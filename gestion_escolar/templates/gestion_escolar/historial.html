@@ -1,0 +1,182 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load historial_filters %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Registros de Actividad</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover datatable-search" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Fecha</th>
+                            <th>Tipo de Documento</th>
+                            <th>Maestro Titular</th>
+                            <th>Maestro Interino</th>
+                            <th>Clave Presupuestal</th>
+                            <th>Motivo</th>
+                            <th>Observaciones</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in historial_items %}
+                        <tr>
+                            <td>{{ item.usuario.username|default:"N/A" }}</td>
+                            <td>{{ item.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                            <td>{{ item.tipo_documento }}</td>
+                            {% if item.tipo_documento == "Reporte de Vacancia" %}
+                                <td>Múltiples</td>
+                                <td>N/A</td>
+                                <td>N/A</td> {# For Maestro Interino #}
+                            {% else %}
+                                <td>{{ item.maestro|default:"N/A" }}</td>
+                                <td>{{ item.maestro_secundario_nombre|default:"N/A" }}</td> {# For Maestro Interino #}
+                                <td>{{ item.maestro.clave_presupuestal|default:"N/A" }}</td>
+                            {% endif %}
+                            <td>{{ item.motivo|default:"N/A" }}</td>
+                            <td class="observacion-cell" data-item-id="{{ item.id }}">
+                                <div class="observacion-display">
+                                    {{ item.observaciones|default:"Sin observaciones" }}
+                                    <button class="btn btn-link btn-sm btn-edit-observacion"><i class="fas fa-pencil-alt"></i></button>
+                                </div>
+                                <div class="observacion-edit" style="display: none;">
+                                    <textarea class="form-control">{{ item.observaciones|default:"" }}</textarea>
+                                    <button class="btn btn-success btn-sm mt-1 btn-save-observacion">Guardar</button>
+                                    <button class="btn btn-secondary btn-sm mt-1 btn-cancel-observacion">Cancelar</button>
+                                </div>
+                            </td>
+                            <td>
+                                {% if item.ruta_archivo %}
+                                    <a href="{% url 'descargar_archivo_historial' item.id %}" class="btn btn-primary btn-sm me-1" target="_blank" title="Descargar"><i class="fas fa-download"></i></a>
+                                {% endif %}
+                                <button class="btn btn-danger btn-sm btn-delete-historial me-1" data-item-id="{{ item.id }}" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% if item.tipo_documento == "Reporte de Vacancia" and item.lote_reporte %}
+                                    <a href="{% url 'historial_detalle_lote' item.id %}" class="btn btn-info btn-sm" title="Ver Detalles"><i class="fas fa-eye"></i></a>
+                                {% elif item.tipo_documento|startswith:"Trámite -" or item.tipo_documento|startswith:"Oficio -" %}
+                                    <a href="{% url 'historial_detalle_tramite' item.id %}" class="btn btn-info btn-sm" title="Ver Detalles"><i class="fas fa-eye"></i></a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para obtener el token CSRF de las cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // Evento para los botones de eliminar
+    $('#dataTable tbody').on('click', 'button.btn-delete-historial', function() {
+        const button = this;
+        const itemId = $(this).data('item-id');
+        const deleteUrl = `/historial/eliminar/${itemId}/`;
+
+        if (confirm('¿Está seguro de que desea eliminar este registro del historial?')) {
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    $('#dataTable').DataTable().row($(button).parents('tr')).remove().draw();
+                    alert(data.message);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Ocurrió un error al intentar eliminar el registro.');
+            });
+        }
+    });
+
+    // Edición en el lugar para observaciones
+    $('#dataTable tbody').on('click', '.btn-edit-observacion', function() {
+        const cell = $(this).closest('.observacion-cell');
+        cell.find('.observacion-display').hide();
+        cell.find('.observacion-edit').show();
+    });
+
+    $('#dataTable tbody').on('click', '.btn-cancel-observacion', function() {
+        const cell = $(this).closest('.observacion-cell');
+        cell.find('.observacion-edit').hide();
+        cell.find('.observacion-display').show();
+    });
+
+    $('#dataTable tbody').on('click', '.btn-save-observacion', function() {
+        const cell = $(this).closest('.observacion-cell');
+        const itemId = cell.data('item-id');
+        const newText = cell.find('textarea').val();
+        const saveUrl = `/historial/guardar_observacion/${itemId}/`;
+
+        fetch(saveUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ observaciones: newText })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const displayDiv = cell.find('.observacion-display');
+                // Actualizar el contenido y volver a añadir el botón de editar
+                displayDiv.html(newText ? newText.replace(/\n/g, '<br>') : 'Sin observaciones');
+                displayDiv.append(' <button class="btn btn-link btn-sm btn-edit-observacion"><i class="fas fa-pencil-alt"></i></button>');
+                
+                // Ocultar edición y mostrar display
+                cell.find('.observacion-edit').hide();
+                displayDiv.show();
+                
+                // Re-dibujar la fila en datatables para que se ajuste la altura si es necesario
+                $('#dataTable').DataTable().row(cell.closest('tr')).invalidate('data').draw(false);
+
+                // alert(data.message); // Opcional: puede ser molesto
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ocurrió un error al guardar la observación.');
+        });
+    });
+});
+</script>
+{% endblock %}

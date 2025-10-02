@@ -1,0 +1,129 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Sistema de Control de Personal{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Dashboard Section -->
+            <div class="row">
+                <div class="col-md-3 col-sm-6">
+                    <div class="card card-dashboard">
+                        <div class="card-body text-center">
+                            <i class="fas fa-map-marked stats-icon text-primary"></i>
+                            <h5 class="mt-3">Zonas</h5>
+                            <h2>{{ total_zonas }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="card card-dashboard">
+                        <div class="card-body text-center">
+                            <i class="fas fa-school stats-icon text-success"></i>
+                            <h5 class="mt-3">Centros de Trabajo</h5>
+                            <h2>{{ total_escuelas }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="card card-dashboard">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chalkboard-teacher stats-icon text-info"></i>
+                            <h5 class="mt-3">Personal</h5>
+                            <h2>{{ total_maestros }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="card card-dashboard">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-tie stats-icon text-warning"></i>
+                            <h5 class="mt-3">Directores</h5>
+                            <h2>{{ total_directores }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Distribución por Zona</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="zoneChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">Último Personal Registrado</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                {% for maestro in ultimo_personal %}
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</h6>
+                                        <small class="text-muted">{{ maestro.get_funcion_display }}</small>
+                                    </div>
+                                    <p class="mb-1">Escuela: {{ maestro.id_escuela.nombre_ct|default:"N/A" }}</p>
+                                </a>
+                                {% empty %}
+                                <div class="list-group-item">
+                                    <p class="mb-1">No hay personal registrado recientemente.</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de distribución por zona
+        const ctx = document.getElementById('zoneChart').getContext('2d');
+        const zoneChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ zona_labels|safe }},
+                datasets: [{
+                    label: 'Número de Escuelas',
+                    data: {{ zona_data|safe }},
+                    backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                    borderColor: 'rgb(52, 152, 219)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            // Asegurar que los ticks sean enteros
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

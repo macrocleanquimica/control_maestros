@@ -1,0 +1,338 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Título de la página -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
+    </div>
+
+    <!-- Formulario para agregar vacancia -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Agregar Nueva Vacancia al Lote #{{ lote.id }}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                <div class="row">
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <label for="id_maestro_titular" class="form-label">Maestro Titular</label>
+                        {{ form.maestro_titular }}
+                        {% if form.maestro_titular.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.maestro_titular.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <label for="id_clave_presupuestal_display" class="form-label">Clave Presupuestal Titular</label>
+                        {{ form.clave_presupuestal_display }}
+                    </div>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <label for="id_maestro_interino" class="form-label">Maestro Interino (Opcional)</label>
+                        {{ form.maestro_interino }}
+                        {% if form.maestro_interino.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.maestro_interino.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <label for="id_curp_interino_display" class="form-label">CURP Interino</label>
+                        {{ form.curp_interino_display }}
+                    </div>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <label for="id_folio_prelacion_display" class="form-label">Folio de Prelación</label>
+                        {{ form.folio_prelacion_display }}
+                    </div>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <label for="id_posicion_orden_display" class="form-label">Posición de Orden</label>
+                        {{ form.posicion_orden_display }}
+                    </div>
+                    
+                    <!-- CORRECCIÓN: Condición completa para excluir campos -->
+                    {% for field in form %}
+                        {% if field.name != 'maestro_titular' and field.name != 'clave_presupuestal_display' and field.name != 'maestro_interino' and field.name != 'curp_interino_display' and field.name != 'folio_prelacion_display' and field.name != 'posicion_orden_display' and field.name != 'nombre_interino' and field.name != 'curp_interino' %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ field.errors|striptags }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">
+                    <i class="fas fa-plus me-2"></i>Agregar al Lote
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4 mb-3" id="nombre_interino_manual_div">
+        <label for="id_nombre_interino" class="form-label">Nombre Interino (manual)</label>
+        {{ form.nombre_interino }}
+        {% if form.nombre_interino.errors %}
+            <div class="text-danger small mt-1">
+                {{ form.nombre_interino.errors|striptags }}
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-md-6 col-lg-4 mb-3" id="curp_interino_manual_div">
+        <label for="id_curp_interino" class="form-label">CURP Interino (manual)</label>
+        {{ form.curp_interino }}
+        {% if form.curp_interino.errors %}
+            <div class="text-danger small mt-1">
+                {{ form.curp_interino.errors|striptags }}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Tabla de vacancias en el lote actual -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Vacancias en el Lote Actual ({{ vacancias_en_lote.count }} registradas)</h6>
+            {% if vacancias_en_lote %}
+                <button type="button" id="export-report-btn" class="btn btn-success no-loader">
+                    <i class="fas fa-file-excel me-2"></i>Generar y Exportar Reporte
+                </button>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Maestro Titular</th>
+                            <th>Categoría</th>
+                            <th>Apreciación</th>
+                            <th>Fechas</th>
+                            <th>Tipo Movimiento</th>
+                            <th>Maestro Interino</th>
+                            <th>CURP Interino</th>
+                            <th>Folio Prelación</th>
+                            <th>Posición Orden</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vacancia in vacancias_en_lote %}
+                        <tr id="vacancia-{{ vacancia.id }}">
+                            <!-- CORRECCIÓN: Verificar si el campo categog existe -->
+                            <td>{{ vacancia.maestro_titular }}</td>
+                            <td>{{ vacancia.maestro_titular.categoria|default:vacancia.maestro_titular.categog|default:"N/A" }}</td>
+                            <td>{{ vacancia.apreciacion.descripcion|truncatechars:50 }}</td>
+                            <td>{{ vacancia.fecha_inicio|date:"d/m/Y" }} - {{ vacancia.fecha_final|date:"d/m/Y" }}</td>
+                            <td>{{ vacancia.tipo_movimiento_original }}</td>
+                            <td>{% if vacancia.maestro_interino %}{{ vacancia.maestro_interino }}{% else %}{{ vacancia.nombre_interino|default:"N/A" }}{% endif %}</td>
+                            <td>{% if vacancia.maestro_interino %}{{ vacancia.maestro_interino.curp }}{% else %}{{ vacancia.curp_interino|default:"N/A" }}{% endif %}</td>
+                            <td>{{ vacancia.folio_prelacion|default:"N/A" }}</td>
+                            <td>{{ vacancia.posicion_orden|default:"N/A" }}</td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm eliminar-vacancia" data-id="{{ vacancia.id }}">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center">Aún no hay vacancias en este lote.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar Select2 para el campo maestro_titular
+        $('#id_maestro_titular').select2({
+            placeholder: "Buscar maestro titular por nombre o clave presupuestal",
+            allowClear: true,
+            width: '100%'
+        });
+
+        // Inicializar Select2 para el campo maestro_interino
+        $('#id_maestro_interino').select2({
+            placeholder: "Buscar interino existente, si no existe crealo",
+            allowClear: true,
+            width: '100%'
+        });
+
+        // Manejar el cambio de selección del maestro titular
+        $('#id_maestro_titular').on('change', function() {
+            var maestroId = $(this).val();
+            if (maestroId) {
+                $.ajax({
+                    url: '{% url "get_maestro_data_for_vacancia" %}',
+                    data: {
+                        'maestro_id': maestroId
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.clave_presupuestal) {
+                            $('#id_clave_presupuestal_display').val(data.clave_presupuestal);
+                        } else {
+                            $('#id_clave_presupuestal_display').val('N/A');
+                        }
+                    }
+                });
+            } else {
+                $('#id_clave_presupuestal_display').val('');
+            }
+        });
+
+        // Manejar el cambio de selección del maestro interino
+        $('#id_maestro_interino').on('change', function() {
+            var maestroId = $(this).val();
+            var nombreInterinoManualDiv = $('#nombre_interino_manual_div');
+            var curpInterinoManualDiv = $('#curp_interino_manual_div');
+
+            if (maestroId) {
+                $.ajax({
+                    url: '{% url "get_interino_and_prelacion_data_ajax" %}', // Nueva URL AJAX
+                    data: {
+                        'maestro_id': maestroId
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        // Siempre intentar poblar la CURP del interino si está disponible
+                        $('#id_curp_interino_display').val(data.curp_interino || 'N/A');
+
+                        if (data.error) {
+                            console.error("Error al obtener datos de interino o prelación: " + data.error);
+                            // Si hay un error real (maestro no encontrado o error de servidor), mostrarlo en la CURP
+                            if (data.error.includes('Maestro interino no encontrado') || data.error.includes('Error inesperado')) {
+                                $('#id_curp_interino_display').val('Error');
+                            }
+                            $('#id_folio_prelacion_display').val('N/A');
+                            $('#id_posicion_orden_display').val('N/A');
+                        } else {
+                            // Si no hay error general, poblar los campos de prelación
+                            $('#id_folio_prelacion_display').val(data.folio_prelacion || 'N/A');
+                            $('#id_posicion_orden_display').val(data.posicion_orden || 'N/A');
+
+                            if (data.tipo_val) {
+                                var tipoVacanteSelect = $('#id_tipo_vacante');
+                                var foundOption = false;
+                                tipoVacanteSelect.find('option').each(function() {
+                                    if ($(this).text().toUpperCase().includes(data.tipo_val.toUpperCase())) {
+                                        tipoVacanteSelect.val($(this).val()).trigger('change');
+                                        foundOption = true;
+                                        return false; // Break the loop
+                                    }
+                                });
+                                if (!foundOption) {
+                                    console.warn("No se encontró una opción de Tipo de Vacante que coincida con: " + data.tipo_val);
+                                    tipoVacanteSelect.val('').trigger('change'); // Limpiar si no hay coincidencia
+                                }
+                            } else {
+                                tipoVacanteSelect.val('').trigger('change');
+                            }
+                            
+                            // Para el Motivo del Movimiento, no hay un campo directo en Prelacion.
+                            // Se deja para selección manual o se requiere un mapeo adicional.
+                            // $('#id_tipo_movimiento_original').val('').trigger('change');
+                        }
+                        nombreInterinoManualDiv.hide();
+                        curpInterinoManualDiv.hide();
+                    }
+                });
+            } else {
+                $('#id_curp_interino_display').val('');
+                $('#id_folio_prelacion_display').val('');
+                $('#id_posicion_orden_display').val('');
+                $('#id_tipo_vacante').val('').trigger('change'); // Limpiar
+                // $('#id_tipo_movimiento_original').val('').trigger('change'); // Limpiar
+                nombreInterinoManualDiv.show();
+                curpInterinoManualDiv.show();
+            }
+        });
+
+        // Ocultar campos manuales al cargar la página si ya hay un interino seleccionado
+        if ($('#id_maestro_interino').val()) {
+            $('#nombre_interino_manual_div').hide();
+            $('#curp_interino_manual_div').hide();
+        }
+
+        // Manejar la eliminación de vacancias del lote
+        $(document).on('click', '.eliminar-vacancia', function() {
+            var vacanciaId = $(this).data('id');
+            var row = $('#vacancia-' + vacanciaId);
+            
+            if (confirm("¿Estás seguro de que deseas eliminar esta vacancia del lote?")) {
+                $.ajax({
+                    url: '/vacancias/eliminar/' + vacanciaId + '/', // Usar la URL directa
+                    type: 'POST',
+                    data: {
+                        'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            row.remove(); // Eliminar la fila de la tabla
+                            // Opcional: Actualizar el contador de vacancias
+                            var countElement = $('h6.m-0.font-weight-bold.text-primary');
+                            var currentCount = parseInt(countElement.text().match(/\((\d+)/)[1]);
+                            countElement.text(countElement.text().replace(currentCount, currentCount - 1));
+                            // Mostrar mensaje de éxito (si se usa el sistema de mensajes de Django)
+                            location.reload(); // Recargar la página para actualizar mensajes y el botón de exportar
+                        } else {
+                            alert("Error al eliminar la vacancia: " + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert("Error de comunicación con el servidor: " + error);
+                        console.error(xhr.responseText);
+                    }
+                });
+            }
+        });
+
+        // Lógica para limpiar el formulario después de exportar (Request 2)
+        $('#export-report-btn').on('click', function() {
+            var loteId = {{ lote.id }};
+            var exportUrl = '{% url "exportar_lote_vacancia" lote_id=0 %}'.replace('/0/', '/' + loteId + '/');
+
+            // Crear un iframe oculto para la descarga
+            var iframe = $('<iframe/>').hide().prop('src', exportUrl);
+            $('body').append(iframe);
+
+            // Recargar la página principal después de un breve retraso
+            // para permitir que la descarga se inicie y la vista se actualice
+            setTimeout(function() {
+                location.reload();
+            }, 1000); // 1 segundo de retraso
+        });
+
+    });
+</script>
+{% endblock %}  

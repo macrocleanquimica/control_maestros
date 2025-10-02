@@ -1,0 +1,133 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Detalle del Personal{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card content-card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Detalle del Personal: {{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</h4>
+                </div>
+                <div class="card-body">
+                    {% if maestro.techo_f and maestro.id_escuela and maestro.techo_f != maestro.id_escuela.id_escuela %}
+                    <div class="alert alert-warning" role="alert">
+                        <strong>Atención:</strong> Este es un maestro desubicado (El Techo Financiero no coincide con el C.C.T. de la escuela).
+                    </div>
+                    {% endif %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="print-hide"><strong>Nombre Completo:</strong> {{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</p>
+                            <p><strong>Clave Presupuestal:</strong> {{ maestro.clave_presupuestal }}</p>
+                            <p><strong>CURP:</strong> {{ maestro.curp }}</p>
+                            <p><strong>RFC:</strong> {{ maestro.rfc }}</p>
+                            <p><strong>Sexo:</strong> {{ maestro.get_sexo_display }}</p>
+                            <p><strong>Estado Civil:</strong> {{ maestro.get_est_civil_display }}</p>
+                            <p><strong>Fecha de Nacimiento:</strong> {{ maestro.fecha_nacimiento|date:"d/m/Y" }}</p>
+                            <p><strong>Techo Financiero:</strong> {{ maestro.techo_f|default:"N/A" }}</p>
+                            <p><strong>C.C.T.:</strong> {% if maestro.id_escuela %}{{ maestro.id_escuela.id_escuela }}{% else %}N/A{% endif %}</p>
+                            <p><strong>Nombre del Centro de Trabajo:</strong> {% if maestro.id_escuela %}{{ maestro.id_escuela.nombre_ct }}{% else %}N/A{% endif %}</p>
+                            <p><strong>Zona Escolar:</strong> {% if maestro.id_escuela and maestro.id_escuela.zona_esc %}{{ maestro.id_escuela.zona_esc.numero }}{% else %}N/A{% endif %}</p>
+                            <p><strong>Categoría:</strong> {{ maestro.categog }}</p>
+                            <p><strong>Código:</strong> {{ maestro.codigo }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Fecha de Ingreso:</strong> {{ maestro.fecha_ingreso|date:"d/m/Y" }}</p>
+                            <p><strong>Fecha de Promoción:</strong> {{ maestro.fecha_promocion|date:"d/m/Y" }}</p>
+                            <p><strong>Formación Académica:</strong> {{ maestro.form_academica }}</p>
+                            <p><strong>Horario:</strong> {{ maestro.horario }}</p>
+                            <p><strong>Función:</strong> {{ maestro.get_funcion_display }}</p>
+                            <p><strong>Nivel de Estudio:</strong> {{ maestro.get_nivel_estudio_display }}</p>
+                            <p><strong>Domicilio Particular:</strong> {{ maestro.domicilio_part }}</p>
+                            <p><strong>Población:</strong> {{ maestro.poblacion }}</p>
+                            <p><strong>Código Postal:</strong> {{ maestro.codigo_postal }}</p>
+                            <p><strong>Teléfono:</strong> {{ maestro.telefono }}</p>
+                            <p><strong>Email:</strong> {{ maestro.email }}</p>
+                            <p><strong>Status:</strong> {{ maestro.get_status_display }}</p>
+                            <p><strong>Observaciones:</strong> {{ maestro.observaciones }}</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <a href="{% url 'lista_maestros' %}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Volver a la Lista</a>
+                    <button onclick="window.print();" class="btn btn-info"><i class="fas fa-print me-2"></i>Imprimir Ficha</button>
+                    <a href="{% url 'export_maestro_csv' pk=maestro.id_maestro %}" class="btn btn-success no-loader"><i class="fas fa-file-excel me-2"></i>Exportar a CSV</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de Expediente Digital -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Expediente Digital</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Lista de documentos existentes -->
+                        <div class="col-md-12">
+                            <h6>Documentos Existentes</h6>
+                            {% if documentos %}
+                                <ul class="list-group">
+                                    {% for doc in documentos %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <a href="{{ doc.archivo.url }}" target="_blank">{{ doc.get_tipo_documento_display }}</a>
+                                            <small>Subido el {{ doc.fecha_subida|date:"d/m/Y" }} por {{ doc.subido_por.username|default:'N/A' }}</small>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p>No hay documentos en el expediente.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body {
+            font-size: 10pt;
+        }
+        .sidebar, .header, .alert, .btn, hr, #sidebarToggle, #sidebarCollapse, .print-hide, .mt-4 {
+            display: none !important;
+        }
+        .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+            padding: 0 !important;
+        }
+        .content-card, .card-body {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .card-header {
+            border-bottom: 1px solid #dee2e6 !important;
+            text-align: center;
+        }
+        .card-header h4 {
+            font-size: 14pt;
+            margin-bottom: 1rem;
+        }
+        .content-card {
+            border: none;
+            box-shadow: none;
+        }
+        .col-md-6 {
+            width: 50% !important;
+            float: left;
+            padding: 0 15px;
+        }
+        .card-body p {
+            margin: 0;
+            padding: 1px 0;
+        }
+    }
+</style>
+{% endblock %}

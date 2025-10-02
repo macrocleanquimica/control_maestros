@@ -1,0 +1,55 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Detalles del Lote de Vacancia</h6>
+        </div>
+        <div class="card-body">
+            <p><strong>ID del Lote:</strong> {{ lote.id }}</p>
+            <p><strong>Generado por:</strong> {{ lote.usuario_generador.username }}</p>
+            <p><strong>Fecha de Creación:</strong> {{ lote.fecha_creacion|date:"d/m/Y H:i" }}</p>
+            <p><strong>Estado:</strong> {{ lote.get_estado_display }}</p>
+            {% if lote.archivo_generado %}
+                <p><strong>Archivo Generado:</strong> <a href="{{ lote.archivo_generado.url }}" target="_blank">Descargar Reporte</a></p>
+            {% endif %}
+            <hr>
+            <h6 class="m-0 font-weight-bold text-primary">Vacancias en este Lote</h6>
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered datatable-search" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Maestro Titular</th>
+                            <th>Maestro Interino</th>
+                            <th>Clave Presupuestal</th>
+                            <th>Motivo del Movimiento</th>
+                            <th>Tipo de Vacante</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Final</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vacancia in vacancias %}
+                        <tr>
+                            <td>{{ vacancia.maestro_titular.nombres }} {{ vacancia.maestro_titular.a_paterno }} {{ vacancia.maestro_titular.a_materno }}</td>
+                            <td>{{ vacancia.nombre_interino|default:"N/A" }}</td>
+                            <td>{{ vacancia.clave_presupuestal }}</td>
+                            <td>{{ vacancia.tipo_movimiento_original }}</td>
+                            <td>{{ vacancia.tipo_vacante }}</td>
+                            <td>{{ vacancia.fecha_inicio|date:"d/m/Y" }}</td>
+                            <td>{{ vacancia.fecha_final|date:"d/m/Y" }}</td>
+                            <td>{{ vacancia.observaciones|default:"" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="{% url 'historial' %}" class="btn btn-secondary mt-3">Volver al Historial</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

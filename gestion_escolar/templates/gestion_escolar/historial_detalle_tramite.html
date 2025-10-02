@@ -1,0 +1,69 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load historial_filters %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Información General del Historial</h6>
+        </div>
+        <div class="card-body">
+            <p><strong>Usuario:</strong> {{ historial_item.usuario.username|default:"N/A" }}</p>
+            <p><strong>Fecha de Creación:</strong> {{ historial_item.fecha_creacion|date:"d/m/Y H:i" }}</p>
+            <p><strong>Tipo de Documento:</strong> {{ historial_item.tipo_documento }}</p>
+            {% if historial_item.maestro %}
+                <p><strong>Maestro Involucrado:</strong> {{ historial_item.maestro }}</p>
+                <p><strong>Clave Presupuestal:</strong> {{ historial_item.maestro.clave_presupuestal }}</p>
+            {% endif %}
+            {% if historial_item.motivo %}
+                <p><strong>Motivo:</strong> {{ historial_item.motivo }}</p>
+            {% endif %}
+            {% if historial_item.observaciones %}
+                <p><strong>Observaciones:</strong> {{ historial_item.observaciones }}</p>
+            {% endif %}
+            {% if historial_item.ruta_archivo %}
+                <p><strong>Archivo Generado:</strong> <a href="{% url 'descargar_archivo_historial' historial_item.id %}" target="_blank">Descargar Archivo</a></p>
+            {% endif %}
+
+            <hr>
+            <h6 class="m-0 font-weight-bold text-primary">Datos Completos del Formulario</h6>
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <tbody>
+                        {% for key, value in datos_tramite.items %}
+                            <tr>
+                                <td><strong>{{ key|title|replace:"_ | " }}:</strong></td>
+                                <td>
+                                    {% if key == "maestro_titular" or key == "maestro_interino" %}
+                                        {% comment %} Asumiendo que estos son IDs de maestro, buscar el nombre {% endcomment %}
+                                        {% with maestro_obj=value|get_maestro_by_id %}
+                                            {{ maestro_obj|default:value }}
+                                        {% endwith %}
+                                    {% elif key == "motivo_tramite" %}
+                                        {% comment %} Asumiendo que es un ID de motivo, buscar la descripción {% endcomment %}
+                                        {% with motivo_obj=value|get_motivo_by_id %}
+                                            {{ motivo_obj|default:value }}
+                                        {% endwith %}
+                                    {% elif key == "plantilla" %}
+                                        {% comment %} Asumiendo que es un ID de plantilla, buscar el nombre {% endcomment %}
+                                        {% with plantilla_obj=value|get_plantilla_by_id %}
+                                            {{ plantilla_obj|default:value }}
+                                        {% endwith %}
+                                    {% elif value is iterable and not value is string %}
+                                        {{ value|join:", " }}
+                                    {% else %}
+                                        {{ value }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <a href="{% url 'historial' %}" class="btn btn-secondary mt-3">Volver al Historial</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

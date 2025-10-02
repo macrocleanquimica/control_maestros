@@ -1,0 +1,75 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ titulo }}</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_numero" class="form-label">Número de Zona</label>
+                            {{ form.numero }}
+                            {% if form.numero.errors %}
+                                <div class="text-danger">{{ form.numero.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_nombre_supervisor" class="form-label">Nombre del Supervisor</label>
+                            {{ form.nombre_supervisor }}
+                            {% if form.nombre_supervisor.errors %}
+                                <div class="text-danger">{{ form.nombre_supervisor.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_contacto_supervisor" class="form-label">Contacto del Supervisor</label>
+                            {{ form.contacto_supervisor }}
+                            {% if form.contacto_supervisor.errors %}
+                                <div class="text-danger">{{ form.contacto_supervisor.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_email_supervisor" class="form-label">Email del Supervisor</label>
+                            {{ form.email_supervisor }}
+                            {% if form.email_supervisor.errors %}
+                                <div class="text-danger">{{ form.email_supervisor.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_observaciones" class="form-label">Observaciones</label>
+                            {{ form.observaciones }}
+                            {% if form.observaciones.errors %}
+                                <div class="text-danger">{{ form.observaciones.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'lista_zonas' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ titulo }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row">
+                            {% for field in form %}
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <hr>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Guardar</button>
+                        <a href="{% url 'lista_maestros' %}" class="btn btn-secondary"><i class="fas fa-times me-2"></i>Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if form.instance.pk %}
+    <!-- Sección de Expediente Digital -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Expediente Digital</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Formulario para subir nuevos documentos -->
+                        <div class="col-md-4">
+                            <h6>Subir Nuevo Documento</h6>
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="{{ doc_form.tipo_documento.id_for_label }}" class="form-label">{{ doc_form.tipo_documento.label }}</label>
+                                    {{ doc_form.tipo_documento }}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="{{ doc_form.archivo.id_for_label }}" class="form-label">{{ doc_form.archivo.label }}</label>
+                                    {{ doc_form.archivo }}
+                                </div>
+                                <button type="submit" name="submit_documento" class="btn btn-info">Subir Documento</button>
+                            </form>
+                        </div>
+
+                        <!-- Lista de documentos existentes -->
+                        <div class="col-md-8">
+                            <h6>Documentos Existentes</h6>
+                            {% if documentos %}
+                                <ul class="list-group">
+                                    {% for doc in documentos %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <a href="{{ doc.archivo.url }}" target="_blank">{{ doc.get_tipo_documento_display }}</a>
+                                            <small>Subido el {{ doc.fecha_subida|date:"d/m/Y" }} por {{ doc.subido_por.username|default:'N/A' }}</small>
+                                            <a href="{% url 'eliminar_documento_expediente' doc_pk=doc.pk %}" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p>No hay documentos en el expediente.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

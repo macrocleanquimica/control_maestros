@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Control de Maestros{% endblock %}</title>
+    {% load static %}
+    {% load auth_extras %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #34495e; /* Dark Gray - for main elements, buttons, active states */
+            --secondary-color: #2c3e50; /* Very Dark Gray/Near Black - for sidebar background, headers */
+            --accent-color: #95a5a6; /* Medium Gray - for subtle accents, borders, less critical highlights */
+            --light-color: #ecf0f1; /* Very Light Gray - for general backgrounds */
+            --success-color: #27ae60; /* Keep green for success messages, as it's a standard indicator */
+            --sidebar-width: 250px;
+            --sidebar-collapsed-width: 70px;
+            --transition-speed: 0.3s;
+        }
+        
+        /* Override Bootstrap primary color classes */
+        .btn-primary {
+            background-color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+        }
+        .btn-primary:hover {
+            background-color: var(--secondary-color) !important; /* Darker on hover */
+            border-color: var(--secondary-color) !important;
+        }
+        .bg-primary {
+            background-color: var(--primary-color) !important;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            transition: margin-left var(--transition-speed);
+        }
+        
+        /* Pantalla de carga */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        #loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Sidebar estilo mejorado */
+        .sidebar {
+            background-color: var(--secondary-color);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            padding-top: 20px;
+            width: var(--sidebar-width);
+            z-index: 1000;
+            transition: all var(--transition-speed) ease;
+            left: 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+        
+        .sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+        
+        .sidebar.collapsed .nav-link {
+            text-align: center;
+            padding: 15px 5px;
+        }
+        
+        .sidebar.collapsed .nav-link i {
+            margin-right: 0;
+            font-size: 1.2rem;
+        }
+        
+        .sidebar.collapsed h3 {
+            display: none;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 15px 20px;
+            margin: 5px 10px;
+            border-radius: 5px;
+            transition: all var(--transition-speed);
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar .nav-link i {
+            transition: transform var(--transition-speed);
+            min-width: 25px;
+            text-align: center;
+        }
+        
+        .sidebar .nav-link.active i {
+            transform: scale(1.2);
+        }
+        
+        /* Contenido principal con margen ajustable */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            transition: margin-left var(--transition-speed) ease, width var(--transition-speed) ease;
+            width: calc(100% - var(--sidebar-width));
+            min-height: 100vh;
+        }
+        
+        .main-content.sidebar-collapsed {
+            margin-left: var(--sidebar-collapsed-width);
+            width: calc(100% - var(--sidebar-collapsed-width));
+        }
+        
+        /* Header fijo */
+        .header {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 10px;
+            z-index: 900;
+        }
+        
+        /* Botones para toggle del sidebar */
+        #sidebarToggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1100;
+            background: var(--primary-color);
+            border: none;
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        #sidebarCollapse {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform var(--transition-speed);
+        }
+        
+        #sidebarCollapse:hover {
+            transform: rotate(180deg);
+        }
+        
+        /* Media queries para responsividad */
+        @media (max-width: 992px) {
+            .sidebar {
+                margin-left: calc(-1 * var(--sidebar-width));
+                width: var(--sidebar-width);
+            }
+            
+            .sidebar.active {
+                margin-left: 0;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            .main-content.sidebar-active {
+                margin-left: var(--sidebar-width);
+                width: calc(100% - var(--sidebar-width));
+            }
+            
+            #sidebarToggle {
+                display: block;
+            }
+            
+            .sidebar.collapsed {
+                margin-left: calc(-1 * var(--sidebar-collapsed-width));
+            }
+            
+            .sidebar.collapsed.active {
+                margin-left: 0;
+                width: var(--sidebar-collapsed-width);
+            }
+            
+            .main-content.sidebar-collapsed {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+        
+        /* Mejoras visuales para móviles */
+        @media (max-width: 576px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            
+            /* Ajustes para dropdowns en móviles */
+            .dropdown-menu {
+                position: static !important;
+                transform: none !important;
+            }
+            
+            .sidebar {
+                width: 80%;
+                margin-left: -80%;
+            }
+            
+            .main-content.sidebar-active {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            .sidebar.collapsed {
+                width: 60px;
+                margin-left: -60px;
+            }
+        }
+        
+        /* Estilos para dropdowns */
+        .dropdown-menu {
+            background-color: var(--secondary-color);
+            border: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .dropdown-item {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            transition: all var(--transition-speed);
+        }
+        
+        .dropdown-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding-left: 25px;
+        }
+        
+        .dropdown-divider {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Backdrop para móviles */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-backdrop {
+                display: block;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity var(--transition-speed), visibility var(--transition-speed);
+            }
+            
+            .sidebar-backdrop.active {
+                opacity: 1;
+                visibility: visible;
+            }
+        }
+        
+        /* Notificaciones y estado de usuario */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .notification-badge {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .notification-badge .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 0.6rem;
+            padding: 3px 6px;
+        }
+        
+        /* Mejoras visuales para el contenido */
+        .content-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform var(--transition-speed);
+        }
+        
+        .content-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Pantalla de carga -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Backdrop para móviles -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Botón para toggle en móviles -->
+    <button id="sidebarToggle" class="btn">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar">
+                <div class="d-flex justify-content-between align-items-center px-3 mb-4">
+                    <h3 class="text-center mb-0">Menu Principal</h3>
+                    <button id="sidebarCollapse" class="d-none d-md-block">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'index' %}">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            <span class="sidebar-text">Dashboard</span>
+                        </a>
+                    </li>
+
+                    <!-- Divider -->
+                    <hr class="sidebar-divider my-3">
+
+                    <!-- Nav Item - Bandeja de Entrada -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'correspondencia_inbox' %}">
+                            <i class="fas fa-envelope me-2"></i>
+                            <span class="sidebar-text">Bandeja de Entrada</span>
+                        </a>
+                    </li>
+
+                    <!-- Nav Item - Mis Pendientes -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'pendientes_activos' %}">
+                            <i class="fas fa-tasks me-2"></i>
+                            <span class="sidebar-text">Mis Pendientes</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Menú desplegable para Personal -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-users me-2"></i>
+                            <span class="sidebar-text">Personal</span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'lista_maestros' %}">
+                                    <i class="fas fa-chalkboard-teacher me-2"></i> Todo el Personal
+                                </a>
+                            </li>
+                            {% if not user|has_group:"Directores" %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'lista_directores' %}">
+                                    <i class="fas fa-user-tie me-2"></i> Directores
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'lista_supervisores_maestros' %}">
+                                    <i class="fas fa-user-check me-2"></i> Supervisores
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'lista_psicologos' %}">
+                                    <i class="fas fa-brain me-2"></i> Psicólogos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'lista_trabajadores_sociales' %}">
+                                    <i class="fas fa-hands-helping me-2"></i> Trabajadores Sociales
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'lista_maestros_grupo' %}">
+                                    <i class="fas fa-user-graduate me-2"></i> Maestros de Grupo
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'lista_docentes_apoyo' %}">
+                                    <i class="fas fa-book me-2"></i> Docentes de Apoyo
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </li>
+
+                    {% if not user|has_group:"Directores" %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'lista_escuelas' %}">
+                            <i class="fas fa-school me-2"></i>
+                            <span class="sidebar-text">Centros de Trabajo</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'lista_categorias' %}">
+                            <i class="fas fa-tags me-2"></i>
+                            <span class="sidebar-text">Categorías</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'lista_zonas' %}">
+                            <i class="fas fa-map-marked me-2"></i>
+                            <span class="sidebar-text">Zonas</span>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'generar_oficios' %}">
+                            <i class="fas fa-file-signature me-2"></i>
+                            <span class="sidebar-text">Oficios</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'generar_tramites_generales' %}">
+                            <i class="fas fa-file-alt me-2"></i>
+                            <span class="sidebar-text">Trámites</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'gestionar_lote_vacancia' %}">
+                            <i class="fas fa-file-invoice me-2"></i>
+                            <span class="sidebar-text">Reporte de Vacancia</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'historial' %}">
+                            <i class="fas fa-history me-2"></i>
+                            <span class="sidebar-text">Historial</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            <span class="sidebar-text">Reportes</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 main-content">
+                <!-- Header -->
+                <div class="header">
+                    <h4>Sistema de Control de Personal de Educación Especial</h4>
+                    {% if user.is_authenticated %}
+                    <ul class="navbar-nav d-flex flex-row align-items-center">
+                        <!-- Notification Bell Dropdown -->
+                        <li class="nav-item dropdown me-3">
+                            <a class="nav-link" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-bell fa-fw"></i>
+                                {% if total_alerts > 0 %}
+                                    <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" style="font-size: 0.6em; padding: .25em .4em;">{{ total_alerts }}</span>
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow animated--grow-in" aria-labelledby="alertsDropdown">
+                                <li><h6 class="dropdown-header">Centro de Alertas</h6></li>
+                                {% for alert in global_alerts %}
+                                    <li><a class="dropdown-item d-flex align-items-center" href="{{ alert.url }}">
+                                        <div class="me-3">
+                                            {% if alert.type == 'message' %}
+                                            <div class="icon-circle bg-primary p-2 rounded-circle"><i class="fas fa-envelope text-white"></i></div>
+                                            {% elif alert.type == 'task' %}
+                                            <div class="icon-circle bg-warning p-2 rounded-circle"><i class="fas fa-tasks text-white"></i></div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <div class="small text-muted">{{ alert.date|date:"d/m/Y" }}</div>
+                                            <span class="fw-bold">{{ alert.text }}</span>
+                                        </div>
+                                    </a></li>
+                                {% endfor %}
+                                {% if not global_alerts %}
+                                <li><a class="dropdown-item text-center small text-muted" href="#">No hay alertas nuevas</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
+
+                        <!-- Nav Item - User Information -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="me-2 d-none d-lg-inline">{{ user.username }}</span>
+                                <i class="fas fa-user-circle"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow animated--grow-in" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="{% url 'correspondencia_inbox' %}">
+                                    <i class="fas fa-envelope fa-sm fa-fw me-2 text-gray-400"></i>
+                                    Bandeja de Entrada
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'ajustes' %}">
+                                    <i class="fas fa-cogs fa-sm fa-fw me-2 text-gray-400"></i>
+                                    Ajustes
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'logout' %}" id="logoutButton">
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw me-2 text-gray-400"></i>
+                                    Cerrar Sesión
+                                </a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    {% endif %}
+                </div>
+
+                <!-- Contenido específico de cada página -->
+                {% block content %}
+                <!-- Ejemplo de contenido por defecto -->
+                <div class="content-card">
+                    <h5>Bienvenido al Sistema de Control</h5>
+                    <p>Seleccione una opción del menú para comenzar.</p>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Toggle sidebar en dispositivos móviles
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('active');
+            document.querySelector('.main-content').classList.toggle('sidebar-active');
+            document.getElementById('sidebarBackdrop').classList.toggle('active');
+        });
+
+        // Cerrar sidebar al hacer clic en el backdrop (en móviles)
+        document.getElementById('sidebarBackdrop').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.remove('active');
+            document.querySelector('.main-content').classList.remove('sidebar-active');
+            this.classList.remove('active');
+        });
+
+        // Colapsar/expandir sidebar en desktop
+        document.getElementById('sidebarCollapse').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('collapsed');
+            document.querySelector('.main-content').classList.toggle('sidebar-collapsed');
+            
+            // Cambiar icono
+            const icon = this.querySelector('i');
+            if (icon.classList.contains('fa-chevron-left')) {
+                icon.classList.replace('fa-chevron-left', 'fa-chevron-right');
+            } else {
+                icon.classList.replace('fa-chevron-right', 'fa-chevron-left');
+            }
+        });
+
+        // Cerrar sidebar al hacer clic en un enlace (en móviles)
+        if (window.innerWidth < 992) {
+            document.querySelectorAll('.sidebar .nav-link:not(.dropdown-toggle)').forEach(link => {
+                link.addEventListener('click', function() {
+                    document.querySelector('.sidebar').classList.remove('active');
+                    document.querySelector('.main-content').classList.remove('sidebar-active');
+                    document.getElementById('sidebarBackdrop').classList.remove('active');
+                });
+            });
+        }
+
+        // Activar el elemento del menú actual
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUrl = window.location.pathname;
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                if (link.getAttribute('href') === currentUrl) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Activar el menú desplegable si está en una de sus opciones
+            document.querySelectorAll('.dropdown-item').forEach(item => {
+                if (item.getAttribute('href') === currentUrl) {
+                    item.classList.add('active');
+                    // También activar el menú principal
+                    item.closest('.dropdown-menu').previousElementSibling.classList.add('active');
+                }
+            });
+        });
+
+        // Función para mostrar pantalla de carga
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.add('active');
+        }
+
+        // Función para ocultar pantalla de carga
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.remove('active');
+        }
+
+        // Cerrar sesión
+        document.getElementById('logoutButton').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('¿Está seguro de que desea cerrar sesión?')) {
+                showLoading();
+                window.location.href = this.href; // Redirigir a la URL de logout
+            }
+        });
+
+        // Mostrar carga al navegar entre páginas
+        document.querySelectorAll('a:not([href="#"]):not(.no-loader)').forEach(link => {
+            link.addEventListener('click', function() {
+                if (this.getAttribute('href') && !this.getAttribute('target')) {
+                    showLoading();
+                }
+            });
+        });
+
+        // Ocultar carga cuando la página termina de cargar (incluyendo navegación por historial)
+        window.addEventListener('pageshow', function() {
+            hideLoading();
+        });
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script src="{% static 'gestion_escolar/js/custom_datatables.js' %}"></script>
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>

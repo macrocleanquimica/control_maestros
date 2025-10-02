@@ -1,0 +1,56 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Agregar Nueva Escuela</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.id_escuela.id_for_label }}">CCT:</label>
+                            {{ form.id_escuela }}
+                            <small class="form-text text-muted">Formato: 10DML0013Q</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.nombre_ct.id_for_label }}">Nombre:</label>
+                            {{ form.nombre_ct }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="{{ form.zona_esc.id_for_label }}">Zona:</label>
+                            {{ form.zona_esc }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="{{ form.turno.id_for_label }}">Turno:</label>
+                            {{ form.turno }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="{{ form.zona_economica.id_for_label }}">Zona Económica:</label>
+                            {{ form.zona_economica }}
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Guardar Escuela</button>
+                <a href="{% url 'lista_escuelas' %}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

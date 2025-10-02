@@ -1,0 +1,29 @@
+{% extends 'gestion_escolar/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ titulo }}</h4>
+                </div>
+                <div class="card-body">
+                    <h5>Ajustes de la Cuenta</h5>
+                    <ul>
+                        <li><a href="{% url 'cambiar_password' %}">Cambiar contraseña</a></li>
+                        <li><a href="{% url 'editar_perfil' %}">Editar perfil</a></li>
+                    </ul>
+
+                    {% if user.is_superuser %}
+                    <hr>
+                    <h5>Gestión de Directores</h5>
+                    <ul>
+                        <li><a href="{% url 'asignar_director' %}">Asignar Director</a></li>
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

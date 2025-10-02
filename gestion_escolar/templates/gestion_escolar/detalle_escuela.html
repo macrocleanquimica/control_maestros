@@ -1,0 +1,85 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Detalle de la Escuela{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card content-card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Detalle de la Escuela: {{ escuela.nombre_ct }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Clave de Centro de Trabajo (CCT):</strong> {{ escuela.id_escuela }}</p>
+                            <p><strong>Nombre del Centro de Trabajo:</strong> {{ escuela.nombre_ct }}</p>
+                            <p><strong>Zona Escolar:</strong> {{ escuela.zona_esc.numero }} - {{ escuela.zona_esc.nombre_supervisor }}</p>
+                            <p><strong>Turno:</strong> {{ escuela.get_turno_display }}</p>
+                            <p><strong>Domicilio:</strong> {{ escuela.domicilio }}</p>
+                            <p><strong>Teléfono:</strong> {{ escuela.telefono_ct|default:"N/A" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Zona Económica:</strong> {{ escuela.get_zona_economica_display }}</p>
+                            <p><strong>Región:</strong> {{ escuela.region }}</p>
+                            <p><strong>U.D.:</strong> {{ escuela.get_u_d_display }}</p>
+                            <p><strong>Sostenimiento:</strong> {{ escuela.get_sostenimiento_display }}</p>
+                            <p><strong>Fecha de Registro:</strong> {{ escuela.fecha_registro|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Última Actualización:</strong> {{ escuela.fecha_actualizacion|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                    <hr>
+
+                    <!-- Sección de Personal -->
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Personal del Centro de Trabajo</h5>
+                            <a href="{% url 'agregar_maestro' %}?escuela_id={{ escuela.pk }}" class="btn btn-success btn-sm">
+                                <i class="fas fa-plus me-2"></i>Agregar Maestro
+                            </a>
+                        </div>
+                        {% if personal %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Nombre Completo</th>
+                                            <th>RFC</th>
+                                            <th>CURP</th>
+                                            <th>Función</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for maestro in personal %}
+                                            <tr>
+                                                <td>{{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</td>
+                                                <td>{{ maestro.rfc|default:"N/A" }}</td>
+                                                <td>{{ maestro.curp|default:"N/A" }}</td>
+                                                <td>{{ maestro.get_funcion_display|default:"N/A" }}</td>
+                                                <td>
+                                                    <a href="{% url 'detalle_maestro' maestro.pk %}" class="btn btn-sm btn-info" title="Ver Detalle"><i class="fas fa-eye"></i></a>
+                                                    <a href="{% url 'editar_maestro' maestro.pk %}" class="btn btn-sm btn-warning" title="Editar"><i class="fas fa-edit"></i></a>
+                                                    <a href="{% url 'eliminar_maestro' maestro.pk %}" class="btn btn-sm btn-danger" title="Eliminar"><i class="fas fa-trash"></i></a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info" role="alert">
+                                No hay personal registrado en esta escuela.
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <a href="{% url 'lista_escuelas' %}" class="btn btn-secondary mt-3"><i class="fas fa-arrow-left me-2"></i>Volver a la Lista</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

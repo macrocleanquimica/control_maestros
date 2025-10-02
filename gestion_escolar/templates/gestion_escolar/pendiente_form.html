@@ -1,0 +1,40 @@
+{% extends "gestion_escolar/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">{{ titulo }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.titulo.id_for_label }}" class="form-label">{{ form.titulo.label }}</label>
+                    {{ form.titulo }}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">{{ form.descripcion.label }}</label>
+                    {{ form.descripcion }}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ form.fecha_programada.id_for_label }}" class="form-label">{{ form.fecha_programada.label }}</label>
+                            {{ form.fecha_programada }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Guardar Pendiente</button>
+                    <a href="{% url 'pendientes_activos' %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

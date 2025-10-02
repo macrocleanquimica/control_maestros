@@ -1,0 +1,39 @@
+{% extends "gestion_escolar/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>{{ titulo }}</h2>
+        <a href="{% url 'correspondencia_crear' %}" class="btn btn-primary">+ Redactar Nuevo Mensaje</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            {% if mensajes %}
+                <div class="list-group list-group-flush">
+                    {% for mensaje in mensajes %}
+                        <a href="{% url 'correspondencia_detail' mensaje.pk %}" class="list-group-item list-group-item-action {% if not mensaje.leido %}list-group-item-primary font-weight-bold{% endif %}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">{{ mensaje.asunto }}</h5>
+                                <small>{{ mensaje.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                            </div>
+                            <p class="mb-1">De: {{ mensaje.remitente.get_full_name|default:mensaje.remitente.username }}</p>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <form method="post" action="{% url 'correspondencia_eliminar' mensaje.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de que quieres eliminar este mensaje?');">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-center text-muted p-4">No tienes mensajes en tu bandeja de entrada.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

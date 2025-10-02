@@ -1,0 +1,28 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Eliminar Escuela</h4>
+                </div>
+                <div class="card-body">
+                    <p>¿Estás seguro de que deseas eliminar la escuela <strong>{{ escuela.nombre_ct }}</strong> (CCT: {{ escuela.id_escuela }})?</p>
+                    <p class="text-danger">Esta acción no se puede deshacer.</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'lista_escuelas' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

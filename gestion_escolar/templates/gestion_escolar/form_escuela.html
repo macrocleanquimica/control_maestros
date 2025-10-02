@@ -1,0 +1,133 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ titulo }}</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.id_escuela.id_for_label }}" class="form-label">CCT:</label>
+                                    {{ form.id_escuela }}
+                                    <small class="form-text text-muted">Formato: 10DML0013Q (2 dígitos + 3 letras + 4 dígitos + 1 letra)</small>
+                                    {% if form.id_escuela.errors %}
+                                        <div class="text-danger">{{ form.id_escuela.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.nombre_ct.id_for_label }}" class="form-label">Nombre:</label>
+                                    {{ form.nombre_ct }}
+                                    {% if form.nombre_ct.errors %}
+                                        <div class="text-danger">{{ form.nombre_ct.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.zona_esc.id_for_label }}" class="form-label">Zona:</label>
+                                    {{ form.zona_esc }}
+                                    {% if form.zona_esc.errors %}
+                                        <div class="text-danger">{{ form.zona_esc.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.turno.id_for_label }}" class="form-label">Turno:</label>
+                                    {{ form.turno }}
+                                    {% if form.turno.errors %}
+                                        <div class="text-danger">{{ form.turno.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.zona_economica.id_for_label }}" class="form-label">Zona Económica:</label>
+                                    {{ form.zona_economica }}
+                                    {% if form.zona_economica.errors %}
+                                        <div class="text-danger">{{ form.zona_economica.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.u_d.id_for_label }}" class="form-label">U.D.:</label>
+                                    {{ form.u_d }}
+                                    {% if form.u_d.errors %}
+                                        <div class="text-danger">{{ form.u_d.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.sostenimiento.id_for_label }}" class="form-label">Sostenimiento:</label>
+                                    {{ form.sostenimiento }}
+                                    {% if form.sostenimiento.errors %}
+                                        <div class="text-danger">{{ form.sostenimiento.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.region.id_for_label }}" class="form-label">Región:</label>
+                                    {{ form.region }}
+                                    {% if form.region.errors %}
+                                        <div class="text-danger">{{ form.region.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.domicilio.id_for_label }}" class="form-label">Domicilio:</label>
+                            {{ form.domicilio }}
+                            {% if form.domicilio.errors %}
+                                <div class="text-danger">{{ form.domicilio.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.telefono_ct.id_for_label }}" class="form-label">Teléfono:</label>
+                            {{ form.telefono_ct }}
+                            {% if form.telefono_ct.errors %}
+                                <div class="text-danger">{{ form.telefono_ct.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'lista_escuelas' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

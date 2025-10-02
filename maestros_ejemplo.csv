@@ -1,0 +1,3 @@
+id_maestro,a_paterno,a_materno,nombres,curp,rfc,sexo,est_civil,fecha_nacimiento,id_escuela,techo_f,dep,unid,sub_unid,categog,hrs,num_plaza,codigo,fecha_ingreso,fecha_promocion,form_academica,horario,funcion,nivel_estudio,domicilio_part,poblacion,codigo_postal,telefono,email,status,observaciones
+00001,GARCIA,LOPEZ,JUAN,GAHJ850101HDFRPN01,GALO850101H12,H,SOLTERO,1985-01-01,10DML0001L,,00,00,00,MTRO,20.0,123456,,2010-08-15,,Licenciatura,7:00-13:00,MAESTRO_GRUPO,LIC,,DURANGO,34000,6181234567,juan.garcia@example.com,ACTIVO,
+00002,PEREZ,MARTINEZ,ANA,PEMA900202MDFRPN02,PEMA900202M12,M,CASADO,1990-02-02,10DML0002K,,00,00,00,DOC,30.0,654321,,2012-09-01,,Maestría,8:00-14:00,DOCENTE_APOYO,MTRO,,GOMEZ PALACIO,35000,6187654321,ana.perez@example.com,ACTIVO,
