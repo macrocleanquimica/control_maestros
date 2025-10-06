@@ -5,6 +5,15 @@ import re
 
 class Zona(models.Model):
     numero = models.IntegerField(unique=True, verbose_name="Número de Zona")
+    supervisor = models.ForeignKey(
+        'Maestro',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Supervisor",
+        related_name='zonas_supervisadas',
+        limit_choices_to={'funcion__in': ['SUPERVISOR', 'SUPERVISOR (A)', 'SUPERVISOR(A)']},
+    )
     observaciones = models.TextField(verbose_name="Observaciones", blank=True)
     
     class Meta:

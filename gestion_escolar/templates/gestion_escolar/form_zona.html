@@ -23,39 +23,23 @@
                         {% csrf_token %}
                         
                         <div class="mb-3">
-                            <label for="id_numero" class="form-label">Número de Zona</label>
+                            <label for="{{ form.numero.id_for_label }}" class="form-label">Número de Zona</label>
                             {{ form.numero }}
                             {% if form.numero.errors %}
                                 <div class="text-danger">{{ form.numero.errors }}</div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="id_nombre_supervisor" class="form-label">Nombre del Supervisor</label>
-                            {{ form.nombre_supervisor }}
-                            {% if form.nombre_supervisor.errors %}
-                                <div class="text-danger">{{ form.nombre_supervisor.errors }}</div>
+                            <label for="{{ form.supervisor.id_for_label }}" class="form-label">Asignar Supervisor</label>
+                            {{ form.supervisor }}
+                            {% if form.supervisor.errors %}
+                                <div class="text-danger">{{ form.supervisor.errors }}</div>
                             {% endif %}
                         </div>
                         
                         <div class="mb-3">
-                            <label for="id_contacto_supervisor" class="form-label">Contacto del Supervisor</label>
-                            {{ form.contacto_supervisor }}
-                            {% if form.contacto_supervisor.errors %}
-                                <div class="text-danger">{{ form.contacto_supervisor.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="id_email_supervisor" class="form-label">Email del Supervisor</label>
-                            {{ form.email_supervisor }}
-                            {% if form.email_supervisor.errors %}
-                                <div class="text-danger">{{ form.email_supervisor.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="id_observaciones" class="form-label">Observaciones</label>
+                            <label for="{{ form.observaciones.id_for_label }}" class="form-label">Observaciones</label>
                             {{ form.observaciones }}
                             {% if form.observaciones.errors %}
                                 <div class="text-danger">{{ form.observaciones.errors }}</div>

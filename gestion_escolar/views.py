@@ -516,25 +516,11 @@ def asignar_director(request):
 def lista_zonas(request):
     if request.user.groups.filter(name='Directores').exists():
         raise PermissionDenied
-    zonas = Zona.objects.all().order_by('numero')
-    zonas_con_supervisor = []
+    
+    # Usamos select_related para traer el supervisor en la misma consulta
+    zonas = Zona.objects.select_related('supervisor').order_by('numero')
 
-    # Valores que identifican a un supervisor en el campo 'funcion'
-    supervisor_values = ['SUPERVISOR', 'SUPERVISOR (A)', 'SUPERVISOR(A)']
-
-    for zona in zonas:
-        # Buscar un maestro que sea supervisor y pertenezca a una escuela de esta zona
-        supervisor_maestro = Maestro.objects.filter(
-            funcion__in=supervisor_values,
-            id_escuela__zona_esc=zona
-        ).first()  # Tomamos el primero que se encuentre
-
-        zonas_con_supervisor.append({
-            'zona': zona,
-            'supervisor': supervisor_maestro  # Puede ser un objeto Maestro o None
-        })
-
-    return render(request, 'gestion_escolar/lista_zonas.html', {'zonas_con_supervisor': zonas_con_supervisor})
+    return render(request, 'gestion_escolar/lista_zonas.html', {'zonas': zonas})
 
 def agregar_zona(request):
     if request.method == 'POST':
@@ -550,7 +536,7 @@ def agregar_zona(request):
     return render(request, 'gestion_escolar/form_zona.html', {'form': form, 'titulo': 'Agregar Zona'})
 
 def editar_zona(request, pk):
-    zona = get_object_or_404(Zona, pk=pk)
+    zona = get_object_or_404(Zona.objects.select_related('supervisor'), pk=pk)
     if request.method == 'POST':
         form = ZonaForm(request.POST, instance=zona)
         if form.is_valid():
@@ -561,7 +547,12 @@ def editar_zona(request, pk):
             messages.error(request, 'Por favor corrige los errores.')
     else:
         form = ZonaForm(instance=zona)
-    return render(request, 'gestion_escolar/form_zona.html', {'form': form, 'titulo': 'Editar Zona'})
+    
+    return render(request, 'gestion_escolar/form_zona.html', {
+        'form': form, 
+        'zona': zona, 
+        'titulo': 'Editar Zona'
+    })
 
 def eliminar_zona(request, pk):
     zona = get_object_or_404(Zona, pk=pk)
@@ -570,6 +561,22 @@ def eliminar_zona(request, pk):
         messages.success(request, 'Zona eliminada correctamente.')
         return redirect('lista_zonas')
     return render(request, 'gestion_escolar/eliminar_zona.html', {'zona': zona})
+
+def detalle_zona(request, pk):
+    # Usamos select_related para optimizar y traer el supervisor en la misma consulta
+    zona = get_object_or_404(Zona.objects.select_related('supervisor'), pk=pk)
+    
+    # Obtenemos todas las escuelas que pertenecen a esta zona
+    escuelas_en_zona = Escuela.objects.filter(zona_esc=zona).order_by('nombre_ct')
+    
+    context = {
+        'zona': zona,
+        'escuelas': escuelas_en_zona,
+        'titulo': f"Detalle de la Zona {zona.numero}"
+    }
+    
+    return render(request, 'gestion_escolar/detalle_zona.html', context)
+
 
 # Vistas para Escuelas
 def lista_escuelas(request):

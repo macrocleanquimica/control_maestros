@@ -32,7 +32,7 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6" id="motivo-tramite-wrapper">
                                 <div class="mb-3">
                                     <label for="{{ form.motivo_tramite.id_for_label }}" class="form-label">{{ form.motivo_tramite.label }}:</label>
                                     {{ form.motivo_tramite }}
@@ -231,6 +231,10 @@ $(document).ready(function() {
     $('#id_plantilla').select2({ placeholder: "Selecciona una plantilla", allowClear: true, width: '100%' });
     $('#id_motivo_tramite').select2({ placeholder: "Selecciona un motivo de trámite", allowClear: true, width: '100%' });
 
+    // --- NUEVA LÓGICA DE VISIBILIDAD INICIAL ---
+    const motivoTramiteWrapper = $('#motivo-tramite-wrapper');
+    motivoTramiteWrapper.hide();
+
     function setupMaestroSelect2(selector, placeholder) {
         $(selector).select2({
             placeholder: placeholder,
@@ -274,339 +278,172 @@ $(document).ready(function() {
     const allManagedFields = ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones', 'quincena_inicial', 'quincena_final'];
     const allSections = ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'];
 
-    // CONFIGURACIÓN ACTUALIZADA - Las fechas ahora están en sus secciones correctas
     const visibleFieldsConfig = {
-        "REINGRESO": { 
-            fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], 
-            sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] 
-        },
-        "FILIACION": { 
-            fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], 
-            sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] 
-        },
-        "REINGRESO SIN PRELACION": { 
-            fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], 
-            sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] 
-        },
-        "SOLICITUD DE ASIGNACION": { 
-            fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], 
-            sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] 
-        },
-        "JUSTIFICACION DE PERFIL": { 
-            fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], 
-            sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] 
-        },
-        "CONSTANCIAS": { 
-            fields: ['maestro_titular', 'folio', 'quincena_inicial', 'quincena_final'], 
-            sections: ['#datos-titular-section', '#otros-datos-section'] 
-        },
-        "OFICIO DE REINCORPORACION": { 
-            fields: ['maestro_titular', 'folio', 'fecha_efecto1'], 
-            sections: ['#datos-titular-section', '#otros-datos-section'] 
-        },
-        "CAMBIO DEL CENTRO DE TRABAJO": { 
-            fields: ['maestro_titular'], 
-            sections: ['#datos-titular-section'] 
-        },
-        "CUADRO CAMBIOS CON FOLIO": { 
-            fields: ['maestro_titular', 'folio', 'fecha_efecto1'], 
-            sections: ['#datos-titular-section', '#otros-datos-section'] 
-        },
-        "PROPUESTA DE MOVIMIENTO": { 
-            fields: ['maestro_titular', 'folio', 'fecha_efecto1'], 
-            sections: ['#datos-titular-section', '#otros-datos-section'] 
-        },
-        "ALTA INICIAL": { 
-            fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'folio', 'observaciones'], 
-            sections: ['#datos-titular-section', '#otros-datos-section'] 
-        },
-        "REPORTE DE VACANCIA": { 
-            fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino'], 
-            sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] 
-        },
+        "REINGRESO": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+        "FILIACION": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+        "REINGRESO SIN PRELACION": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+        "SOLICITUD DE ASIGNACION": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+        "JUSTIFICACION DE PERFIL": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+        "CONSTANCIAS": { fields: ['maestro_titular', 'folio', 'quincena_inicial', 'quincena_final'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+        "OFICIO DE REINCORPORACION": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+        "CAMBIO DEL CENTRO DE TRABAJO": { fields: ['maestro_titular'], sections: ['#datos-titular-section'] },
+        "CUADRO CAMBIOS CON FOLIO": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+        "PROPUESTA DE MOVIMIENTO": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+        "ALTA INICIAL": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+        "REPORTE DE VACANCIA": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
     };
 
     function updateFormVisibility() {
         const selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
         const config = visibleFieldsConfig[selectedPlantillaText];
 
-        // Hide all managed fields and sections
-        allManagedFields.forEach(fieldName => {
-            $(`[data-field-name="${fieldName}"]`).hide();
-        });
-        allSections.forEach(sectionId => {
-            $(sectionId).hide();
-        });
+        allManagedFields.forEach(fieldName => { $(`[data-field-name="${fieldName}"]`).hide(); });
+        allSections.forEach(sectionId => { $(sectionId).hide(); });
 
         if (config) {
-            // Show configured fields and sections
-            config.fields.forEach(fieldName => {
-                $(`[data-field-name="${fieldName}"]`).show();
-            });
-            config.sections.forEach(sectionId => {
-                $(sectionId).show();
-            });
+            config.fields.forEach(fieldName => { $(`[data-field-name="${fieldName}"]`).show(); });
+            config.sections.forEach(sectionId => { $(sectionId).show(); });
         }
-        
-        console.log('Configuración aplicada para:', selectedPlantillaText, config);
     }
 
-    // --- FIN LÓGICA DE VISIBILIDAD ---
-
-    // Helper function to calculate month difference similar to VBA DateDiff("m", ...)
     function getDateDiffInMonths(d1, d2) {
-        var months;
-        months = (d2.getFullYear() - d1.getFullYear()) * 12;
-        months -= d1.getMonth();
-        months += d2.getMonth();
-        if (d2.getDate() < d1.getDate()) {
-            months--;
-        }
+        var months = (d2.getFullYear() - d1.getFullYear()) * 12 - d1.getMonth() + d2.getMonth();
+        if (d2.getDate() < d1.getDate()) { months--; }
         return months;
     }
 
-    // Function to calculate Tipo de Movimiento Interino based on VBA logic
     function calculateTipoMovimientoInterino() {
         var motivoTramiteText = $('#id_motivo_tramite option:selected').text().trim().toUpperCase();
         var fechaEfecto3Str = $('#id_fecha_efecto3').val();
         var fechaEfecto4Str = $('#id_fecha_efecto4').val();
         var resultadoAlta = "";
 
-        // Casos sin importar fechas
         switch (motivoTramiteText) {
-            case "LIC. DE GRAVIDEZ":
-                resultadoAlta = "ALTA INTERINA EN GRAVIDEZ";
-                $('#id_tipo_movimiento_interino').val(resultadoAlta);
-                return;
-            case "LIC. POR PASAR A OTRO EMPLEO":
-                resultadoAlta = "ALTA INICIAL POR PROMOCIÓN O ADMISIÓN";
-                $('#id_tipo_movimiento_interino').val(resultadoAlta);
-                return;
-        }
-
-        // Validar fechas para condiciones que sí dependen de fechas
-        if (!fechaEfecto3Str || !fechaEfecto4Str) {
-            resultadoAlta = "FECHAS INSUFICIENTES";
-            $('#id_tipo_movimiento_interino').val(resultadoAlta);
-            return;
-        }
-
-        var fechaEfecto3 = new Date(fechaEfecto3Str + 'T00:00:00');
-        var fechaEfecto4 = new Date(fechaEfecto4Str + 'T00:00:00');
-
-        if (isNaN(fechaEfecto3.getTime()) || isNaN(fechaEfecto4.getTime())) {
-            resultadoAlta = "FECHAS INSUFICIENTES";
-            $('#id_tipo_movimiento_interino').val(resultadoAlta);
-            return;
-        }
-
-        var diferenciaMeses = getDateDiffInMonths(fechaEfecto3, fechaEfecto4);
-
-        // Casos según diferencia de fechas
-        switch (motivoTramiteText) {
-            case "LIC. PREPENSIONARIA":
-            case "PREJUBILATORIO":
-                if (diferenciaMeses < 6) {
-                    resultadoAlta = "ALTA EN PENSION";
-                } else {
-                    resultadoAlta = "ALTA PROVISIONAL";
-                }
-                break;
-
-            case "BECA COMISIÓN":
-                if (diferenciaMeses < 6) {
-                    resultadoAlta = "SUSTITUTO BECARIO";
-                } else {
-                    resultadoAlta = "ALTA PROVISIONAL";
-                }
-                break;
-
-            case "BAJA POR DEFUNCIÓN":
-            case "LIC. POR ASUNTOS PARTICULARES":
-            case "LIC. POR COM. SINDICAL":
-            case "PRORROGA DE LIC. POR COM. SINDICAL":
-                if (diferenciaMeses < 6) {
-                    resultadoAlta = "ALTA INTERINA LIMITADA";
-                } else {
-                    resultadoAlta = "ALTA PROVISIONAL";
-                }
-                break;
-
-            case "JUBILACIÓN":
-                if (diferenciaMeses < 6) {
-                    resultadoAlta = "ALTA INTERINA LIMITADA EN VACANTE DEFINITIVA";
-                } else {
-                    resultadoAlta = "ALTA PROVISIONAL EN VACANTE DEFINITIVA";
-                }
-                break;
-
+            case "LIC. DE GRAVIDEZ": resultadoAlta = "ALTA INTERINA EN GRAVIDEZ"; break;
+            case "LIC. POR PASAR A OTRO EMPLEO": resultadoAlta = "ALTA INICIAL POR PROMOCIÓN O ADMISIÓN"; break;
             default:
-                resultadoAlta = "NO PROCEDENTE";
-                break;
+                if (!fechaEfecto3Str || !fechaEfecto4Str) { resultadoAlta = "FECHAS INSUFICIENTES"; break; }
+                var fechaEfecto3 = new Date(fechaEfecto3Str + 'T00:00:00');
+                var fechaEfecto4 = new Date(fechaEfecto4Str + 'T00:00:00');
+                if (isNaN(fechaEfecto3.getTime()) || isNaN(fechaEfecto4.getTime())) { resultadoAlta = "FECHAS INSUFICIENTES"; break; }
+                var diferenciaMeses = getDateDiffInMonths(fechaEfecto3, fechaEfecto4);
+                switch (motivoTramiteText) {
+                    case "LIC. PREPENSIONARIA": case "PREJUBILATORIO": resultadoAlta = diferenciaMeses < 6 ? "ALTA EN PENSION" : "ALTA PROVISIONAL"; break;
+                    case "BECA COMISIÓN": case "PRORROGA DE BECA COMISIÓN": resultadoAlta = diferenciaMeses < 6 ? "SUSTITUTO BECARIO" : "ALTA PROVISIONAL"; break;
+                    case "BAJA POR DEFUNCIÓN": case "LIC. POR ASUNTOS PARTICULARES": case "LIC. POR COM. SINDICAL": case "PRORROGA DE LIC. POR COM. SINDICAL": resultadoAlta = diferenciaMeses < 6 ? "ALTA INTERINA LIMITADA" : "ALTA PROVISIONAL"; break;
+                    case "JUBILACIÓN": resultadoAlta = diferenciaMeses < 6 ? "ALTA INTERINA LIMITADA EN VACANTE DEFINITIVA" : "ALTA PROVISIONAL EN VACANTE DEFINITIVA"; break;
+                    default: resultadoAlta = "NO PROCEDENTE";
+                }
         }
-
         $('#id_tipo_movimiento_interino').val(resultadoAlta);
     }
 
-    // NUEVA FUNCIÓN: Cargar datos de prelación automáticamente
     function cargarPrelacionAutomatica(curpInterino) {
-        if (!curpInterino) {
-            // Limpiar campos si no hay CURP
-            $('#id_no_prel_display').val('');
-            $('#id_folio_prel_display').val('');
-            $('#id_tipo_val_display').val('');
-            return;
-        }
-
+        if (!curpInterino) { $('#id_no_prel_display, #id_folio_prel_display, #id_tipo_val_display').val(''); return; }
         $.get('{% url "get_prelacion_data_ajax" %}', { curp_interino: curpInterino }, function(data) {
-            if (data.encontrado) {
-                $('#id_no_prel_display').val(data.numero_prelacion);
-                $('#id_folio_prel_display').val(data.folio_prelacion);
-                $('#id_tipo_val_display').val(data.tipo_val);
-            } else {
-                $('#id_no_prel_display').val('');
-                $('#id_folio_prel_display').val('');
-                $('#id_tipo_val_display').val('');
-            }
-        }).fail(function() {
-            console.error('Error al cargar datos de prelación');
-            $('#id_no_prel_display').val('');
-            $('#id_folio_prel_display').val('');
-            $('#id_tipo_val_display').val('');
-        });
+            $('#id_no_prel_display').val(data.encontrado ? data.numero_prelacion : '');
+            $('#id_folio_prel_display').val(data.encontrado ? data.folio_prelacion : '');
+            $('#id_tipo_val_display').val(data.encontrado ? data.tipo_val : '');
+        }).fail(function() { console.error('Error al cargar datos de prelación'); $('#id_no_prel_display, #id_folio_prel_display, #id_tipo_val_display').val(''); });
     }
 
-    // Lógica para filtrar motivo_tramite basado en la plantilla seleccionada
     $('#id_plantilla').on('change', function() {
         var plantillaId = $(this).val();
         var motivoTramiteSelect = $('#id_motivo_tramite');
         
-        updateFormVisibility(); // Actualizar visibilidad
+        // --- LÓGICA DE VISIBILIDAD DEL MOTIVO ---
+        if (plantillaId) { motivoTramiteWrapper.show(); } else { motivoTramiteWrapper.hide(); }
 
-        motivoTramiteSelect.empty();
-        motivoTramiteSelect.append(new Option('', '', true, true)).trigger('change');
+        updateFormVisibility();
+        motivoTramiteSelect.empty().append(new Option('', '', true, true)).trigger('change');
 
         if (plantillaId) {
-            $.ajax({
-                url: '{% url "get_motivos_tramite_ajax" %}',
-                data: { 'plantilla_id': plantillaId },
-                dataType: 'json',
+            $.ajax({ url: '{% url "get_motivos_tramite_ajax" %}', data: { 'plantilla_id': plantillaId }, dataType: 'json',
                 success: function(data) {
-                    $.each(data, function(key, value) {
-                        motivoTramiteSelect.append(new Option(value.text, value.id));
-                    });
+                    $.each(data, function(key, value) { motivoTramiteSelect.append(new Option(value.text, value.id)); });
                     motivoTramiteSelect.trigger('change');
                 }
             });
         }
     });
 
-    // Función para obtener y rellenar datos del maestro
     function getMaestroData(maestroId, prefix) {
-        if (maestroId) {
-            $.ajax({
-                url: '{% url "get_maestro_data" %}',
-                data: { 'maestro_id': maestroId },
-                dataType: 'json',
-                success: function(data) {
-                    if (!data.error) {
-                        if (prefix === 'titular') {
-                            $('#id_curp_titular_display').val(data.curp);
-                            $('#id_rfc_titular_display').val(data.rfc);
-                            $('#id_clave_presupuestal_titular_display').val(data.clave_presupuestal);
-                            $('#id_categoria_titular_display').val(data.categoria);
-                            $('#id_funcion_titular_display').val(data.funcion);
-
-                            // Re-evaluar interino si está seleccionado
-                            var interinoId = $('#id_maestro_interino').val();
-                            if (interinoId) {
-                                getMaestroData(interinoId, 'interino');
-                            }
+        if (!maestroId) { limpiarCamposMaestro(prefix); return; }
+        $.ajax({ url: '{% url "get_maestro_data" %}', data: { 'maestro_id': maestroId }, dataType: 'json',
+            success: function(data) {
+                if (data.error) { console.error('Error:', data.error); limpiarCamposMaestro(prefix); return; }
+                if (prefix === 'titular') {
+                    $('#id_curp_titular_display').val(data.curp); $('#id_rfc_titular_display').val(data.rfc);
+                    $('#id_clave_presupuestal_titular_display').val(data.clave_presupuestal); $('#id_categoria_titular_display').val(data.categoria);
+                    $('#id_funcion_titular_display').val(data.funcion);
+                    var interinoId = $('#id_maestro_interino').val();
+                    if (interinoId) { getMaestroData(interinoId, 'interino'); }
+                } else if (prefix === 'interino') {
+                    $('#id_curp_interino_display').val(data.curp); $('#id_rfc_interino_display').val(data.rfc);
+                    var presupuestal_titular = $('#id_clave_presupuestal_titular_display').val();
+                    var motivo_tramite_text = $('#id_motivo_tramite option:selected').text().trim().toUpperCase();
+                    var calculated_presupuestal_interino = presupuestal_titular;
+                    if (presupuestal_titular && presupuestal_titular.length >= 2) {
+                        if (motivo_tramite_text === "BECA COMISIÓN" || motivo_tramite_text === "PRORROGA DE BECA COMISION") {
+                            calculated_presupuestal_interino = "48" + presupuestal_titular.substring(2);
+                        } else if (motivo_tramite_text === "LIC. DE GRAVIDEZ") {
+                            calculated_presupuestal_interino = "14" + presupuestal_titular.substring(2);
                         }
-                        else if (prefix === 'interino') {
-                            $('#id_curp_interino_display').val(data.curp);
-                            $('#id_rfc_interino_display').val(data.rfc);
-                            
-                            // Lógica para clave presupuestal del interino
-                            var presupuestal_titular = $('#id_clave_presupuestal_titular_display').val();
-                            var motivo_tramite_text = $('#id_motivo_tramite option:selected').text().trim().toUpperCase();
-                            var calculated_presupuestal_interino = presupuestal_titular;
-
-                            if (motivo_tramite_text === "BECA COMISIÓN" || motivo_tramite_text === "PRORROGA DE BECA COMISION") {
-                                if (presupuestal_titular && presupuestal_titular.length >= 2) {
-                                    calculated_presupuestal_interino = "48" + presupuestal_titular.substring(2);
-                                }
-                            } else if (motivo_tramite_text === "LIC. DE GRAVIDEZ") {
-                                if (presupuestal_titular && presupuestal_titular.length >= 2) {
-                                    calculated_presupuestal_interino = "24" + presupuestal_titular.substring(2);
-                                }
-                            }
-                            $('#id_clave_presupuestal_interino_display').val(calculated_presupuestal_interino);
-
-                            // Función del interino = función del titular
-                            $('#id_funcion_interino_display').val($('#id_funcion_titular_display').val());
-                            
-                            // Cargar prelación automáticamente con la CURP del interino
-                            cargarPrelacionAutomatica(data.curp);
-                        }
-                    } else {
-                        console.error('Error al obtener datos del maestro:', data.error);
-                        limpiarCamposMaestro(prefix);
                     }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error AJAX al obtener datos del maestro:', error);
-                    limpiarCamposMaestro(prefix);
+                    $('#id_clave_presupuestal_interino_display').val(calculated_presupuestal_interino);
+                    $('#id_funcion_interino_display').val($('#id_funcion_titular_display').val());
+                    cargarPrelacionAutomatica(data.curp);
                 }
-            });
-        } else {
-            limpiarCamposMaestro(prefix);
-        }
+            },
+            error: function() { console.error('Error AJAX'); limpiarCamposMaestro(prefix); }
+        });
     }
 
-    // Función para limpiar campos del maestro
     function limpiarCamposMaestro(prefix) {
         if (prefix === 'titular') {
-            $('#id_curp_titular_display').val('');
-            $('#id_rfc_titular_display').val('');
-            $('#id_clave_presupuestal_titular_display').val('');
-            $('#id_categoria_titular_display').val('');
-            $('#id_funcion_titular_display').val('');
-            $('#id_clave_presupuestal_interino_display').val('');
-            $('#id_funcion_interino_display').val('');
-        }
-        else if (prefix === 'interino') {
-            $('#id_curp_interino_display').val('');
-            $('#id_rfc_interino_display').val('');
-            $('#id_clave_presupuestal_interino_display').val('');
-            $('#id_funcion_interino_display').val('');
-            // También limpiar prelación cuando se limpia el interino
+            $('#id_curp_titular_display, #id_rfc_titular_display, #id_clave_presupuestal_titular_display, #id_categoria_titular_display, #id_funcion_titular_display, #id_clave_presupuestal_interino_display, #id_funcion_interino_display').val('');
+        } else if (prefix === 'interino') {
+            $('#id_curp_interino_display, #id_rfc_interino_display, #id_clave_presupuestal_interino_display, #id_funcion_interino_display').val('');
             cargarPrelacionAutomatica('');
         }
     }
 
+    // --- NUEVA LÓGICA PARA LIMPIAR FORMULARIO TRAS ÉXITO ---
+    $('form').on('submit', function(e) {
+        // Usamos un timeout para permitir que la descarga inicie y que los errores de validación (si los hay) aparezcan.
+        setTimeout(() => {
+            // Si no hay alertas de error de Django, asumimos que fue exitoso.
+            if ($('.alert-danger').length === 0) {
+                // 1. Crear y mostrar mensaje de éxito
+                const successAlert = `
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        Trámite generado y descargado correctamente.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                $('.card-body').prepend(successAlert);
+
+                // 2. Limpiar todos los campos del formulario
+                $(this)[0].reset();
+
+                // 3. Resetear los campos Select2
+                $('#id_plantilla, #id_motivo_tramite, #id_maestro_titular, #id_maestro_interino').val(null).trigger('change');
+
+                // 4. Forzar la actualización de la visibilidad para ocultar todo
+                // El .trigger('change') en #id_plantilla ya se encarga de esto.
+            }
+        }, 1000); // 1 segundo de espera
+    });
+
     // Event listeners
-    $('#id_maestro_titular').on('change', function() {
-        var maestroId = $(this).val();
-        getMaestroData(maestroId, 'titular');
-    });
-
-    $('#id_maestro_interino').on('change', function() {
-        var maestroId = $(this).val();
-        getMaestroData(maestroId, 'interino');
-    });
-
+    $('#id_maestro_titular').on('change', function() { getMaestroData($(this).val(), 'titular'); });
+    $('#id_maestro_interino').on('change', function() { getMaestroData($(this).val(), 'interino'); });
     $('#id_motivo_tramite').on('change', function() {
         var interinoId = $('#id_maestro_interino').val();
-        if (interinoId) {
-            getMaestroData(interinoId, 'interino');
-        }
+        if (interinoId) { getMaestroData(interinoId, 'interino'); }
         calculateTipoMovimientoInterino();
     });
-
-    $('#id_fecha_efecto3, #id_fecha_efecto4').on('change', function() {
-        calculateTipoMovimientoInterino();
-    });
+    $('#id_fecha_efecto3, #id_fecha_efecto4').on('change', function() { calculateTipoMovimientoInterino(); });
 
     // Cargar datos y visibilidad iniciales
     updateFormVisibility();

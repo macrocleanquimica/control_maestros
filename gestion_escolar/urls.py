@@ -10,6 +10,7 @@ urlpatterns = [
     path('zonas/', views.lista_zonas, name='lista_zonas'),
     path('zonas/agregar/', views.agregar_zona, name='agregar_zona'),
     path('zonas/editar/<int:pk>/', views.editar_zona, name='editar_zona'),
+    path('zonas/detalle/<int:pk>/', views.detalle_zona, name='detalle_zona'),
     path('zonas/eliminar/<int:pk>/', views.eliminar_zona, name='eliminar_zona'),
     
     # URLs para Escuelas
