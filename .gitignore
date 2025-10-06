@@ -1,4 +1,4 @@
- # Entorno virtual
+# Entorno virtual
   venv/
 
   # Base de datos local
@@ -16,3 +16,7 @@
   # Archivos de medios y estáticos generados
   /media/
   /static_root/
+
+  # Documentos y reportes generados por la aplicación
+  reportes_vacancias/
+  tramites_generados/
