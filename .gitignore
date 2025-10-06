@@ -1,22 +1,22 @@
 # Entorno virtual
-  venv/
+venv/
 
-  # Base de datos local
-  db.sqlite3
-  *.sqlite3
+# Base de datos local
+db.sqlite3
+*.sqlite3
 
-  # Archivos de Python compilados
-  __pycache__/
-  *.pyc
+# Archivos de Python compilados
+__pycache__/
+*.pyc
 
-  # Archivos de configuración de editores
-  .vscode/
-  .idea/
+# Archivos de configuración de editores
+.vscode/
+.idea/
 
-  # Archivos de medios y estáticos generados
-  /media/
-  /static_root/
+# Archivos de medios y estáticos generados
+/media/
+/static_root/
 
-  # Documentos y reportes generados por la aplicación
-  reportes_vacancias/
-  tramites_generados/
+# Documentos y reportes generados por la aplicación
+reportes_vacancias/
+tramites_generados/
