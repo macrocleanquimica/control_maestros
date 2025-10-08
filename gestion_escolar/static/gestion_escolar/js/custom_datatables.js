@@ -1,3 +1,4 @@
+
 $(document).ready(function() {
     // Función para normalizar texto (quitar acentos)
     var accent_normalize = function(data) {
@@ -20,5 +21,20 @@ $(document).ready(function() {
         "columnDefs": [
             { "type": "html-accent-neutral", "targets": "_all" }
         ]
+    });
+
+    // Lógica para el botón de exportar a Excel
+    $('#export-excel-btn').on('click', function() {
+        // Obtener la instancia de la tabla específica por su ID
+        var tablaMaestros_instance = $('#tablaMaestros').DataTable();
+        
+        // Obtener el valor actual del campo de búsqueda de esa instancia
+        var filtro = tablaMaestros_instance.search();
+
+        // Construir la URL para la exportación
+        var url = '/maestros/exportar/excel/?filtro=' + encodeURIComponent(filtro);
+
+        // Redirigir para iniciar la descarga
+        window.location.href = url;
     });
 });

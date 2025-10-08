@@ -1284,6 +1284,93 @@ def export_maestro_csv(request, pk):
     return response
 
 @login_required
+def exportar_maestros_excel(request):
+    filtro = request.GET.get('filtro', '')
+    print(f"DEBUG: Filtro recibido en exportar_maestros_excel: '{filtro}'")
+    
+    # Construir la consulta base con select_related para optimizar
+    maestros_qs = Maestro.objects.select_related('id_escuela', 'id_escuela__zona_esc', 'categog').all().order_by('a_paterno', 'a_materno', 'nombres')
+
+    # Aplicar filtro si existe
+    if filtro:
+        maestros_qs = maestros_qs.filter(
+            Q(nombres__icontains=filtro) |
+            Q(a_paterno__icontains=filtro) |
+            Q(a_materno__icontains=filtro) |
+            Q(rfc__icontains=filtro) |
+            Q(curp__icontains=filtro) |
+            Q(id_maestro__icontains=filtro) |
+            Q(id_escuela__nombre_ct__icontains=filtro) |
+            Q(id_escuela__id_escuela__icontains=filtro) |
+            Q(categog__descripcion__icontains=filtro)
+        )
+
+    # Crear el libro de Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Maestros"
+
+    # Definir los encabezados
+    headers = [
+        "ID Maestro", "Nombre(s)", "Apellido Paterno", "Apellido Materno", "RFC", "CURP",
+        "Sexo", "Estado Civil", "Fecha Nacimiento", "Techo Financiero",
+        "CCT", "Nombre del CT", "Zona Escolar", "Función", "Categoría",
+        "Clave Presupuestal", "Código", "Fecha Ingreso", "Fecha Promoción",
+        "Formación Académica", "Horario", "Nivel de Estudio", "Domicilio Particular",
+        "Población", "Código Postal", "Teléfono", "Email", "Status", "Observaciones"
+    ]
+    ws.append(headers)
+
+    # Escribir los datos de cada maestro
+    for maestro in maestros_qs:
+        escuela = maestro.id_escuela
+        zona_numero = ''
+        if escuela and escuela.zona_esc:
+            zona_numero = escuela.zona_esc.numero
+
+        row = [
+            maestro.id_maestro,
+            maestro.nombres,
+            maestro.a_paterno,
+            maestro.a_materno,
+            maestro.rfc,
+            maestro.curp,
+            maestro.get_sexo_display(),
+            maestro.get_est_civil_display(),
+            maestro.fecha_nacimiento.strftime("%Y-%m-%d") if maestro.fecha_nacimiento else '',
+            maestro.techo_f,
+            escuela.id_escuela if escuela else '',
+            escuela.nombre_ct if escuela else '',
+            zona_numero,
+            maestro.get_funcion_display(),
+            maestro.categog.descripcion if maestro.categog else '',
+            maestro.clave_presupuestal,
+            maestro.codigo,
+            maestro.fecha_ingreso.strftime("%Y-%m-%d") if maestro.fecha_ingreso else '',
+            maestro.fecha_promocion.strftime("%Y-%m-%d") if maestro.fecha_promocion else '',
+            maestro.form_academica,
+            maestro.horario,
+            maestro.get_nivel_estudio_display(),
+            maestro.domicilio_part,
+            maestro.poblacion,
+            maestro.codigo_postal,
+            maestro.telefono,
+            maestro.email,
+            maestro.get_status_display(),
+            maestro.observaciones,
+        ]
+        ws.append(row)
+
+    # Preparar la respuesta para la descarga
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': 'attachment; filename="reporte_maestros.xlsx"'},
+    )
+    wb.save(response)
+
+    return response
+
+@login_required
 def gestionar_lote_vacancia(request):
     if request.user.groups.filter(name='Directores').exists():
         raise PermissionDenied

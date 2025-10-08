@@ -32,6 +32,8 @@ urlpatterns = [
     path('maestros/eliminar/<str:pk>/', views.eliminar_maestro, name='eliminar_maestro'),  # Cambiado a str
     path('maestros/detalle/<str:pk>/', views.detalle_maestro, name='detalle_maestro'),
     path('maestros/detalle/<str:pk>/export/csv/', views.export_maestro_csv, name='export_maestro_csv'),
+    path('maestros/exportar/excel/', views.exportar_maestros_excel, name='exportar_maestros_excel'),
+    path('maestros/exportar/excel/', views.exportar_maestros_excel, name='exportar_maestros_excel'),
     path('maestros/eliminar_documento/<int:doc_pk>/', views.eliminar_documento_expediente, name='eliminar_documento_expediente'),
     
     # URLs para funciones específicas

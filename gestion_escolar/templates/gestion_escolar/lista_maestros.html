@@ -5,9 +5,14 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Gestión de Personal</h2> 
-        <a href="{% url 'agregar_maestro' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Agregar Maestro
-        </a>
+        <div>
+            <a href="{% url 'agregar_maestro' %}" class="btn btn-primary me-2">
+                <i class="fas fa-plus me-2"></i>Agregar Maestro
+            </a>
+            <button id="export-excel-btn" class="btn btn-success">
+                <i class="fas fa-file-excel me-2"></i>Exportar a Excel
+            </button>
+        </div>
     </div>
     
     {% if messages %}
