@@ -5,9 +5,14 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>{{ titulo }}</h2>
-        <a href="{% url 'agregar_maestro' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Agregar {{ funcion_display }}
-        </a>
+        <div class="btn-toolbar">
+            <button id="exportarExcelBtn" class="btn btn-success me-2">
+                <i class="fas fa-file-excel me-2"></i>Exportar a Excel
+            </button>
+            <a href="{% url 'agregar_maestro' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Agregar {{ funcion_display }}
+            </a>
+        </div>
     </div>
     
     {% if messages %}
@@ -68,4 +73,33 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const exportBtn = document.getElementById('exportarExcelBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            // Get the function type from the template context
+            const funcion = '{{ funcion|escapejs }}';
+            
+            // Base URL for the export view
+            let url = `{% url 'exportar_maestros_excel' %}?funcion=${funcion}`;
+            
+            // Get the current search value from the DataTable instance
+            try {
+                const dataTable = $('#tablaFunciones').DataTable();
+                const filtro = dataTable.search();
+                if (filtro) {
+                    url += `&filtro=${encodeURIComponent(filtro)}`;
+                }
+            } catch (e) {
+                console.error("Could not get DataTable search filter:", e);
+            }
+            
+            // Redirect to the constructed URL to trigger the download
+            window.location.href = url;
+        });
+    }
+});
+</script>
 {% endblock %}

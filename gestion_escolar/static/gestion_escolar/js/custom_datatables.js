@@ -12,12 +12,46 @@ $(document).ready(function() {
     $.fn.dataTable.ext.type.search['string-accent-neutral'] = accent_normalize;
     $.fn.dataTable.ext.type.search['html-accent-neutral'] = accent_normalize;
 
-    // Inicializar todas las tablas que tengan la clase 'datatable-search'
-    $('.datatable-search').DataTable({
+
+    // Inicializar la tabla de Maestros con Server-Side Processing
+    if ($('#tablaMaestros').length) {
+        $('#tablaMaestros').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: $('#tablaMaestros').data('ajax-url'),
+                type: 'GET'
+            },
+            columns: [
+                { data: 0 }, // ID
+                { data: 1 }, // Nombre
+                { data: 2 }, // CCT
+                { data: 3 }, // CURP
+                { data: 4 }, // Clave Presupuestal
+                { data: 5 }, // Status
+                { data: 6, orderable: false, searchable: false }, // Acciones
+                { data: 7, visible: false } // is_misplaced flag
+            ],
+            createdRow: function(row, data, dataIndex) {
+                // Si el flag is_misplaced es true, añade la clase a la fila
+                if (data[7]) {
+                    $(row).addClass('text-danger');
+                }
+            },
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            },
+            "columnDefs": [
+                { "type": "html-accent-neutral", "targets": "_all" }
+            ]
+        });
+    }
+
+    // Inicializar otras tablas que puedan existir con la configuración simple
+    $('.datatable-search:not(#tablaMaestros)').DataTable({
         language: {
             url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
         },
-        // Aplicar la búsqueda sin acentos a todas las columnas
         "columnDefs": [
             { "type": "html-accent-neutral", "targets": "_all" }
         ]

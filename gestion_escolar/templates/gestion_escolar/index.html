@@ -48,8 +48,8 @@
             </div>
 
             <div class="row mt-4">
-                <div class="col-lg-6">
-                    <div class="card">
+                <div class="col-lg-4">
+                    <div class="card h-100">
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">Distribución por Zona</h5>
                         </div>
@@ -58,17 +58,44 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="card">
+                <div class="col-lg-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">Mis Pendientes Próximos</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                {% for pendiente in ultimos_pendientes %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ pendiente.titulo }}</h6>
+                                        <small class="text-muted">{{ pendiente.fecha_programada|date:"d/m/Y" }}</small>
+                                    </div>
+                                    <p class="mb-1 text-truncate">{{ pendiente.descripcion|default:"Sin descripción." }}</p>
+                                </div>
+                                {% empty %}
+                                <div class="list-group-item">
+                                    <p class="mb-1">No tienes pendientes próximos.</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="{% url 'pendientes_activos' %}" class="btn btn-sm btn-outline-primary">Ver todos los pendientes</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card h-100">
                         <div class="card-header bg-success text-white">
                             <h5 class="mb-0">Último Personal Registrado</h5>
                         </div>
                         <div class="card-body">
                             <div class="list-group">
                                 {% for maestro in ultimo_personal %}
-                                <a href="#" class="list-group-item list-group-item-action">
+                                <a href="{% url 'detalle_maestro' maestro.id_maestro %}" class="list-group-item list-group-item-action">
                                     <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">{{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</h6>
+                                        <h6 class="mb-1">{{ maestro.nombres }} {{ maestro.a_paterno }}</h6>
                                         <small class="text-muted">{{ maestro.get_funcion_display }}</small>
                                     </div>
                                     <p class="mb-1">Escuela: {{ maestro.id_escuela.nombre_ct|default:"N/A" }}</p>

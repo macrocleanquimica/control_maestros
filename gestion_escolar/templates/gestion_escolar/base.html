@@ -360,6 +360,11 @@
             transform: translateY(-5px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
+
+        /* Forzar color en filas de tabla marcadas como danger */
+        tr.text-danger td {
+            color: #dc3545 !important; /* Color de peligro de Bootstrap */
+        }
     </style>
 </head>
 <body>
@@ -397,13 +402,7 @@
                     <!-- Divider -->
                     <hr class="sidebar-divider my-3">
 
-                    <!-- Nav Item - Bandeja de Entrada -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'correspondencia_inbox' %}">
-                            <i class="fas fa-envelope me-2"></i>
-                            <span class="sidebar-text">Bandeja de Entrada</span>
-                        </a>
-                    </li>
+
 
                     <!-- Nav Item - Mis Pendientes -->
                     <li class="nav-item">
@@ -497,7 +496,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'gestionar_lote_vacancia' %}">
                             <i class="fas fa-file-invoice me-2"></i>
-                            <span class="sidebar-text">Reporte de Vacancia</span>
+                            <span class="sidebar-text">Asignación de Vacancia</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -507,7 +506,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{% url 'reportes_dashboard' %}">
                             <i class="fas fa-chart-bar me-2"></i>
                             <span class="sidebar-text">Reportes</span>
                         </a>

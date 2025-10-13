@@ -329,7 +329,7 @@ $(document).ready(function() {
                 var diferenciaMeses = getDateDiffInMonths(fechaEfecto3, fechaEfecto4);
                 switch (motivoTramiteText) {
                     case "LIC. PREPENSIONARIA": case "PREJUBILATORIO": resultadoAlta = diferenciaMeses < 6 ? "ALTA EN PENSION" : "ALTA PROVISIONAL"; break;
-                    case "BECA COMISIÓN": case "PRORROGA DE BECA COMISIÓN": resultadoAlta = diferenciaMeses < 6 ? "SUSTITUTO BECARIO" : "ALTA PROVISIONAL"; break;
+                    case "BECA COMISIÓN": case "PRORROGA DE BECA COMISION": resultadoAlta = diferenciaMeses < 6 ? "SUSTITUTO BECARIO" : "ALTA PROVISIONAL"; break;
                     case "BAJA POR DEFUNCIÓN": case "LIC. POR ASUNTOS PARTICULARES": case "LIC. POR COM. SINDICAL": case "PRORROGA DE LIC. POR COM. SINDICAL": resultadoAlta = diferenciaMeses < 6 ? "ALTA INTERINA LIMITADA" : "ALTA PROVISIONAL"; break;
                     case "JUBILACIÓN": resultadoAlta = diferenciaMeses < 6 ? "ALTA INTERINA LIMITADA EN VACANTE DEFINITIVA" : "ALTA PROVISIONAL EN VACANTE DEFINITIVA"; break;
                     default: resultadoAlta = "NO PROCEDENTE";
@@ -388,6 +388,8 @@ $(document).ready(function() {
                             calculated_presupuestal_interino = "48" + presupuestal_titular.substring(2);
                         } else if (motivo_tramite_text === "LIC. DE GRAVIDEZ") {
                             calculated_presupuestal_interino = "14" + presupuestal_titular.substring(2);
+                        } else if (motivo_tramite_text === "LIC. PREPENSIONARIA" || motivo_tramite_text === "PREJUBILATORIO") {
+                            calculated_presupuestal_interino = "15" + presupuestal_titular.substring(2);
                         }
                     }
                     $('#id_clave_presupuestal_interino_display').val(calculated_presupuestal_interino);

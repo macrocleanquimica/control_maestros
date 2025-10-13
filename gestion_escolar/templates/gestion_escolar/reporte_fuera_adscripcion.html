@@ -1,0 +1,44 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block title %}Reporte de Personal Fuera de Adscripción{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-2 text-gray-800">Reporte de Personal Fuera de Adscripción</h1>
+    <p class="mb-4">Este reporte lista al personal cuyo Centro de Trabajo de pago (Techo Financiero) no coincide con el Centro de Trabajo donde están físicamente asignados.</p>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Resultados</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <th>RFC</th>
+                            <th>C.C.T. Físico (Asignado)</th>
+                            <th>C.C.T. de Pago (Techo)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for maestro in personal_fuera_adscripcion %}
+                        <tr>
+                            <td>{{ maestro.a_paterno }} {{ maestro.a_materno }} {{ maestro.nombres }}</td>
+                            <td>{{ maestro.rfc }}</td>
+                            <td>{{ maestro.id_escuela.id_escuela }} - {{ maestro.id_escuela.nombre_ct }}</td>
+                            <td>{{ maestro.techo_f }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No se encontró personal fuera de adscripción.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

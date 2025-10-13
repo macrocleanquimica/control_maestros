@@ -67,6 +67,26 @@ def get_supervisor_info(zona):
         return {'nombre': get_full_name(supervisor), 'nivel': supervisor.nivel_estudio or ''}
     return {'nombre': 'SUPERVISOR NO ENCONTRADO', 'nivel': ''}
 
+# Helper function to get user initials
+def get_user_initials(user):
+    if not user:
+        return ""
+    
+    # Intenta obtener el nombre completo del perfil del usuario
+    full_name = user.get_full_name()
+    
+    # Si no hay nombre completo, intenta con first_name y last_name
+    if not full_name:
+        full_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
+
+    if not full_name:
+        return user.username[0].lower() if user.username else ''
+
+    parts = full_name.split()
+    initials = "".join([part[0] for part in parts if part])
+    return initials.lower()
+
+
 # Helper function to calculate month difference similar to VBA DateDiff("m", ...)
 def get_month_diff(d1, d2):
     # Ensure d1 is earlier than d2
@@ -151,7 +171,7 @@ def serialize_form_data(cleaned_data):
     return serialized_data
 
 # Main Word generation function
-def generate_word_document(form_data, plantilla_tramite):
+def generate_word_document(form_data, plantilla_tramite, user):
     try:
         # --- Construct absolute path for the template ---
         template_path = os.path.join(settings.BASE_DIR, 'tramites', 'Plantillas', 'Word', plantilla_tramite.ruta_archivo)
@@ -192,6 +212,10 @@ def generate_word_document(form_data, plantilla_tramite):
                 presupuestal_interino = "48" + presupuestal_titular[2:]
             elif motivo_text == "LIC. DE GRAVIDEZ":
                 presupuestal_interino = "24" + presupuestal_titular[2:]
+            elif motivo_text == "LIC. PREPENSIONARIA":
+                presupuestal_interino = "15" + presupuestal_titular[2:]
+            elif motivo_text == "PREJUBILATORIO":
+                presupuestal_interino = "15" + presupuestal_titular[2:]
         
         # Lógica para funcion_interino
         funcion_interino = maestro_titular.funcion or '' if maestro_titular else ''
@@ -226,7 +250,7 @@ def generate_word_document(form_data, plantilla_tramite):
                         tipo_movimiento_interino = "ALTA EN PENSION"
                     else:
                         tipo_movimiento_interino = "ALTA PROVISIONAL"
-                elif motivo_tramite_text == "BECA COMISIÓN":
+                elif motivo_tramite_text in ["BECA COMISIÓN", "PRORROGA DE BECA COMISION", "PRÓRROGA DE BECA COMISIÓN"]:
                     if diferencia_meses < 6:
                         tipo_movimiento_interino = "SUSTITUTO BECARIO"
                     else:
@@ -274,8 +298,12 @@ def generate_word_document(form_data, plantilla_tramite):
         folio_prel = form_data.get('folio_prel_display') or ''
         tipo_val = form_data.get('tipo_val_display') or ''
 
+        # --- Generate initials ---
+        quienlohizo = get_user_initials(user)
+
         # --- Context for docxtpl ---
         context = {
+            'quienlohizo': quienlohizo,
             'Nombre_Titular': nombre_titular,
             'CURP_Titular': curp_titular,
             'RFC_Titular': rfc_titular,
@@ -443,12 +471,21 @@ def index(request):
 
     ultimo_personal = Maestro.objects.order_by('-fecha_registro')[:5]
 
+    # Obtener los 5 pendientes más próximos para el usuario actual
+    today = timezone.now().date()
+    ultimos_pendientes = Pendiente.objects.filter(
+        usuario=request.user,
+        completado=False,
+        fecha_programada__lte=today
+    ).order_by('fecha_programada')[:5]
+
     context = {
         'total_zonas': total_zonas,
         'total_escuelas': total_escuelas,
         'total_maestros': total_maestros,
         'total_directores': total_directores,
         'ultimo_personal': ultimo_personal,
+        'ultimos_pendientes': ultimos_pendientes,
         'zona_labels': json.dumps(zona_labels),
         'zona_data': json.dumps(zona_data),
         'titulo': 'Dashboard'
@@ -631,32 +668,114 @@ def detalle_escuela(request, pk):
     return render(request, 'gestion_escolar/detalle_escuela.html', context)
 
 # Vistas para Maestros
+from unidecode import unidecode
+from django.urls import reverse
+
 @login_required
 def lista_maestros(request):
     user = request.user
+    # Esta vista ahora solo renderiza el template base.
+    return render(request, 'gestion_escolar/lista_maestros.html')
+
+@login_required
+def lista_maestros_ajax(request):
+    # Parámetros de DataTables
+    draw = int(request.GET.get('draw', 0))
+    start = int(request.GET.get('start', 0))
+    length = int(request.GET.get('length', 10))
+    search_value = request.GET.get('search[value]', '')
+
+    # Ordenamiento
+    order_column_index = int(request.GET.get('order[0][column]', 0))
+    order_dir = request.GET.get('order[0][dir]', 'asc')
+    column_names = ['id_maestro', 'a_paterno', 'id_escuela__id_escuela', 'curp', 'clave_presupuestal', 'status']
+    order_column = column_names[order_column_index]
+    if order_dir == 'desc':
+        order_column = f'-{order_column}'
+
+    # Queryset base
+    user = request.user
     if user.groups.filter(name='Directores').exists():
         try:
-            # Director can only see their school's teachers
             maestro_director = user.maestro_profile
-            escuela_director = maestro_director.id_escuela
-            maestros = Maestro.objects.filter(id_escuela=escuela_director).exclude(
-                id_maestro__isnull=True
-            ).exclude(
-                id_maestro=''
-            ).order_by('a_paterno', 'a_materno', 'nombres')
+            queryset = Maestro.objects.filter(id_escuela=maestro_director.id_escuela)
         except AttributeError:
-            # Handle case where user is in Directores group but has no maestro_profile
-            maestros = Maestro.objects.none()
+            queryset = Maestro.objects.none()
     else:
-        # Admin and other users can see all teachers
-        maestros = Maestro.objects.exclude(
-            id_maestro__isnull=True
-        ).exclude(
-            id_maestro=''
-        ).order_by('a_paterno', 'a_materno', 'nombres')
-        
-    return render(request, 'gestion_escolar/lista_maestros.html', {'maestros': maestros})
+        queryset = Maestro.objects.all()
+    
+    queryset = queryset.exclude(id_maestro__isnull=True).exclude(id_maestro='')
 
+    # Total de registros sin filtrar
+    records_total = queryset.count()
+
+    # Filtro de búsqueda
+    if search_value:
+        search_terms = search_value.split()
+        table_name = Maestro._meta.db_table
+        where_clauses = []
+        params = []
+        for term in search_terms:
+            unaccented_term = f'%{unidecode(term)}%'
+            term_clause = f"""(
+                {table_name}.id_maestro LIKE %s OR
+                unaccent({table_name}.nombres) LIKE %s OR
+                unaccent({table_name}.a_paterno) LIKE %s OR
+                unaccent({table_name}.a_materno) LIKE %s OR
+                unaccent({table_name}.curp) LIKE %s OR
+                unaccent({table_name}.clave_presupuestal) LIKE %s
+            )"""
+            where_clauses.append(term_clause)
+            params.append(f'%{term}%')
+            params.extend([unaccented_term] * 5)
+        
+        if where_clauses:
+            queryset = queryset.extra(where=[" AND ".join(where_clauses)], params=params)
+
+    # Total de registros después del filtro
+    records_filtered = queryset.count()
+
+    # Ordenamiento y paginación
+    queryset = queryset.order_by(order_column)[start:start + length]
+
+    # Preparar datos para la respuesta JSON
+    data = []
+    for maestro in queryset:
+        actions = f'''
+            <div class="btn-group" role="group">
+                <a href="{reverse('detalle_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-info"><i class="fas fa-eye"></i></a>
+                <a href="{reverse('editar_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                <a href="{reverse('eliminar_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>
+            </div>
+        '''
+        status_map = {'ACTIVO': 'success', 'INACTIVO': 'warning'}
+        status_class = status_map.get(maestro.status, 'secondary')
+        status_html = f'<span class="badge bg-{status_class}">{maestro.get_status_display()}</span>'
+
+        # Comprobar si el CCT de la escuela es diferente del techo financiero
+        is_misplaced = False
+        if maestro.id_escuela and maestro.techo_f:
+            if maestro.id_escuela.id_escuela.strip().upper() != maestro.techo_f.strip().upper():
+                is_misplaced = True
+
+        data.append([
+            maestro.id_maestro,
+            f'{maestro.a_paterno} {maestro.a_materno} {maestro.nombres}',
+            maestro.id_escuela.id_escuela if maestro.id_escuela else 'N/A',
+            maestro.curp,
+            maestro.clave_presupuestal or '-',
+            status_html,
+            actions,
+            is_misplaced  # Dato extra para el frontend
+        ])
+
+    response = {
+        'draw': draw,
+        'recordsTotal': records_total,
+        'recordsFiltered': records_filtered,
+        'data': data,
+    }
+    return JsonResponse(response)
 def agregar_maestro(request):
     all_escuelas = Escuela.objects.all()
     initial_data = {}
@@ -880,7 +999,7 @@ def generar_tramites_generales(request):
             plantilla_id = form.cleaned_data['plantilla'].id
             plantilla_tramite = PlantillaTramite.objects.get(id=plantilla_id)
 
-            success, message = generate_word_document(form.cleaned_data, plantilla_tramite)
+            success, message = generate_word_document(form.cleaned_data, plantilla_tramite, request.user)
 
             if success:
                 # Crear registro en el historial
@@ -928,7 +1047,7 @@ def generar_oficios(request):
             plantilla_id = form.cleaned_data['plantilla'].id
             plantilla_tramite = PlantillaTramite.objects.get(id=plantilla_id)
 
-            success, message = generate_word_document(form.cleaned_data, plantilla_tramite)
+            success, message = generate_word_document(form.cleaned_data, plantilla_tramite, request.user)
 
             if success:
                 # Crear registro en el historial
@@ -1095,6 +1214,31 @@ def eliminar_categoria(request, pk):
     return render(request, 'gestion_escolar/eliminar_categoria.html', {'categoria': categoria})
 
 from django.http import JsonResponse, HttpResponse, FileResponse, HttpResponseForbidden
+from django.db.models.functions import Upper, Trim
+
+@login_required
+def reportes_dashboard(request):
+    context = {
+        'titulo': 'Dashboard de Reportes'
+    }
+    return render(request, 'gestion_escolar/reportes_dashboard.html', context)
+
+@login_required
+def reporte_personal_fuera_adscripcion(request):
+    # Anotamos versiones limpias (sin espacios y en mayúsculas) de los campos a comparar
+    personal_qs = Maestro.objects.annotate(
+        techo_f_clean=Trim(Upper('techo_f')),
+        id_escuela_clean=Trim(Upper('id_escuela__id_escuela'))
+    ).exclude(techo_f__isnull=True).exclude(techo_f='')
+
+    # Filtramos donde los campos limpios no coinciden
+    personal_fuera_adscripcion = [p for p in personal_qs if p.techo_f_clean != p.id_escuela_clean]
+
+    context = {
+        'personal_fuera_adscripcion': personal_fuera_adscripcion,
+        'titulo': 'Reporte de Personal Fuera de Adscripción'
+    }
+    return render(request, 'gestion_escolar/reporte_fuera_adscripcion.html', context)
 
 @login_required
 def historial(request):
@@ -1234,16 +1378,12 @@ def signup_view(request):
     return render(request, 'gestion_escolar/signup.html', context)
 
 @login_required
-def export_maestro_csv(request, pk):
+def export_maestro_excel(request, pk):
     maestro = get_object_or_404(Maestro, id_maestro=pk)
     
-    response = HttpResponse(
-        content_type='text/csv',
-        headers={'Content-Disposition': f'attachment; filename="detalle_{maestro.a_paterno}_{maestro.id_maestro}.csv"'},
-    )
-    response.write('\ufeff') # BOM for Excel to handle UTF-8 correctly
-
-    writer = csv.writer(response)
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"Detalle_{maestro.id_maestro}"
 
     # Define headers and data
     data = {
@@ -1259,7 +1399,7 @@ def export_maestro_csv(request, pk):
         "Nombre del Centro de Trabajo": maestro.id_escuela.nombre_ct if maestro.id_escuela else 'N/A',
         "Zona Escolar": maestro.id_escuela.zona_esc.numero if maestro.id_escuela and maestro.id_escuela.zona_esc else 'N/A',
         "Clave Presupuestal": maestro.clave_presupuestal,
-        "Categoría": maestro.categog,
+        "Categoría": str(maestro.categog) if maestro.categog else '',
         "Código": maestro.codigo,
         "Fecha de Ingreso": maestro.fecha_ingreso,
         "Fecha de Promoción": maestro.fecha_promocion,
@@ -1276,22 +1416,71 @@ def export_maestro_csv(request, pk):
         "Observaciones": maestro.observaciones,
     }
 
-    # Write header row
-    writer.writerow(data.keys())
-    # Write data row
-    writer.writerow(data.values())
+    # Write data in two columns: Header and Value
+    for key, value in data.items():
+        # Handle date objects specifically for formatting
+        if isinstance(value, date):
+            value = value.strftime("%d/%m/%Y")
+        ws.append([key, value])
+
+    # Adjust column widths
+    ws.column_dimensions['A'].width = 30
+    ws.column_dimensions['B'].width = 50
+
+    # Prepare the response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': f'attachment; filename="detalle_{maestro.a_paterno}_{maestro.id_maestro}.xlsx"'},
+    )
+    wb.save(response)
 
     return response
 
 @login_required
 def exportar_maestros_excel(request):
     filtro = request.GET.get('filtro', '')
-    print(f"DEBUG: Filtro recibido en exportar_maestros_excel: '{filtro}'")
-    
+    funcion = request.GET.get('funcion', '')
+
     # Construir la consulta base con select_related para optimizar
     maestros_qs = Maestro.objects.select_related('id_escuela', 'id_escuela__zona_esc', 'categog').all().order_by('a_paterno', 'a_materno', 'nombres')
 
-    # Aplicar filtro si existe
+    # Aplicar filtro de función si existe
+    if funcion:
+        funcion_mapping = {
+            'DIRECTOR': {'display': 'Director', 'values': ['DIRECTOR', 'DIRECTOR (A)']},
+            'SUPERVISOR': {'display': 'Supervisor', 'values': ['SUPERVISOR', 'SUPERVISOR (A)', 'SUPERVISOR(A)']},
+            'MAESTRO_GRUPO': {'display': 'Maestro de Grupo', 'values': ['MAESTRO_GRUPO', 'MAESTRO(A) DE GRUPO', 'MAESTRO(A) DE GRUPO CON ESPECIALIDAD', 'MAESTRO(A) DE GRUPO ESPECIALISTA','MATRO(A) DE GRUPO ESPECIALISTA']},
+            'DOCENTE_APOYO': {'display': 'Docente de Apoyo', 'values': ['MAESTRO(A) DE APOYO']},
+            'PSICOLOGO': {'display': 'Psicólogo', 'values': ['PSICOLOGO', 'PSICÓLOGO(A)', 'PSICÓLOGO (A)']},
+            'TRABAJADOR_SOCIAL': {'display': 'Trabajador Social', 'values': ['TRABAJADOR_SOCIAL', 'TRABAJADOR (A) SOCIAL']},
+            'NIÑERO': {'display': 'Niñero', 'values': ['NIÑERO', 'NIÑERO(A)']},
+            'SECRETARIO': {'display': 'Secretario', 'values': ['SECRETARIO', 'SECRETARIA ', 'SECRETARIO(A)']},
+            'INTENDENTE': {'display': 'Intendente', 'values': ['INTENDENTE']},
+            'VELADOR': {'display': 'Velador', 'values': ['VELADOR']},
+            'VIGILANTE': {'display': 'Vigilante', 'values': ['VIGILANTE', 'VIGILANTE ']},
+            'OTRO': {'display': 'Otro', 'values': ['OTRO']},
+            'APOYO_TECNICO_PEDAGOGICO': {'display': 'Apoyo Técnico Pedagógico', 'values': ['APOYO TECNICO PEDAGOGICO']},
+            'INSTRUCTOR_TALLER': {'display': 'Instructor de Taller', 'values': ['INSTRUCTOR(A) DE TALLER']},
+            'MAESTRO_TALLER': {'display': 'Maestro de Taller', 'values': ['MAESTRO(A) DE TALLER', 'MAESTRO DE TALLER']},
+            'MAESTRO_MUSICA': {'display': 'Maestro de Música', 'values': ['MAESTRO(A) MUSICA']},
+            'MAESTRO_EDUCACION_FISICA': {'display': 'Maestro de Educación Física', 'values': ['MAESTRO(A) DE EDUCACIÓN FÍSICA']},
+            'MEDICO': {'display': 'Médico', 'values': ['MÉDICO(A)', 'MÉDICO (A)']},
+            'PROMOTOR_TIC': {'display': 'Promotor TIC', 'values': ['PROMOTOR TIC', 'PROMOTOR TIC ']},
+            'TERAPISTA_FISICO': {'display': 'Terapista Físico', 'values': ['TERAPISTA FISICO ']},
+            'BIBLIOTECARIO': {'display': 'Bibliotecario', 'values': ['BIBLIOTECARIO(A)']},
+            'ADMINISTRATIVO_ESPECIALIZADO': {'display': 'Administrativo Especializado', 'values': ['ADMINISTRATIVO ESPECIALIZADO']},
+            'OFICIAL_SERVICIOS_MANTENIMIENTO': {'display': 'Oficial de Servicios y Mantenimiento', 'values': ['OFICIAL DE SERVICIOS Y MANTENIMIENTO', 'OFICIAL DE SERVICIOS DE MANTENIMIENTO']},
+            'ASISTENTE_DE_SERVICIOS': {'display': 'Asistente de Servicios', 'values': ['ASISTENTE DE SERVICIOS']},
+            'ASESOR_JURIDICO': {'display': 'Asesor Jurídico', 'values': ['ASESOR JURÍDICO']},
+            'AUXILIAR_DE_GRUPO': {'display': 'Auxiliar de Grupo', 'values': ['AUXILIAR DE GRUPO']},
+            'MAESTRO_COMUNICACION': {'display': 'Maestro de Comunicación', 'values': ['MAESTRO(A) DE COMUNICACIÓN ']},
+            'MAESTRO_AULA_HOSPITALARIA': {'display': 'Maestro Aula Hospitalaria', 'values': ['MAESTRO(A) AULA HOSPITALARIA']},
+        }
+        funcion_info = funcion_mapping.get(funcion)
+        if funcion_info:
+            maestros_qs = maestros_qs.filter(funcion__in=funcion_info['values'])
+
+    # Aplicar filtro de texto libre si existe
     if filtro:
         maestros_qs = maestros_qs.filter(
             Q(nombres__icontains=filtro) |

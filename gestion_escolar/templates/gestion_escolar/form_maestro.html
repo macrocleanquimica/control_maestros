@@ -1,92 +1,266 @@
 {% extends 'gestion_escolar/base.html' %}
-
-{% block title %}{{ titulo }}{% endblock %}
+{% load static %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{{ titulo }}</h4>
-                </div>
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="row">
-                            {% for field in form %}
-                                <div class="col-md-4 mb-3">
-                                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                                    {{ field }}
-                                    {% if field.help_text %}
-                                        <small class="form-text text-muted">{{ field.help_text }}</small>
-                                    {% endif %}
-                                    {% for error in field.errors %}
-                                        <div class="invalid-feedback d-block">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                        <hr>
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Guardar</button>
-                        <a href="{% url 'lista_maestros' %}" class="btn btn-secondary"><i class="fas fa-times me-2"></i>Cancelar</a>
-                    </form>
-                </div>
-            </div>
-        </div>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{% if maestro %}Editar Personal{% else %}Agregar Personal{% endif %}</h2>
+        <a href="{% url 'lista_maestros' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver a la lista
+        </a>
     </div>
 
-    {% if form.instance.pk %}
-    <!-- Sección de Expediente Digital -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0">Expediente Digital</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <!-- Formulario para subir nuevos documentos -->
-                        <div class="col-md-4">
-                            <h6>Subir Nuevo Documento</h6>
-                            <form method="post" enctype="multipart/form-data">
-                                {% csrf_token %}
-                                <div class="mb-3">
-                                    <label for="{{ doc_form.tipo_documento.id_for_label }}" class="form-label">{{ doc_form.tipo_documento.label }}</label>
-                                    {{ doc_form.tipo_documento }}
-                                </div>
-                                <div class="mb-3">
-                                    <label for="{{ doc_form.archivo.id_for_label }}" class="form-label">{{ doc_form.archivo.label }}</label>
-                                    {{ doc_form.archivo }}
-                                </div>
-                                <button type="submit" name="submit_documento" class="btn btn-info">Subir Documento</button>
-                            </form>
-                        </div>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
 
-                        <!-- Lista de documentos existentes -->
-                        <div class="col-md-8">
-                            <h6>Documentos Existentes</h6>
-                            {% if documentos %}
-                                <ul class="list-group">
-                                    {% for doc in documentos %}
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <a href="{{ doc.archivo.url }}" target="_blank">{{ doc.get_tipo_documento_display }}</a>
-                                            <small>Subido el {{ doc.fecha_subida|date:"d/m/Y" }} por {{ doc.subido_por.username|default:'N/A' }}</small>
-                                            <a href="{% url 'eliminar_documento_expediente' doc_pk=doc.pk %}" class="btn btn-danger btn-sm">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            {% else %}
-                                <p>No hay documentos en el expediente.</p>
-                            {% endif %}
-                        </div>
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- Apellido Paterno, Apellido Materno, Nombres -->
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.a_paterno.id_for_label }}" class="form-label">Apellido Paterno</label>
+                        {{ form.a_paterno }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.a_materno.id_for_label }}" class="form-label">Apellido Materno</label>
+                        {{ form.a_materno }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.nombres.id_for_label }}" class="form-label">Nombres</label>
+                        {{ form.nombres }}
                     </div>
                 </div>
-            </div>
+
+                <!-- CURP, RFC -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.curp.id_for_label }}" class="form-label">CURP</label>
+                        {{ form.curp }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.rfc.id_for_label }}" class="form-label">RFC</label>
+                        {{ form.rfc }}
+                    </div>
+                </div>
+
+                <!-- Escuela, Techo Financiero -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.id_escuela.id_for_label }}" class="form-label">Escuela</label>
+                        {{ form.id_escuela }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.techo_f.id_for_label }}" class="form-label">Techo Financiero</label>
+                        {{ form.techo_f }}
+                    </div>
+                </div>
+
+                <!-- DEP, UNID, SUB UNID, HRS, Categoría, Número de Plaza -->
+                <div class="row">
+                    <div class="col-md-2 mb-3">
+                        <label for="{{ form.dep.id_for_label }}" class="form-label">DEP</label>
+                        {{ form.dep }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="{{ form.unid.id_for_label }}" class="form-label">UNID</label>
+                        {{ form.unid }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="{{ form.sub_unid.id_for_label }}" class="form-label">SUB UNID</label>
+                        {{ form.sub_unid }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="{{ form.categog.id_for_label }}" class="form-label">Categoría</label>
+                        {{ form.categog }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="{{ form.hrs.id_for_label }}" class="form-label">HRS</label>
+                        {{ form.hrs }}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="{{ form.num_plaza.id_for_label }}" class="form-label">No. de Plaza</label>
+                        {{ form.num_plaza }}
+                    </div>
+                </div>
+
+                <!-- Código -->
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="{{ form.codigo.id_for_label }}" class="form-label">Código</label>
+                        {{ form.codigo }}
+                    </div>
+                </div>
+
+                <!-- Sexo, Estado Civil, Fecha de Nacimiento -->
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.sexo.id_for_label }}" class="form-label">Sexo</label>
+                        {{ form.sexo }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.est_civil.id_for_label }}" class="form-label">Estado Civil</label>
+                        {{ form.est_civil }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">Fecha de Nacimiento</label>
+                        {{ form.fecha_nacimiento }}
+                    </div>
+                </div>
+
+                <!-- Fecha de Ingreso, Fecha de Promoción -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.fecha_ingreso.id_for_label }}" class="form-label">Fecha de Ingreso</label>
+                        {{ form.fecha_ingreso }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.fecha_promocion.id_for_label }}" class="form-label">Fecha de Promoción</label>
+                        {{ form.fecha_promocion }}
+                    </div>
+                </div>
+
+                <!-- Formación Académica, Horario -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.form_academica.id_for_label }}" class="form-label">Formación Académica</label>
+                        {{ form.form_academica }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.horario.id_for_label }}" class="form-label">Horario</label>
+                        {{ form.horario }}
+                    </div>
+                </div>
+
+                <!-- Función, Nivel de Estudio -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.funcion.id_for_label }}" class="form-label">Función</label>
+                        {{ form.funcion }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.nivel_estudio.id_for_label }}" class="form-label">Nivel de Estudio</label>
+                        {{ form.nivel_estudio }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.domicilio_part.id_for_label }}" class="form-label">Domicilio Particular</label>
+                        {{ form.domicilio_part }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="{{ form.poblacion.id_for_label }}" class="form-label">Población</label>
+                        {{ form.poblacion }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="{{ form.codigo_postal.id_for_label }}" class="form-label">Código Postal</label>
+                        {{ form.codigo_postal }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.telefono.id_for_label }}" class="form-label">Teléfono</label>
+                        {{ form.telefono }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                        {{ form.email }}
+                    </div>
+                </div>
+
+                <!-- Status, Observaciones, Usuario Asociado -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                        {{ form.status }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.observaciones.id_for_label }}" class="form-label">Observaciones</label>
+                        {{ form.observaciones }}
+                    </div>
+                </div>
+                {% if form.user %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.user.id_for_label }}" class="form-label">Usuario Asociado</label>
+                        {{ form.user }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
         </div>
     </div>
-    {% endif %}
-</div>
-{% endblock %}
+
+    {% if maestro %}
+    <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Documentos del Expediente</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="mb-4">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ doc_form.tipo_documento.id_for_label }}" class="form-label">Tipo de Documento</label>
+                        {{ doc_form.tipo_documento }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ doc_form.archivo.id_for_label }}" class="form-label">Archivo (PDF)</label>
+                        {{ doc_form.archivo }}
+                    </div>
+                </div>
+                <button type="submit" name="submit_documento" class="btn btn-success">Subir Documento</button>
+            </form>
+
+            {% if documentos %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tipo de Documento</th>
+                                    <th>Archivo</th>
+                                    <th>Fecha de Subida</th>
+                                    <th>Subido por</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for documento in documentos %}
+                                <tr>
+                                    <td>{{ documento.get_tipo_documento_display }}</td>
+                                    <td><a href="{{ documento.archivo.url }}" target="_blank">{{ documento.get_file_name }}</a></td>
+                                    <td>{{ documento.fecha_subida|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ documento.subido_por.username }}</td>
+                                    <td>
+                                        <form action="{% url 'eliminar_documento_expediente' documento.pk %}" method="post" style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Estás seguro de que deseas eliminar este documento?');">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p>No hay documentos en el expediente.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endblock %}
+        

@@ -16,7 +16,10 @@
                         <div class="col-md-6">
                             <p><strong>Clave de Centro de Trabajo (CCT):</strong> {{ escuela.id_escuela }}</p>
                             <p><strong>Nombre del Centro de Trabajo:</strong> {{ escuela.nombre_ct }}</p>
-                            <p><strong>Zona Escolar:</strong> {{ escuela.zona_esc.numero }} - {{ escuela.zona_esc.nombre_supervisor }}</p>
+                            <p><strong>Zona Escolar:</strong> {{ escuela.zona_esc.numero }}</p>
+                            {% with supervisor=escuela.zona_esc.supervisor %}
+                                <p><strong>Supervisor de Zona:</strong> {% if supervisor %}{{ supervisor.nombres }} {{ supervisor.a_paterno }} {{ supervisor.a_materno }}{% else %}N/A{% endif %}</p>
+                            {% endwith %}
                             <p><strong>Turno:</strong> {{ escuela.get_turno_display }}</p>
                             <p><strong>Domicilio:</strong> {{ escuela.domicilio }}</p>
                             <p><strong>Teléfono:</strong> {{ escuela.telefono_ct|default:"N/A" }}</p>

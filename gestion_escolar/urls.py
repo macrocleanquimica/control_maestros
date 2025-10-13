@@ -27,11 +27,12 @@ urlpatterns = [
     
     # URLs para Maestros - CAMBIO IMPORTANTE: usar <str:pk> en lugar de <int:pk>
     path('maestros/', views.lista_maestros, name='lista_maestros'),
+    path('maestros/ajax/', views.lista_maestros_ajax, name='lista_maestros_ajax'),
     path('maestros/agregar/', views.agregar_maestro, name='agregar_maestro'),
     path('maestros/editar/<str:pk>/', views.editar_maestro, name='editar_maestro'),  # Cambiado a str
     path('maestros/eliminar/<str:pk>/', views.eliminar_maestro, name='eliminar_maestro'),  # Cambiado a str
     path('maestros/detalle/<str:pk>/', views.detalle_maestro, name='detalle_maestro'),
-    path('maestros/detalle/<str:pk>/export/csv/', views.export_maestro_csv, name='export_maestro_csv'),
+    path('maestros/detalle/<str:pk>/export/excel/', views.export_maestro_excel, name='export_maestro_excel'),
     path('maestros/exportar/excel/', views.exportar_maestros_excel, name='exportar_maestros_excel'),
     path('maestros/exportar/excel/', views.exportar_maestros_excel, name='exportar_maestros_excel'),
     path('maestros/eliminar_documento/<int:doc_pk>/', views.eliminar_documento_expediente, name='eliminar_documento_expediente'),
@@ -72,6 +73,10 @@ urlpatterns = [
     path('historial/guardar_observacion/<int:item_id>/', views.guardar_observacion_historial, name='guardar_observacion_historial'),
     path('historial/detalle_lote/<int:historial_id>/', views.historial_detalle_lote, name='historial_detalle_lote'),
     path('historial/detalle_tramite/<int:historial_id>/', views.historial_detalle_tramite, name='historial_detalle_tramite'),
+
+    # URLs para Reportes
+    path('reportes/', views.reportes_dashboard, name='reportes_dashboard'),
+    path('reportes/personal_fuera_adscripcion/', views.reporte_personal_fuera_adscripcion, name='reporte_personal_fuera_adscripcion'),
 
     # URLs para Pendientes y Correspondencia
     path('pendientes/', views.PendienteActiveListView.as_view(), name='pendientes_activos'),

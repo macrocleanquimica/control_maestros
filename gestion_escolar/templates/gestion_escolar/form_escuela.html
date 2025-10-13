@@ -68,7 +68,7 @@
                                     <label for="{{ form.zona_economica.id_for_label }}" class="form-label">Zona Económica:</label>
                                     {{ form.zona_economica }}
                                     {% if form.zona_economica.errors %}
-                                        <div class="text-danger">{{ form.zona_economica.errors }}</div>
+                                        <div class="text-danger">{{ form.zona_economica.errors %}</div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -130,4 +130,22 @@
         </div>
     </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.querySelector('form');
+    var inputs = form.querySelectorAll('input[type="text"], textarea');
+
+    inputs.forEach(function(input) {
+        input.style.textTransform = 'uppercase';
+        input.addEventListener('input', function(e) {
+            var start = this.selectionStart;
+            var end = this.selectionEnd;
+            this.value = this.value.toUpperCase();
+            this.setSelectionRange(start, end);
+        });
+    });
+});
+</script>
 {% endblock %}

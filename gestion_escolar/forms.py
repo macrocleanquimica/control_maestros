@@ -113,6 +113,10 @@ class CategoriaChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return obj.id_categoria
 
+class EscuelaChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.id_escuela
+
 class ZonaForm(forms.ModelForm):
     class Meta:
         model = Zona
@@ -160,6 +164,11 @@ class MaestroForm(forms.ModelForm):
         required=False,
         label="Categoría",
         widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    id_escuela = EscuelaChoiceField(
+        queryset=Escuela.objects.all().order_by('id_escuela'),
+        label="Escuela (CCT)",
+        widget=forms.Select(attrs={'class': 'form-control select2'})
     )
 
     class Meta:
@@ -220,8 +229,6 @@ class MaestroForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
-        self.fields['id_escuela'].queryset = Escuela.objects.all().order_by('nombre_ct')
-        self.fields['id_escuela'].widget.attrs.update({'class': 'form-control'})
         self.fields['sexo'].widget.attrs.update({'class': 'form-control'})
         self.fields['est_civil'].widget.attrs.update({'class': 'form-control'})
         self.fields['nivel_estudio'].widget.attrs.update({'class': 'form-control'})

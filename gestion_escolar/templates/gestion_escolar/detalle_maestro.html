@@ -52,7 +52,7 @@
                     <hr>
                     <a href="{% url 'lista_maestros' %}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Volver a la Lista</a>
                     <button onclick="window.print();" class="btn btn-info"><i class="fas fa-print me-2"></i>Imprimir Ficha</button>
-                    <a href="{% url 'export_maestro_csv' pk=maestro.id_maestro %}" class="btn btn-success no-loader"><i class="fas fa-file-excel me-2"></i>Exportar a CSV</a>
+                    <a href="{% url 'export_maestro_excel' pk=maestro.id_maestro %}" class="btn btn-success no-loader"><i class="fas fa-file-excel me-2"></i>Exportar a Excel</a>
                 </div>
             </div>
         </div>
