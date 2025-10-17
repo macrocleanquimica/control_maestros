@@ -8,6 +8,7 @@
     <div class="row">
         <div class="col-12">
             <!-- Dashboard Section -->
+            {% if perms.gestion_escolar.ver_estadisticas_generales %}
             <div class="row">
                 <div class="col-md-3 col-sm-6">
                     <div class="card card-dashboard">
@@ -46,10 +47,12 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
 
-            <div class="row mt-4">
-                <div class="col-lg-4">
-                    <div class="card h-100">
+            <div class="row mt-4 d-flex align-items-stretch">
+                {% if perms.gestion_escolar.ver_grafico_distribucion_zona %}
+                <div class="col-lg-4 d-flex">
+                    <div class="card h-100 flex-grow-1">
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0">Distribución por Zona</h5>
                         </div>
@@ -58,8 +61,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4">
-                    <div class="card h-100">
+                {% endif %}
+                {% if perms.gestion_escolar.ver_lista_pendientes %}
+                <div class="col-lg-4 d-flex">
+                    <div class="card h-100 flex-grow-1">
                         <div class="card-header bg-warning text-dark">
                             <h5 class="mb-0">Mis Pendientes Próximos</h5>
                         </div>
@@ -80,13 +85,15 @@
                                 {% endfor %}
                             </div>
                             <div class="text-center mt-3">
-                                <a href="{% url 'pendientes_activos' %}" class="btn btn-sm btn-outline-primary">Ver todos los pendientes</a>
+                                <a href="{% url 'pendientes_activos' %}" class="btn btn-sm btn-outline-primary">Agregar o Ver los pendientes</a>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4">
-                    <div class="card h-100">
+                {% endif %}
+                {% if perms.gestion_escolar.ver_lista_ultimo_personal %}
+                <div class="col-lg-4 d-flex">
+                    <div class="card h-100 flex-grow-1">
                         <div class="card-header bg-success text-white">
                             <h5 class="mb-0">Último Personal Registrado</h5>
                         </div>
@@ -109,10 +116,34 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
+                {% if ultima_correspondencia %}
+                <div class="col-lg-4 d-flex">
+                    <div class="card h-100 flex-grow-1">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">Última correspondencia Registrada</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                {% for registro in ultima_correspondencia %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ registro.fecha_recibido|date:"d/m/Y" }}</h6>
+                                    </div>
+                                    <p class="mb-1 text-truncate">{{ registro.contenido|truncatechars:100 }}</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+{% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -152,5 +183,4 @@
         });
     });
 </script>
-{% endblock %}
 {% endblock %}

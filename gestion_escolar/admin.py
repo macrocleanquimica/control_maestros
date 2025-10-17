@@ -223,3 +223,13 @@ class PlantillaTramiteAdmin(admin.ModelAdmin):
     search_fields = ('nombre',)
 
 admin.site.register(PlantillaTramite, PlantillaTramiteAdmin)
+
+from .models import RegistroCorrespondencia
+
+@admin.register(RegistroCorrespondencia)
+class RegistroCorrespondenciaAdmin(admin.ModelAdmin):
+    list_display = ('folio_documento', 'remitente', 'tipo_documento', 'fecha_recibido', 'maestro', 'archivo_adjunto')
+    search_fields = ('folio_documento', 'remitente', 'contenido', 'maestro__nombres', 'maestro__a_paterno')
+    list_filter = ('tipo_documento', 'area', 'fecha_recibido')
+    date_hierarchy = 'fecha_recibido'
+    readonly_fields = ('fecha_registro',)

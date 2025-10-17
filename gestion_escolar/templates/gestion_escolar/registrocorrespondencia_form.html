@@ -1,0 +1,127 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Datos del Registro</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-2 mb-3">
+                        <label for="{{ form.fecha_recibido.id_for_label }}" class="form-label">{{ form.fecha_recibido.label }}</label>
+                        <input type="date" name="{{ form.fecha_recibido.name }}" id="{{ form.fecha_recibido.id_for_label }}" class="form-control" value="{{ form.fecha_recibido.value|date:'Y-m-d' }}">
+                        {% if form.fecha_recibido.errors %}<div class="invalid-feedback d-block">{{ form.fecha_recibido.errors.as_text }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="{{ form.fecha_oficio.id_for_label }}" class="form-label">{{ form.fecha_oficio.label }}</label>
+                        <input type="date" name="{{ form.fecha_oficio.name }}" id="{{ form.fecha_oficio.id_for_label }}" class="form-control" value="{{ form.fecha_oficio.value|date:'Y-m-d' }}">
+                        {% if form.fecha_oficio.errors %}<div class="invalid-feedback d-block">{{ form.fecha_oficio.errors.as_text }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.folio_documento.id_for_label }}" class="form-label">{{ form.folio_documento.label }}</label>
+                        {{ form.folio_documento }}
+                        {% if form.folio_documento.errors %}<div class="invalid-feedback d-block">{{ form.folio_documento.errors.as_text }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.remitente.id_for_label }}" class="form-label">{{ form.remitente.label }}</label>
+                        {{ form.remitente }}
+                        {% if form.remitente.errors %}<div class="invalid-feedback d-block">{{ form.remitente.errors.as_text }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 col-md-6 mb-3">
+                        <label for="{{ form.quien_recibio.id_for_label }}" class="form-label">{{ form.quien_recibio.label }}</label>
+                        {{ form.quien_recibio }}
+                        {% if form.quien_recibio.errors %}<div class="invalid-feedback d-block">{{ form.quien_recibio.errors.as_text }}</div>{% endif %}
+                    </div>
+                    <div class="col-12 col-md-6 mb-3">
+                        <label for="{{ form.tipo_documento.id_for_label }}" class="form-label">{{ form.tipo_documento.label }}</label>
+                        {{ form.tipo_documento }}
+                        {% if form.tipo_documento.errors %}<div class="invalid-feedback d-block">{{ form.tipo_documento.errors.as_text }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2 mb-3">
+                        <label for="{{ form.area.id_for_label }}" class="form-label">{{ form.area.label }}</label>
+                        {{ form.area }}
+                        {% if form.area.errors %}<div class="invalid-feedback d-block">{{ form.area.errors.as_text }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="row"> <!-- New row for maestro field -->
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.maestro.id_for_label }}" class="form-label">{{ form.maestro.label }}</label>
+                        {{ form.maestro }}
+                        {% if form.maestro.errors %}<div class="invalid-feedback d-block">{{ form.maestro.errors.as_text }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="{{ form.contenido.id_for_label }}" class="form-label">{{ form.contenido.label }}</label>
+                    {{ form.contenido }}
+                    {% if form.contenido.errors %}<div class="invalid-feedback d-block">{{ form.contenido.errors.as_text }}</div>{% endif %}
+                </div>
+                <div class="mb-3">
+                    <label for="{{ form.observaciones.id_for_label }}" class="form-label">{{ form.observaciones.label }}</label>
+                    {{ form.observaciones }}
+                    {% if form.observaciones.errors %}<div class="invalid-feedback d-block">{{ form.observaciones.errors.as_text }}</div>{% endif %}
+                </div>
+                <div class="mb-3">
+                    <label for="{{ form.archivo_adjunto.id_for_label }}" class="form-label">{{ form.archivo_adjunto.label }}</label>
+                    {{ form.archivo_adjunto }}
+                    {% if form.instance.archivo_adjunto %}
+                        <p class="mt-2">
+                            Archivo actual: <a href="{{ form.instance.archivo_adjunto.url }}" target="_blank">{{ form.instance.archivo_adjunto.name|cut:"correspondencia/" }}</a>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="clear_archivo_adjunto" id="clear_archivo_adjunto" style="border: 1px solid red;">
+                                <label class="form-check-label" for="clear_archivo_adjunto">
+                                    Eliminar archivo actual
+                                </label>
+                            </div>
+                        </p>
+                    {% endif %}
+                    {% if form.archivo_adjunto.errors %}<div class="invalid-feedback d-block">{{ form.archivo_adjunto.errors.as_text }}</div>{% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-success">Guardar</button>
+                <a href="{% url 'registrocorrespondencia_list' %}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Inicializar Select2 para el campo de maestro
+    $('#id_maestro').select2({
+        placeholder: "Busque un maestro por nombre, apellidos o CURP",
+        minimumInputLength: 3,
+        allowClear: true,
+        width: '100%', // Add this line
+        ajax: {
+            url: "{% url 'buscar_maestros_ajax' %}",
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    term: params.term // término de búsqueda
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.results
+                };
+            },
+            cache: true
+        }
+    });
+});
+</script>
+{% endblock %}

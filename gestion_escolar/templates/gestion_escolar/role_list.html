@@ -1,0 +1,96 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
+        <a href="{% url 'role_create' %}" class="btn btn-primary btn-icon-split">
+            <span class="icon text-white-50"><i class="fas fa-plus"></i></span>
+            <span class="text">Crear Nuevo Rol</span>
+        </a>
+    </div>
+
+    <!-- Tabla de Roles -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Roles del Sistema</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nombre del Rol</th>
+                            <th style="width: 30%;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for role in roles %}
+                        <tr>
+                            <td>{{ role.name }}</td>
+                            <td>
+                                <a href="{% url 'role_update' role.pk %}" class="btn btn-sm btn-primary">Editar Permisos</a>
+                                <a href="{% url 'role_members' role.pk %}" class="btn btn-sm btn-info">Gestionar Miembros</a>
+                                {% if role.name != 'Directores' %}
+                                <a href="{% url 'role_delete' role.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center">No hay roles definidos.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Resumen de Usuarios -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Resumen de Permisos por Usuario</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="userRolesTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Roles Asignados</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }} {% if user.is_superuser %}<span class="badge bg-success">Superusuario</span>{% endif %}</td>
+                            <td>
+                                {% for group in user.groups.all %}
+                                    <span class="badge bg-secondary rounded-pill">{{ group.name }}</span>
+                                {% empty %}
+                                    <span class="text-muted">Sin roles asignados</span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#userRolesTable').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/Spanish.json"
+        },
+        "pageLength": 10
+    });
+});
+</script>
+{% endblock %}

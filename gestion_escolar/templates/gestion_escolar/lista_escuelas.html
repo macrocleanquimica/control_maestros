@@ -51,12 +51,16 @@
                                     <a href="{% url 'detalle_escuela' escuela.pk %}" class="btn btn-sm btn-outline-info">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    {% if perms.gestion_escolar.change_escuela %}
                                     <a href="{% url 'editar_escuela' escuela.pk %}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    {% endif %}
+                                    {% if perms.gestion_escolar.delete_escuela %}
                                     <a href="{% url 'eliminar_escuela' escuela.pk %}" class="btn btn-sm btn-outline-danger">
                                         <i class="fas fa-trash"></i>
                                     </a>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>

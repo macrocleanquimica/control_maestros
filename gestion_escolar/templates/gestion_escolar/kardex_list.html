@@ -1,0 +1,54 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ titulo|default:"Kardex del Personal" }}</h2> 
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="tablaKardex" class="table table-striped table-hover" style="width:100%;" data-ajax-url="{% url 'kardex_maestros_ajax' %}">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Clave Presupuestal</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    if ($('#tablaKardex').length) {
+        $('#tablaKardex').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: $('#tablaKardex').data('ajax-url'),
+                type: 'GET'
+            },
+            columns: [
+                { data: 0 }, // Nombre
+                { data: 1 }, // Clave Presupuestal
+                { data: 2, orderable: false, searchable: false } // Acciones
+            ],
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

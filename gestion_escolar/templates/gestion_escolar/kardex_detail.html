@@ -1,0 +1,121 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-0">{{ titulo }}</h1>
+            <p class="text-muted mb-0">Historial completo de actividades y documentos.</p>
+        </div>
+        <a href="{% url 'kardex_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver a la lista
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <ul class="timeline">
+                {% for item in timeline %}
+                    <li class="timeline-item">
+                        <div class="timeline-badge">
+                            {% if item.tipo == 'Trámite' %}
+                                <i class="fas fa-file-alt text-primary"></i>
+                            {% elif item.tipo == 'Correspondencia' %}
+                                <i class="fas fa-envelope text-warning"></i>
+                            {% elif item.tipo == 'Movimiento Manual' %}
+                                <i class="fas fa-pencil-alt text-info"></i>
+                            {% else %}
+                                <i class="fas fa-history text-secondary"></i>
+                            {% endif %}
+                        </div>
+                        <div class="timeline-panel">
+                            <div class="timeline-heading">
+                                <h5 class="timeline-title">{{ item.descripcion }}</h5>
+                                <p><small class="text-muted"><i class="fas fa-clock me-1"></i>{{ item.fecha|date:"d/m/Y H:i" }}</small></p>
+                            </div>
+                            <div class="timeline-body">
+                                <p>{{ item.detalle }}</p>
+                                <hr>
+                                <p class="mb-0"><small><strong>Tipo:</strong> {{ item.tipo }} | <strong>Usuario:</strong> {{ item.usuario }}</small></p>
+                                
+                                <!-- Enlace al detalle si el objeto existe -->
+                                {% if item.objeto %}
+                                    <div class="mt-2">
+                                        {% if item.tipo == 'Trámite' and item.objeto.id %}
+                                            <a href="{% url 'historial_detalle_tramite' item.objeto.id %}" class="btn btn-sm btn-outline-primary">Ver Detalle del Trámite</a>
+                                        {% elif item.tipo == 'Correspondencia' and item.objeto.id %}
+                                            <a href="{% url 'registrocorrespondencia_detail' item.objeto.id %}" class="btn btn-sm btn-outline-warning">Ver Detalle de Correspondencia</a>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="timeline-item">
+                        <div class="timeline-badge"><i class="fas fa-exclamation-circle text-danger"></i></div>
+                        <div class="timeline-panel">
+                            <div class="timeline-body">
+                                <p>No hay ningún evento registrado en el historial de este maestro.</p>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    list-style: none;
+    padding: 20px 0 20px;
+    position: relative;
+}
+.timeline:before {
+    top: 0;
+    bottom: 0;
+    position: absolute;
+    content: " ";
+    width: 3px;
+    background-color: #eeeeee;
+    left: 25px;
+    margin-left: -1.5px;
+}
+.timeline-item {
+    margin-bottom: 20px;
+    position: relative;
+}
+.timeline-badge {
+    color: #fff;
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
+    font-size: 1.4em;
+    text-align: center;
+    position: absolute;
+    top: 16px;
+    left: 0;
+    margin-left: 0;
+    background-color: #999999;
+    z-index: 100;
+    border-top-right-radius: 50%;
+    border-top-left-radius: 50%;
+    border-bottom-right-radius: 50%;
+    border-bottom-left-radius: 50%;
+}
+.timeline-badge i {
+    position: relative;
+    top: 2px;
+}
+.timeline-panel {
+    margin-left: 80px;
+    border: 1px solid #d4d4d4;
+    border-radius: 2px;
+    padding: 20px;
+    position: relative;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+}
+</style>
+
+{% endblock %}

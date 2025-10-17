@@ -2,9 +2,9 @@ from django import forms
 from .models import (
     Zona, Escuela, Maestro, Categoria, MotivoTramite, 
     PlantillaTramite, Prelacion, TipoApreciacion, Vacancia, 
-    Pendiente, Correspondencia
+    Pendiente, Correspondencia, RegistroCorrespondencia
 )
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group, Permission
 import re
 
 class PendienteForm(forms.ModelForm):
@@ -21,6 +21,35 @@ class PendienteForm(forms.ModelForm):
             'descripcion': 'Descripción (Opcional)',
             'fecha_programada': 'Fecha Programada',
         }
+
+class RegistroCorrespondenciaForm(forms.ModelForm):
+    class Meta:
+        model = RegistroCorrespondencia
+        fields = [
+            'fecha_recibido', 'fecha_oficio', 'maestro', 'tipo_documento', 
+            'folio_documento', 'remitente', 'contenido', 'area', 'observaciones',
+            'archivo_adjunto', 'quien_recibio'
+        ]
+        widgets = {
+            'fecha_recibido': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'fecha_oficio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'maestro': forms.Select(attrs={'class': 'form-control select2'}),
+            'tipo_documento': forms.Select(attrs={'class': 'form-control'}),
+            'folio_documento': forms.TextInput(attrs={'class': 'form-control', 'style': 'text-transform: uppercase;'}),
+            'remitente': forms.TextInput(attrs={'class': 'form-control', 'style': 'text-transform: uppercase;'}),
+            'contenido': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'style': 'text-transform: uppercase;'}),
+            'area': forms.Select(attrs={'class': 'form-control'}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'style': 'text-transform: uppercase;'}),
+            'archivo_adjunto': forms.FileInput(attrs={'class': 'form-control-file'}),
+            'quien_recibio': forms.TextInput(attrs={'class': 'form-control', 'style': 'text-transform: uppercase;'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for field_name in ['folio_documento', 'remitente', 'contenido', 'observaciones', 'quien_recibio']:
+            if field_name in cleaned_data and cleaned_data[field_name]:
+                cleaned_data[field_name] = cleaned_data[field_name].upper()
+        return cleaned_data
 
 class CorrespondenciaForm(forms.ModelForm):
     class Meta:
@@ -395,3 +424,32 @@ class DocumentoExpedienteForm(forms.ModelForm):
             'tipo_documento': forms.Select(attrs={'class': 'form-control'}),
             'archivo': forms.FileInput(attrs={'class': 'form-control-file'}),
         }
+
+
+class RolePermissionForm(forms.ModelForm):
+    class Meta:
+        model = Group
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'name': 'Nombre del Rol',
+        }
+
+    permissions = forms.ModelMultipleChoiceField(
+        queryset=Permission.objects.filter(content_type__app_label='gestion_escolar'),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(RolePermissionForm, self).__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['permissions'].initial = self.instance.permissions.all()
+
+    def save(self, *args, **kwargs):
+        group = super(RolePermissionForm, self).save(commit=False)
+        group.save()
+        group.permissions.set(self.cleaned_data['permissions'])
+        return group

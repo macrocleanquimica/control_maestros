@@ -1,0 +1,71 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
+        <div>
+            <a href="{% url 'registrocorrespondencia_list' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Volver a la Lista
+            </a>
+            <a href="{% url 'registrocorrespondencia_update' registro.pk %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            {% if perms.gestion_escolar.delete_registrocorrespondencia %}
+                <a href="{% url 'registrocorrespondencia_delete' registro.pk %}" class="btn btn-danger btn-sm">
+                    <i class="fas fa-trash"></i> Eliminar
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Información del Registro</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Fecha de Recibido:</strong> {{ registro.fecha_recibido|date:"d/m/Y" }}</p>
+                    <p><strong>Fecha del Oficio:</strong> {{ registro.fecha_oficio|date:"d/m/Y" }}</p>
+                    <p><strong>Folio del Documento:</strong> {{ registro.folio_documento|default:"S/F" }}</p>
+                    <p><strong>Remitente:</strong> {{ registro.remitente }}</p>
+                    <p><strong>Quien Recibió:</strong> {{ registro.quien_recibio|default:"N/A" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Tipo de Documento:</strong> {{ registro.get_tipo_documento_display }}</p>
+                    <p><strong>Área Destino:</strong> {{ registro.get_area_display }}</p>
+                    <p><strong>Maestro Relacionado:</strong> 
+                        {% if registro.maestro %}
+                            <a href="{% url 'detalle_maestro' registro.maestro.pk %}">{{ registro.maestro }}</a>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </p>
+                    <p><strong>Fecha de Registro en Sistema:</strong> {{ registro.fecha_registro|date:"d/m/Y H:i" }}</p>
+                </div>
+            </div>
+            <hr>
+            <h5>Contenido del Oficio</h5>
+            <p style="white-space: pre-wrap;">{{ registro.contenido }}</p>
+            <hr>
+            <h5>Observaciones</h5>
+            <p style="white-space: pre-wrap;">{{ registro.observaciones|default:"Sin observaciones." }}</p>
+            {% if registro.archivo_adjunto %}
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Archivo Adjunto</h5>
+                </div>
+                <div class="card-body">
+                    <p>
+                        <a href="{{ registro.archivo_adjunto.url }}" target="_blank">
+                            <i class="fas fa-file-pdf"></i> Ver Archivo Adjunto ({{ registro.archivo_adjunto.name|cut:"correspondencia/" }})
+                        </a>
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

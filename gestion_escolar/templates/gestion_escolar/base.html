@@ -11,6 +11,7 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'gestion_escolar/css/custom.css' %}">
     <style>
         :root {
             --primary-color: #34495e; /* Dark Gray - for main elements, buttons, active states */
@@ -368,6 +369,8 @@
     </style>
 </head>
 <body>
+
+
     <!-- Pantalla de carga -->
     <div id="loading-overlay">
         <div class="spinner"></div>
@@ -395,7 +398,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'index' %}">
                             <i class="fas fa-tachometer-alt me-2"></i>
-                            <span class="sidebar-text">Dashboard</span>
+                            <span class="sidebar-text">Inicio</span>
                         </a>
                     </li>
 
@@ -405,14 +408,17 @@
 
 
                     <!-- Nav Item - Mis Pendientes -->
+                    {% if perms.gestion_escolar.acceder_pendientes %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'pendientes_activos' %}">
                             <i class="fas fa-tasks me-2"></i>
                             <span class="sidebar-text">Mis Pendientes</span>
                         </a>
                     </li>
+                    {% endif %}
                     
                     <!-- Menú desplegable para Personal -->
+                    {% if perms.gestion_escolar.view_maestro %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-users me-2"></i>
@@ -460,55 +466,78 @@
                             {% endif %}
                         </ul>
                     </li>
+                    {% endif %}
 
-                    {% if not user|has_group:"Directores" %}
+                    {% if perms.gestion_escolar.view_escuela %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'lista_escuelas' %}">
                             <i class="fas fa-school me-2"></i>
                             <span class="sidebar-text">Centros de Trabajo</span>
                         </a>
                     </li>
+                    {% endif %}
+                    {% if perms.gestion_escolar.view_categoria %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'lista_categorias' %}">
                             <i class="fas fa-tags me-2"></i>
                             <span class="sidebar-text">Categorías</span>
                         </a>
                     </li>
+                    {% endif %}
+                    {% if perms.gestion_escolar.view_zona %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'lista_zonas' %}">
                             <i class="fas fa-map-marked me-2"></i>
                             <span class="sidebar-text">Zonas</span>
                         </a>
                     </li>
+                    {% endif %}
                     
+                    {% if perms.gestion_escolar.acceder_oficios %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'generar_oficios' %}">
                             <i class="fas fa-file-signature me-2"></i>
                             <span class="sidebar-text">Oficios</span>
                         </a>
                     </li>
+                    {% endif %}
+                    {% if perms.gestion_escolar.acceder_tramites %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'generar_tramites_generales' %}">
                             <i class="fas fa-file-alt me-2"></i>
                             <span class="sidebar-text">Trámites</span>
                         </a>
                     </li>
+                    {% endif %}
+                    {% if perms.gestion_escolar.acceder_vacancias %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'gestionar_lote_vacancia' %}">
                             <i class="fas fa-file-invoice me-2"></i>
                             <span class="sidebar-text">Asignación de Vacancia</span>
                         </a>
                     </li>
+                    {% endif %}
+                    {% if perms.gestion_escolar.acceder_historial %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'historial' %}">
                             <i class="fas fa-history me-2"></i>
                             <span class="sidebar-text">Historial</span>
                         </a>
                     </li>
+                    {% endif %}
+                    {% if perms.gestion_escolar.acceder_reportes %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'reportes_dashboard' %}">
                             <i class="fas fa-chart-bar me-2"></i>
                             <span class="sidebar-text">Reportes</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if perms.gestion_escolar.view_registrocorrespondencia %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'registrocorrespondencia_list' %}">
+                            <i class="fas fa-archive me-2"></i>
+                            <span class="sidebar-text">Registro Correspondencia</span>
                         </a>
                     </li>
                     {% endif %}
@@ -560,15 +589,18 @@
                                 <i class="fas fa-user-circle"></i>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow animated--grow-in" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="{% url 'correspondencia_inbox' %}">
-                                    <i class="fas fa-envelope fa-sm fa-fw me-2 text-gray-400"></i>
-                                    Bandeja de Entrada
-                                </a></li>
-                                <li><a class="dropdown-item" href="{% url 'ajustes' %}">
-                                    <i class="fas fa-cogs fa-sm fa-fw me-2 text-gray-400"></i>
-                                    Ajustes
-                                </a></li>
-                                <li><hr class="dropdown-divider"></li>
+                                                            {% if perms.gestion_escolar.acceder_bandeja_entrada %}
+                                                            <li><a class="dropdown-item" href="{% url 'correspondencia_inbox' %}">
+                                                                <i class="fas fa-envelope fa-sm fa-fw me-2 text-gray-400"></i>
+                                                                Bandeja de Entrada
+                                                            </a></li>
+                                                            {% endif %}
+                                                            {% if perms.gestion_escolar.acceder_ajustes %}
+                                                            <li><a class="dropdown-item" href="{% url 'ajustes' %}">
+                                                                <i class="fas fa-cogs fa-sm fa-fw me-2 text-gray-400"></i>
+                                                                Ajustes
+                                                            </a></li>
+                                                            {% endif %}                                <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'logout' %}" id="logoutButton">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw me-2 text-gray-400"></i>
                                     Cerrar Sesión

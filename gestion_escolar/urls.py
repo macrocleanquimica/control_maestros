@@ -77,6 +77,7 @@ urlpatterns = [
     # URLs para Reportes
     path('reportes/', views.reportes_dashboard, name='reportes_dashboard'),
     path('reportes/personal_fuera_adscripcion/', views.reporte_personal_fuera_adscripcion, name='reporte_personal_fuera_adscripcion'),
+    path('reportes/distribucion_funcion/', views.reporte_distribucion_funcion, name='reporte_distribucion_funcion'),
 
     # URLs para Pendientes y Correspondencia
     path('pendientes/', views.PendienteActiveListView.as_view(), name='pendientes_activos'),
@@ -88,11 +89,25 @@ urlpatterns = [
     path('correspondencia/<int:pk>/', views.CorrespondenciaDetailView.as_view(), name='correspondencia_detail'),
     path('correspondencia/<int:pk>/eliminar/', views.correspondencia_eliminar, name='correspondencia_eliminar'),
 
+    # URLs para Registro de Correspondencia
+    path('registros_correspondencia/', views.RegistroCorrespondenciaListView.as_view(), name='registrocorrespondencia_list'),
+    path('registros_correspondencia/nuevo/', views.RegistroCorrespondenciaCreateView.as_view(), name='registrocorrespondencia_create'),
+    path('registros_correspondencia/<int:pk>/', views.RegistroCorrespondenciaDetailView.as_view(), name='registrocorrespondencia_detail'),
+    path('registros_correspondencia/<int:pk>/editar/', views.RegistroCorrespondenciaUpdateView.as_view(), name='registrocorrespondencia_update'),
+    path('registros_correspondencia/<int:pk>/eliminar/', views.RegistroCorrespondenciaDeleteView.as_view(), name='registrocorrespondencia_delete'),
+
     # URLs para Ajustes
     path('ajustes/', views.ajustes_view, name='ajustes'),
     path('ajustes/cambiar-password/', views.cambiar_password, name='cambiar_password'),
     path('ajustes/editar-perfil/', views.editar_perfil, name='editar_perfil'),
     path('ajustes/asignar-director/', views.asignar_director, name='asignar_director'),
+
+    # URLs para Roles y Permisos
+    path('ajustes/roles/', views.RoleListView.as_view(), name='role_list'),
+    path('ajustes/roles/nuevo/', views.RoleCreateView.as_view(), name='role_create'),
+    path('ajustes/roles/<int:pk>/editar/', views.RoleUpdateView.as_view(), name='role_update'),
+    path('ajustes/roles/<int:pk>/miembros/', views.manage_role_members, name='role_members'),
+    path('ajustes/roles/<int:pk>/eliminar/', views.RoleDeleteView.as_view(), name='role_delete'),
 
     # URLs para Autenticación
     path('login/', views.login_view, name='login'),
@@ -104,4 +119,9 @@ urlpatterns = [
     path('reset_password_sent/', auth_views.PasswordResetDoneView.as_view(template_name="gestion_escolar/password_reset/password_reset_done.html"), name="password_reset_done"),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name="gestion_escolar/password_reset/password_reset_confirm.html"), name="password_reset_confirm"),
     path('reset_password_complete/', auth_views.PasswordResetCompleteView.as_view(template_name="gestion_escolar/password_reset/password_reset_complete.html"), name="password_reset_complete"),
+
+    # URLs para Kardex
+    path('kardex/ajax/', views.kardex_maestros_ajax, name='kardex_maestros_ajax'),
+    path('kardex/', views.kardex_maestro_list, name='kardex_list'),
+    path('kardex/maestro/<str:maestro_id>/', views.kardex_maestro_detail, name='kardex_maestro_detail'),
 ]

@@ -195,7 +195,6 @@ class Maestro(models.Model):
         ('NIÑERO(A)', 'Niñero(a)'),
         ('SECRETARIO', 'Secretario'),
         ('SECRETARIA ', 'Secretaria'),
-        ('INTENDENTE', 'Intendente'),
         ('VELADOR', 'Velador'),
         ('VIGILANTE', 'Vigilante'),
         ('VIGILANTE ', 'Vigilante'),
@@ -232,7 +231,7 @@ class Maestro(models.Model):
         ('ASESOR_JURIDICO', 'Asesor Jurídico'),
         ('AUXILIAR_DE_GRUPO', 'Auxiliar de Grupo'),
         ('MAESTRO_DE_COMUNICACION', 'Maestro(a) de Comunicación'),
-        ('MAESTRO_AULA_HOSPITALARIA', 'Maestro(a) Aula Hospitalaria'),
+        ('MAESTRO_AULA_HOSPITALARIA', 'Maestro Aula Hospitalaria'),
         ('', 'No especificado'),
     ]
     
@@ -392,8 +391,8 @@ class PlantillaTramite(models.Model):
         ('TRAMITE', 'Trámite'),
     ]
     tipo_documento = models.CharField(
-        max_length=10,
-        choices=TIPO_DOCUMENTO_CHOICES,
+        max_length=10, 
+        choices=TIPO_DOCUMENTO_CHOICES, 
         default='TRAMITE',
         verbose_name="Tipo de Documento",
         help_text="Indica si la plantilla es para un Oficio o un Trámite general."
@@ -583,6 +582,111 @@ class Correspondencia(models.Model):
     def __str__(self):
         return f"De: {self.remitente.username} | Para: {self.destinatario.username} | Asunto: {self.asunto}"
 
+class RegistroCorrespondencia(models.Model):
+    TIPO_DOCUMENTO_CHOICES = [
+        ('OFICIO', 'Oficio'),
+        ('TARJETA', 'Tarjeta'),
+        ('CIRCULAR', 'Circular'),
+        ('INVITACION', 'Invitación'),
+        ('OTRO', 'Otro'),
+    ]
+    AREA_CHOICES = [
+        ('OPERATIVO', 'Operativo'),
+        ('ACADEMICA', 'Académica'),
+        ('DIRECCION', 'Dirección'),
+        ('OTRO', 'Otro'),
+    ]
+
+    fecha_recibido = models.DateField(verbose_name="Fecha de Recibido")
+    fecha_oficio = models.DateField(verbose_name="Fecha del Oficio")
+    maestro = models.ForeignKey(
+        Maestro,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Maestro Relacionado (Opcional)",
+        related_name='correspondencia_recibida'
+    )
+    tipo_documento = models.CharField(
+        max_length=20, 
+        choices=TIPO_DOCUMENTO_CHOICES, 
+        verbose_name="Tipo de Documento"
+    )
+    folio_documento = models.CharField(max_length=100, verbose_name="Folio del Documento", blank=True)
+    remitente = models.CharField(max_length=255, verbose_name="Remitente (De)")
+    contenido = models.TextField(verbose_name="Contenido del Oficio")
+    area = models.CharField(
+        max_length=20, 
+        choices=AREA_CHOICES, 
+        verbose_name="Área Destino"
+    )
+    observaciones = models.TextField(verbose_name="Observaciones", blank=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    archivo_adjunto = models.FileField(upload_to='correspondencia/', blank=True, null=True, verbose_name="Archivo Adjunto (PDF)")
+    quien_recibio = models.CharField(max_length=255, verbose_name="Quien Recibió", blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Registro de Correspondencia"
+        verbose_name_plural = "Registros de Correspondencia"
+        ordering = ['-fecha_recibido', '-fecha_registro']
+
+    def __str__(self):
+        return f"Oficio {self.folio_documento} de {self.remitente} ({self.fecha_recibido})"
+
+# --- MODELOS ANCLA PARA PERMISOS PERSONALIZADOS ---
+# Estos modelos no crean tablas en la BD (managed=False)
+# Su único propósito es servir como ancla para permisos
+# que se pueden asignar a los roles en la matriz visual.
+
+class ModuloOficios(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de Oficios"
+        permissions = (("acceder_oficios", "Puede acceder al módulo de Oficios"),)
+
+class ModuloTramites(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de Trámites"
+        permissions = (("acceder_tramites", "Puede acceder al módulo de Trámites"),)
+
+class ModuloVacancias(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de Asignación de Vacancia"
+        permissions = (("acceder_vacancias", "Puede acceder al módulo de Asignación de Vacancia"),)
+
+class ModuloHistorial(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de Historial"
+        permissions = (("acceder_historial", "Puede acceder al módulo de Historial"),)
+
+class ModuloAjustes(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de Ajustes"
+        permissions = (("acceder_ajustes", "Puede acceder al módulo de Ajustes"),)
+
+class ModuloBandejaEntrada(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de Bandeja de Entrada"
+        permissions = (("acceder_bandeja_entrada", "Puede acceder a la Bandeja de Entrada"),)
+
+class ModuloReportes(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de Reportes"
+        permissions = (("acceder_reportes", "Puede acceder al módulo de Reportes"),)
+
+class ModuloMisPendientes(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de Mis Pendientes"
+        permissions = (("acceder_pendientes", "Puede acceder al módulo de Mis Pendientes"),)
+
+
 class Notificacion(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notificaciones', verbose_name="Usuario")
     mensaje = models.CharField(max_length=255, verbose_name="Mensaje")
@@ -615,3 +719,29 @@ class Pendiente(models.Model):
         return self.titulo
 
 # --- FIN DE NUEVOS MODELOS ---
+
+class ModuloDashboard(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de Dashboard"
+        permissions = (
+            ("ver_estadisticas_generales", "Puede ver las estadísticas generales del dashboard"),
+            ("ver_grafico_distribucion_zona", "Puede ver el gráfico de distribución por zona"),
+            ("ver_lista_pendientes", "Puede ver la lista de pendientes próximos"),
+            ("ver_lista_ultimo_personal", "Puede ver la lista de último personal registrado"),
+            ("ver_ultima_correspondencia", "Puede ver la tarjeta de última correspondencia registrada"),
+        )
+
+class KardexMovimiento(models.Model):
+    maestro = models.ForeignKey(Maestro, on_delete=models.CASCADE, verbose_name="Maestro")
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Usuario")
+    fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha del Movimiento")
+    descripcion = models.TextField(verbose_name="Descripción del Movimiento")
+
+    class Meta:
+        verbose_name = "Movimiento de Kardex"
+        verbose_name_plural = "Movimientos de Kardex"
+        ordering = ['-fecha']
+
+    def __str__(self):
+        return f"Movimiento {self.id} - {self.maestro}"

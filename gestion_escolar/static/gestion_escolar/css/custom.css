@@ -1,0 +1,25 @@
+.card .card-body {
+    position: relative;
+    display: flex; /* Habilitar flexbox */
+    flex-direction: column; /* Apilar elementos verticalmente */
+    justify-content: space-between; /* Distribuir espacio entre elementos */
+    min-height: 180px; /* Restaurar min-height */
+}
+.card .stretched-link::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    pointer-events: auto;
+    content: "";
+    background-color: rgba(0,0,0,0);
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}

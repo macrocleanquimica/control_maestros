@@ -1,0 +1,161 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-2 text-gray-800">{{ titulo }}</h1>
+    <p class="mb-4">Este reporte muestra la distribución del personal por función, con filtros por zona escolar y centro de trabajo.</p>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" action="{% url 'reporte_distribucion_funcion' %}">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="zona">Zona Escolar</label>
+                            <select name="zona" id="zona" class="form-control">
+                                <option value="">Todas</option>
+                                {% for zona in zonas %}
+                                    <option value="{{ zona.pk }}" {% if zona.pk == selected_zona %}selected{% endif %}>
+                                        {{ zona.numero }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="escuela">Centro de Trabajo</label>
+                            <select name="escuela" id="escuela" class="form-control">
+                                <option value="">Todos</option>
+                                {% for escuela in escuelas %}
+                                    <option value="{{ escuela.pk }}" data-zona="{{ escuela.zona_esc_id }}" {% if escuela.pk == selected_escuela %}selected{% endif %}>
+                                        {{ escuela.nombre_ct }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Filtrar</button>
+                        <a href="{% url 'reporte_distribucion_funcion' %}" class="btn btn-secondary ms-2">Limpiar</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Gráfico de Distribución</h6>
+        </div>
+        <div class="card-body">
+            <div class="chart-bar">
+                <canvas id="myBarChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.chart-bar {
+  position: relative;
+  height: 20rem;
+  width: 100%;
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Bar Chart
+    var ctx = document.getElementById("myBarChart");
+    var myBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ labels|safe }},
+            datasets: [{
+                label: "Total",
+                backgroundColor: "#4e73df",
+                hoverBackgroundColor: "#2e59d9",
+                borderColor: "#4e73df",
+                data: {{ data|safe }},
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 25,
+                    top: 25,
+                    bottom: 0
+                }
+            },
+            scales: {
+                xAxes: [{
+                    gridLines: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 20
+                    },
+                    maxBarThickness: 25,
+                }],
+                yAxes: [{
+                    ticks: {
+                        min: 0,
+                        padding: 10,
+                    },
+                    gridLines: {
+                        color: "rgb(234, 236, 244)",
+                        zeroLineColor: "rgb(234, 236, 244)",
+                        drawBorder: false,
+                        borderDash: [2],
+                        zeroLineBorderDash: [2]
+                    }
+                }],
+            },
+            legend: {
+                display: false
+            },
+            tooltips: {
+                titleMarginBottom: 10,
+                titleFontColor: '#6e707e',
+                titleFontSize: 14,
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+        }
+    });
+
+    // Cascading dropdowns
+    const zonaSelect = document.getElementById('zona');
+    const escuelaSelect = document.getElementById('escuela');
+    const escuelaOptions = Array.from(escuelaSelect.options);
+
+    zonaSelect.addEventListener('change', function() {
+        const selectedZona = this.value;
+        escuelaSelect.innerHTML = '<option value="">Todos</option>';
+
+        escuelaOptions.forEach(option => {
+            if (option.value === "" || option.dataset.zona === selectedZona) {
+                escuelaSelect.add(option.cloneNode(true));
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

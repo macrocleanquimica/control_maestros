@@ -16,9 +16,10 @@
 
                     {% if user.is_superuser %}
                     <hr>
-                    <h5>Gestión de Directores</h5>
+                    <h5>Gestión del Sistema</h5>
                     <ul>
                         <li><a href="{% url 'asignar_director' %}">Asignar Director</a></li>
+                        <li><a href="{% url 'role_list' %}">Roles y Permisos</a></li>
                     </ul>
                     {% endif %}
                 </div>

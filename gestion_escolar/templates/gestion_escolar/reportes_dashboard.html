@@ -10,78 +10,62 @@
         <h1 class="h3 mb-0 text-gray-800">Dashboard de Reportes</h1>
     </div>
 
-    <div class="row">
-        <!-- Aquí irán las tarjetas de cada reporte -->
-        
-        <!-- Ejemplo de Tarjeta para Reporte Tabular -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Reporte de Personal</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">Personal Fuera de Adscripción</div>
-                            <p class="mt-2 text-gray-600 small">Muestra el personal que no está en su C.C.T. de pago.</p>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-friends fa-2x text-gray-300"></i>
-                        </div>
+    <div class="row d-flex align-items-stretch g-4">
+        <!-- Tarjeta para Reporte de Personal Desubicado -->
+        <div class="col-md-4 mb-4 d-flex">
+            <div class="card border-left-primary shadow h-100 flex-grow-1">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            PERSONAL DESUBICADO</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Reporte de Personal Desubicado</div>
+                        <p class="mt-2 text-gray-600 small">Muestra el personal que no está en su C.C.T. de pago.</p>
+                    </div>
+                    <div class="text-end mt-auto">
+                        <i class="fas fa-user-friends fa-2x text-gray-300"></i>
                     </div>
                     <a href="{% url 'reporte_personal_fuera_adscripcion' %}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
 
-        <!-- Ejemplo de Tarjeta para Reporte Gráfico -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Reporte Gráfico</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">Distribución por Función</div>
-                             <p class="mt-2 text-gray-600 small">Gráfico con la distribución del personal según su función.</p>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-chart-pie fa-2x text-gray-300"></i>
-                        </div>
+        <!-- Tarjeta para Reporte Gráfico de Distribución por Función -->
+        <div class="col-md-4 mb-4 d-flex">
+            <div class="card border-left-success shadow h-100 flex-grow-1">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Reporte Gráfico</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Distribución por Función</div>
+                        <p class="mt-2 text-gray-600 small">Gráfico con la distribución del personal según su función.</p>
                     </div>
-                     <a href="{% url 'reporte_personal_fuera_adscripcion' %}" class="stretched-link"></a>
+                    <div class="text-end mt-auto">
+                        <i class="fas fa-chart-pie fa-2x text-gray-300"></i>
+                    </div>
+                    <a href="{% url 'reporte_distribucion_funcion' %}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
 
-        <!-- Puedes agregar más tarjetas aquí -->
-
+        <!-- Tarjeta para Movimientos del Kardex -->
+        <div class="col-md-4 mb-4 d-flex">
+            <div class="card border-left-info shadow h-100 flex-grow-1">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Kardex</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Movimientos del Kardex</div>
+                        <p class="mt-2 text-gray-600 small">Consulta los movimientos de los Maestros.</p>
+                    </div>
+                    <div class="text-end mt-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                    <a href="{% url 'kardex_list' %}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<style>
-    .card .card-body {
-        position: relative;
-    }
-    .card .stretched-link::after {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 1;
-        pointer-events: auto;
-        content: "";
-        background-color: rgba(0,0,0,0);
-    }
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-    }
-    .card {
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
-</style>
-{% endblock %}

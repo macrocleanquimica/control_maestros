@@ -1,0 +1,23 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Eliminar Rol: {{ role.name }}</h6>
+        </div>
+        <div class="card-body">
+            <p>¿Estás seguro de que deseas eliminar el rol <strong>{{ role.name }}</strong>?</p>
+            <p class="text-danger">Esta acción no se puede deshacer. Los usuarios que pertenezcan a este rol perderán todos los permisos asociados a él.</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+                <a href="{% url 'role_list' %}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

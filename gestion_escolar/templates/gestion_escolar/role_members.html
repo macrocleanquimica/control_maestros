@@ -1,0 +1,66 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Columna de Usuarios Disponibles -->
+            <div class="col-lg-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Usuarios Disponibles</h6>
+                    </div>
+                    <div class="card-body" style="height: 400px; overflow-y: auto;">
+                        {% for user in non_members %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="users_to_add" value="{{ user.pk }}" id="add-user-{{ user.pk }}">
+                            <label class="form-check-label" for="add-user-{{ user.pk }}">
+                                {{ user.username }}
+                            </label>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">No hay más usuarios para agregar.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna de Miembros Actuales -->
+            <div class="col-lg-6">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Miembros Actuales del Rol</h6>
+                    </div>
+                    <div class="card-body" style="height: 400px; overflow-y: auto;">
+                        {% for user in members %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="users_to_remove" value="{{ user.pk }}" id="remove-user-{{ user.pk }}">
+                            <label class="form-check-label" for="remove-user-{{ user.pk }}">
+                                {{ user.username }}
+                            </label>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">Este rol no tiene miembros.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success btn-lg">Guardar Cambios</button>
+        <a href="{% url 'role_list' %}" class="btn btn-secondary btn-lg">Salir</a>
+    </form>
+</div>
+{% endblock %}

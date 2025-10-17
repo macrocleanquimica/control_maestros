@@ -5,20 +5,22 @@ from django.contrib.auth import update_session_auth_hash
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, CreateView, DetailView
+from django.contrib.auth.decorators import login_required, user_passes_test, permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
+from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.utils import timezone
 
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group, User, Permission
+from django.contrib.contenttypes.models import ContentType
 from .forms import (ZonaForm, EscuelaForm, MaestroForm, CategoriaForm, TramiteForm, 
                    SignUpForm, VacanciaForm, DocumentoExpedienteForm, 
-                   CustomUserChangeForm, AsignarDirectorForm, PendienteForm, CorrespondenciaForm)
+                   CustomUserChangeForm, AsignarDirectorForm, PendienteForm, CorrespondenciaForm, RegistroCorrespondenciaForm,
+                   RolePermissionForm)
 from .models import (Zona, Escuela, Maestro, Categoria, MotivoTramite, 
                    PlantillaTramite, Prelacion, LoteReporteVacancia, Vacancia, 
                    TipoApreciacion, Historial, DocumentoExpediente, 
-                   Correspondencia, Notificacion, Pendiente)
+                   Correspondencia, Notificacion, Pendiente, RegistroCorrespondencia, KardexMovimiento)
 from django.db.models import Q, Count
 from django.http import JsonResponse, HttpResponse
 import csv
@@ -458,41 +460,41 @@ def get_prelacion_data_ajax(request):
     return JsonResponse(datos_prelacion)
 
 # Vistas principales
+@login_required
 def index(request):
-    total_zonas = Zona.objects.count()
-    total_escuelas = Escuela.objects.count()
-    total_maestros = Maestro.objects.count()
-    total_directores = Maestro.objects.filter(funcion__icontains='DIRECTOR').count()
-
-    distribucion_por_zona = Zona.objects.annotate(num_escuelas=Count('escuela')).order_by('numero')
-
-    zona_labels = [f"Zona {zona.numero}" for zona in distribucion_por_zona]
-    zona_data = [zona.num_escuelas for zona in distribucion_por_zona]
-
-    ultimo_personal = Maestro.objects.order_by('-fecha_registro')[:5]
-
-    # Obtener los 5 pendientes más próximos para el usuario actual
-    today = timezone.now().date()
-    ultimos_pendientes = Pendiente.objects.filter(
-        usuario=request.user,
-        completado=False,
-        fecha_programada__lte=today
-    ).order_by('fecha_programada')[:5]
-
     context = {
-        'total_zonas': total_zonas,
-        'total_escuelas': total_escuelas,
-        'total_maestros': total_maestros,
-        'total_directores': total_directores,
-        'ultimo_personal': ultimo_personal,
-        'ultimos_pendientes': ultimos_pendientes,
-        'zona_labels': json.dumps(zona_labels),
-        'zona_data': json.dumps(zona_data),
         'titulo': 'Dashboard'
     }
+
+    # Check permissions for each section
+    if request.user.has_perm('gestion_escolar.ver_estadisticas_generales'):
+        context['total_zonas'] = Zona.objects.count()
+        context['total_escuelas'] = Escuela.objects.count()
+        context['total_maestros'] = Maestro.objects.count()
+        context['total_directores'] = Maestro.objects.filter(funcion__icontains='DIRECTOR').count()
+
+    if request.user.has_perm('gestion_escolar.ver_grafico_distribucion_zona'):
+        distribucion_por_zona = Zona.objects.annotate(num_escuelas=Count('escuela')).order_by('numero')
+        context['zona_labels'] = json.dumps([f"Zona {zona.numero}" for zona in distribucion_por_zona])
+        context['zona_data'] = json.dumps([zona.num_escuelas for zona in distribucion_por_zona])
+
+    if request.user.has_perm('gestion_escolar.ver_lista_pendientes'):
+        today = timezone.now().date()
+        context['ultimos_pendientes'] = Pendiente.objects.filter(
+            usuario=request.user,
+            completado=False,
+            fecha_programada__lte=today
+        ).order_by('fecha_programada')[:5]
+
+    if request.user.has_perm('gestion_escolar.ver_lista_ultimo_personal'):
+        context['ultimo_personal'] = Maestro.objects.order_by('-fecha_registro')[:5]
+
+    if request.user.has_perm('gestion_escolar.view_registrocorrespondencia'):
+        context['ultima_correspondencia'] = RegistroCorrespondencia.objects.order_by('-fecha_registro')[:5]
+
     return render(request, 'gestion_escolar/index.html', context)
 
-@login_required
+@permission_required('gestion_escolar.acceder_ajustes', raise_exception=True)
 def ajustes_view(request):
     return render(request, 'gestion_escolar/ajustes.html', {'titulo': 'Ajustes'})
 
@@ -741,13 +743,19 @@ def lista_maestros_ajax(request):
     # Preparar datos para la respuesta JSON
     data = []
     for maestro in queryset:
-        actions = f'''
-            <div class="btn-group" role="group">
-                <a href="{reverse('detalle_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-info"><i class="fas fa-eye"></i></a>
-                <a href="{reverse('editar_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
-                <a href="{reverse('eliminar_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>
-            </div>
-        '''
+        actions = '<div class="btn-group" role="group">'
+        # View button is always available if they can see the list
+        actions += f'<a href="{reverse('detalle_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-info"><i class="fas fa-eye"></i></a>'
+        
+        # Conditional Edit button
+        if request.user.has_perm('gestion_escolar.change_maestro'):
+            actions += f'<a href="{reverse('editar_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>'
+
+        # Conditional Delete button
+        if request.user.has_perm('gestion_escolar.delete_maestro'):
+            actions += f'<a href="{reverse('eliminar_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>'
+        
+        actions += '</div>'
         status_map = {'ACTIVO': 'success', 'INACTIVO': 'warning'}
         status_class = status_map.get(maestro.status, 'secondary')
         status_html = f'<span class="badge bg-{status_class}">{maestro.get_status_display()}</span>'
@@ -898,7 +906,7 @@ def eliminar_documento_expediente(request, doc_pk):
             messages.success(request, 'Documento eliminado correctamente.')
             return redirect('detalle_maestro', pk=maestro_id)
         except Exception as e:
-            messages.error(request, f'Error al eliminar el documento: {e}')
+            messages.error(request, f"Error al eliminar el documento: {e}")
             return redirect('detalle_maestro', pk=maestro_id)
 
     context = {
@@ -990,9 +998,8 @@ def lista_docentes_apoyo(request):
     return lista_por_funcion(request, 'DOCENTE_APOYO')
 
 # Vistas para Trámites
+@permission_required('gestion_escolar.acceder_tramites', raise_exception=True)
 def generar_tramites_generales(request):
-    if request.user.groups.filter(name='Directores').exists():
-        raise PermissionDenied
     if request.method == 'POST':
         form = TramiteForm(request.POST, form_type='tramites') # Pass form_type
         if form.is_valid():
@@ -1038,9 +1045,8 @@ def generar_tramites_generales(request):
     }
     return render(request, 'gestion_escolar/generar_tramite.html', context)
 
+@permission_required('gestion_escolar.acceder_oficios', raise_exception=True)
 def generar_oficios(request):
-    if request.user.groups.filter(name='Directores').exists():
-        raise PermissionDenied
     if request.method == 'POST':
         form = TramiteForm(request.POST, form_type='oficios') # Pass form_type
         if form.is_valid():
@@ -1216,7 +1222,7 @@ def eliminar_categoria(request, pk):
 from django.http import JsonResponse, HttpResponse, FileResponse, HttpResponseForbidden
 from django.db.models.functions import Upper, Trim
 
-@login_required
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
 def reportes_dashboard(request):
     context = {
         'titulo': 'Dashboard de Reportes'
@@ -1240,10 +1246,8 @@ def reporte_personal_fuera_adscripcion(request):
     }
     return render(request, 'gestion_escolar/reporte_fuera_adscripcion.html', context)
 
-@login_required
+@permission_required('gestion_escolar.acceder_historial', raise_exception=True)
 def historial(request):
-    if request.user.groups.filter(name='Directores').exists():
-        raise PermissionDenied
     historial_items = Historial.objects.select_related('usuario', 'maestro').all()
     context = {
         'historial_items': historial_items,
@@ -1559,10 +1563,8 @@ def exportar_maestros_excel(request):
 
     return response
 
-@login_required
+@permission_required('gestion_escolar.acceder_vacancias', raise_exception=True)
 def gestionar_lote_vacancia(request):
-    if request.user.groups.filter(name='Directores').exists():
-        raise PermissionDenied
     # Busca un lote en proceso para el usuario actual o crea uno nuevo
     # Primero, intenta obtener un lote existente
     lotes_en_proceso = LoteReporteVacancia.objects.filter(
@@ -1835,7 +1837,8 @@ class PendienteCreateView(LoginRequiredMixin, CreateView):
         context['titulo'] = 'Crear Nuevo Pendiente'
         return context
 
-class PendienteActiveListView(LoginRequiredMixin, ListView):
+class PendienteActiveListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    permission_required = 'gestion_escolar.acceder_pendientes'
     model = Pendiente
     template_name = 'gestion_escolar/pendiente_list.html'
     context_object_name = 'pendientes'
@@ -1881,7 +1884,8 @@ def pendiente_marcar_completado(request, pk):
 
 # --- VISTAS PARA CORRESPONDENCIA ---
 
-class CorrespondenciaInboxView(LoginRequiredMixin, ListView):
+class CorrespondenciaInboxView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    permission_required = 'gestion_escolar.acceder_bandeja_entrada'
     model = Correspondencia
     template_name = 'gestion_escolar/correspondencia_inbox.html'
     context_object_name = 'mensajes'
@@ -1927,22 +1931,390 @@ def correspondencia_eliminar(request, pk):
 
 
 class CorrespondenciaCreateView(LoginRequiredMixin, CreateView):
+
+
     form_class = CorrespondenciaForm
+
+
     template_name = 'gestion_escolar/correspondencia_form.html'
+
+
     success_url = reverse_lazy('correspondencia_inbox')
 
+
+
+
+
     def form_valid(self, form):
+
+
         form.instance.remitente = self.request.user
+
+
         messages.success(self.request, "Mensaje enviado correctamente.")
+
+
         return super().form_valid(form)
 
+
+
+
+
     def get_form(self, form_class=None):
+
+
         form = super().get_form(form_class)
+
+
         # Excluir al usuario actual de la lista de destinatarios
+
+
         form.fields['destinatario'].queryset = User.objects.exclude(pk=self.request.user.pk)
+
+
         return form
+
+
+
+
+
+        def get_context_data(self, **kwargs):
+            context = super().get_context_data(**kwargs)
+            context['titulo'] = 'Redactar Nuevo Mensaje'
+            return context
+
+
+
+class RegistroCorrespondenciaListView(LoginRequiredMixin, ListView):
+    model = RegistroCorrespondencia
+    template_name = 'gestion_escolar/registrocorrespondencia_list.html'
+    context_object_name = 'registros'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['titulo'] = 'Redactar Nuevo Mensaje'
+        context['titulo'] = 'Registro de Correspondencia'
         return context
+
+class RegistroCorrespondenciaCreateView(LoginRequiredMixin, CreateView):
+    model = RegistroCorrespondencia
+    form_class = RegistroCorrespondenciaForm
+    template_name = 'gestion_escolar/registrocorrespondencia_form.html'
+    success_url = reverse_lazy('registrocorrespondencia_list')
+
+class RegistroCorrespondenciaDetailView(LoginRequiredMixin, DetailView):
+    model = RegistroCorrespondencia
+    template_name = 'gestion_escolar/registrocorrespondencia_detail.html'
+    context_object_name = 'registro'
+
+class RegistroCorrespondenciaUpdateView(LoginRequiredMixin, UpdateView):
+    model = RegistroCorrespondencia
+    form_class = RegistroCorrespondenciaForm
+    template_name = 'gestion_escolar/registrocorrespondencia_form.html'
+    success_url = reverse_lazy('registrocorrespondencia_list')
+
+class RegistroCorrespondenciaDeleteView(LoginRequiredMixin, DeleteView):
+    model = RegistroCorrespondencia
+    template_name = 'gestion_escolar/registrocorrespondencia_confirm_delete.html'
+    success_url = reverse_lazy('registrocorrespondencia_list')
+
+class RoleListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Group
+    template_name = 'gestion_escolar/role_list.html'
+    context_object_name = 'roles'
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo'] = 'Gestión de Roles y Permisos'
+        context['users'] = User.objects.all()
+        return context
+
+def get_permissions_matrix():
+    from django.contrib.contenttypes.models import ContentType
+    from django.contrib.auth.models import Permission
+
+    matrix = []
+    # Define los modelos que quieres en la matriz y su orden
+    ordered_models = [
+        'zona', 'escuela', 'maestro', 'categoria', 
+        'historial', 'pendiente', 'correspondencia', 'registrocorrespondencia'
+    ]
+    
+    app_models = ContentType.objects.filter(app_label='gestion_escolar').order_by('model')
+
+    for model_name in ordered_models:
+        try:
+            ct = app_models.get(model=model_name)
+            perms = Permission.objects.filter(content_type=ct)
+            matrix.append({
+                'model_name': ct.name,
+                'type': 'crud',
+                'view': perms.filter(codename__startswith='view_').first(),
+                'add': perms.filter(codename__startswith='add_').first(),
+                'change': perms.filter(codename__startswith='change_').first(),
+                'delete': perms.filter(codename__startswith='delete_').first(),
+            })
+        except ContentType.DoesNotExist:
+            continue
+
+    # Añadir permisos personalizados
+    custom_perms_codenames = [
+        'acceder_oficios', 'acceder_tramites', 'acceder_vacancias', 
+        'acceder_historial', 'acceder_ajustes', 'acceder_bandeja_entrada',
+        'acceder_reportes', 'acceder_pendientes',
+        # New dashboard permissions
+        'ver_estadisticas_generales', 'ver_grafico_distribucion_zona',
+        'ver_lista_pendientes', 'ver_lista_ultimo_personal', 'ver_ultima_correspondencia',
+        'acceder_kardex',
+    ]
+    
+    for codename in custom_perms_codenames:
+        try:
+            perm = Permission.objects.get(codename=codename)
+            matrix.append({
+                'model_name': perm.name,
+                'type': 'custom',
+                'permission': perm
+            })
+        except Permission.DoesNotExist:
+            continue
+            
+    return matrix
+
+class RoleCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = Group
+    form_class = RolePermissionForm
+    template_name = 'gestion_escolar/role_form.html'
+    success_url = reverse_lazy('role_list')
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo'] = 'Crear Nuevo Rol'
+        context['permissions_matrix'] = get_permissions_matrix()
+        return context
+
+class RoleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Group
+    form_class = RolePermissionForm
+    template_name = 'gestion_escolar/role_form.html'
+    success_url = reverse_lazy('role_list')
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['titulo'] = f'Editar Rol: {self.object.name}'
+        context['permissions_matrix'] = get_permissions_matrix()
+        return context
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def manage_role_members(request, pk):
+    role = get_object_or_404(Group, pk=pk)
+    users_in_role = role.user_set.all()
+    users_not_in_role = User.objects.exclude(groups=role)
+
+    if request.method == 'POST':
+        users_to_add = request.POST.getlist('users_to_add')
+        users_to_remove = request.POST.getlist('users_to_remove')
+
+        for user_id in users_to_add:
+            user = User.objects.get(pk=user_id)
+            user.groups.add(role)
+        
+        for user_id in users_to_remove:
+            user = User.objects.get(pk=user_id)
+            user.groups.remove(role)
+        
+        messages.success(request, 'Miembros del rol actualizados correctamente.')
+        return redirect('role_members', pk=pk)
+
+    context = {
+        'titulo': f'Gestionar Miembros del Rol: {role.name}',
+        'role': role,
+        'members': users_in_role,
+        'non_members': users_not_in_role
+    }
+    return render(request, 'gestion_escolar/role_members.html', context)
+
+class RoleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Group
+    template_name = 'gestion_escolar/role_confirm_delete.html'
+    success_url = reverse_lazy('role_list')
+    def test_func(self):
+        return self.request.user.is_superuser
+
+@login_required
+def reporte_distribucion_funcion(request):
+    maestros_qs = Maestro.objects.all()
+
+    # Get filter parameters
+    zona_id = request.GET.get('zona')
+    escuela_id = request.GET.get('escuela')
+
+    if zona_id:
+        maestros_qs = maestros_qs.filter(id_escuela__zona_esc_id=zona_id)
+    
+    if escuela_id:
+        maestros_qs = maestros_qs.filter(id_escuela_id=escuela_id)
+
+    # Group by function and count
+    distribucion = maestros_qs.values('funcion').annotate(total=Count('funcion')).order_by('-total')
+
+    # Prepare data for Chart.js
+    labels = [d['funcion'] for d in distribucion]
+    data = [d['total'] for d in distribucion]
+
+    # Get all zonas and escuelas for the filters
+    zonas = Zona.objects.all()
+    escuelas = Escuela.objects.all()
+
+    context = {
+        'titulo': 'Distribución de Personal por Función',
+        'labels': json.dumps(labels),
+        'data': json.dumps(data),
+        'zonas': zonas,
+        'escuelas': escuelas,
+        'selected_zona': int(zona_id) if zona_id else None,
+        'selected_escuela': int(escuela_id) if escuela_id else None,
+    }
+    return render(request, 'gestion_escolar/reporte_distribucion_funcion.html', context)
+
+# --- VISTAS PARA KARDEX ---
+
+@login_required
+def kardex_maestros_ajax(request):
+    draw = int(request.GET.get('draw', 0))
+    start = int(request.GET.get('start', 0))
+    length = int(request.GET.get('length', 10))
+    search_value = request.GET.get('search[value]', '')
+
+    order_column_index = int(request.GET.get('order[0][column]', 0))
+    order_dir = request.GET.get('order[0][dir]', 'asc')
+    column_names = ['a_paterno', 'clave_presupuestal'] 
+    order_column = column_names[order_column_index]
+    if order_dir == 'desc':
+        order_column = f'-{order_column}'
+
+    queryset = Maestro.objects.all().exclude(id_maestro__isnull=True).exclude(id_maestro='')
+    records_total = queryset.count()
+
+    if search_value:
+        from unidecode import unidecode
+        search_terms = search_value.split()
+        table_name = Maestro._meta.db_table
+        
+        where_clauses = []
+        params = []
+
+        for term in search_terms:
+            unaccented_term = f'%{unidecode(term)}%'
+            term_with_wildcards = f'%{term}%'
+            
+            term_clause = f"""(
+                unaccent({table_name}.nombres) LIKE %s OR
+                unaccent({table_name}.a_paterno) LIKE %s OR
+                unaccent({table_name}.a_materno) LIKE %s OR
+                {table_name}.clave_presupuestal LIKE %s
+            )"""
+            where_clauses.append(term_clause)
+            
+            params.extend([unaccented_term, unaccented_term, unaccented_term, term_with_wildcards])
+
+        if where_clauses:
+            queryset = queryset.extra(where=[" AND ".join(where_clauses)], params=params)
+
+    records_filtered = queryset.count()
+    queryset = queryset.order_by(order_column)[start:start + length]
+
+    data = []
+    for maestro in queryset:
+        actions = f'<a href="{reverse("kardex_maestro_detail", args=[maestro.pk])}" class="btn btn-sm btn-info">Ver Kardex</a>'
+        data.append([
+            f'{maestro.a_paterno} {maestro.a_materno} {maestro.nombres}',
+            maestro.clave_presupuestal or '-',
+            actions
+        ])
+
+    response = {
+        'draw': draw,
+        'recordsTotal': records_total,
+        'recordsFiltered': records_filtered,
+        'data': data,
+    }
+    return JsonResponse(response)
+
+@permission_required('gestion_escolar.acceder_kardex', raise_exception=True)
+def kardex_maestro_list(request):
+    """Muestra una lista de maestros para seleccionar y ver su kardex."""
+    # La lógica ahora está en la vista AJAX, este template solo renderiza la tabla base
+    context = {
+        'titulo': 'Kardex del Personal'
+    }
+    return render(request, 'gestion_escolar/kardex_list.html', context)
+
+@permission_required('gestion_escolar.acceder_kardex', raise_exception=True)
+def kardex_maestro_detail(request, maestro_id):
+    """Muestra una línea de tiempo unificada para un maestro específico."""
+    maestro = get_object_or_404(Maestro, pk=maestro_id)
+    
+    timeline = []
+
+    # 4. Obtener registros de Historial
+    # Incluir registros donde el maestro es el titular o donde aparece como maestro secundario (interino)
+    maestro_full_name = f"{maestro.nombres or ''} {maestro.a_paterno or ''} {maestro.a_materno or ''}".strip()
+    historial_maestro = Historial.objects.filter(
+        Q(maestro=maestro) | Q(maestro_secundario_nombre=maestro_full_name)
+    ).select_related('usuario')
+    for item in historial_maestro:
+        timeline.append({
+            'fecha': item.fecha_creacion,
+            'tipo': 'Trámite',
+            'descripcion': item.tipo_documento,
+            'detalle': item.motivo or 'Ver documento',
+            'usuario': item.usuario.username if item.usuario else 'Sistema',
+            'objeto': item
+        })
+
+    # 2. Obtener registros de RegistroCorrespondencia
+    correspondencia_recibida = RegistroCorrespondencia.objects.filter(maestro=maestro)
+    for item in correspondencia_recibida:
+        # Convertir date a datetime para unificar el tipo en la timeline
+        fecha_dt = datetime.combine(item.fecha_recibido, datetime.min.time())
+        timeline.append({
+            'fecha': fecha_dt,
+            'tipo': 'Correspondencia',
+            'descripcion': f"Recibido: {item.get_tipo_documento_display()} de {item.remitente}",
+            'detalle': item.contenido,
+            'usuario': item.quien_recibio or 'N/A',
+            'objeto': item
+        })
+
+    # 3. Obtener registros de KardexMovimiento
+    movimientos_kardex = KardexMovimiento.objects.filter(maestro=maestro).select_related('usuario')
+    for item in movimientos_kardex:
+        timeline.append({
+            'fecha': item.fecha,
+            'tipo': 'Movimiento Manual',
+            'descripcion': 'Anotación en Kardex',
+            'detalle': item.descripcion,
+            'usuario': item.usuario.username if item.usuario else 'Sistema',
+            'objeto': item
+        })
+
+    # Ordenar la línea de tiempo por fecha, de más reciente a más antiguo
+    timeline.sort(key=lambda x: x['fecha'], reverse=True)
+
+    context = {
+        'maestro': maestro,
+        'timeline': timeline,
+        'titulo': f'Kardex de {maestro}'
+    }
+    
+    return render(request, 'gestion_escolar/kardex_detail.html', context)
