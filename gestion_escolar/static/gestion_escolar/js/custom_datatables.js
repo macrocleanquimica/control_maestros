@@ -71,4 +71,14 @@ $(document).ready(function() {
         // Redirigir para iniciar la descarga
         window.location.href = url;
     });
+
+    // Also, ensure the input field itself converts to uppercase on keyup
+    $(document).on('keyup', '.dataTables_filter input', function() {
+        var input = $(this);
+        var start = input.prop('selectionStart');
+        var end = input.prop('selectionEnd');
+        input.val(input.val().toUpperCase());
+        input.prop('selectionStart', start);
+        input.prop('selectionEnd', end);
+    });
 });

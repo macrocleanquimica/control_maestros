@@ -5,12 +5,15 @@
 
 {% block content %}
 <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">Detalle del Personal: {{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</h4>
+        <a href="{% url 'lista_maestros' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
+        </a>
+    </div>
     <div class="row">
         <div class="col-12">
             <div class="card content-card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Detalle del Personal: {{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</h4>
-                </div>
                 <div class="card-body">
                     {% if maestro.techo_f and maestro.id_escuela and maestro.techo_f != maestro.id_escuela.id_escuela %}
                     <div class="alert alert-warning" role="alert">
@@ -50,9 +53,10 @@
                         </div>
                     </div>
                     <hr>
-                    <a href="{% url 'lista_maestros' %}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Volver a la Lista</a>
-                    <button onclick="window.print();" class="btn btn-info"><i class="fas fa-print me-2"></i>Imprimir Ficha</button>
-                    <a href="{% url 'export_maestro_excel' pk=maestro.id_maestro %}" class="btn btn-success no-loader"><i class="fas fa-file-excel me-2"></i>Exportar a Excel</a>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button onclick="window.print();" class="btn btn-info"><i class="fas fa-print me-2"></i>Imprimir Ficha</button>
+                        <a href="{% url 'export_maestro_excel' pk=maestro.id_maestro %}" class="btn btn-success no-loader"><i class="fas fa-file-excel me-2"></i>Exportar a Excel</a>
+                    </div>
                 </div>
             </div>
         </div>

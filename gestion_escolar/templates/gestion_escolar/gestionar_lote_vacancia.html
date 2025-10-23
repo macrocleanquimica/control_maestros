@@ -93,25 +93,6 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-4 mb-3" id="nombre_interino_manual_div">
-        <label for="id_nombre_interino" class="form-label">Nombre Interino (manual)</label>
-        {{ form.nombre_interino }}
-        {% if form.nombre_interino.errors %}
-            <div class="text-danger small mt-1">
-                {{ form.nombre_interino.errors|striptags }}
-            </div>
-        {% endif %}
-    </div>
-    <div class="col-md-6 col-lg-4 mb-3" id="curp_interino_manual_div">
-        <label for="id_curp_interino" class="form-label">CURP Interino (manual)</label>
-        {{ form.curp_interino }}
-        {% if form.curp_interino.errors %}
-            <div class="text-danger small mt-1">
-                {{ form.curp_interino.errors|striptags }}
-            </div>
-        {% endif %}
-    </div>
-
     <!-- Tabla de vacancias en el lote actual -->
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">

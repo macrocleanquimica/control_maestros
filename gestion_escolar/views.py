@@ -1248,7 +1248,7 @@ def reporte_personal_fuera_adscripcion(request):
 
 @permission_required('gestion_escolar.acceder_historial', raise_exception=True)
 def historial(request):
-    historial_items = Historial.objects.select_related('usuario', 'maestro').all()
+    historial_items = Historial.objects.select_related('usuario', 'maestro').all().order_by('-fecha_creacion')
     context = {
         'historial_items': historial_items,
         'titulo': 'Historial de Documentos'
@@ -1659,6 +1659,41 @@ def gestionar_lote_vacancia(request):
             vacancia.nombre_titular_reporte = f'{maestro.nombres} {maestro.a_paterno} {maestro.a_materno}'
 
             vacancia.save()
+
+            # --- Crear registro en el historial para la vacancia ---
+            maestro_titular_obj = vacancia.maestro_titular
+            maestro_interino_obj = vacancia.maestro_interino
+
+            datos_tramite_vacancia = {
+                "tipo_movimiento": "Detalle de Asignación de Vacancia",
+                "id_vacancia": vacancia.id,
+                "clave_presupuestal_posicion": vacancia.clave_presupuestal,
+                "maestro_titular_info": {
+                    "id_maestro": maestro_titular_obj.id_maestro,
+                    "nombre_completo": get_full_name(maestro_titular_obj),
+                    "clave_presupuestal": maestro_titular_obj.generar_clave_presupuestal()
+                }
+            }
+
+            if maestro_interino_obj:
+                datos_tramite_vacancia["maestro_interino_info"] = {
+                    "id_maestro": maestro_interino_obj.id_maestro,
+                    "nombre_completo": get_full_name(maestro_interino_obj),
+                    "clave_presupuestal": maestro_interino_obj.generar_clave_presupuestal()
+                }
+
+            Historial.objects.create(
+                usuario=request.user,
+                tipo_documento="Asignación de Vacancia",
+                maestro=maestro_titular_obj,
+                maestro_secundario_nombre=get_full_name(maestro_interino_obj) if maestro_interino_obj else '',
+                ruta_archivo="", # No hay archivo específico para esta entrada de historial de vacancia
+                motivo="Asignación de Vacancia",
+                lote_reporte=lote,
+                datos_tramite=datos_tramite_vacancia
+            )
+            # --- Fin del registro en historial ---
+
             messages.success(request, "Vacancia agregada al lote actual.")
             return redirect('gestionar_lote_vacancia')
         else:
@@ -1702,15 +1737,28 @@ def exportar_lote_vacancia(request, lote_id):
     for vacancia in vacancias:
         for i, field_name in enumerate(campos_excel):
             cell = sheet.cell(row=row_num, column=i + 1)
-            valor = getattr(vacancia, field_name, '')
+            valor = '' # Default value
+
+            if field_name == 'curp_interino':
+                if vacancia.maestro_interino:
+                    valor = vacancia.maestro_interino.curp or ''
+                else:
+                    valor = vacancia.curp_interino or '' # Fallback to manual field for old data
+            elif field_name == 'nombre_interino':
+                if vacancia.maestro_interino:
+                    valor = get_full_name(vacancia.maestro_interino)
+                else:
+                    valor = vacancia.nombre_interino or '' # Fallback to manual field for old data
+            elif field_name == 'tipo_vacante': # New condition for tipo_vacante
+                # Get the display value from choices, then capitalize the first letter
+                valor = vacancia.get_tipo_vacante_display().capitalize()
+            else:
+                valor = getattr(vacancia, field_name, '')
             
-            # Transformación específica para zona_economica (Romanos a Arábigos)
+            # Transformación para zona_economica (Roman to Arabic)
             if field_name == 'zona_economica' and isinstance(valor, str):
                 valor = valor.replace('Zona II', 'Zona 2').replace('Zona III', 'Zona 3')
 
-            # Si el campo es una FK, obtener su representación de texto
-            if hasattr(valor, 'descripcion'):
-                valor = valor.descripcion
             cell.value = valor
         row_num += 1
 
@@ -2207,7 +2255,8 @@ def kardex_maestros_ajax(request):
 
     if search_value:
         from unidecode import unidecode
-        search_terms = search_value.split()
+        search_value_upper = search_value.upper() # Convert search value to uppercase
+        search_terms = search_value_upper.split() # Use uppercase search value
         table_name = Maestro._meta.db_table
         
         where_clauses = []
@@ -2218,10 +2267,10 @@ def kardex_maestros_ajax(request):
             term_with_wildcards = f'%{term}%'
             
             term_clause = f"""(
-                unaccent({table_name}.nombres) LIKE %s OR
-                unaccent({table_name}.a_paterno) LIKE %s OR
-                unaccent({table_name}.a_materno) LIKE %s OR
-                {table_name}.clave_presupuestal LIKE %s
+                UPPER(unaccent({table_name}.nombres)) LIKE %s OR
+                UPPER(unaccent({table_name}.a_paterno)) LIKE %s OR
+                UPPER(unaccent({table_name}.a_materno)) LIKE %s OR
+                UPPER({table_name}.clave_presupuestal) LIKE %s
             )"""
             where_clauses.append(term_clause)
             
@@ -2273,11 +2322,27 @@ def kardex_maestro_detail(request, maestro_id):
         Q(maestro=maestro) | Q(maestro_secundario_nombre=maestro_full_name)
     ).select_related('usuario')
     for item in historial_maestro:
+        detalle_display = item.motivo or 'Ver documento'
+        if item.tipo_documento == "Asignación de Vacancia" and item.datos_tramite:
+            vacancia_data = item.datos_tramite.get("detalles_vacancia", {})
+            claves_presupuestales = []
+            if vacancia_data.get("clave_presupuestal_posicion"):
+                claves_presupuestales.append(f"Posición: {vacancia_data['clave_presupuestal_posicion']}")
+            if vacancia_data.get("maestro_titular_info", {}).get("clave_presupuestal"):
+                claves_presupuestales.append(f"Titular: {vacancia_data['maestro_titular_info']['clave_presupuestal']}")
+            if vacancia_data.get("maestro_interino_info", {}).get("clave_presupuestal"):
+                claves_presupuestales.append(f"Interino: {vacancia_data['maestro_interino_info']['clave_presupuestal']}")
+            
+            if claves_presupuestales:
+                detalle_display = "Claves Presupuestales: " + ", ".join(claves_presupuestales)
+            else:
+                detalle_display = "Asignación de Vacancia (sin claves presupuestales registradas)"
+
         timeline.append({
             'fecha': item.fecha_creacion,
             'tipo': 'Trámite',
             'descripcion': item.tipo_documento,
-            'detalle': item.motivo or 'Ver documento',
+            'detalle': detalle_display, # Usar el detalle_display modificado
             'usuario': item.usuario.username if item.usuario else 'Sistema',
             'objeto': item
         })
@@ -2285,10 +2350,11 @@ def kardex_maestro_detail(request, maestro_id):
     # 2. Obtener registros de RegistroCorrespondencia
     correspondencia_recibida = RegistroCorrespondencia.objects.filter(maestro=maestro)
     for item in correspondencia_recibida:
-        # Convertir date a datetime para unificar el tipo en la timeline
-        fecha_dt = datetime.combine(item.fecha_recibido, datetime.min.time())
+        # Convertir date a datetime y hacerlo timezone-aware para unificar el tipo en la timeline
+        fecha_dt_naive = datetime.combine(item.fecha_recibido, datetime.min.time())
+        fecha_dt_aware = timezone.make_aware(fecha_dt_naive, timezone.get_current_timezone())
         timeline.append({
-            'fecha': fecha_dt,
+            'fecha': fecha_dt_aware, # Use the timezone-aware datetime
             'tipo': 'Correspondencia',
             'descripcion': f"Recibido: {item.get_tipo_documento_display()} de {item.remitente}",
             'detalle': item.contenido,

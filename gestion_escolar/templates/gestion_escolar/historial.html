@@ -11,7 +11,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped table-hover datatable-search" id="dataTable" width="100%" cellspacing="0">
+                <table class="table table-striped table-hover" id="dataTable" width="100%" cellspacing="0">
                     <thead>
                         <tr>
                             <th>Usuario</th>
@@ -34,10 +34,10 @@
                             {% if item.tipo_documento == "Reporte de Vacancia" %}
                                 <td>Múltiples</td>
                                 <td>N/A</td>
-                                <td>N/A</td> {# For Maestro Interino #}
+                                <td>N/A</td>
                             {% else %}
                                 <td>{{ item.maestro|default:"N/A" }}</td>
-                                <td>{{ item.maestro_secundario_nombre|default:"N/A" }}</td> {# For Maestro Interino #}
+                                <td>{{ item.maestro_secundario_nombre|default:"N/A" }}</td>
                                 <td>{{ item.maestro.clave_presupuestal|default:"N/A" }}</td>
                             {% endif %}
                             <td>{{ item.motivo|default:"N/A" }}</td>
@@ -54,17 +54,17 @@
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
-                                    {% if item.ruta_archivo %}
-                                        <a href="{% url 'descargar_archivo_historial' item.id %}" class="btn btn-outline-primary btn-sm me-1" target="_blank" title="Descargar"><i class="fas fa-download"></i></a>
+                                    {% if item.tipo_documento == "Reporte de Vacancia" and item.lote_reporte %}
+                                        <a href="{% url 'historial_detalle_lote' item.id %}" class="btn btn-sm btn-outline-info" title="Ver Detalles"><i class="fas fa-eye"></i></a>
+                                    {% elif item.tipo_documento|startswith:"Trámite -" or item.tipo_documento|startswith:"Oficio -" %}
+                                        <a href="{% url 'historial_detalle_tramite' item.id %}" class="btn btn-sm btn-outline-info" title="Ver Detalles"><i class="fas fa-eye"></i></a>
                                     {% endif %}
-                                    <button class="btn btn-outline-danger btn-sm btn-delete-historial me-1" data-item-id="{{ item.id }}" title="Eliminar">
+                                    {% if item.ruta_archivo %}
+                                        <a href="{% url 'descargar_archivo_historial' item.id %}" class="btn btn-sm btn-outline-primary" target="_blank" title="Descargar"><i class="fas fa-download"></i></a>
+                                    {% endif %}
+                                    <button class="btn btn-sm btn-outline-danger btn-delete-historial" data-item-id="{{ item.id }}" title="Eliminar">
                                         <i class="fas fa-trash"></i>
                                     </button>
-                                    {% if item.tipo_documento == "Reporte de Vacancia" and item.lote_reporte %}
-                                        <a href="{% url 'historial_detalle_lote' item.id %}" class="btn btn-outline-info btn-sm" title="Ver Detalles"><i class="fas fa-eye"></i></a>
-                                    {% elif item.tipo_documento|startswith:"Trámite -" or item.tipo_documento|startswith:"Oficio -" %}
-                                        <a href="{% url 'historial_detalle_tramite' item.id %}" class="btn btn-outline-info btn-sm" title="Ver Detalles"><i class="fas fa-eye"></i></a>
-                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
@@ -80,6 +80,36 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Configuración más robusta para DataTables
+    var table = $('#dataTable').DataTable({
+        "order": [[1, "desc"]],
+        "columnDefs": [
+            {
+                "targets": 1, // Columna de fecha
+                "type": "date",
+                "render": function (data, type, row) {
+                    // Forzar el formato de fecha para ordenamiento
+                    if (type === 'sort') {
+                        // Convertir "22/10/2025 10:43" a "2025-10-22 10:43" para ordenamiento
+                        var parts = data.split(' ');
+                        var datePart = parts[0].split('/');
+                        return datePart[2] + '-' + datePart[1] + '-' + datePart[0] + (parts[1] ? ' ' + parts[1] : '');
+                    }
+                    return data;
+                }
+            }
+        ],
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+        },
+        "stateSave": false, // Evitar que guarde el estado anterior
+        "destroy": true, // Destruir cualquier instancia previa
+        "retrieve": true
+    });
+
+    // Forzar reordenamiento después de la inicialización
+    table.order([1, 'desc']).draw();
+
     // Función para obtener el token CSRF de las cookies
     function getCookie(name) {
         let cookieValue = null;
@@ -114,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    $('#dataTable').DataTable().row($(button).parents('tr')).remove().draw();
+                    table.row($(button).parents('tr')).remove().draw();
                     alert(data.message);
                 } else {
                     alert('Error: ' + data.message);
@@ -158,18 +188,13 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.status === 'success') {
                 const displayDiv = cell.find('.observacion-display');
-                // Actualizar el contenido y volver a añadir el botón de editar
                 displayDiv.html(newText ? newText.replace(/\n/g, '<br>') : 'Sin observaciones');
                 displayDiv.append(' <button class="btn btn-link btn-sm btn-edit-observacion"><i class="fas fa-pencil-alt"></i></button>');
                 
-                // Ocultar edición y mostrar display
                 cell.find('.observacion-edit').hide();
                 displayDiv.show();
                 
-                // Re-dibujar la fila en datatables para que se ajuste la altura si es necesario
-                $('#dataTable').DataTable().row(cell.closest('tr')).invalidate('data').draw(false);
-
-                // alert(data.message); // Opcional: puede ser molesto
+                table.row(cell.closest('tr')).invalidate('data').draw(false);
             } else {
                 alert('Error: ' + data.message);
             }

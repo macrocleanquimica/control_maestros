@@ -3,7 +3,12 @@
 
 {% block content %}
 <div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
+        <a href="{% url 'historial' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver al Historial
+        </a>
+    </div>
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">
@@ -36,7 +41,18 @@
                             <tr>
                                 <td><strong>{{ key|title|replace:"_ | " }}:</strong></td>
                                 <td>
-                                    {% if key == "maestro_titular" or key == "maestro_interino" %}
+                                    {% if key == "detalles_vacancia" %}
+                                        {% with vacancia_details=value %}
+                                            <p><strong>ID Vacancia:</strong> {{ vacancia_details.id_vacancia }}</p>
+                                            <p><strong>Clave Presupuestal Posición:</strong> {{ vacancia_details.clave_presupuestal_posicion }}</p>
+                                            {% if vacancia_details.maestro_titular_info %}
+                                                <p><strong>Maestro Titular:</strong> {{ vacancia_details.maestro_titular_info.nombre_completo }} (Clave: {{ vacancia_details.maestro_titular_info.clave_presupuestal }})</p>
+                                            {% endif %}
+                                            {% if vacancia_details.maestro_interino_info %}
+                                                <p><strong>Maestro Interino:</strong> {{ vacancia_details.maestro_interino_info.nombre_completo }} (Clave: {{ vacancia_details.maestro_interino_info.clave_presupuestal }})</p>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% elif key == "maestro_titular" or key == "maestro_interino" %}
                                         {% comment %} Asumiendo que estos son IDs de maestro, buscar el nombre {% endcomment %}
                                         {% with maestro_obj=value|get_maestro_by_id %}
                                             {{ maestro_obj|default:value }}
@@ -62,7 +78,6 @@
                     </tbody>
                 </table>
             </div>
-            <a href="{% url 'historial' %}" class="btn btn-secondary mt-3">Volver al Historial</a>
         </div>
     </div>
 </div>
