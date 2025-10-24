@@ -314,6 +314,27 @@
             }, 1000); // 1 segundo de retraso
         });
 
+        // Lógica para ocultar/mostrar campos basados en el Tipo de Vacante
+        var tipoVacanteField = $('#id_tipo_vacante');
+        var fechaFinalContainer = $('#id_fecha_final').closest('.col-md-6');
+        var motivoMovimientoContainer = $('#id_tipo_movimiento_original').closest('.col-md-6');
+
+        function updateFieldsBasedOnTipoVacante() {
+            if (tipoVacanteField.val() === 'DEFINITIVA') {
+                fechaFinalContainer.hide();
+                motivoMovimientoContainer.hide();
+            } else {
+                fechaFinalContainer.show();
+                motivoMovimientoContainer.show();
+            }
+        }
+
+        // Ejecutar al cargar la página
+        updateFieldsBasedOnTipoVacante();
+
+        // Ejecutar al cambiar el tipo de vacante
+        tipoVacanteField.on('change', updateFieldsBasedOnTipoVacante);
+
     });
 </script>
 {% endblock %}  

@@ -474,9 +474,9 @@ class Vacancia(models.Model):
     maestro_interino = models.ForeignKey(Maestro, on_delete=models.SET_NULL, null=True, blank=True, related_name='vacancias_interino', verbose_name="Maestro Interino")
     apreciacion = models.ForeignKey(TipoApreciacion, on_delete=models.PROTECT, verbose_name="Apreciación")
     tipo_vacante = models.CharField(max_length=100, choices=TIPO_VACANTE_CHOICES, verbose_name="Tipo de Vacante")
-    tipo_movimiento_original = models.CharField(max_length=100, choices=MOTIVO_MOVIMIENTO_CHOICES, verbose_name="Motivo del Movimiento") # Ej: BECA COMISIÓN
+    tipo_movimiento_original = models.CharField(max_length=100, choices=MOTIVO_MOVIMIENTO_CHOICES, verbose_name="Motivo del Movimiento", null=True, blank=True) # Ej: BECA COMISIÓN
     fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
-    fecha_final = models.DateField(verbose_name="Fecha Final")
+    fecha_final = models.DateField(verbose_name="Fecha Final", null=True)
     observaciones = models.TextField(blank=True, null=True)
     nombre_interino = models.CharField(max_length=255, blank=True, null=True, verbose_name="Nombre Interino (manual)")
     curp_interino = models.CharField(max_length=18, blank=True, null=True, verbose_name="CURP Interino (manual)")
@@ -498,7 +498,7 @@ class Vacancia(models.Model):
     techo_financiero = models.CharField(max_length=50)
     clave_ct = models.CharField(max_length=20)
     turno = models.CharField(max_length=50)
-    tipo_movimiento_reporte = models.CharField(max_length=100, verbose_name="Tipo de Movimiento para Reporte") # Ej: LICENCIA POR BECA
+    tipo_movimiento_reporte = models.CharField(max_length=100, verbose_name="Tipo de Movimiento para Reporte", null=True, blank=True) # Ej: LICENCIA POR BECA
     nombre_titular_reporte = models.CharField(max_length=255)
     pseudoplaza = models.CharField(max_length=1, blank=True, null=True, verbose_name="Pseudoplaza")
 

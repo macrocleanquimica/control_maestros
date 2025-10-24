@@ -2,10 +2,17 @@ from django.contrib import admin
 from import_export import resources, fields
 from import_export.widgets import ForeignKeyWidget
 from import_export.admin import ImportExportModelAdmin
-from .models import Zona, Escuela, Maestro, Categoria, MotivoTramite, PlantillaTramite, Prelacion, Director, DocumentoExpediente
+from .models import (Zona, Escuela, Maestro, Categoria, MotivoTramite, 
+                   PlantillaTramite, Prelacion, Director, DocumentoExpediente, TipoApreciacion)
 from .forms import DocumentoExpedienteForm
 
 # Register your models here.
+
+class TipoApreciacionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'descripcion')
+    search_fields = ('descripcion',)
+
+admin.site.register(TipoApreciacion, TipoApreciacionAdmin)
 
 
 

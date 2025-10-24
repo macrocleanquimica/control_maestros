@@ -1290,14 +1290,22 @@ def historial_detalle_tramite(request, historial_id):
 def descargar_archivo_historial(request, item_id):
     item = get_object_or_404(Historial, id=item_id)
     
+    file_path = item.ruta_archivo
+    if not file_path and item.lote_reporte and item.lote_reporte.archivo_generado:
+        file_path = item.lote_reporte.archivo_generado.path
+
+    if not file_path:
+        messages.error(request, "No hay archivo para descargar.")
+        return redirect('historial')
+
     # Security check to prevent directory traversal
-    if not os.path.abspath(item.ruta_archivo).startswith(os.path.abspath(settings.BASE_DIR)):
+    if not os.path.abspath(file_path).startswith(os.path.abspath(settings.BASE_DIR)):
         messages.error(request, "Acceso denegado.")
         return redirect('historial')
 
-    if os.path.exists(item.ruta_archivo):
+    if os.path.exists(file_path):
         try:
-            return FileResponse(open(item.ruta_archivo, 'rb'), as_attachment=True, filename=os.path.basename(item.ruta_archivo))
+            return FileResponse(open(file_path, 'rb'), as_attachment=True, filename=os.path.basename(file_path))
         except Exception as e:
             messages.error(request, f"No se pudo abrir el archivo: {e}")
             return redirect('historial')
@@ -1710,7 +1718,10 @@ def gestionar_lote_vacancia(request):
     }
     return render(request, 'gestion_escolar/gestionar_lote_vacancia.html', context)
 
+from django.views.decorators.clickjacking import xframe_options_exempt
+
 @login_required
+@xframe_options_exempt
 def exportar_lote_vacancia(request, lote_id):
     lote = get_object_or_404(LoteReporteVacancia, id=lote_id, usuario_generador=request.user)
     vacancias = lote.vacancias.all()
@@ -1749,6 +1760,11 @@ def exportar_lote_vacancia(request, lote_id):
                     valor = get_full_name(vacancia.maestro_interino)
                 else:
                     valor = vacancia.nombre_interino or '' # Fallback to manual field for old data
+            elif field_name == 'apreciacion':
+                if vacancia.apreciacion:
+                    valor = vacancia.apreciacion.descripcion
+                else:
+                    valor = ''
             elif field_name == 'tipo_vacante': # New condition for tipo_vacante
                 # Get the display value from choices, then capitalize the first letter
                 valor = vacancia.get_tipo_vacante_display().capitalize()
@@ -1757,13 +1773,17 @@ def exportar_lote_vacancia(request, lote_id):
             
             # Transformación para zona_economica (Roman to Arabic)
             if field_name == 'zona_economica' and isinstance(valor, str):
-                valor = valor.replace('Zona II', 'Zona 2').replace('Zona III', 'Zona 3')
+                roman_to_arabic_map = {
+                    'Zona II': 'Zona 2',
+                    'Zona III': 'Zona 3',
+                }
+                valor = roman_to_arabic_map.get(valor, valor)
 
             cell.value = valor
         row_num += 1
 
     # Guardar el archivo en el servidor
-    output_dir = os.path.join(settings.BASE_DIR, 'reportes_vacancias')
+    output_dir = os.path.join(settings.MEDIA_ROOT, 'reportes_vacancias')
     os.makedirs(output_dir, exist_ok=True)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1814,7 +1834,8 @@ def get_maestro_data_for_vacancia(request):
             maestro = Maestro.objects.get(id_maestro=maestro_id)
             data = {
                 'nombre_completo': f'{maestro.nombres} {maestro.a_paterno} {maestro.a_materno}',
-                'clave_presupuestal': maestro.clave_presupuestal
+                'clave_presupuestal': maestro.clave_presupuestal,
+                'categoria': maestro.categog.id_categoria if maestro.categog else ''
             }
         except Maestro.DoesNotExist:
             data = {'error': 'Maestro no encontrado'}

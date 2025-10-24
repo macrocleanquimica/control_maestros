@@ -99,6 +99,16 @@ class VacanciaForm(forms.ModelForm):
         self.fields['maestro_titular'].queryset = Maestro.objects.all().order_by('a_paterno', 'a_materno', 'nombres')
         self.fields['maestro_interino'].queryset = Maestro.objects.all().order_by('a_paterno', 'a_materno', 'nombres')
         self.fields['maestro_interino'].required = False # Make interino optional
+        self.fields['fecha_final'].required = False
+        self.fields['tipo_movimiento_original'].required = False
+
+        # Ensure the special apreciacion is always in the choices
+        promocion_apreciacion, created = TipoApreciacion.objects.get_or_create(
+            descripcion="PROMOCIÓN.EDUCACIÓN BÁSICA.DIRECCIÓN.ESPECIAL.ESPECIAL.DIRECTOR DE ESCUELA DE EDUCACIÓN ESPECIAL"
+        )
+        existing_queryset = self.fields['apreciacion'].queryset
+        self.fields['apreciacion'].queryset = (existing_queryset | TipoApreciacion.objects.filter(pk=promocion_apreciacion.pk)).distinct().order_by('descripcion')
+
         for field_name, field in self.fields.items():
             if field_name not in ['maestro_titular', 'maestro_interino', 'apreciacion', 'tipo_vacante', 'tipo_movimiento_original']:
                 field.widget.attrs.update({'class': 'form-control'})
@@ -107,12 +117,27 @@ class VacanciaForm(forms.ModelForm):
         cleaned_data = super().clean()
         maestro = cleaned_data.get("maestro_titular")
         apreciacion = cleaned_data.get("apreciacion")
+        tipo_vacante = cleaned_data.get("tipo_vacante")
 
-        if not maestro or not apreciacion:
+        if not maestro:
             return cleaned_data
 
         categoria = maestro.categog.id_categoria if maestro.categog else ""
+
+        if not apreciacion:
+            # Si la apreciación no se asignó automáticamente y no se proveyó, es un error.
+            self.add_error('apreciacion', 'Este campo es requerido.')
+            return cleaned_data
+
         apreciacion_desc = apreciacion.descripcion
+
+        # Si la vacante es definitiva, la fecha final no es requerida y debe ser nula.
+        if tipo_vacante == 'DEFINITIVA':
+            cleaned_data['fecha_final'] = None
+            cleaned_data['tipo_movimiento_original'] = None
+        elif not cleaned_data.get('fecha_final'):
+            # Si es temporal, la fecha final es obligatoria.
+            self.add_error('fecha_final', 'Este campo es requerido para vacantes temporales.')
 
         if apreciacion_desc == "ADMISIÓN.EDUCACIÓN BÁSICA.DOCENTE.EDUCACIÓN ESPECIAL.PSICOLOGÍA EDUCATIVA":
             if categoria not in ["E0689", "P04803"]:
@@ -123,7 +148,7 @@ class VacanciaForm(forms.ModelForm):
         validation_rules = {
             ("E0687", "E0281", "E0181", "E0681", "E0671"): "ADMISIÓN.EDUCACIÓN BÁSICA.DOCENTE.EDUCACIÓN ESPECIAL.EDUCACIÓN ESPECIAL",
             ("E0763", "E0761"): "ADMISIÓN.EDUCACIÓN BÁSICA.DOCENTE.EDUCACIÓN FÍSICA",
-            ("E0629", "E0221"): "PROMOCIÓN. EDUCACIÓN BÁSICA. DIRECCIÓN. ESPECIAL. ESPECIAL. DIRECTOR DE ESCUELA DE EDUCACIÓN ESPECIAL",
+            ("E0629", "E0221"): "PROMOCIÓN.EDUCACIÓN BÁSICA.DIRECCIÓN.ESPECIAL.ESPECIAL.DIRECTOR DE ESCUELA DE EDUCACIÓN ESPECIAL",
             ("E0633",): "PROMOCIÓN. EDUCACIÓN BÁSICA. SUPERVISIÓN. ESPECIAL. ESPECIAL. SUPERVISOR DE EDUCACIÓN ESPECIAL. FORÁNEO",
             ("E0465", "E0461"): "ADMISIÓN.EDUCACIÓN BÁSICA.TÉCNICO DOCENTE.EDUCACIÓN ESPECIAL.MAESTRO DE TALLER",
         }

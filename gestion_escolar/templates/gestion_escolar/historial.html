@@ -54,12 +54,12 @@
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
-                                    {% if item.tipo_documento == "Reporte de Vacancia" and item.lote_reporte %}
+                                    {% if item.tipo_documento == "Reporte de Vacancia" and item.lote_reporte or item.tipo_documento == "Asignación de Vacancia" and item.lote_reporte %}
                                         <a href="{% url 'historial_detalle_lote' item.id %}" class="btn btn-sm btn-outline-info" title="Ver Detalles"><i class="fas fa-eye"></i></a>
                                     {% elif item.tipo_documento|startswith:"Trámite -" or item.tipo_documento|startswith:"Oficio -" %}
                                         <a href="{% url 'historial_detalle_tramite' item.id %}" class="btn btn-sm btn-outline-info" title="Ver Detalles"><i class="fas fa-eye"></i></a>
                                     {% endif %}
-                                    {% if item.ruta_archivo %}
+                                    {% if item.ruta_archivo or item.lote_reporte.archivo_generado %}
                                         <a href="{% url 'descargar_archivo_historial' item.id %}" class="btn btn-sm btn-outline-primary" target="_blank" title="Descargar"><i class="fas fa-download"></i></a>
                                     {% endif %}
                                     <button class="btn btn-sm btn-outline-danger btn-delete-historial" data-item-id="{{ item.id }}" title="Eliminar">
