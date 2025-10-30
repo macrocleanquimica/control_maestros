@@ -57,11 +57,17 @@ urlpatterns = [
 
     # URLs para Reporte de Vacancia
     path('vacancias/gestionar/', views.gestionar_lote_vacancia, name='gestionar_lote_vacancia'),
-    path('vacancias/exportar/<int:lote_id>/', views.exportar_lote_vacancia, name='exportar_lote_vacancia'),
+    # path('exportar-lote-vacancia/<int:lote_id>/', views.exportar_lote_vacancia, name='exportar_lote_vacancia'), # URL antigua, ahora dividida
+    # Nuevas URLs para exportación por pasos
+    path('vacancias/exportar/paso_word/<int:lote_id>/', views.exportar_paso_word, name='exportar_paso_word'),
+    path('vacancias/exportar/paso_gsheets/<int:lote_id>/', views.exportar_paso_gsheets, name='exportar_paso_gsheets'),
+    path('vacancias/exportar/paso_excel/<int:lote_id>/', views.exportar_paso_excel, name='exportar_paso_excel'),
+
     path('vacancias/get_maestro_data_ajax/', views.get_maestro_data_for_vacancia, name='get_maestro_data_for_vacancia'),
     path('vacancias/get_interino_data_ajax/', views.get_maestro_data_for_vacancia, name='get_interino_data_for_vacancia'),
     path('vacancias/get_interino_and_prelacion_data_ajax/', views.get_interino_and_prelacion_data_ajax, name='get_interino_and_prelacion_data_ajax'),
     path('vacancias/eliminar/<int:pk>/', views.eliminar_vacancia_lote, name='eliminar_vacancia_lote'),
+    # path('vacancias/descargar_excel/<int:lote_id>/<str:filename>/', views.descargar_excel_lote, name='descargar_excel_lote'),
     
     # NUEVA URL: Para obtener datos de prelación automáticamente
     path('tramites/get_prelacion_data/', views.get_prelacion_data_ajax, name='get_prelacion_data_ajax'),

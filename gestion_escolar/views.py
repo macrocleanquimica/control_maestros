@@ -21,6 +21,7 @@ from .models import (Zona, Escuela, Maestro, Categoria, MotivoTramite,
                    PlantillaTramite, Prelacion, LoteReporteVacancia, Vacancia, 
                    TipoApreciacion, Historial, DocumentoExpediente, 
                    Correspondencia, Notificacion, Pendiente, RegistroCorrespondencia, KardexMovimiento)
+from django.db import transaction
 from django.db.models import Q, Count
 from django.http import JsonResponse, HttpResponse
 import csv
@@ -30,7 +31,8 @@ import openpyxl
 from docxtpl import DocxTemplate
 from datetime import datetime, date
 from django.conf import settings
-
+import gspread
+from google.oauth2 import service_account
 
 
 # Helper function to get full name
@@ -148,6 +150,18 @@ def convertir_fecha_a_letras(fecha):
 
     return f"{dia} de {mes} del {anio}"
 
+def format_date_for_solicitud_asignacion(fecha):
+    if not fecha:
+        return ''
+    meses_espanol = [
+        "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+        "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+    ]
+    dia = fecha.day
+    mes = meses_espanol[fecha.month - 1]
+    anio = fecha.year
+    return f"{dia:02d} DE {mes} DEL {anio}"
+
 def serialize_form_data(cleaned_data):
     """
     Converts form.cleaned_data into a JSON-serializable dictionary,
@@ -172,15 +186,105 @@ def serialize_form_data(cleaned_data):
             serialized_data[key] = value
     return serialized_data
 
+# Helper function to send data to Google Sheet - VERSIÓN CORREGIDA
+def send_to_google_sheet(row_data):
+    """
+    Función corregida para enviar datos a Google Sheets
+    """
+    print("DEBUG GS: Iniciando envío a Google Sheets...")
+    
+    try:
+        # Verificar configuraciones
+        if not hasattr(settings, 'GOOGLE_SHEETS_CREDENTIALS'):
+            return False, "Configuración de credenciales no encontrada"
+        
+        creds_json = settings.GOOGLE_SHEETS_CREDENTIALS
+        
+        # Verificar campos esenciales
+        if not creds_json.get('private_key') or not creds_json.get('client_email'):
+            return False, "Credenciales incompletas - falta private_key o client_email"
+        
+        print(f"DEBUG GS: Usando cuenta: {creds_json['client_email']}")
+        
+        # Configurar scopes
+        SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+        
+        # Crear credenciales
+        credentials = service_account.Credentials.from_service_account_info(
+            creds_json,
+            scopes=SCOPES
+        )
+        
+        # Autorizar
+        gc = gspread.authorize(credentials)
+        print("DEBUG GS: ✅ Autenticación exitosa")
+        
+        # Abrir la hoja
+        spreadsheet = gc.open_by_key(settings.GOOGLE_SHEET_ID)  # open_by_key en lugar de open_by_id
+        worksheet = spreadsheet.worksheet(settings.GOOGLE_SHEET_WORKSHEET_NAME)
+        print("DEBUG GS: ✅ Hoja abierta correctamente")
+        
+        # Preparar datos
+        cleaned_data = []
+        for item in row_data:
+            if item is None:
+                cleaned_data.append('')
+            elif isinstance(item, (date, datetime)):
+                cleaned_data.append(item.strftime('%Y-%m-%d'))
+            else:
+                cleaned_data.append(str(item))
+        
+        # Enviar datos
+        worksheet.append_row(cleaned_data)
+        print(f"DEBUG GS: ✅ Fila agregada: {cleaned_data}")
+        
+        return True, "Datos enviados correctamente a Google Sheets"
+        
+    except gspread.exceptions.SpreadsheetNotFound:
+        error_msg = "Google Sheet no encontrado. Verifica el GOOGLE_SHEET_ID."
+        print(f"DEBUG GS: ❌ {error_msg}")
+        return False, error_msg
+        
+    except gspread.exceptions.WorksheetNotFound:
+        error_msg = f"Hoja '{settings.GOOGLE_SHEET_WORKSHEET_NAME}' no encontrada."
+        print(f"DEBUG GS: ❌ {error_msg}")
+        return False, error_msg
+        
+    except Exception as e:
+        error_msg = f"Error: {str(e)}"
+        print(f"DEBUG GS: ❌ {error_msg}")
+        return False, error_msg
+
 # Main Word generation function
 def generate_word_document(form_data, plantilla_tramite, user):
     try:
+        # --- Lógica para seleccionar plantilla especial para desubicados ---
+        maestro_titular = form_data.get('maestro_titular')
+        template_name_upper = plantilla_tramite.nombre.upper().strip()
+        ruta_plantilla_final = plantilla_tramite.ruta_archivo
+
+        is_desubicado = False
+        if maestro_titular and maestro_titular.techo_f and maestro_titular.id_escuela:
+            if maestro_titular.techo_f.strip().upper() != maestro_titular.id_escuela.id_escuela.strip().upper():
+                is_desubicado = True
+
+        # Mapeo de plantillas normales a sus versiones para desubicados
+        plantillas_especiales = {
+            "REINGRESO": "REINGRESODESUBICADO.docx",
+            "FILIACION": "FILIACIONDESUBICADO.docx",
+        }
+
+        # Si la plantilla actual tiene una versión especial y el maestro está desubicado, la usamos
+        if template_name_upper in plantillas_especiales and is_desubicado:
+            nueva_plantilla = plantillas_especiales[template_name_upper]
+            ruta_plantilla_final = nueva_plantilla
+            print(f"DEBUG: Maestro desubicado detectado para {template_name_upper}. Usando plantilla especial: {ruta_plantilla_final}")
+
         # --- Construct absolute path for the template ---
-        template_path = os.path.join(settings.BASE_DIR, 'tramites', 'Plantillas', 'Word', plantilla_tramite.ruta_archivo)
+        template_path = os.path.join(settings.BASE_DIR, 'tramites', 'Plantillas', 'Word', ruta_plantilla_final)
         doc = DocxTemplate(template_path)
 
         # --- Gather Data ---
-        maestro_titular = form_data.get('maestro_titular')
         maestro_interino = form_data.get('maestro_interino')
         motivo_tramite_obj = form_data.get('motivo_tramite')
 
@@ -205,6 +309,7 @@ def generate_word_document(form_data, plantilla_tramite, user):
         paterno_interino = maestro_interino.a_paterno or '' if maestro_interino else ''
         materno_interino = maestro_interino.a_materno or '' if maestro_interino else ''
         nombre_interino_solo = maestro_interino.nombres or '' if maestro_interino else ''
+        formacion_academica_interino = maestro_interino.form_academica or '' if maestro_interino else ''
         
         # Lógica para presupuestal_interino
         presupuestal_interino = presupuestal_titular
@@ -276,11 +381,40 @@ def generate_word_document(form_data, plantilla_tramite, user):
         f_hoy = f"{today.day} de {meses[today.month - 1]} del {today.year}"
         f_hoy_letras = convertir_fecha_a_letras(today)
 
-        # Director, Supervisor, and School Info
-        escuela_titular = maestro_titular.id_escuela if maestro_titular else None
-        escuela_info = get_school_info(escuela_titular)
-        director_info = get_director_info(escuela_titular)
-        supervisor_info = get_supervisor_info(escuela_titular.zona_esc if escuela_titular else None)
+        # --- OBTENER DATOS DE AMBAS ESCUELAS: ADSCRIPCIÓN Y PAGO ---
+        # 1. Escuela de Adscripción (donde trabaja físicamente)
+        escuela_adscripcion = None
+        if maestro_titular:
+            escuela_adscripcion = maestro_titular.id_escuela
+        
+        escuela_adscripcion_info = get_school_info(escuela_adscripcion)
+
+        # Corrección: Asegurarse de que las variables de director y supervisor siempre existan
+        if escuela_adscripcion:
+            director_adscripcion_info = get_director_info(escuela_adscripcion)
+            supervisor_adscripcion_info = get_supervisor_info(escuela_adscripcion.zona_esc)
+        else:
+            director_adscripcion_info = {'nombre': 'DIRECTOR NO ENCONTRADO', 'nivel': ''}
+            supervisor_adscripcion_info = {'nombre': 'SUPERVISOR NO ENCONTRADO', 'nivel': ''}
+        # 2. Escuela de Pago (donde cobra, según Techo Financiero)
+        escuela_pago = None
+        if maestro_titular and maestro_titular.techo_f:
+            try:
+                escuela_pago = Escuela.objects.get(id_escuela=maestro_titular.techo_f)
+            except Escuela.DoesNotExist:
+                # Si el techo_f no corresponde a una escuela registrada, se deja como None
+                escuela_pago = None
+        
+        escuela_pago_info = get_school_info(escuela_pago)
+
+        # 3. Autoridades de la Escuela de Pago (Techo Financiero)
+        if escuela_pago:
+            director_pago_info = get_director_info(escuela_pago)
+            supervisor_pago_info = get_supervisor_info(escuela_pago.zona_esc)
+        else:
+            # Si no hay escuela de pago, usar valores por defecto
+            director_pago_info = {'nombre': 'DIRECTOR (PAGO) NO ENCONTRADO', 'nivel': ''}
+            supervisor_pago_info = {'nombre': 'SUPERVISOR (PAGO) NO ENCONTRADO', 'nivel': ''}
 
         quincena_inicial = form_data.get('quincena_inicial') or ''
         quincena_final = form_data.get('quincena_final') or ''
@@ -313,21 +447,32 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'Presupuestal_Titular': presupuestal_titular,
             'Techo_Financiero': techo_financiero_titular,
             'Funcion_Titular': funcion_titular,
-            'Clave_CT': escuela_info['id_escuela'],
-            'Nombre_CT': escuela_info['nombre_ct'],
-            'Turno': escuela_info['turno'],
-            'Domicilio_CT': escuela_info['domicilio'],
-            'Z_economica': escuela_info['zona_economica'],
-            'Z_Escolar': escuela_info['zona_esc_numero'],
-            'Poblacion': escuela_info['region'],
-            'U_D': escuela_info['u_d'],
-            'Sostenimiento': escuela_info['sostenimiento'],
+            
+            # --- Variables para la Escuela de Adscripción (donde trabaja) ---
+            'Clave_CT': escuela_adscripcion_info['id_escuela'],
+            'Nombre_CT': escuela_adscripcion_info['nombre_ct'],
+            'Turno': escuela_adscripcion_info['turno'],
+            'Domicilio_CT': escuela_adscripcion_info['domicilio'],
+            'Z_economica': escuela_adscripcion_info['zona_economica'],
+            'Z_Escolar': escuela_adscripcion_info['zona_esc_numero'],
+            'Poblacion': escuela_adscripcion_info['region'],
+            'U_D': escuela_adscripcion_info['u_d'],
+            'Sostenimiento': escuela_adscripcion_info['sostenimiento'],
+            'Nom_CTCompleto': escuela_adscripcion_info['nombre_ct'],
+
+            # --- NUEVAS Variables para la Escuela de Pago (Techo Financiero) ---
+            'Clave_CT_Techo_F': escuela_pago_info['id_escuela'],
+            'Nombre_CT_Techo_F': escuela_pago_info['nombre_ct'],
+            'Turno_Techo_F': escuela_pago_info['turno'],
+            'Domicilio_CT_Techo_F': escuela_pago_info['domicilio'],
+            'Poblacion_Techo_F': escuela_pago_info['region'],
+            'Nom_CT_Techo_F_Completo': escuela_pago_info['nombre_ct'], # <-- VARIABLE AÑADIDA
 
             'T_Movimiento': motivo_movimiento,
             'Efecto_1': fecha_efecto1.strftime("%d/%m/%Y") if fecha_efecto1 else '',
             'Efecto_2': fecha_efecto2.strftime("%d/%m/%Y") if fecha_efecto2 else '',
-            'Efecto_3': fecha_efecto3.strftime("%d/%m/%Y") if fecha_efecto3 else '',
-            'Efecto_4': fecha_efecto4.strftime("%d/%m/%Y") if fecha_efecto4 else '',
+            'Efecto_3': format_date_for_solicitud_asignacion(fecha_efecto3) if plantilla_tramite.nombre == "SOLICITUD DE ASIGNACION" else (fecha_efecto3.strftime("%d/%m/%Y") if fecha_efecto3 else ''),
+            'Efecto_4': format_date_for_solicitud_asignacion(fecha_efecto4) if plantilla_tramite.nombre == "SOLICITUD DE ASIGNACION" else (fecha_efecto4.strftime("%d/%m/%Y") if fecha_efecto4 else ''),
             'F_Hoy': f_hoy,
             'F_OfPres': folio,
             'COMENTARIOS': observaciones,
@@ -348,6 +493,7 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'Paterno': paterno_interino,
             'Materno': materno_interino,
             'Nombre': nombre_interino_solo,
+            'Formacion_Academica': formacion_academica_interino,
 
             # Prelacion Data (ahora se llenan automáticamente)
             'No_Prel': no_prel,
@@ -355,10 +501,16 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'Tipo_Val': tipo_val,
 
             # Autoridades
-            'Supervisor': supervisor_info['nombre'],
-            'P_Sup': supervisor_info['nivel'],
-            'Director': director_info['nombre'],
-            'P_Dir': director_info['nivel'],
+            'Supervisor': supervisor_adscripcion_info['nombre'],
+            'P_Sup': supervisor_adscripcion_info['nivel'],
+            'Director': director_adscripcion_info['nombre'],
+            'P_Dir': director_adscripcion_info['nivel'],
+
+            # --- NUEVAS Variables para Autoridades de la Escuela de Pago ---
+            'Supervisor_Techo_F': supervisor_pago_info['nombre'],
+            'P_Sup_Techo_F': supervisor_pago_info['nivel'],
+            'Director_Techo_F': director_pago_info['nombre'],
+            'P_Dir_Techo_F': director_pago_info['nivel'],
 
             # VBA specific fields
             'Resultado_Alta': tipo_movimiento_interino,
@@ -369,9 +521,9 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'Horas': maestro_titular.hrs.split('.')[0] if (maestro_titular and maestro_titular.hrs and '.' in maestro_titular.hrs) else '',
             'Nivel': 'Educación Especial',
             'Entidad': 'DURANGO',
-            'Municipio': escuela_info['region'],
-            'Region': escuela_info['region'],
-            'ZonaEconomica': escuela_info['zona_economica'],
+            'Municipio': escuela_adscripcion_info['region'],
+            'Region': escuela_adscripcion_info['region'],
+            'ZonaEconomica': escuela_adscripcion_info['zona_economica'],
             'Destino': '',
             'Apreciacion': '',
             'TipoVacante': '',
@@ -392,7 +544,6 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'F_Ano': f_ano,
 
             'F_HoyLetra': f_hoy_letras,
-            'Nom_CTCompleto': escuela_info['nombre_ct'],
         }
 
         # --- Render Document ---
@@ -706,6 +857,9 @@ def lista_maestros_ajax(request):
     else:
         queryset = Maestro.objects.all()
     
+    # Optimización: Precargar los datos de la escuela para evitar consultas N+1
+    queryset = queryset.select_related('id_escuela')
+
     queryset = queryset.exclude(id_maestro__isnull=True).exclude(id_maestro='')
 
     # Total de registros sin filtrar
@@ -714,25 +868,22 @@ def lista_maestros_ajax(request):
     # Filtro de búsqueda
     if search_value:
         search_terms = search_value.split()
-        table_name = Maestro._meta.db_table
-        where_clauses = []
-        params = []
+        queries = []
         for term in search_terms:
-            unaccented_term = f'%{unidecode(term)}%'
-            term_clause = f"""(
-                {table_name}.id_maestro LIKE %s OR
-                unaccent({table_name}.nombres) LIKE %s OR
-                unaccent({table_name}.a_paterno) LIKE %s OR
-                unaccent({table_name}.a_materno) LIKE %s OR
-                unaccent({table_name}.curp) LIKE %s OR
-                unaccent({table_name}.clave_presupuestal) LIKE %s
-            )"""
-            where_clauses.append(term_clause)
-            params.append(f'%{term}%')
-            params.extend([unaccented_term] * 5)
-        
-        if where_clauses:
-            queryset = queryset.extra(where=[" AND ".join(where_clauses)], params=params)
+            # Construimos una consulta Q para cada término de búsqueda
+            # Esto busca el término en cualquiera de los campos especificados
+            term_query = Q(
+                Q(id_maestro__icontains=term) |
+                Q(nombres__icontains=term) |
+                Q(a_paterno__icontains=term) |
+                Q(a_materno__icontains=term) |
+                Q(curp__icontains=term) |
+                Q(clave_presupuestal__icontains=term) |
+                Q(id_escuela__id_escuela__icontains=term) # Búsqueda por C.C.T.
+            )
+            queries.append(term_query)
+        # Combinamos todas las consultas con un operador AND
+        queryset = queryset.filter(*queries)
 
     # Total de registros después del filtro
     records_filtered = queryset.count()
@@ -862,7 +1013,7 @@ def eliminar_maestro(request, pk):
     maestro = get_object_or_404(Maestro, id_maestro=pk)
     if request.method == 'POST':
         maestro.delete()
-        messages.success(request, 'Maestro eliminado correctamente.')
+        messages.success(request, 'Maestro eliminada correctamente.')
         return redirect('lista_maestros')
     return render(request, 'gestion_escolar/eliminar_maestro.html', {'maestro': maestro})
 
@@ -1011,7 +1162,32 @@ def generar_tramites_generales(request):
             if success:
                 # Crear registro en el historial
                 try:
+                    # --- ENRIQUECER DATOS PARA EL HISTORIAL ---
+                    # Copiamos los datos limpios del formulario
+                    datos_para_historial = form.cleaned_data.copy()
+                    
+                    # Obtenemos los objetos relacionados
                     maestro_titular_obj = form.cleaned_data.get('maestro_titular')
+                    escuela_titular = maestro_titular_obj.id_escuela if maestro_titular_obj else None
+                    zona_esc = escuela_titular.zona_esc if escuela_titular else None
+
+                    # Usamos las funciones de ayuda para obtener la información
+                    escuela_info = get_school_info(escuela_titular)
+                    director_info = get_director_info(escuela_titular)
+                    supervisor_info = get_supervisor_info(zona_esc)
+
+                    # Agregamos la información adicional al diccionario que se guardará
+                    datos_para_historial['techo_financiero_titular'] = maestro_titular_obj.techo_f if maestro_titular_obj else ''
+                    datos_para_historial['clave_ct'] = escuela_info.get('id_escuela', '')
+                    datos_para_historial['nombre_ct'] = escuela_info.get('nombre_ct', '')
+                    datos_para_historial['turno'] = escuela_info.get('turno', '')
+                    datos_para_historial['domicilio_ct'] = escuela_info.get('domicilio', '')
+                    datos_para_historial['z_escolar'] = escuela_info.get('zona_esc_numero', '')
+                    datos_para_historial['region'] = escuela_info.get('region', '')
+                    datos_para_historial['sostenimiento'] = escuela_info.get('sostenimiento', '')
+                    datos_para_historial['supervisor'] = supervisor_info.get('nombre', '')
+                    datos_para_historial['director'] = director_info.get('nombre', '')
+                    
                     print(f"DEBUG: Maestro Titular en generar_tramites_generales: {maestro_titular_obj}") # DEBUG LINE
                     Historial.objects.create(
                         usuario=request.user,
@@ -1020,7 +1196,7 @@ def generar_tramites_generales(request):
                         ruta_archivo=message,
                         motivo=form.cleaned_data.get('motivo_tramite').motivo_tramite if form.cleaned_data.get('motivo_tramite') else '',
                         maestro_secundario_nombre=get_full_name(form.cleaned_data.get('maestro_interino')),
-                        datos_tramite=serialize_form_data(form.cleaned_data)
+                        datos_tramite=serialize_form_data(datos_para_historial) # Guardamos los datos enriquecidos
                     )
                 except Exception as e:
                     messages.warning(request, f"Advertencia: El trámite se generó pero no se pudo guardar en el historial: {e}")
@@ -1058,6 +1234,28 @@ def generar_oficios(request):
             if success:
                 # Crear registro en el historial
                 try:
+                    # --- ENRIQUECER DATOS PARA EL HISTORIAL (para Oficios) ---
+                    datos_para_historial = form.cleaned_data.copy()
+                    
+                    maestro_titular_obj = form.cleaned_data.get('maestro_titular')
+                    escuela_titular = maestro_titular_obj.id_escuela if maestro_titular_obj else None
+                    zona_esc = escuela_titular.zona_esc if escuela_titular else None
+
+                    escuela_info = get_school_info(escuela_titular)
+                    director_info = get_director_info(escuela_titular)
+                    supervisor_info = get_supervisor_info(zona_esc)
+
+                    datos_para_historial['techo_financiero_titular'] = maestro_titular_obj.techo_f if maestro_titular_obj else ''
+                    datos_para_historial['clave_ct'] = escuela_info.get('id_escuela', '')
+                    datos_para_historial['nombre_ct'] = escuela_info.get('nombre_ct', '')
+                    datos_para_historial['turno'] = escuela_info.get('turno', '')
+                    datos_para_historial['domicilio_ct'] = escuela_info.get('domicilio', '')
+                    datos_para_historial['z_escolar'] = escuela_info.get('zona_esc_numero', '')
+                    datos_para_historial['region'] = escuela_info.get('region', '')
+                    datos_para_historial['sostenimiento'] = escuela_info.get('sostenimiento', '')
+                    datos_para_historial['supervisor'] = supervisor_info.get('nombre', '')
+                    datos_para_historial['director'] = director_info.get('nombre', '')
+
                     Historial.objects.create(
                         usuario=request.user,
                         tipo_documento=f"Oficio - {plantilla_tramite.nombre}",
@@ -1065,7 +1263,7 @@ def generar_oficios(request):
                         ruta_archivo=message,
                         motivo=form.cleaned_data.get('motivo_tramite').motivo_tramite if form.cleaned_data.get('motivo_tramite') else '',
                         maestro_secundario_nombre=get_full_name(form.cleaned_data.get('maestro_interino')),
-                        datos_tramite=serialize_form_data(form.cleaned_data)
+                        datos_tramite=serialize_form_data(datos_para_historial)
                     )
                 except Exception as e:
                     messages.warning(request, f"Advertencia: El oficio se generó pero no se pudo guardar en el historial: {e}")
@@ -1133,13 +1331,12 @@ def get_motivos_tramite_ajax(request):
 def buscar_maestros_ajax(request):
     search_term = request.GET.get('term', '')
     
-    # Dividir el término de búsqueda por espacios
-    terms = [term for term in search_term.split() if term]
+    if not search_term or len(search_term) < 2:
+        return JsonResponse({'results': []})
     
-    # Iniciar una consulta vacía
+    terms = [term for term in search_term.split() if term]
     query = Q()
     
-    # Construir una consulta que busque cada término en los campos de nombre
     for term in terms:
         query &= (
             Q(nombres__icontains=term) |
@@ -1147,9 +1344,8 @@ def buscar_maestros_ajax(request):
             Q(a_materno__icontains=term)
         )
     
-    # Filtrar maestros que coincidan con todos los términos de búsqueda
-    maestros = Maestro.objects.filter(query).order_by('a_paterno', 'a_materno', 'nombres')[:20] # Limitar a 20 resultados
-
+    maestros = Maestro.objects.filter(query).order_by('a_paterno', 'a_materno', 'nombres')[:20]
+    
     results = []
     for maestro in maestros:
         full_name = f"{maestro.a_paterno or ''} {maestro.a_materno or ''} {maestro.nombres or ''}".strip()
@@ -1157,7 +1353,7 @@ def buscar_maestros_ajax(request):
             "id": maestro.id_maestro,
             "text": full_name
         })
-
+    
     return JsonResponse({'results': results})
 
 @login_required
@@ -1276,10 +1472,18 @@ def historial_detalle_lote(request, historial_id):
 def historial_detalle_tramite(request, historial_id):
     historial_item = get_object_or_404(Historial, id=historial_id)
     if historial_item.datos_tramite:
+        # Definimos la lista de claves para la sección "Centro de Trabajo" aquí en la vista.
+        ct_keys_list = [
+            'techo_financiero_titular', 'clave_ct', 'nombre_ct', 'turno', 
+            'domicilio_ct', 'z_escolar', 'region', 'sostenimiento', 
+            'supervisor', 'director'
+        ]
+
         context = {
             'historial_item': historial_item,
             'datos_tramite': historial_item.datos_tramite,
-            'titulo': f'Detalle de {historial_item.tipo_documento}'
+            'titulo': f'Detalle de {historial_item.tipo_documento}',
+            'ct_keys_list': ct_keys_list, # Pasamos la lista a la plantilla
         }
         return render(request, 'gestion_escolar/historial_detalle_tramite.html', context)
     else:
@@ -1617,13 +1821,6 @@ def gestionar_lote_vacancia(request):
                     if prelacion:
                         vacancia.posicion_orden = prelacion.pos_orden
                         vacancia.folio_prelacion = prelacion.folio
-            else:
-                # Si no se selecciona un maestro interino, se usan los campos manuales del formulario
-                vacancia.nombre_interino = form.cleaned_data.get('nombre_interino')
-                vacancia.curp_interino = form.cleaned_data.get('curp_interino')
-                # Si no hay maestro interino seleccionado, los campos de prelación manuales también deben ser considerados
-                vacancia.posicion_orden = form.cleaned_data.get('posicion_orden_display') # Asumiendo que estos campos se llenan manualmente si no hay interino
-                vacancia.folio_prelacion = form.cleaned_data.get('folio_prelacion_display') # Asumiendo que estos campos se llenan manualmente si no hay interino
 
             # --- Lógica de Transformación (portada de VBA) ---
             # 1. Dirección
@@ -1720,110 +1917,292 @@ def gestionar_lote_vacancia(request):
 
 from django.views.decorators.clickjacking import xframe_options_exempt
 
-@login_required
-@xframe_options_exempt
-def exportar_lote_vacancia(request, lote_id):
+def _get_lote_y_vacancias(request, lote_id):
     lote = get_object_or_404(LoteReporteVacancia, id=lote_id, usuario_generador=request.user)
     vacancias = lote.vacancias.all()
 
     if not vacancias.exists():
-        messages.error(request, "No hay vacancias en este lote para exportar.")
-        return redirect('gestionar_lote_vacancia')
+        raise ValueError("No hay vacancias en este lote para exportar.")
 
-    template_path = os.path.join(settings.BASE_DIR, 'gestion_escolar', 'templates', 'tramites', 'Plantillas', 'Excel', 'FORMATOVACANCIAUSICAMM.xlsx')
-    workbook = openpyxl.load_workbook(template_path)
-    sheet = workbook.active
+    if lote.estado == 'GENERADO':
+        messages.warning(request, "Este lote ya fue procesado anteriormente.")
+        return JsonResponse({'status': 'error', 'message': 'Este lote ya fue procesado.'}, status=400)
 
-    # Fila inicial para escribir los datos
-    row_num = 2
+    lote.estado = 'PROCESANDO'
+    lote.save()
+    return lote, vacancias
 
-    # Campos en el orden del Excel
-    campos_excel = [
-        'nivel', 'entidad', 'municipio', 'direccion', 'region', 'zona_economica', 'destino', 'apreciacion',
-        'tipo_vacante', 'tipo_plaza', 'horas', 'sostenimiento', 'fecha_inicio', 'fecha_final', 'categoria',
-        'pseudoplaza', 'clave_presupuestal', 'techo_financiero', 'clave_ct', 'turno', 'tipo_movimiento_reporte', 'observaciones',
-        'posicion_orden', 'folio_prelacion', 'curp_interino', 'nombre_interino'
-    ]
-
-    for vacancia in vacancias:
-        for i, field_name in enumerate(campos_excel):
-            cell = sheet.cell(row=row_num, column=i + 1)
-            valor = '' # Default value
-
-            if field_name == 'curp_interino':
-                if vacancia.maestro_interino:
-                    valor = vacancia.maestro_interino.curp or ''
-                else:
-                    valor = vacancia.curp_interino or '' # Fallback to manual field for old data
-            elif field_name == 'nombre_interino':
-                if vacancia.maestro_interino:
-                    valor = get_full_name(vacancia.maestro_interino)
-                else:
-                    valor = vacancia.nombre_interino or '' # Fallback to manual field for old data
-            elif field_name == 'apreciacion':
-                if vacancia.apreciacion:
-                    valor = vacancia.apreciacion.descripcion
-                else:
-                    valor = ''
-            elif field_name == 'tipo_vacante': # New condition for tipo_vacante
-                # Get the display value from choices, then capitalize the first letter
-                valor = vacancia.get_tipo_vacante_display().capitalize()
-            else:
-                valor = getattr(vacancia, field_name, '')
-            
-            # Transformación para zona_economica (Roman to Arabic)
-            if field_name == 'zona_economica' and isinstance(valor, str):
-                roman_to_arabic_map = {
-                    'Zona II': 'Zona 2',
-                    'Zona III': 'Zona 3',
-                }
-                valor = roman_to_arabic_map.get(valor, valor)
-
-            cell.value = valor
-        row_num += 1
-
-    # Guardar el archivo en el servidor
-    output_dir = os.path.join(settings.MEDIA_ROOT, 'reportes_vacancias')
-    os.makedirs(output_dir, exist_ok=True)
-    
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_filename = f"VACANCIA_{timestamp}.xlsx"
-    output_path_server = os.path.join(output_dir, output_filename)
-    workbook.save(output_path_server)
-
-    # Crear registro en el historial
+@login_required
+@transaction.atomic
+def exportar_paso_word(request, lote_id):
+    print("******** PASO 1: GENERANDO DOCUMENTOS WORD ********")
     try:
-        Historial.objects.create(
-            usuario=request.user,
-            tipo_documento="Reporte de Vacancia",
-            maestro=None,  # No se asocia a un único maestro
-            ruta_archivo=output_path_server,
-            motivo="Reporte de Vacancia",
+        lote, vacancias = _get_lote_y_vacancias(request, lote_id)
+    except ValueError as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    plantilla_solicitud_asignacion = PlantillaTramite.objects.filter(nombre="SOLICITUD DE ASIGNACION").first()
+    documentos_word_generados = 0
+    word_docs_info = []
+
+    if not plantilla_solicitud_asignacion:
+        return JsonResponse({'status': 'warning', 'message': 'Plantilla "SOLICITUD DE ASIGNACION" no encontrada. Saltando paso de Word.', 'word_count': 0, 'word_docs': []})
+
+    # 1. GENERAR DOCUMENTOS WORD (para vacancias ≤ 3 meses con interino)
+    for vacancia in vacancias:
+        if vacancia.maestro_interino:
+            # Verificar si la vacancia es ≤ 3 meses
+            if vacancia.fecha_inicio and vacancia.fecha_final:
+                duration_months = get_month_diff(vacancia.fecha_inicio, vacancia.fecha_final)
+                if duration_months <= 3:
+                    print(f"DEBUG: Generando Word para vacancia ID {vacancia.id} (≤ 3 meses)")
+                    
+                    form_data_for_word = {
+                        'plantilla': plantilla_solicitud_asignacion,
+                        'maestro_titular': vacancia.maestro_titular,
+                        'maestro_interino': vacancia.maestro_interino,
+                        'fecha_efecto1': vacancia.fecha_inicio, 
+                        'fecha_efecto2': vacancia.fecha_final,
+                        'fecha_efecto3': vacancia.fecha_inicio, 
+                        'fecha_efecto4': vacancia.fecha_final,
+                        'folio': vacancia.folio_prelacion, 
+                        'observaciones': vacancia.observaciones,
+                        'no_prel_display': vacancia.posicion_orden, 
+                        'folio_prel_display': vacancia.folio_prelacion,
+                    }
+                    
+                    motivo_tramite_obj = MotivoTramite.objects.filter(motivo_tramite=vacancia.tipo_movimiento_original).first()
+                    form_data_for_word['motivo_tramite'] = motivo_tramite_obj
+                    
+                    tipo_val_display = ''
+                    if vacancia.maestro_interino.curp:
+                        prelacion = Prelacion.objects.filter(curp=vacancia.maestro_interino.curp).first()
+                        if prelacion:
+                            tipo_val_display = prelacion.tipo_val
+                    form_data_for_word['tipo_val_display'] = tipo_val_display
+
+                    success, doc_path = generate_word_document(form_data_for_word, plantilla_solicitud_asignacion, request.user)
+                    if success:
+                        try:
+                            historial_word = Historial.objects.create(
+                                usuario=request.user,
+                                tipo_documento=f"Oficio - {plantilla_solicitud_asignacion.nombre}",
+                                maestro=vacancia.maestro_titular,
+                                ruta_archivo=doc_path,
+                                motivo=motivo_tramite_obj.motivo_tramite if motivo_tramite_obj else '',
+                                maestro_secundario_nombre=get_full_name(vacancia.maestro_interino),
+                                datos_tramite=serialize_form_data(form_data_for_word)
+                            )
+                            word_docs_info.append({
+                                'id': historial_word.id,
+                                'nombre': os.path.basename(doc_path),
+                                'url': reverse('descargar_archivo_historial', args=[historial_word.id])
+                            })
+                            documentos_word_generados += 1
+                        except Exception as e:
+                            print(f"DEBUG: ❌ Error creando historial para Word: {e}")
+    
+    return JsonResponse({
+        'status': 'success',
+        'message': f'Se generaron {documentos_word_generados} documento(s) Word.',
+        'word_count': documentos_word_generados,
+        'word_docs': word_docs_info
+    })
+
+@login_required
+@transaction.atomic
+def exportar_paso_gsheets(request, lote_id):
+    print("******** PASO 2: ENVIANDO A GOOGLE SHEETS ********")
+    try:
+        lote, vacancias = _get_lote_y_vacancias(request, lote_id)
+    except ValueError as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    vacancias_enviadas = 0
+    errores_gsheets = []
+    for vacancia in vacancias:
+        if vacancia.maestro_interino and vacancia.fecha_inicio and vacancia.fecha_final:
+            duration_months = get_month_diff(vacancia.fecha_inicio, vacancia.fecha_final)
+            if duration_months <= 3:
+                print(f"DEBUG: Enviando a Google Sheets: {get_full_name(vacancia.maestro_interino)}")
+                # Construir la fila de datos para Google Sheets
+                google_sheet_row_data = [
+                    str(vacancias.filter(id__lte=vacancia.id).count()),
+                    datetime.now().strftime("%Y-%m-%d"),
+                    "EDUCACIÓN ESPECIAL",
+                    "Durango",
+                    vacancia.municipio or '',
+                    vacancia.direccion or '',
+                    vacancia.region or '',
+                    vacancia.zona_economica or '',
+                    vacancia.destino or '',
+                    vacancia.apreciacion.descripcion if vacancia.apreciacion else '',
+                    vacancia.get_tipo_vacante_display() or '',
+                    vacancia.tipo_plaza or '',
+                    vacancia.horas if vacancia.tipo_plaza == "HORA/SEMANA/MES" else '',
+                    vacancia.sostenimiento or '',
+                    vacancia.fecha_inicio.strftime("%Y-%m-%d") if vacancia.fecha_inicio else '',
+                    vacancia.fecha_final.strftime("%Y-%m-%d") if vacancia.fecha_final else '',
+                    vacancia.categoria or '',
+                    vacancia.pseudoplaza or '',
+                    vacancia.clave_presupuestal or '',
+                    vacancia.techo_financiero or '',
+                    vacancia.clave_ct or '',
+                    vacancia.turno or '',
+                    vacancia.tipo_movimiento_original or '',
+                    vacancia.observaciones or '',
+                    vacancia.maestro_interino.curp or '',
+                    '',
+                    vacancia.maestro_interino.form_academica or '',
+                    "N/A" if vacancia.tipo_plaza == "JORNADA" else (vacancia.apreciacion.descripcion if vacancia.apreciacion else ''),
+                    '', '', '', '',
+                    format_date_for_solicitud_asignacion(vacancia.fecha_inicio) if vacancia.fecha_inicio else '',
+                    format_date_for_solicitud_asignacion(vacancia.fecha_final) if vacancia.fecha_final else '',
+                    '', '',
+                    f"DEE/{vacancia.folio_prelacion}/2025" if vacancia.folio_prelacion else '',
+                    '', '',
+                ]
+                success_gs, message_gs = send_to_google_sheet(google_sheet_row_data)
+                if not success_gs:
+                    error_msg = f"Fallo al enviar datos del interino '{get_full_name(vacancia.maestro_interino)}': {message_gs}"
+                    print(f"DEBUG: ❌ Google Sheets - {error_msg}")
+                    errores_gsheets.append(error_msg)
+                else:
+                    vacancias_enviadas += 1
+    
+    mensaje_final = f'Se enviaron datos de {vacancias_enviadas} vacancia(s) a Google Sheets.'
+    if errores_gsheets:
+        mensaje_final += f' Hubo {len(errores_gsheets)} error(es).'
+
+    return JsonResponse({
+        'status': 'success',
+        'message': mensaje_final,
+        'gsheets_count': vacancias_enviadas,
+        'gsheets_errors': errores_gsheets
+    })
+
+@login_required
+@transaction.atomic
+def exportar_paso_excel(request, lote_id):
+    print("******** PASO 3: GENERANDO ARCHIVO EXCEL ********")
+    try:
+        lote, vacancias = _get_lote_y_vacancias(request, lote_id)
+        print("DEBUG: Iniciando generación de Excel...")
+        
+        # Verificar que el directorio de templates existe
+        template_path = os.path.join(settings.BASE_DIR, 'tramites', 'Plantillas', 'Excel', 'FORMATOVACANCIAUSICAMM.xlsx')
+        print(f"DEBUG: Buscando template en: {template_path}")
+        
+        if not os.path.exists(template_path):
+            # Intentar rutas alternativas
+            alternative_paths = [
+                os.path.join(settings.BASE_DIR, 'gestion_escolar', 'templates', 'tramites', 'Plantillas', 'Excel', 'FORMATOVACANCIAUSICAMM.xlsx'),
+                os.path.join(settings.BASE_DIR, 'templates', 'tramites', 'Plantillas', 'Excel', 'FORMATOVACANCIAUSICAMM.xlsx'),
+            ]
+            
+            template_found = False
+            for alt_path in alternative_paths:
+                if os.path.exists(alt_path):
+                    template_path = alt_path
+                    template_found = True
+                    print(f"DEBUG: Template encontrado en ruta alternativa: {template_path}")
+                    break
+            
+            if not template_found:
+                raise FileNotFoundError(f"No se encontró el template en ninguna ruta: {template_path}")
+
+        print("DEBUG: Cargando workbook...")
+        workbook = openpyxl.load_workbook(template_path)
+        sheet = workbook.active
+        
+        print("DEBUG: Preparando datos para Excel...")
+        row_num = 2
+        campos_excel = [
+            'nivel', 'entidad', 'municipio', 'direccion', 'region', 'zona_economica', 'destino', 'apreciacion',
+            'tipo_vacante', 'tipo_plaza', 'horas', 'sostenimiento', 'fecha_inicio', 'fecha_final', 'categoria',
+            'pseudoplaza', 'clave_presupuestal', 'techo_financiero', 'clave_ct', 'turno', 'tipo_movimiento_reporte', 'observaciones',
+            'posicion_orden', 'folio_prelacion', 'curp_interino', 'nombre_interino'
+        ]
+        
+        for vacancia in vacancias:
+            print(f"DEBUG: Procesando vacancia {vacancia.id} para Excel...")
+            for i, field_name in enumerate(campos_excel):
+                cell = sheet.cell(row=row_num, column=i + 1)
+                valor = ''
+                
+                try:
+                    if field_name == 'curp_interino': 
+                        valor = vacancia.maestro_interino.curp if vacancia.maestro_interino else vacancia.curp_interino or ''
+                    elif field_name == 'nombre_interino': 
+                        valor = get_full_name(vacancia.maestro_interino) if vacancia.maestro_interino else vacancia.nombre_interino or ''
+                    elif field_name == 'apreciacion': 
+                        valor = vacancia.apreciacion.descripcion if vacancia.apreciacion else ''
+                    elif field_name == 'tipo_vacante': 
+                        valor = vacancia.get_tipo_vacante_display().capitalize() if vacancia.tipo_vacante else ''
+                    elif field_name == 'zona_economica' and isinstance(valor, str):
+                        valor = {'Zona II': 'Zona 2', 'Zona III': 'Zona 3'}.get(valor, valor)
+                    else: 
+                        valor = getattr(vacancia, field_name, '') or ''
+                        
+                    # Convertir fechas a string
+                    if field_name in ['fecha_inicio', 'fecha_final'] and valor:
+                        if isinstance(valor, (date, datetime)):
+                            valor = valor.strftime("%Y-%m-%d")
+                            
+                except Exception as field_error:
+                    print(f"DEBUG: Error procesando campo {field_name} para vacancia {vacancia.id}: {field_error}")
+                    valor = f"Error: {field_error}"
+                
+                cell.value = valor
+                
+            row_num += 1
+
+        print("DEBUG: Guardando archivo Excel...")
+        output_dir = os.path.join(settings.MEDIA_ROOT, 'reportes_vacancias')
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_filename = f"VACANCIA_{timestamp}.xlsx"
+        output_path_server = os.path.join(output_dir, output_filename)
+        
+        workbook.save(output_path_server)
+        print(f"DEBUG: Excel guardado en: {output_path_server}")
+
+        # Crear registro en historial
+        historial_excel = Historial.objects.create(
+            usuario=request.user, 
+            tipo_documento="Reporte de Vacancia", 
+            maestro=None,
+            ruta_archivo=output_path_server, 
+            motivo="Reporte de Vacancia", 
             lote_reporte=lote
         )
+        
+        # Actualizar lote
+        lote.archivo_generado = os.path.join('reportes_vacancias', output_filename)
+        lote.estado = 'GENERADO'
+        lote.fecha_generado = datetime.now()
+        lote.save()
+
+        # Preparar respuesta - SIMPLIFICADA PARA EVITAR ERRORES
+        response_data = {
+            'status': 'success',
+            'message': f'Lote procesado exitosamente. Se generaron {documentos_word_generados} documento(s) Word y 1 archivo Excel.',
+            'excel_url': reverse('descargar_archivo_historial', args=[historial_excel.id]),
+            'excel_name': output_filename
+        }
+
+        print("DEBUG: Proceso completado exitosamente, retornando respuesta JSON")
+        return JsonResponse(response_data)
+
     except Exception as e:
-        messages.warning(request, f"Advertencia: El reporte se generó pero no se pudo guardar en el historial: {e}")
-
-    # Actualizar el campo archivo_generado del lote
-    lote.archivo_generado = os.path.join('reportes_vacancias', output_filename) # Guardar la ruta relativa
-    lote.save() # Guardar el lote para persistir la ruta del archivo
-
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = f'attachment; filename={output_filename}'
-    workbook.save(response)
-
-    # Marcar el lote como generado y limpiar vacancias (o mantener para historial)
-    lote.estado = 'GENERADO'
-    lote.fecha_generado = datetime.now()
-    lote.save()
-
-    # Crear un nuevo lote en proceso para el usuario
-    LoteReporteVacancia.objects.create(usuario_generador=request.user, estado='EN_PROCESO')
-
-    # Opcional: Crear un nuevo lote en proceso para el usuario
-    LoteReporteVacancia.objects.create(usuario_generador=request.user, estado='EN_PROCESO')
-
-    return response
+        print(f"DEBUG: ❌ Error generando Excel: {str(e)}")
+        import traceback
+        print(f"DEBUG: Traceback completo: {traceback.format_exc()}")
+        
+        messages.error(request, f"Error al generar el archivo Excel: {str(e)}")
+        lote.estado = 'EN_PROCESO'
+        lote.save()
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
 def get_maestro_data_for_vacancia(request):
@@ -1835,7 +2214,8 @@ def get_maestro_data_for_vacancia(request):
             data = {
                 'nombre_completo': f'{maestro.nombres} {maestro.a_paterno} {maestro.a_materno}',
                 'clave_presupuestal': maestro.clave_presupuestal,
-                'categoria': maestro.categog.id_categoria if maestro.categog else ''
+                'categoria': maestro.categog.id_categoria if maestro.categog else '',
+                'curp': maestro.curp or ''
             }
         except Maestro.DoesNotExist:
             data = {'error': 'Maestro no encontrado'}
@@ -2305,7 +2685,8 @@ def kardex_maestros_ajax(request):
 
     data = []
     for maestro in queryset:
-        actions = f'<a href="{reverse("kardex_maestro_detail", args=[maestro.pk])}" class="btn btn-sm btn-info">Ver Kardex</a>'
+        kardex_url = reverse("kardex_maestro_detail", args=[maestro.pk]) + "?from=lista"
+        actions = f'<a href="{kardex_url}" class="btn btn-sm btn-warning">Ver Kardex</a>'
         data.append([
             f'{maestro.a_paterno} {maestro.a_materno} {maestro.nombres}',
             maestro.clave_presupuestal or '-',
@@ -2333,6 +2714,9 @@ def kardex_maestro_list(request):
 def kardex_maestro_detail(request, maestro_id):
     """Muestra una línea de tiempo unificada para un maestro específico."""
     maestro = get_object_or_404(Maestro, pk=maestro_id)
+    
+    # Obtener el origen para el botón de "volver"
+    from_page = request.GET.get('from', 'lista') # 'lista' es el valor por defecto
     
     timeline = []
 
@@ -2401,7 +2785,8 @@ def kardex_maestro_detail(request, maestro_id):
     context = {
         'maestro': maestro,
         'timeline': timeline,
-        'titulo': f'Kardex de {maestro}'
+        'titulo': f'Kardex de {maestro}',
+        'from_page': from_page
     }
     
     return render(request, 'gestion_escolar/kardex_detail.html', context)

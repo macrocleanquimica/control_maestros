@@ -7,9 +7,14 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Detalle del Personal: {{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</h4>
-        <a href="{% url 'lista_maestros' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
-        </a>
+        <div>
+            {% if perms.gestion_escolar.acceder_kardex %}
+                <a href="{% url 'kardex_maestro_detail' maestro.id_maestro %}?from=detalle" class="btn btn-warning me-2"><i class="fas fa-history me-2"></i>Ver Kardex</a>
+            {% endif %}
+            <a href="{% url 'lista_maestros' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
+            </a>
+        </div>
     </div>
     <div class="row">
         <div class="col-12">

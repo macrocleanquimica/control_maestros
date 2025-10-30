@@ -7,9 +7,15 @@
             <h1 class="mb-0">{{ titulo }}</h1>
             <p class="text-muted mb-0">Historial completo de actividades y documentos.</p>
         </div>
-        <a href="{% url 'kardex_list' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver a la lista
-        </a>
+        {% if from_page == 'detalle' %}
+            <a href="{% url 'detalle_maestro' maestro.id_maestro %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver al Detalle del Personal
+            </a>
+        {% else %}
+            <a href="{% url 'kardex_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver a la Lista de Kardex
+            </a>
+        {% endif %}
     </div>
 
     <div class="card">

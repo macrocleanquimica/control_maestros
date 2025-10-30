@@ -33,11 +33,32 @@
             {% endif %}
 
             <hr>
-            <h6 class="m-0 font-weight-bold text-primary">Datos Completos del Formulario</h6>
+            
+            {% comment %} Definimos las claves que se mostrarán en la sección de Centro de Trabajo {% endcomment %}
+            <!-- Sección para Información del Centro de Trabajo -->
+            <h6 class="m-0 font-weight-bold text-primary">Información del Centro de Trabajo y Autoridades (al momento del trámite)</h6>
+            <div class="table-responsive mt-3 mb-4">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <tbody>
+                        {% for key in ct_keys_list %}
+                            {% if key in datos_tramite %}
+                            <tr>
+                                <td style="width: 30%;"><strong>{{ key|title|replace:"_ | " }}:</strong></td>
+                                <td>{{ datos_tramite|get_item:key|default:"N/A" }}</td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Sección para otros datos del formulario -->
+            <h6 class="m-0 font-weight-bold text-primary">Otros Datos del Formulario</h6>
             <div class="table-responsive mt-3">
                 <table class="table table-bordered" width="100%" cellspacing="0">
                     <tbody>
                         {% for key, value in datos_tramite.items %}
+                        {% if key not in ct_keys_list %}
                             <tr>
                                 <td><strong>{{ key|title|replace:"_ | " }}:</strong></td>
                                 <td>
@@ -74,6 +95,7 @@
                                     {% endif %}
                                 </td>
                             </tr>
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
