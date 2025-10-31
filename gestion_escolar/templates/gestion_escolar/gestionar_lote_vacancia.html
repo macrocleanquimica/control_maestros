@@ -295,8 +295,12 @@ function iniciarProcesoExportacion(loteId) {
 
                                                 $('#final-links').html(finalLinksHtml).show();
                                                 
-                                                // Recargar la página después de un tiempo
-                                                setTimeout(() => location.reload(), 10000);
+                                                // No recargar la página automáticamente. El usuario cerrará el modal manualmente.
+                                                updateLoadingMessage('<i class="fas fa-star text-warning"></i> ¡Proceso completado con éxito! Puede cerrar esta ventana cuando termine.');
+                                                
+                                                // Añadir un botón de cierre manual
+                                                const closeButton = '<button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="modal" onclick="location.reload()">Cerrar y Recargar</button>';
+                                                $('#final-links').append(closeButton);
                                             } else {
                                                 handleExportError('Paso 3 (Excel)', responseExcel.message);
                                             }

@@ -12,3 +12,4 @@ whitenoise
 requests
 gspread
 google-auth-oauthlib
+django-colorfield

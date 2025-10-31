@@ -84,6 +84,7 @@ urlpatterns = [
     path('reportes/', views.reportes_dashboard, name='reportes_dashboard'),
     path('reportes/personal_fuera_adscripcion/', views.reporte_personal_fuera_adscripcion, name='reporte_personal_fuera_adscripcion'),
     path('reportes/distribucion_funcion/', views.reporte_distribucion_funcion, name='reporte_distribucion_funcion'),
+    path('reportes/personal_fuera_adscripcion/export/excel/', views.export_personal_fuera_adscripcion_excel, name='export_personal_fuera_adscripcion_excel'),
 
     # URLs para Pendientes y Correspondencia
     path('pendientes/', views.PendienteActiveListView.as_view(), name='pendientes_activos'),
@@ -114,6 +115,12 @@ urlpatterns = [
     path('ajustes/roles/<int:pk>/editar/', views.RoleUpdateView.as_view(), name='role_update'),
     path('ajustes/roles/<int:pk>/miembros/', views.manage_role_members, name='role_members'),
     path('ajustes/roles/<int:pk>/eliminar/', views.RoleDeleteView.as_view(), name='role_delete'),
+
+    # URLs para Gestión de Temas
+    path('ajustes/temas/', views.ThemeListView.as_view(), name='tema_list'),
+    path('ajustes/temas/nuevo/', views.ThemeCreateView.as_view(), name='tema_create'),
+    path('ajustes/temas/<int:pk>/editar/', views.ThemeUpdateView.as_view(), name='tema_update'),
+    path('ajustes/temas/<int:pk>/eliminar/', views.ThemeDeleteView.as_view(), name='tema_delete'),
 
     # URLs para Autenticación
     path('login/', views.login_view, name='login'),

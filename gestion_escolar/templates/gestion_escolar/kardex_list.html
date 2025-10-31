@@ -1,6 +1,9 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
+{% block extra_head %}
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -45,7 +48,11 @@ $(document).ready(function() {
                 { data: 2, orderable: false, searchable: false } // Acciones
             ],
             language: {
-                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
+                processing: `
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
+                    </div>`
             }
         });
     }

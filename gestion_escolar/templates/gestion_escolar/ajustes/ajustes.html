@@ -20,6 +20,9 @@
                     <ul>
                         <li><a href="{% url 'asignar_director' %}">Asignar Director</a></li>
                         <li><a href="{% url 'role_list' %}">Roles y Permisos</a></li>
+                        {% if perms.gestion_escolar.view_tema %}
+                        <li><a href="{% url 'tema_list' %}">Gestión de Temas</a></li>
+                        {% endif %}
                     </ul>
                     {% endif %}
                 </div>

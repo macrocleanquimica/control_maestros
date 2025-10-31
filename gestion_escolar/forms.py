@@ -1,6 +1,6 @@
 from django import forms
 from .models import (
-    Zona, Escuela, Maestro, Categoria, MotivoTramite, 
+    Zona, Escuela, Maestro, Categoria, MotivoTramite, Tema,
     PlantillaTramite, Prelacion, TipoApreciacion, Vacancia, 
     Pendiente, Correspondencia, RegistroCorrespondencia
 )
@@ -478,3 +478,21 @@ class RolePermissionForm(forms.ModelForm):
         group.save()
         group.permissions.set(self.cleaned_data['permissions'])
         return group
+
+class TemaForm(forms.ModelForm):
+    class Meta:
+        model = Tema
+        fields = ['nombre', 'activo', 'fecha_inicio', 'fecha_fin', 'color_principal', 'color_secundario', 'color_texto', 'imagen_fondo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'fecha_fin': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'imagen_fondo': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('fecha_inicio') and cleaned_data.get('fecha_fin') and cleaned_data['fecha_fin'] < cleaned_data['fecha_inicio']:
+            raise forms.ValidationError("La fecha de fin no puede ser anterior a la fecha de inicio.")
+        return cleaned_data

@@ -6,12 +6,34 @@
     <title>{% block title %}Sistema de Control de Maestros{% endblock %}</title>
     {% load static %}
     {% load auth_extras %}
+    {% load color_filters %}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'gestion_escolar/css/custom.css' %}">
+    <link href="{% static 'gestion_escolar/css/print.css' %}" rel="stylesheet" media="print">
+    
+    {% if active_theme %}
+    <style>
+        /* Estilos dinámicos para el tema activo */
+        #accordionSidebar {
+            background-color: {{ active_theme.color_principal }};
+            {% if active_theme.imagen_fondo %}
+            background-image: linear-gradient(180deg, {{ active_theme.color_principal|hex_to_rgba:0.7 }}, {{ active_theme.color_secundario|hex_to_rgba:0.5 }}), url("{{ active_theme.imagen_fondo.url }}");
+            background-size: cover;
+            background-position: center;
+            background-blend-mode: overlay;
+            {% else %}
+            background-image: linear-gradient(180deg, {{ active_theme.color_principal }}, {{ active_theme.color_secundario }});
+            {% endif %}
+        }
+        #accordionSidebar .sidebar-brand-text, #accordionSidebar .nav-item .nav-link span, #accordionSidebar .sidebar-heading {
+            color: {{ active_theme.color_texto }} !important;
+        }
+    </style>
+    {% endif %}
     <style>
         :root {
             --primary-color: #34495e; /* Dark Gray - for main elements, buttons, active states */
@@ -392,7 +414,7 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-md-2 sidebar">
+            <div id="accordionSidebar" class="col-md-2 sidebar">
                 <div class="text-center p-3" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
                     <a href="{% url 'index' %}">
                         <img src="{% static 'gestion_escolar/img/logotipo.png' %}" alt="Logotipo" class="img-fluid" style="max-height: 100px;">
@@ -723,8 +745,24 @@
         window.addEventListener('pageshow', function() {
             hideLoading();
         });
+
     </script>
     
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if active_theme %}
+                console.log("Active theme data:", {
+                    nombre: "{{ active_theme.nombre }}",
+                    imagen_fondo_url: "{{ active_theme.imagen_fondo.url|default:'No hay imagen' }}",
+                    color_principal: "{{ active_theme.color_principal }}",
+                    color_secundario: "{{ active_theme.color_secundario }}",
+                    color_texto: "{{ active_theme.color_texto }}"
+                });
+            {% else %}
+                console.log("No active theme found.");
+            {% endif %}
+        });
+    </script>
     {% block extra_js %}
     {% endblock %}
 </body>

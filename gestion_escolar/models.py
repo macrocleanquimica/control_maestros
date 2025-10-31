@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from .validators import validate_cct_format
 import re
+from colorfield.fields import ColorField
 
 class Zona(models.Model):
     numero = models.IntegerField(unique=True, verbose_name="Número de Zona")
@@ -745,3 +746,21 @@ class KardexMovimiento(models.Model):
 
     def __str__(self):
         return f"Movimiento {self.id} - {self.maestro}"
+
+class Tema(models.Model):
+    nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre del Tema")
+    fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
+    fecha_fin = models.DateField(verbose_name="Fecha de Fin")
+    imagen_fondo = models.ImageField(upload_to='themes/', blank=True, null=True, verbose_name="Imagen de Fondo (Opcional)")
+    color_principal = ColorField(default='#2c3e50', verbose_name="Color Principal (Gradiente Superior)")
+    color_secundario = ColorField(default='#34495e', verbose_name="Color Secundario (Gradiente Inferior)")
+    color_texto = ColorField(default='#FFFFFF', verbose_name="Color del Texto")
+    activo = models.BooleanField(default=True, verbose_name="Activo", help_text="Solo un tema puede estar activo a la vez para un rango de fechas.")
+
+    class Meta:
+        verbose_name = "Tema de Personalización"
+        verbose_name_plural = "Temas de Personalización"
+        ordering = ['fecha_inicio']
+
+    def __str__(self):
+        return self.nombre

@@ -1,0 +1,30 @@
+/* --- Tema para Noviembre (Día de Muertos) --- */
+.theme-noviembre {
+    /* Color base que se verá si la imagen no carga */
+    background-color: #4c1a4c; 
+    
+    /* Capas de fondo: un gradiente semitransparente SOBRE tu imagen */
+    background-image: 
+        linear-gradient(180deg, rgba(76, 26, 76, 0.6), rgba(255, 127, 80, 0.4)),
+        url('../img/themes/skin_dia_de_muertos.jpg'); /* <-- RUTA SIMPLIFICADA */
+
+    background-size: cover; /* Asegura que la imagen cubra todo el espacio */
+    background-position: center; /* Centra la imagen */
+    background-blend-mode: overlay; /* Mezcla la imagen con los colores para un efecto sutil */
+    color: #fff;
+}
+
+.theme-noviembre .sidebar-brand-text,
+.theme-noviembre .nav-item .nav-link span,
+.theme-noviembre .sidebar-heading {
+    color: rgba(255, 255, 255, 0.95) !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* Sombra para mejorar legibilidad */
+}
+
+.theme-noviembre .nav-item .nav-link i {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.theme-noviembre hr.sidebar-divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}

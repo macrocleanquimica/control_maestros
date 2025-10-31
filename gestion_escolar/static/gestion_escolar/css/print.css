@@ -1,0 +1,58 @@
+@media print {
+    /* Ocultar la barra de navegación lateral y superior */
+    .sidebar,
+    .navbar,
+    .footer,
+    .topbar {
+        display: none !important;
+    }
+
+    /* Ocultar botones y otros elementos no deseados */
+    .btn,
+    .dt-buttons,
+    div.dataTables_filter,
+    div.dataTables_length,
+    div.dataTables_info,
+    div.dataTables_paginate {
+        display: none !important;
+    }
+
+    /* Asegurarse de que el contenido principal ocupe todo el ancho */
+    #content-wrapper,
+    #content {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Estilos para que la tabla se vea bien */
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .table {
+        width: 100% !important;
+        border: 1px solid #dee2e6;
+    }
+
+    .table th,
+    .table td {
+        font-size: 10pt;
+    }
+
+    /* Evitar saltos de página dentro de las filas de la tabla */
+    tr {
+        page-break-inside: avoid;
+    }
+
+    /* Ocultar el header de la tarjeta, excepto el título si se quiere mantener */
+    .card-header h6 {
+        display: block; /* Asegurarse de que el título sea visible */
+    }
+
+    /* Ocultar específicamente los botones que agregamos */
+    .card-header > div:last-child {
+        display: none !important;
+    }
+}
