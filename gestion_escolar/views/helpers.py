@@ -152,21 +152,28 @@ def serialize_form_data(cleaned_data):
     return serialized_data
 
 def send_to_google_sheet(row_data):
-    print("DEBUG GS: Iniciando envío a Google Sheets...")
+    # print("DEBUG GS: Iniciando envío a Google Sheets...") # Comentado para producción
     try:
         if not hasattr(settings, 'GOOGLE_SHEETS_CREDENTIALS'):
             return False, "Configuración de credenciales no encontrada"
         creds_json = settings.GOOGLE_SHEETS_CREDENTIALS
         if not creds_json.get('private_key') or not creds_json.get('client_email'):
             return False, "Credenciales incompletas - falta private_key o client_email"
-        print(f"DEBUG GS: Usando cuenta: {creds_json['client_email']}")
+        
+        # Crear una copia de las credenciales para modificar la clave privada
+        creds_for_auth = creds_json.copy()
+        # Reemplazar los '\n' escapados por saltos de línea reales
+        creds_for_auth['private_key'] = creds_for_auth['private_key'].replace('\\n', '\n')
+        
+        # print(f"DEBUG GS: Usando cuenta: {creds_for_auth['client_email']}") # Comentado para producción
         SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-        credentials = service_account.Credentials.from_service_account_info(creds_json, scopes=SCOPES)
-        gc = gspread.authorize(credentials)
-        print("DEBUG GS: ✅ Autenticación exitosa")
+        credentials = service_account.Credentials.from_service_account_info(creds_for_auth, scopes=SCOPES)
+        # Usar gspread.Client directamente con el objeto de credenciales
+        gc = gspread.Client(auth=credentials)
+        # print("DEBUG GS: ✅ Autenticación exitosa") # Comentado para producción
         spreadsheet = gc.open_by_key(settings.GOOGLE_SHEET_ID)
         worksheet = spreadsheet.worksheet(settings.GOOGLE_SHEET_WORKSHEET_NAME)
-        print("DEBUG GS: ✅ Hoja abierta correctamente")
+        # print("DEBUG GS: ✅ Hoja abierta correctamente") # Comentado para producción
         cleaned_data = []
         for item in row_data:
             if item is None:
@@ -176,19 +183,19 @@ def send_to_google_sheet(row_data):
             else:
                 cleaned_data.append(str(item))
         worksheet.append_row(cleaned_data)
-        print(f"DEBUG GS: ✅ Fila agregada: {cleaned_data}")
+        # print(f"DEBUG GS: ✅ Fila agregada: {cleaned_data}") # Comentado para producción
         return True, "Datos enviados correctamente a Google Sheets"
     except gspread.exceptions.SpreadsheetNotFound:
         error_msg = "Google Sheet no encontrado. Verifica el GOOGLE_SHEET_ID."
-        print(f"DEBUG GS: ❌ {error_msg}")
+        # print(f"DEBUG GS: ❌ {error_msg}") # Comentado para producción
         return False, error_msg
     except gspread.exceptions.WorksheetNotFound:
         error_msg = f"Hoja '{settings.GOOGLE_SHEET_WORKSHEET_NAME}' no encontrada."
-        print(f"DEBUG GS: ❌ {error_msg}")
+        # print(f"DEBUG GS: ❌ {error_msg}") # Comentado para producción
         return False, error_msg
     except Exception as e:
         error_msg = f"Error: {str(e)}"
-        print(f"DEBUG GS: ❌ {error_msg}")
+        # print(f"DEBUG GS: ❌ {error_msg}") # Comentado para producción
         return False, error_msg
 
 def generate_word_document(form_data, plantilla_tramite, user):

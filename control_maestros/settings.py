@@ -138,17 +138,23 @@ MEDIA_URL = '/media/'
 # Google Sheets API Configuration
 # ADVERTENCIA DE SEGURIDAD: Las credenciales de la API de Google Sheets son un secreto
 # y NO deben ser versionadas en un repositorio público.
-# Se recomienda cargarlas desde variables de entorno o un archivo de configuración seguro.
-# Por ejemplo, puedes usar un archivo .env y la librería python-dotenv.
-# Asegúrate de que tu archivo .env esté en .gitignore.
+# Se recomienda cargarlas desde un archivo local que esté en .gitignore.
 
-# Cargar credenciales desde una variable de entorno (JSON string)
-GOOGLE_SHEETS_CREDENTIALS_JSON = os.getenv('GOOGLE_SHEETS_CREDENTIALS_JSON', '{}')
-try:
-    GOOGLE_SHEETS_CREDENTIALS = json.loads(GOOGLE_SHEETS_CREDENTIALS_JSON)
-except json.JSONDecodeError:
-    GOOGLE_SHEETS_CREDENTIALS = {}
+# Ruta al archivo de credenciales local (debe estar en .gitignore)
+LOCAL_SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, 'service_account_local.json')
 
-# Cargar IDs desde variables de entorno
-GOOGLE_SHEET_ID = os.getenv('GOOGLE_SHEET_ID', '')
-GOOGLE_SHEET_WORKSHEET_NAME = os.getenv('GOOGLE_SHEET_WORKSHEET_NAME', '')
+GOOGLE_SHEETS_CREDENTIALS = {}
+if os.path.exists(LOCAL_SERVICE_ACCOUNT_FILE):
+    try:
+        with open(LOCAL_SERVICE_ACCOUNT_FILE, 'r') as f:
+            GOOGLE_SHEETS_CREDENTIALS = json.load(f)
+    except Exception as e:
+        pass # Opcional: loggear el error sin imprimir en consola
+else:
+    pass # Opcional: loggear la advertencia sin imprimir en consola
+
+# Cargar IDs desde variables de entorno (o directamente si no son sensibles)
+# Si GOOGLE_SHEET_ID y GOOGLE_SHEET_WORKSHEET_NAME no son secretos, pueden estar aquí directamente.
+# Si son sensibles, se recomienda cargarlos también desde variables de entorno.
+GOOGLE_SHEET_ID = os.getenv('GOOGLE_SHEET_ID', '1Svs7eClLiHezipj9RnV_Q8yNuxJbxew--OqKemOeoSs') # Usar valor por defecto si no está en .env
+GOOGLE_SHEET_WORKSHEET_NAME = os.getenv('GOOGLE_SHEET_WORKSHEET_NAME', 'DatosVacancias') # Usar valor por defecto si no está en .env
