@@ -23,7 +23,22 @@
         <div class="card-body">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                
+                <!-- AGREGAR ESTO PARA VER ERRORES DETALLADOS -->
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        <h5 class="alert-heading">Errores en el formulario:</h5>
+        <ul class="mb-0">
+            {% for field, errors in form.errors.items %}
+                <li>
+                    <strong>{{ field|title }}:</strong> 
+                    {% for error in errors %}
+                        {{ error }}
+                    {% endfor %}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
                 <!-- Apellido Paterno, Apellido Materno, Nombres -->
                 <div class="row">
                     <div class="col-md-4 mb-3">
@@ -147,7 +162,7 @@
                         {{ form.funcion }}
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="{{ form.nivel_estudio.id_for_label }}" class="form-label">Nivel de Estudio</label>
+                        <label for="{{ form.nivel_estudio.id_for_label }}" class="form-label">Titulo o Tratamiento (Prefijo a usar)</label>
                         {{ form.nivel_estudio }}
                     </div>
                 </div>

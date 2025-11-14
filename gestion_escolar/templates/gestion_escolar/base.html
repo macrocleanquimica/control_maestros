@@ -394,6 +394,12 @@
             color: #dc3545 !important; /* Color de peligro de Bootstrap */
         }
     </style>
+    <style>
+        /* Forzar mayúsculas en los campos de formulario, excepto en los de tipo email */
+        input:not([type="email"]), textarea {
+            text-transform: uppercase;
+        }
+    </style>
 </head>
 <body>
 
@@ -748,22 +754,22 @@
 
     </script>
     
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            {% if active_theme %}
-                console.log("Active theme data:", {
-                    nombre: "{{ active_theme.nombre }}",
-                    imagen_fondo_url: "{{ active_theme.imagen_fondo.url|default:'No hay imagen' }}",
-                    color_principal: "{{ active_theme.color_principal }}",
-                    color_secundario: "{{ active_theme.color_secundario }}",
-                    color_texto: "{{ active_theme.color_texto }}"
-                });
-            {% else %}
-                console.log("No active theme found.");
-            {% endif %}
-        });
-    </script>
+
     {% block extra_js %}
+    <script>
+    $(document).ready(function() {
+        // Check if tablaCorrespondencia exists before initializing DataTable
+        if ($('#tablaCorrespondencia').length) {
+            $('#tablaCorrespondencia').DataTable({
+                responsive: true,
+                order: [[ 0, 'desc' ]], // Ordenar por la primera columna (fecha) de forma descendente
+                language: {
+                    url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                }
+            });
+        }
+    });
+    </script>
     {% endblock %}
 </body>
 </html>

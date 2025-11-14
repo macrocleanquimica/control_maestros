@@ -7,7 +7,31 @@ from .models import (
 from django.contrib.auth.models import User, Group, Permission
 import re
 
-class PendienteForm(forms.ModelForm):
+class UppercaseFormMixin(object):
+    """
+    Mixin para convertir a mayúsculas los campos de texto de un formulario.
+    Aplica un estilo CSS y un script oninput para que el texto se vea en mayúsculas 
+    mientras se escribe y convierte el valor a mayúsculas antes de validarlo.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            if isinstance(field, forms.CharField) and not isinstance(field, forms.EmailField):
+                if isinstance(field.widget, (forms.TextInput, forms.Textarea)):
+                    field.widget.attrs.update({
+                        'style': 'text-transform: uppercase;',
+                        'oninput': 'this.value = this.value.toUpperCase()'
+                    })
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for field_name, value in cleaned_data.items():
+            field = self.fields.get(field_name)
+            if isinstance(value, str) and field and not isinstance(field, forms.EmailField):
+                cleaned_data[field_name] = value.upper()
+        return cleaned_data
+
+class PendienteForm(UppercaseFormMixin, forms.ModelForm):
     class Meta:
         model = Pendiente
         fields = ['titulo', 'descripcion', 'fecha_programada']
@@ -22,7 +46,7 @@ class PendienteForm(forms.ModelForm):
             'fecha_programada': 'Fecha Programada',
         }
 
-class RegistroCorrespondenciaForm(forms.ModelForm):
+class RegistroCorrespondenciaForm(UppercaseFormMixin, forms.ModelForm):
     class Meta:
         model = RegistroCorrespondencia
         fields = [
@@ -35,23 +59,16 @@ class RegistroCorrespondenciaForm(forms.ModelForm):
             'fecha_oficio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'maestro': forms.Select(attrs={'class': 'form-control select2'}),
             'tipo_documento': forms.Select(attrs={'class': 'form-control'}),
-            'folio_documento': forms.TextInput(attrs={'class': 'form-control', 'style': 'text-transform: uppercase;'}),
-            'remitente': forms.TextInput(attrs={'class': 'form-control', 'style': 'text-transform: uppercase;'}),
-            'contenido': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'style': 'text-transform: uppercase;'}),
+            'folio_documento': forms.TextInput(attrs={'class': 'form-control'}),
+            'remitente': forms.TextInput(attrs={'class': 'form-control'}),
+            'contenido': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'area': forms.Select(attrs={'class': 'form-control'}),
-            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'style': 'text-transform: uppercase;'}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'archivo_adjunto': forms.FileInput(attrs={'class': 'form-control-file'}),
-            'quien_recibio': forms.TextInput(attrs={'class': 'form-control', 'style': 'text-transform: uppercase;'}),
+            'quien_recibio': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
-    def clean(self):
-        cleaned_data = super().clean()
-        for field_name in ['folio_documento', 'remitente', 'contenido', 'observaciones', 'quien_recibio']:
-            if field_name in cleaned_data and cleaned_data[field_name]:
-                cleaned_data[field_name] = cleaned_data[field_name].upper()
-        return cleaned_data
-
-class CorrespondenciaForm(forms.ModelForm):
+class CorrespondenciaForm(UppercaseFormMixin, forms.ModelForm):
     class Meta:
         model = Correspondencia
         fields = ['destinatario', 'asunto', 'cuerpo']
@@ -66,7 +83,7 @@ class CorrespondenciaForm(forms.ModelForm):
             'cuerpo': 'Mensaje',
         }
 
-class VacanciaForm(forms.ModelForm):
+class VacanciaForm(UppercaseFormMixin, forms.ModelForm):
     clave_presupuestal_display = forms.CharField(label="Clave Presupuestal", required=False, 
                                                  widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
     curp_interino_display = forms.CharField(label="CURP Interino", required=False, 
@@ -171,7 +188,7 @@ class EscuelaChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return obj.id_escuela
 
-class ZonaForm(forms.ModelForm):
+class ZonaForm(UppercaseFormMixin, forms.ModelForm):
     class Meta:
         model = Zona
         fields = '__all__'
@@ -182,7 +199,7 @@ class ZonaForm(forms.ModelForm):
             'numero': 'Número de Zona',
         }
 
-class EscuelaForm(forms.ModelForm):
+class EscuelaForm(UppercaseFormMixin, forms.ModelForm):
     class Meta:
         model = Escuela
         fields = '__all__'
@@ -203,7 +220,7 @@ class EscuelaForm(forms.ModelForm):
         self.fields['u_d'].widget.attrs.update({'class': 'form-control'})
         self.fields['sostenimiento'].widget.attrs.update({'class': 'form-control'})
 
-class CategoriaForm(forms.ModelForm):
+class CategoriaForm(UppercaseFormMixin, forms.ModelForm):
     class Meta:
         model = Categoria
         fields = '__all__'
@@ -212,7 +229,7 @@ class CategoriaForm(forms.ModelForm):
             'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
-class MaestroForm(forms.ModelForm):
+class MaestroForm(UppercaseFormMixin, forms.ModelForm):
     categog = CategoriaChoiceField(
         queryset=Categoria.objects.all().order_by('id_categoria'),
         required=False,
@@ -250,25 +267,25 @@ class MaestroForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'dep': forms.TextInput(attrs={
                 'class': 'form-control',
-                'pattern': '^\d{2}$',
+                'pattern': r'^\d{2}$',
                 'title': '2 dígitos (ej: 07)',
                 'placeholder': '00'
             }),
             'unid': forms.TextInput(attrs={
                 'class': 'form-control',
-                'pattern': '^\d{2}$',
+                'pattern': r'^\d{2}$',
                 'title': '2 dígitos (ej: 10)',
                 'placeholder': '00'
             }),
             'sub_unid': forms.TextInput(attrs={
                 'class': 'form-control',
-                'pattern': '^\d{2}$',
+                'pattern': r'^\d{2}$',
                 'title': '2 dígitos (ej: 04)',
                 'placeholder': '00'
             }),
             'hrs': forms.TextInput(attrs={
                 'class': 'form-control',
-                'pattern': '^\d{2}\.\d$',
+                'pattern': r'^\d{2}\.\d$',
                 'title': 'Formato: XX.X (ej: 00.0, 42.0)',
                 'placeholder': '00.0'
             }),
@@ -287,12 +304,13 @@ class MaestroForm(forms.ModelForm):
         self.fields['est_civil'].widget.attrs.update({'class': 'form-control'})
         self.fields['nivel_estudio'].widget.attrs.update({'class': 'form-control'})
         self.fields['status'].widget.attrs.update({'class': 'form-control'})
-        self.fields['funcion'].choices = Maestro.FUNCION_OPCIONES
         self.fields['dep'].widget.attrs.update({'class': 'form-control'})
         self.fields['unid'].widget.attrs.update({'class': 'form-control'})
         self.fields['sub_unid'].widget.attrs.update({'class': 'form-control'})
         self.fields['hrs'].widget.attrs.update({'class': 'form-control'})
         self.fields['num_plaza'].widget.attrs.update({'class': 'form-control'})
+
+
 
         if request and not request.user.is_superuser:
             if 'user' in self.fields:
@@ -316,7 +334,7 @@ class MaestroForm(forms.ModelForm):
                 self.add_error(campo, 'Este campo es requerido para generar la clave presupuestal')
         return cleaned_data
 
-class TramiteForm(forms.Form):
+class TramiteForm(UppercaseFormMixin, forms.Form):
     def __init__(self, *args, **kwargs):
         form_type = kwargs.pop('form_type', None)
         super().__init__(*args, **kwargs)
@@ -377,7 +395,7 @@ class TramiteForm(forms.Form):
                                          widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
     tipo_val_display = forms.CharField(label="Tipo de Valoración", required=False,
                                        widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
-    folio = forms.CharField(max_length=50, label="Folio", required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    folio = forms.CharField(max_length=50, label="Folio de Oficio (Manual)", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Capture el folio del control de oficios'}))
     fecha_efecto1 = forms.DateField(label="Fecha inicial Titular", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
     fecha_efecto2 = forms.DateField(label="Fecha Final Titular", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
     fecha_efecto3 = forms.DateField(label="Fecha inicial Interino", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
@@ -407,7 +425,7 @@ class TramiteForm(forms.Form):
 
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 
-class SignUpForm(UserCreationForm):
+class SignUpForm(UppercaseFormMixin, UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True, label='Nombre(s)')
     last_name = forms.CharField(max_length=150, required=True, label='Apellidos')
     email = forms.EmailField(max_length=254, required=True, label='Correo electrónico')
@@ -423,7 +441,7 @@ class SignUpForm(UserCreationForm):
             user.save()
         return user
 
-class CustomUserChangeForm(UserChangeForm):
+class CustomUserChangeForm(UppercaseFormMixin, UserChangeForm):
     password = None
     class Meta:
         model = User
@@ -451,7 +469,7 @@ class DocumentoExpedienteForm(forms.ModelForm):
         }
 
 
-class RolePermissionForm(forms.ModelForm):
+class RolePermissionForm(UppercaseFormMixin, forms.ModelForm):
     class Meta:
         model = Group
         fields = ['name']
@@ -479,7 +497,7 @@ class RolePermissionForm(forms.ModelForm):
         group.permissions.set(self.cleaned_data['permissions'])
         return group
 
-class TemaForm(forms.ModelForm):
+class TemaForm(UppercaseFormMixin, forms.ModelForm):
     class Meta:
         model = Tema
         fields = ['nombre', 'activo', 'fecha_inicio', 'fecha_fin', 'color_principal', 'color_secundario', 'color_texto', 'imagen_fondo']

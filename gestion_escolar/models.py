@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from .validators import validate_cct_format
 import re
 from colorfield.fields import ColorField
+from unidecode import unidecode
 
 class Zona(models.Model):
     numero = models.IntegerField(unique=True, verbose_name="Número de Zona")
@@ -13,7 +14,7 @@ class Zona(models.Model):
         blank=True,
         verbose_name="Supervisor",
         related_name='zonas_supervisadas',
-        limit_choices_to={'funcion__in': ['SUPERVISOR', 'SUPERVISOR (A)', 'SUPERVISOR(A)']},
+        limit_choices_to={'funcion__in': ['SUPERVISOR(A)']},
     )
     observaciones = models.TextField(verbose_name="Observaciones", blank=True)
     
@@ -155,20 +156,15 @@ class Maestro(models.Model):
     ]
     
     NIVEL_ESTUDIO_OPCIONES = [
-        ('LIC', 'Licenciatura'),
-        ('ING', 'Ingeniería'),
-        ('MTRO', 'Maestría'),
-        ('DOC', 'Doctorado'),
-        ('TSU', 'Técnico Superior Universitario'),
-        ('BACHILLER', 'Bachillerato'),
-        ('OTRO', 'Otro'),
-        ('Dra.', 'Dra.'),
-        ('Profra.', 'Profra.'),
-        ('Prof.', 'Prof.'),
-        ('Mtra.', 'Mtra.'),
-        ('Profr.', 'Profr.'),
-        ('Psic.', 'Psic.'),
-        ('', 'No especificado'),
+        ('DRA.', 'DRA.'),
+        ('PROFRA.', 'PROFRA.'),
+        ('PROF.', 'PROF.'),
+        ('MTRA.', 'MTRA.'),
+        ('PROFR.', 'PROFR.'),
+        ('PSIC.', 'PSIC.'),
+        ('DR.', 'DR.'),
+        ('MTRO.', 'MTRO.'),
+        ('C.', 'C.'),
     ]
     
     STATUS_OPCIONES = [
@@ -182,58 +178,32 @@ class Maestro(models.Model):
     ]
     
     FUNCION_OPCIONES = [
-        ('DIRECTOR', 'Director'),
-        ('SUPERVISOR', 'Supervisor'),
-        ('SUPERVISOR (A)', 'Supervisor(a)'),
-        ('MAESTRO_GRUPO', 'Maestro de grupo'),
-        ('MAESTRO_ESPECIALISTA', 'Maestro especialista'),
-        ('DOCENTE_APOYO', 'Docente de apoyo'),
-        ('PSICOLOGO', 'Psicólogo'),
-        ('PSICÓLOGO(A)', 'Psicólogo(a)'),
-        ('PSICÓLOGO (A)', 'Psicólogo(a)'),
-        ('TRABAJADOR_SOCIAL', 'Trabajador social'),
-        ('NIÑERO', 'Niñero'),
-        ('NIÑERO(A)', 'Niñero(a)'),
-        ('SECRETARIO', 'Secretario'),
-        ('SECRETARIA ', 'Secretaria'),
-        ('VELADOR', 'Velador'),
-        ('VIGILANTE', 'Vigilante'),
-        ('VIGILANTE ', 'Vigilante'),
-        ('OTRO', 'Otro'),
-        ('SUPERVISOR(A)', 'Supervisor(a)'),
-        ('APOYO TECNICO PEDAGOGICO', 'Apoyo Técnico Pedagógico'),
-        ('SECRETARIO(A)', 'Secretario(a)'),
-        ('DIRECTOR (A)', 'Director(a)'),
-        ('MAESTRO(A) DE GRUPO', 'Maestro(a) de grupo'),
-        ('MAESTRO(A) DE GRUPO CON ESPECIALIDAD', 'Maestro(a) de grupo con especialidad'),
-        ('MAESTRO(A) DE GRUPO ESPECIALISTA', 'Maestro(a) de grupo especialista'),
-        ('MATRO(A) DE GRUPO ESPECIALISTA', 'Maestro(a) de grupo especialista'),
-        ('INSTRUCTOR(A) DE TALLER', 'Instructor(a) de taller'),
-        ('MAESTRO_DE_TALLER', 'Maestro(a) de taller'),
-        ('MAESTRO_DE_TALLER', 'Maestro de taller'),
-        ('MAESTRO_MUSICA', 'Maestro(a) música'),
-        ('MAESTRO_DE_EDUCACION_FISICA', 'Maestro(a) de educación física'),
-        ('MAESTRO_ESPECIALISTA_DOCENTE_DE_APOYO', 'Maestro(a) especialista docente de apoyo'),
-        ('MAESTRO_ESPECIALISTA_DOCENTE_DE_APOYO', 'Maestro(a) especialista docente de apoyo'),
-        ('MAESTRO_DE_APOYO', 'Maestro(a) de apoyo'),
-        ('MTRA_ESPECIALISTA_DOCENTE_DE_APOYO', 'Mtra. especialista docente de apoyo'),
-        ('MAESTRO_ESPECIALISTA_DOCENTE_DE_APOYO', 'Maestro especialista docente de apoyo'),
-        ('TRABAJADOR_SOCIAL', 'Trabajador(a) social'),
-        ('MEDICO', 'Médico(a)'),
-        ('MEDICO', 'Médico(a)'),
-        ('PROMOTOR_TIC', 'Promotor TIC'),
-        ('PROMOTOR_TIC', 'Promotor TIC'),
-        ('TERAPISTA_FISICO', 'Terapista Físico'),
-        ('BIBLIOTECARIO', 'Bibliotecario(a)'),
-        ('ADMINISTRATIVO_ESPECIALIZADO', 'Administrativo Especializado'),
-        ('OFICIAL_DE_SERVICIOS_Y_MANTENIMIENTO', 'Oficial de Servicios y Mantenimiento'),
-        ('OFICIAL_DE_SERVICIOS_DE_MANTENIMIENTO', 'Oficial de Servicios de Mantenimiento'),
-        ('ASISTENTE_DE_SERVICIOS', 'Asistente de Servicios'),
-        ('ASESOR_JURIDICO', 'Asesor Jurídico'),
-        ('AUXILIAR_DE_GRUPO', 'Auxiliar de Grupo'),
-        ('MAESTRO_DE_COMUNICACION', 'Maestro(a) de Comunicación'),
-        ('MAESTRO_AULA_HOSPITALARIA', 'Maestro Aula Hospitalaria'),
-        ('', 'No especificado'),
+        ('ADMINISTRATIVO ESPECIALIZADO', 'ADMINISTRATIVO ESPECIALIZADO'),
+        ('APOYO TÉCNICO PEDAGÓGICO', 'APOYO TÉCNICO PEDAGÓGICO'),
+        ('ASESOR JURÍDICO', 'ASESOR JURÍDICO'),
+        ('ASISTENTE DE SERVICIOS', 'ASISTENTE DE SERVICIOS'),
+        ('AUXILIAR DE GRUPO', 'AUXILIAR DE GRUPO'),
+        ('BIBLIOTECARIO', 'BIBLIOTECARIO'),
+        ('DIRECTOR(A)', 'DIRECTOR(A)'),
+        ('MAESTRO(A) AULA HOSPITALARIA', 'MAESTRO(A) AULA HOSPITALARIA'),
+        ('MAESTRO(A) DE COMUNICACIÓN', 'MAESTRO(A) DE COMUNICACIÓN'),
+        ('MAESTRO(A) DE EDUCACIÓN FÍSICA', 'MAESTRO(A) DE EDUCACIÓN FÍSICA'),
+        ('MAESTRO(A) ESPECIALISTA DOCENTE DE APOYO', 'MAESTRO(A) ESPECIALISTA DOCENTE DE APOYO'),
+        ('MAESTRO(A) DE GRUPO ESPECIALISTA', 'MAESTRO(A) DE GRUPO ESPECIALISTA'),
+        ('MAESTRO(A) MÚSICA', 'MAESTRO(A) MÚSICA'),
+        ('MAESTRO(A) DE TALLER', 'MAESTRO(A) DE TALLER'),
+        ('MÉDICO(A)', 'MÉDICO(A)'),
+        ('NIÑERO(A)', 'NIÑERO(A)'),
+        ('NO ESPECIFICADO', 'NO ESPECIFICADO'),
+        ('OFICIAL DE SERVICIOS Y MANTENIMIENTO', 'OFICIAL DE SERVICIOS Y MANTENIMIENTO'),
+        ('PROMOTOR TIC', 'PROMOTOR TIC'),
+        ('PSICÓLOGO(A)', 'PSICÓLOGO(A)'),
+        ('SECRETARIO(A)', 'SECRETARIO(A)'),
+        ('SUPERVISOR(A)', 'SUPERVISOR(A)'),
+        ('TERAPISTA FÍSICO', 'TERAPISTA FÍSICO'),
+        ('TRABAJADOR(A) SOCIAL', 'TRABAJADOR(A) SOCIAL'),
+        ('VELADOR', 'VELADOR'),
+        ('VIGILANTE', 'VIGILANTE'),
     ]
     
     # Datos personales
@@ -268,7 +238,7 @@ class Maestro(models.Model):
     form_academica = models.CharField(max_length=100, verbose_name="Formación Académica", blank=True, null=True)
     horario = models.CharField(max_length=100, verbose_name="Horario", blank=True, null=True)
     funcion = models.CharField(max_length=50, choices=FUNCION_OPCIONES, verbose_name="Función", blank=True, null=True)
-    nivel_estudio = models.CharField(max_length=20, choices=NIVEL_ESTUDIO_OPCIONES, verbose_name="Nivel de Estudio", blank=True, null=True)
+    nivel_estudio = models.CharField(max_length=20, choices=NIVEL_ESTUDIO_OPCIONES, verbose_name="Titulo o Tratamiento (Prefijo a usar)", blank=True, null=True)
     domicilio_part = models.TextField(verbose_name="Domicilio Particular", blank=True, null=True)
     poblacion = models.CharField(max_length=100, verbose_name="Población", blank=True, null=True)
     codigo_postal = models.CharField(max_length=10, verbose_name="Código Postal", blank=True, null=True)
@@ -280,6 +250,13 @@ class Maestro(models.Model):
     fecha_actualizacion = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
     clave_presupuestal = models.CharField(max_length=50, verbose_name="Clave Presupuestal", blank=True, null=True, editable=False)
     
+    # Campos para búsqueda normalizada
+    a_paterno_normalized = models.CharField(max_length=50, editable=False, db_index=True, blank=True, null=True)
+    a_materno_normalized = models.CharField(max_length=50, editable=False, db_index=True, blank=True, null=True)
+    nombres_normalized = models.CharField(max_length=100, editable=False, db_index=True, blank=True, null=True)
+    nombre_completo_normalized = models.CharField(max_length=202, editable=False, db_index=True, blank=True, null=True)
+    nombre_completo_unaccented = models.CharField(max_length=511, blank=True, null=True, db_index=True, editable=False)
+
     class Meta:
         verbose_name = "Personal"
         verbose_name_plural = "Todo el personal"  # Cambia el nombre del menú lateral
@@ -327,6 +304,23 @@ class Maestro(models.Model):
         
         # Generar la clave presupuestal antes de guardar
         self.clave_presupuestal = self.generar_clave_presupuestal()
+
+        # Lógica solicitada por el usuario para el nuevo campo
+        from unidecode import unidecode
+        full_name = f"{self.nombres or ''} {self.a_paterno or ''} {self.a_materno or ''}".strip().upper()
+        self.nombre_completo_unaccented = unidecode(full_name)
+
+        # Mantener la lógica de normalización anterior para otros campos si es necesario
+        self.a_paterno_normalized = unidecode(self.a_paterno.upper()) if self.a_paterno else None
+        self.a_materno_normalized = unidecode(self.a_materno.upper()) if self.a_materno else None
+        self.nombres_normalized = unidecode(self.nombres.upper()) if self.nombres else None
+        parts = [
+            self.nombres_normalized,
+            self.a_paterno_normalized,
+            self.a_materno_normalized
+        ]
+        self.nombre_completo_normalized = ' '.join(filter(None, parts))
+
         super().save(*args, **kwargs)
     
     def clean(self):

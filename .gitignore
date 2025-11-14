@@ -20,3 +20,6 @@ __pycache__/
 # Documentos y reportes generados por la aplicación
 reportes_vacancias/
 tramites_generados/
+
+# Archivos de entorno local
+/.env

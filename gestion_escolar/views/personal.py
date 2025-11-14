@@ -46,20 +46,19 @@ def lista_maestros_ajax(request):
     records_total = queryset.count()
 
     if search_value:
-        search_terms = search_value.split()
-        queries = []
-        for term in search_terms:
-            term_query = Q(
-                Q(id_maestro__icontains=term) |
-                Q(nombres__icontains=term) |
-                Q(a_paterno__icontains=term) |
-                Q(a_materno__icontains=term) |
-                Q(curp__icontains=term) |
-                Q(clave_presupuestal__icontains=term) |
-                Q(id_escuela__id_escuela__icontains=term)
-            )
-            queries.append(term_query)
-        queryset = queryset.filter(*queries)
+        from unidecode import unidecode
+        # Normalizamos el término de búsqueda para el nombre (mayúsculas y sin acentos)
+        search_unaccented = unidecode(search_value.upper())
+
+        # Búsqueda en campos que no necesitan normalización especial (o usan la entrada directa)
+        query = Q(id_maestro__icontains=search_value) | \
+                Q(curp__icontains=search_value) | \
+                Q(rfc__icontains=search_value) | \
+                Q(clave_presupuestal__icontains=search_value) | \
+                Q(id_escuela__id_escuela__icontains=search_value) | \
+                Q(nombre_completo_unaccented__icontains=search_unaccented)
+
+        queryset = queryset.filter(query)
 
     records_filtered = queryset.count()
     queryset = queryset.order_by(order_column)[start:start + length]
@@ -87,7 +86,7 @@ def lista_maestros_ajax(request):
 
         data.append([
             maestro.id_maestro,
-            f'{maestro.a_paterno} {maestro.a_materno} {maestro.nombres}',
+            f'{maestro.nombres} {maestro.a_paterno} {maestro.a_materno}',
             maestro.id_escuela.id_escuela if maestro.id_escuela else 'N/A',
             maestro.curp,
             maestro.clave_presupuestal or '-',
@@ -159,6 +158,7 @@ def editar_maestro(request, pk):
                 messages.success(request, 'Maestro actualizado correctamente.')
                 return redirect('lista_maestros')
             else:
+                print(form.errors.as_json())
                 messages.error(request, 'Por favor corrige los errores.')
             doc_form = DocumentoExpedienteForm()
     else:

@@ -8,12 +8,19 @@ from django.http import HttpResponse
 from django.db.models import Q, Count
 from django.db.models.functions import Upper, Trim
 
-from ..models import Maestro, Zona, Escuela
+from ..models import Maestro, Zona, Escuela, RegistroCorrespondencia # Import RegistroCorrespondencia
 
 @permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
 def reportes_dashboard(request):
+    ultimos_registros_correspondencia = []
+    has_correspondencia_perm = request.user.has_perm('gestion_escolar.ver_ultima_correspondencia')
+    print(f"DEBUG: User has 'ver_ultima_correspondencia' permission: {has_correspondencia_perm}")
+    if has_correspondencia_perm:
+        ultimos_registros_correspondencia = RegistroCorrespondencia.objects.all().order_by('-fecha_recibido', '-fecha_registro')[:5] # Get latest 5
+
     context = {
-        'titulo': 'Dashboard de Reportes'
+        'titulo': 'Dashboard de Reportes',
+        'ultimos_registros_correspondencia': ultimos_registros_correspondencia,
     }
     return render(request, 'gestion_escolar/reportes_dashboard.html', context)
 

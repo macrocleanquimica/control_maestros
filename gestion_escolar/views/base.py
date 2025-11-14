@@ -35,7 +35,7 @@ def index(request):
     if request.user.has_perm('gestion_escolar.ver_lista_ultimo_personal'):
         context['ultimo_personal'] = Maestro.objects.order_by('-fecha_registro')[:5]
 
-    if request.user.has_perm('gestion_escolar.view_registrocorrespondencia'):
+    if request.user.has_perm('gestion_escolar.ver_ultima_correspondencia'):
         context['ultima_correspondencia'] = RegistroCorrespondencia.objects.order_by('-fecha_registro')[:5]
 
     return render(request, 'gestion_escolar/index.html', context)

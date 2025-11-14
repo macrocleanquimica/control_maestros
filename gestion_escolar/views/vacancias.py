@@ -212,50 +212,48 @@ def exportar_paso_gsheets(request, lote_id):
     errores_gsheets = []
     for vacancia in vacancias:
         if vacancia.maestro_interino and vacancia.fecha_inicio and vacancia.fecha_final:
-            duration_months = get_month_diff(vacancia.fecha_inicio, vacancia.fecha_final)
-            if duration_months <= 3:
-                google_sheet_row_data = [
-                    str(vacancias.filter(id__lte=vacancia.id).count()),
-                    datetime.now().strftime("%Y-%m-%d"),
-                    "EDUCACIÓN ESPECIAL",
-                    "Durango",
-                    vacancia.municipio or '',
-                    vacancia.direccion or '',
-                    vacancia.region or '',
-                    vacancia.zona_economica or '',
-                    vacancia.destino or '',
-                    vacancia.apreciacion.descripcion if vacancia.apreciacion else '',
-                    vacancia.get_tipo_vacante_display() or '',
-                    vacancia.tipo_plaza or '',
-                    vacancia.horas if vacancia.tipo_plaza == "HORA/SEMANA/MES" else '',
-                    vacancia.sostenimiento or '',
-                    vacancia.fecha_inicio.strftime("%Y-%m-%d") if vacancia.fecha_inicio else '',
-                    vacancia.fecha_final.strftime("%Y-%m-%d") if vacancia.fecha_final else '',
-                    vacancia.categoria or '',
-                    vacancia.pseudoplaza or '',
-                    vacancia.clave_presupuestal or '',
-                    vacancia.techo_financiero or '',
-                    vacancia.clave_ct or '',
-                    vacancia.turno or '',
-                    vacancia.tipo_movimiento_original or '',
-                    vacancia.observaciones or '',
-                    vacancia.maestro_interino.curp or '',
-                    '',
-                    vacancia.maestro_interino.form_academica or '',
-                    "N/A" if vacancia.tipo_plaza == "JORNADA" else (vacancia.apreciacion.descripcion if vacancia.apreciacion else ''),
-                    '', '', '', '',
-                    format_date_for_solicitud_asignacion(vacancia.fecha_inicio) if vacancia.fecha_inicio else '',
-                    format_date_for_solicitud_asignacion(vacancia.fecha_final) if vacancia.fecha_final else '',
-                    '', '',
-                    f"DEE/{vacancia.folio_prelacion}/2025" if vacancia.folio_prelacion else '',
-                    '', '',
-                ]
-                success_gs, message_gs = send_to_google_sheet(google_sheet_row_data)
-                if not success_gs:
-                    error_msg = f"Fallo al enviar datos del interino '{get_full_name(vacancia.maestro_interino)}': {message_gs}"
-                    errores_gsheets.append(error_msg)
-                else:
-                    vacancias_enviadas += 1
+            google_sheet_row_data = [
+                str(vacancias.filter(id__lte=vacancia.id).count()),
+                datetime.now().strftime("%Y-%m-%d"),
+                "EDUCACIÓN ESPECIAL",
+                "Durango",
+                vacancia.municipio or '',
+                vacancia.direccion or '',
+                vacancia.region or '',
+                vacancia.zona_economica or '',
+                vacancia.destino or '',
+                vacancia.apreciacion.descripcion if vacancia.apreciacion else '',
+                vacancia.get_tipo_vacante_display() or '',
+                vacancia.tipo_plaza or '',
+                vacancia.horas if vacancia.tipo_plaza == "HORA/SEMANA/MES" else '',
+                vacancia.sostenimiento or '',
+                vacancia.fecha_inicio.strftime("%Y-%m-%d") if vacancia.fecha_inicio else '',
+                vacancia.fecha_final.strftime("%Y-%m-%d") if vacancia.fecha_final else '',
+                vacancia.categoria or '',
+                vacancia.pseudoplaza or '',
+                vacancia.clave_presupuestal or '',
+                vacancia.techo_financiero or '',
+                vacancia.clave_ct or '',
+                vacancia.turno or '',
+                vacancia.tipo_movimiento_original or '',
+                vacancia.observaciones or '',
+                vacancia.maestro_interino.curp or '',
+                '',
+                vacancia.maestro_interino.form_academica or '',
+                "N/A" if vacancia.tipo_plaza == "JORNADA" else (vacancia.apreciacion.descripcion if vacancia.apreciacion else ''),
+                '', '', '', '',
+                format_date_for_solicitud_asignacion(vacancia.fecha_inicio) if vacancia.fecha_inicio else '',
+                format_date_for_solicitud_asignacion(vacancia.fecha_final) if vacancia.fecha_final else '',
+                '', '',
+                f"DEE/{vacancia.folio_prelacion}/2025" if vacancia.folio_prelacion else '',
+                '', '',
+            ]
+            success_gs, message_gs = send_to_google_sheet(google_sheet_row_data)
+            if not success_gs:
+                error_msg = f"Fallo al enviar datos del interino '{get_full_name(vacancia.maestro_interino)}': {message_gs}"
+                errores_gsheets.append(error_msg)
+            else:
+                vacancias_enviadas += 1
     
     mensaje_final = f'Se enviaron datos de {vacancias_enviadas} vacancia(s) a Google Sheets.'
     if errores_gsheets:

@@ -78,21 +78,19 @@ def buscar_maestros_ajax(request):
     if not search_term or len(search_term) < 2:
         return JsonResponse({'results': []})
     
-    terms = [term for term in search_term.split() if term]
-    query = Q()
+    from unidecode import unidecode
+    # Normalizamos el término de búsqueda (mayúsculas y sin acentos)
+    search_unaccented = unidecode(search_term.upper())
+
+    # Buscamos en el campo pre-calculado y normalizado
+    query = Q(nombre_completo_unaccented__icontains=search_unaccented)
     
-    for term in terms:
-        query &= (
-            Q(nombres__icontains=term) |
-            Q(a_paterno__icontains=term) |
-            Q(a_materno__icontains=term)
-        )
-    
-    maestros = Maestro.objects.filter(query).order_by('a_paterno', 'a_materno', 'nombres')[:20]
+    maestros = Maestro.objects.filter(query).order_by('nombres', 'a_paterno', 'a_materno')[:20]
     
     results = []
     for maestro in maestros:
-        full_name = f"{maestro.a_paterno or ''} {maestro.a_materno or ''} {maestro.nombres or ''}".strip()
+        # Formato de nombre: Nombres Apellido Paterno Apellido Materno
+        full_name = f"{maestro.nombres or ''} {maestro.a_paterno or ''} {maestro.a_materno or ''}".strip()
         results.append({
             "id": maestro.id_maestro,
             "text": full_name
