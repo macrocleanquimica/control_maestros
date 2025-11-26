@@ -12,3 +12,4 @@ from .pendientes import *
 from .correspondencia import *
 from .roles import *
 from .mensajeria import *
+from .fup import *

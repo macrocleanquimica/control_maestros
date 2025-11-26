@@ -682,6 +682,13 @@ class ModuloMisPendientes(models.Model):
         permissions = (("acceder_pendientes", "Puede acceder al módulo de Mis Pendientes"),)
 
 
+class ModuloFUP(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de FUP"
+        permissions = (("acceder_fup", "Puede acceder al módulo de FUP"),)
+
+
 class Notificacion(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notificaciones', verbose_name="Usuario")
     mensaje = models.CharField(max_length=255, verbose_name="Mensaje")
@@ -758,3 +765,63 @@ class Tema(models.Model):
 
     def __str__(self):
         return self.nombre
+
+class FUP(models.Model):
+    """Formato Único de Personal - Registro de documentos FUP con snapshot de datos del maestro"""
+    
+    SOSTENIMIENTOS = [
+        ('FEDERAL', 'Federal'),
+        ('ESTATAL', 'Estatal'),
+    ]
+    
+    # Relación con maestro
+    maestro = models.ForeignKey(
+        Maestro,
+        on_delete=models.CASCADE,
+        verbose_name="Maestro",
+        related_name='fups'
+    )
+    
+    # Snapshot de datos del maestro al momento de crear el FUP
+    nombre_completo = models.CharField(max_length=250, verbose_name="Nombre Completo", editable=False)
+    rfc = models.CharField(max_length=13, verbose_name="RFC", blank=True, null=True, editable=False)
+    curp = models.CharField(max_length=18, verbose_name="CURP", blank=True, null=True, editable=False)
+    clave_presupuestal = models.CharField(max_length=50, verbose_name="Clave Presupuestal", blank=True, null=True, editable=False)
+    
+    # Datos del FUP
+    fecha = models.DateField(auto_now_add=True, verbose_name="Fecha de FUP")
+    techo_financiero = models.CharField(max_length=50, verbose_name="Techo Financiero", blank=True, null=True)
+    efectos = models.CharField(max_length=100, verbose_name="Efectos", blank=True, null=True)
+    folio = models.CharField(max_length=50, verbose_name="Folio", blank=True, null=True)
+    observaciones = models.TextField(verbose_name="Observaciones", blank=True, null=True)
+    sostenimiento = models.CharField(max_length=10, choices=SOSTENIMIENTOS, verbose_name="Sostenimiento", blank=True, null=True)
+    
+    # Archivo PDF
+    archivo = models.FileField(upload_to='fups/%Y/%m/', verbose_name="Archivo PDF", blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "FUP"
+        verbose_name_plural = "FUPs"
+        ordering = ['-fecha', '-id']
+    
+    def __str__(self):
+        return f"FUP {self.folio} - {self.nombre_completo}"
+    
+    def save(self, *args, **kwargs):
+        # Snapshot de datos del maestro
+        if not self.pk:  # Solo en creación
+            self.nombre_completo = f"{self.maestro.a_paterno or ''} {self.maestro.a_materno or ''} {self.maestro.nombres or ''}".strip()
+            self.rfc = self.maestro.rfc
+            self.curp = self.maestro.curp
+            self.clave_presupuestal = self.maestro.clave_presupuestal
+            
+            # Si no se especifica techo_financiero, usar el del maestro
+            if not self.techo_financiero:
+                self.techo_financiero = self.maestro.techo_f
+        
+        # Actualizar techo_f del maestro si cambió
+        if self.techo_financiero and self.techo_financiero != self.maestro.techo_f:
+            self.maestro.techo_f = self.techo_financiero
+            self.maestro.save(update_fields=['techo_f'])
+        
+        super().save(*args, **kwargs)

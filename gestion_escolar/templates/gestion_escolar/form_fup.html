@@ -1,0 +1,176 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Datos del FUP</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> Por favor corrige los errores abajo indicados.
+                    {{ form.errors }}
+                </div>
+                {% endif %}
+
+                <div class="form-row">
+                    <div class="form-group col-md-10">
+                        <label for="{{ form.maestro.id_for_label }}">Maestro *</label>
+                        {{ form.maestro }}
+                        {% if form.maestro.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.maestro.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="{{ form.folio.id_for_label }}">Folio</label>
+                        {{ form.folio }}
+                        {% if form.folio.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.folio.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Campos de solo lectura para mostrar datos del maestro -->
+                <div class="card mb-4 mt-3" id="maestro-info"
+                    style="display: none; max-width: 900px; margin-left: auto; margin-right: auto;">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="m-0">Datos del Maestro Seleccionado</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label>RFC</label>
+                                <input type="text" class="form-control" id="display-rfc" readonly>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label>CURP</label>
+                                <input type="text" class="form-control" id="display-curp" readonly>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label>Clave Presupuestal</label>
+                                <input type="text" class="form-control" id="display-clave" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-2">
+                        <label for="{{ form.techo_financiero.id_for_label }}">Techo Financiero</label>
+                        {{ form.techo_financiero }}
+                        <small class="form-text text-muted">Si se deja vacío, se tomará el del maestro.</small>
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="{{ form.efectos.id_for_label }}">Efectos</label>
+                        {{ form.efectos }}
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="{{ form.sostenimiento.id_for_label }}">Sostenimiento</label>
+                        {{ form.sostenimiento }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.observaciones.id_for_label }}">Observaciones</label>
+                    {{ form.observaciones }}
+                </div>
+
+                <div class="form-group mt-3">
+                    <label for="{{ form.archivo.id_for_label }}">Archivo PDF</label>
+                    {{ form.archivo }}
+                </div>
+
+                <hr>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{% url 'lista_fup' %}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        // Inicializar Select2 con AJAX para el campo de maestro (igual que en correspondencia)
+        $('#id_maestro').select2({
+            placeholder: "Busque un maestro por nombre, apellidos o CURP",
+            minimumInputLength: 3,
+            allowClear: true,
+            width: '100%',
+            ajax: {
+                url: "{% url 'buscar_maestros_ajax' %}",
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        term: params.term // término de búsqueda
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.results
+                    };
+                },
+                cache: true
+            }
+        });
+
+        // Función para cargar datos del maestro
+        function cargarDatosMaestro(maestroId) {
+            if (!maestroId) {
+                $('#maestro-info').hide();
+                return;
+            }
+
+            $.ajax({
+                url: '{% url "get_maestro_data_fup" %}',
+                data: { 'maestro_id': maestroId },
+                dataType: 'json',
+                success: function (data) {
+                    // Mostrar el card con los datos
+                    $('#maestro-info').show();
+
+                    // Llenar los campos de solo lectura
+                    $('#display-rfc').val(data.rfc);
+                    $('#display-curp').val(data.curp);
+                    $('#display-clave').val(data.clave_presupuestal);
+
+                    // Auto-llenar el techo financiero si está vacío
+                    if (!$('#id_techo_financiero').val()) {
+                        $('#id_techo_financiero').val(data.techo_financiero);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error al cargar datos del maestro:', error);
+                    $('#maestro-info').hide();
+                }
+            });
+        }
+
+        // Evento cuando se selecciona un maestro
+        $('#id_maestro').on('change', function () {
+            var maestroId = $(this).val();
+            cargarDatosMaestro(maestroId);
+        });
+
+        // Si ya hay un maestro seleccionado al cargar la página (modo edición)
+        var maestroIdInicial = $('#id_maestro').val();
+        if (maestroIdInicial) {
+            cargarDatosMaestro(maestroIdInicial);
+        }
+    });
+</script>
+{% endblock %}

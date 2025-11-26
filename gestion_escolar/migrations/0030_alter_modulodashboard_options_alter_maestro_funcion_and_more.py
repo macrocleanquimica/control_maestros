@@ -22,19 +22,4 @@ class Migration(migrations.Migration):
             name='funcion',
             field=models.CharField(blank=True, choices=[('DIRECTOR', 'Director'), ('SUPERVISOR', 'Supervisor'), ('SUPERVISOR (A)', 'Supervisor(a)'), ('MAESTRO_GRUPO', 'Maestro de grupo'), ('MAESTRO_ESPECIALISTA', 'Maestro especialista'), ('DOCENTE_APOYO', 'Docente de apoyo'), ('PSICOLOGO', 'Psicólogo'), ('PSICÓLOGO(A)', 'Psicólogo(a)'), ('PSICÓLOGO (A)', 'Psicólogo(a)'), ('TRABAJADOR_SOCIAL', 'Trabajador social'), ('NIÑERO', 'Niñero'), ('NIÑERO(A)', 'Niñero(a)'), ('SECRETARIO', 'Secretario'), ('SECRETARIA ', 'Secretaria'), ('VELADOR', 'Velador'), ('VIGILANTE', 'Vigilante'), ('VIGILANTE ', 'Vigilante'), ('OTRO', 'Otro'), ('SUPERVISOR(A)', 'Supervisor(a)'), ('APOYO TECNICO PEDAGOGICO', 'Apoyo Técnico Pedagógico'), ('SECRETARIO(A)', 'Secretario(a)'), ('DIRECTOR (A)', 'Director(a)'), ('MAESTRO(A) DE GRUPO', 'Maestro(a) de grupo'), ('MAESTRO(A) DE GRUPO CON ESPECIALIDAD', 'Maestro(a) de grupo con especialidad'), ('MAESTRO(A) DE GRUPO ESPECIALISTA', 'Maestro(a) de grupo especialista'), ('MATRO(A) DE GRUPO ESPECIALISTA', 'Maestro(a) de grupo especialista'), ('INSTRUCTOR(A) DE TALLER', 'Instructor(a) de taller'), ('MAESTRO_DE_TALLER', 'Maestro(a) de taller'), ('MAESTRO_DE_TALLER', 'Maestro de taller'), ('MAESTRO_MUSICA', 'Maestro(a) música'), ('MAESTRO_DE_EDUCACION_FISICA', 'Maestro(a) de educación física'), ('MAESTRO_ESPECIALISTA_DOCENTE_DE_APOYO', 'Maestro(a) especialista docente de apoyo'), ('MAESTRO_ESPECIALISTA_DOCENTE_DE_APOYO', 'Maestro(a) especialista docente de apoyo'), ('MAESTRO_DE_APOYO', 'Maestro(a) de apoyo'), ('MTRA_ESPECIALISTA_DOCENTE_DE_APOYO', 'Mtra. especialista docente de apoyo'), ('MAESTRO_ESPECIALISTA_DOCENTE_DE_APOYO', 'Maestro especialista docente de apoyo'), ('TRABAJADOR_SOCIAL', 'Trabajador(a) social'), ('MEDICO', 'Médico(a)'), ('MEDICO', 'Médico(a)'), ('PROMOTOR_TIC', 'Promotor TIC'), ('PROMOTOR_TIC', 'Promotor TIC'), ('TERAPISTA_FISICO', 'Terapista Físico'), ('BIBLIOTECARIO', 'Bibliotecario(a)'), ('ADMINISTRATIVO_ESPECIALIZADO', 'Administrativo Especializado'), ('OFICIAL_DE_SERVICIOS_Y_MANTENIMIENTO', 'Oficial de Servicios y Mantenimiento'), ('OFICIAL_DE_SERVICIOS_DE_MANTENIMIENTO', 'Oficial de Servicios de Mantenimiento'), ('ASISTENTE_DE_SERVICIOS', 'Asistente de Servicios'), ('ASESOR_JURIDICO', 'Asesor Jurídico'), ('AUXILIAR_DE_GRUPO', 'Auxiliar de Grupo'), ('MAESTRO_DE_COMUNICACION', 'Maestro(a) de Comunicación'), ('MAESTRO_AULA_HOSPITALARIA', 'Maestro Aula Hospitalaria'), ('', 'No especificado')], max_length=50, null=True, verbose_name='Función'),
         ),
-        migrations.CreateModel(
-            name='KardexMovimiento',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fecha', models.DateTimeField(auto_now_add=True, verbose_name='Fecha del Movimiento')),
-                ('descripcion', models.TextField(verbose_name='Descripción del Movimiento')),
-                ('maestro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='gestion_escolar.maestro', verbose_name='Maestro')),
-                ('usuario', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL, verbose_name='Usuario')),
-            ],
-            options={
-                'verbose_name': 'Movimiento de Kardex',
-                'verbose_name_plural': 'Movimientos de Kardex',
-                'ordering': ['-fecha'],
-            },
-        ),
     ]

@@ -1,0 +1,26 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow mb-4 border-left-danger">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">Eliminar FUP</h6>
+                </div>
+                <div class="card-body">
+                    <p>¿Estás seguro de que deseas eliminar el FUP con folio <strong>{{ fup.folio }}</strong> del
+                        maestro <strong>{{ fup.nombre_completo }}</strong>?</p>
+                    <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-block">Eliminar</button>
+                        <a href="{% url 'lista_fup' %}" class="btn btn-secondary btn-block">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

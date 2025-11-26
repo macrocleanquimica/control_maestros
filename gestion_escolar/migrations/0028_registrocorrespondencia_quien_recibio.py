@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gestion_escolar', '0027_registrocorrespondencia_archivo_adjunto'),
+        ('gestion_escolar', '0026_modulomispendientes_moduloreportes'),
     ]
 
     operations = [

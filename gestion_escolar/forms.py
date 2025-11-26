@@ -2,7 +2,7 @@ from django import forms
 from .models import (
     Zona, Escuela, Maestro, Categoria, MotivoTramite, Tema,
     PlantillaTramite, Prelacion, TipoApreciacion, Vacancia, 
-    Pendiente, Correspondencia, RegistroCorrespondencia
+    Pendiente, Correspondencia, RegistroCorrespondencia, FUP
 )
 from django.contrib.auth.models import User, Group, Permission
 import re
@@ -514,3 +514,69 @@ class TemaForm(UppercaseFormMixin, forms.ModelForm):
         if cleaned_data.get('fecha_inicio') and cleaned_data.get('fecha_fin') and cleaned_data['fecha_fin'] < cleaned_data['fecha_inicio']:
             raise forms.ValidationError("La fecha de fin no puede ser anterior a la fecha de inicio.")
         return cleaned_data
+
+class FUPForm(UppercaseFormMixin, forms.ModelForm):
+    class Meta:
+        model = FUP
+        fields = ['maestro', 'techo_financiero', 'efectos', 'folio', 'observaciones', 'sostenimiento', 'archivo']
+        widgets = {
+            'maestro': forms.Select(attrs={'class': 'form-control select2'}),
+            'techo_financiero': forms.TextInput(attrs={'class': 'form-control'}),
+            'efectos': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ejemplo: 202509-202515',
+                'pattern': r'\d{6}-\d{6}',
+                'title': 'Formato: AAAAMM-AAAAMM (Ejemplo: 202509-202515)'
+            }),
+            'folio': forms.TextInput(attrs={'class': 'form-control'}),
+            'observaciones': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'sostenimiento': forms.Select(attrs={'class': 'form-control'}),
+            'archivo': forms.FileInput(attrs={'class': 'form-control-file'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # El queryset se maneja via AJAX para búsqueda dinámica
+
+    def clean_efectos(self):
+        import re
+        efectos = self.cleaned_data.get('efectos')
+        
+        if efectos:
+            # Validar formato AAAAMM-AAAAMM (6 dígitos - 6 dígitos)
+            pattern = r'^\d{6}-\d{6}$'
+            if not re.match(pattern, efectos):
+                raise forms.ValidationError(
+                    'El formato debe ser AAAAMM-AAAAMM (Ejemplo: 202509-202515)'
+                )
+            
+            # Validar que las partes sean válidas
+            partes = efectos.split('-')
+            inicio = partes[0]
+            fin = partes[1]
+            
+            # Validar año (primeros 4 dígitos)
+            año_inicio = int(inicio[:4])
+            año_fin = int(fin[:4])
+            
+            if año_inicio < 2000 or año_inicio > 2100:
+                raise forms.ValidationError('El año de inicio debe estar entre 2000 y 2100')
+            
+            if año_fin < 2000 or año_fin > 2100:
+                raise forms.ValidationError('El año de fin debe estar entre 2000 y 2100')
+            
+            # Validar quincena (últimos 2 dígitos: 01-24)
+            quincena_inicio = int(inicio[4:6])
+            quincena_fin = int(fin[4:6])
+            
+            if quincena_inicio < 1 or quincena_inicio > 24:
+                raise forms.ValidationError('La quincena de inicio debe estar entre 01 y 24')
+            
+            if quincena_fin < 1 or quincena_fin > 24:
+                raise forms.ValidationError('La quincena de fin debe estar entre 01 y 24')
+            
+            # Validar que el periodo de fin sea mayor o igual al de inicio
+            if int(fin) < int(inicio):
+                raise forms.ValidationError('El periodo de fin debe ser mayor o igual al de inicio')
+        
+        return efectos

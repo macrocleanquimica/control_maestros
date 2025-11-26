@@ -24,6 +24,7 @@ class Migration(migrations.Migration):
                 ('area', models.CharField(choices=[('OPERATIVO', 'Operativo'), ('ACADEMICA', 'Académica'), ('DIRECCION', 'Dirección'), ('OTRO', 'Otro')], max_length=20, verbose_name='Área Destino')),
                 ('observaciones', models.TextField(blank=True, verbose_name='Observaciones')),
                 ('fecha_registro', models.DateTimeField(auto_now_add=True)),
+                ('archivo_adjunto', models.FileField(blank=True, null=True, upload_to='correspondencia/', verbose_name='Archivo Adjunto (PDF)')),
                 ('maestro', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='correspondencia_recibida', to='gestion_escolar.maestro', verbose_name='Maestro Relacionado (Opcional)')),
             ],
             options={

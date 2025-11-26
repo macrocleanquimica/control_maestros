@@ -28,7 +28,7 @@ def get_permissions_matrix():
     matrix = []
     ordered_models = [
         'zona', 'escuela', 'maestro', 'categoria', 
-        'historial', 'pendiente', 'correspondencia', 'registrocorrespondencia'
+        'historial', 'pendiente', 'correspondencia', 'registrocorrespondencia', 'fup'
     ]
     
     app_models = ContentType.objects.filter(app_label='gestion_escolar').order_by('model')
@@ -54,7 +54,7 @@ def get_permissions_matrix():
         'acceder_reportes', 'acceder_pendientes',
         'ver_estadisticas_generales', 'ver_grafico_distribucion_zona',
         'ver_lista_pendientes', 'ver_lista_ultimo_personal', 'ver_ultima_correspondencia',
-        'acceder_kardex',
+        'acceder_kardex', 'acceder_fup',
     ]
     
     for codename in custom_perms_codenames:

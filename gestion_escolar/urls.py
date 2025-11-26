@@ -29,11 +29,10 @@ urlpatterns = [
     path('maestros/', views.lista_maestros, name='lista_maestros'),
     path('maestros/ajax/', views.lista_maestros_ajax, name='lista_maestros_ajax'),
     path('maestros/agregar/', views.agregar_maestro, name='agregar_maestro'),
-    path('maestros/editar/<str:pk>/', views.editar_maestro, name='editar_maestro'),  # Cambiado a str
-    path('maestros/eliminar/<str:pk>/', views.eliminar_maestro, name='eliminar_maestro'),  # Cambiado a str
+    path('maestros/editar/<str:pk>/', views.editar_maestro, name='editar_maestro'),
+    path('maestros/eliminar/<str:pk>/', views.eliminar_maestro, name='eliminar_maestro'),
     path('maestros/detalle/<str:pk>/', views.detalle_maestro, name='detalle_maestro'),
     path('maestros/detalle/<str:pk>/export/excel/', views.export_maestro_excel, name='export_maestro_excel'),
-    path('maestros/exportar/excel/', views.exportar_maestros_excel, name='exportar_maestros_excel'),
     path('maestros/exportar/excel/', views.exportar_maestros_excel, name='exportar_maestros_excel'),
     path('maestros/eliminar_documento/<int:doc_pk>/', views.eliminar_documento_expediente, name='eliminar_documento_expediente'),
     
@@ -57,19 +56,13 @@ urlpatterns = [
 
     # URLs para Reporte de Vacancia
     path('vacancias/gestionar/', views.gestionar_lote_vacancia, name='gestionar_lote_vacancia'),
-    # path('exportar-lote-vacancia/<int:lote_id>/', views.exportar_lote_vacancia, name='exportar_lote_vacancia'), # URL antigua, ahora dividida
-    # Nuevas URLs para exportación por pasos
     path('vacancias/exportar/paso_word/<int:lote_id>/', views.exportar_paso_word, name='exportar_paso_word'),
     path('vacancias/exportar/paso_gsheets/<int:lote_id>/', views.exportar_paso_gsheets, name='exportar_paso_gsheets'),
     path('vacancias/exportar/paso_excel/<int:lote_id>/', views.exportar_paso_excel, name='exportar_paso_excel'),
-
     path('vacancias/get_maestro_data_ajax/', views.get_maestro_data_for_vacancia, name='get_maestro_data_for_vacancia'),
     path('vacancias/get_interino_data_ajax/', views.get_maestro_data_for_vacancia, name='get_interino_data_for_vacancia'),
     path('vacancias/get_interino_and_prelacion_data_ajax/', views.get_interino_and_prelacion_data_ajax, name='get_interino_and_prelacion_data_ajax'),
     path('vacancias/eliminar/<int:pk>/', views.eliminar_vacancia_lote, name='eliminar_vacancia_lote'),
-    # path('vacancias/descargar_excel/<int:lote_id>/<str:filename>/', views.descargar_excel_lote, name='descargar_excel_lote'),
-    
-    # NUEVA URL: Para obtener datos de prelación automáticamente
     path('tramites/get_prelacion_data/', views.get_prelacion_data_ajax, name='get_prelacion_data_ajax'),
 
     # URLs para Historial
@@ -132,6 +125,14 @@ urlpatterns = [
     path('reset_password_sent/', auth_views.PasswordResetDoneView.as_view(template_name="gestion_escolar/password_reset/password_reset_done.html"), name="password_reset_done"),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name="gestion_escolar/password_reset/password_reset_confirm.html"), name="password_reset_confirm"),
     path('reset_password_complete/', auth_views.PasswordResetCompleteView.as_view(template_name="gestion_escolar/password_reset/password_reset_complete.html"), name="password_reset_complete"),
+
+    # URLs para FUP
+    path('fup/', views.lista_fup, name='lista_fup'),
+    path('fup/crear/', views.crear_fup, name='crear_fup'),
+    path('fup/editar/<int:pk>/', views.editar_fup, name='editar_fup'),
+    path('fup/eliminar/<int:pk>/', views.eliminar_fup, name='eliminar_fup'),
+    path('fup/detalle/<int:pk>/', views.detalle_fup, name='detalle_fup'),
+    path('fup/get_maestro_data/', views.get_maestro_data_fup, name='get_maestro_data_fup'),
 
     # URLs para Kardex
     path('kardex/ajax/', views.kardex_maestros_ajax, name='kardex_maestros_ajax'),

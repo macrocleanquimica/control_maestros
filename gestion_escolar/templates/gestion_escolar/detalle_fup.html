@@ -1,0 +1,95 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Detalle del FUP: {{ fup.folio }}</h1>
+        <a href="{% url 'lista_fup' %}" class="btn btn-secondary btn-sm shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver al Listado
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Información General</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Maestro:</div>
+                        <div class="col-md-8">{{ fup.nombre_completo }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">RFC:</div>
+                        <div class="col-md-8">{{ fup.rfc }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">CURP:</div>
+                        <div class="col-md-8">{{ fup.curp }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Clave Presupuestal:</div>
+                        <div class="col-md-8">{{ fup.clave_presupuestal }}</div>
+                    </div>
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Fecha:</div>
+                        <div class="col-md-8">{{ fup.fecha|date:"d/m/Y" }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Techo Financiero:</div>
+                        <div class="col-md-8">{{ fup.techo_financiero }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Efectos:</div>
+                        <div class="col-md-8">{{ fup.efectos }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Sostenimiento:</div>
+                        <div class="col-md-8">{{ fup.get_sostenimiento_display }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 font-weight-bold">Observaciones:</div>
+                        <div class="col-md-8">{{ fup.observaciones|default:"-"|linebreaks }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Documento</h6>
+                </div>
+                <div class="card-body text-center">
+                    {% if fup.archivo %}
+                    <div class="mb-3">
+                        <i class="fas fa-file-pdf fa-5x text-danger"></i>
+                    </div>
+                    <a href="{{ fup.archivo.url }}" target="_blank" class="btn btn-primary btn-block">
+                        <i class="fas fa-download"></i> Descargar PDF
+                    </a>
+                    {% else %}
+                    <p class="text-muted">No hay archivo adjunto.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Acciones</h6>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'editar_fup' fup.pk %}" class="btn btn-warning btn-block mb-2">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{% url 'eliminar_fup' fup.pk %}" class="btn btn-danger btn-block">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

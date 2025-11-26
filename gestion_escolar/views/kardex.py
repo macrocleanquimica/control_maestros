@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime
 
-from ..models import Maestro, Historial, RegistroCorrespondencia, KardexMovimiento
+from ..models import Maestro, Historial, RegistroCorrespondencia, KardexMovimiento, FUP
 
 @login_required
 def kardex_maestros_ajax(request):
@@ -123,6 +123,19 @@ def kardex_maestro_detail(request, maestro_id):
             'descripcion': 'Anotación en Kardex',
             'detalle': item.descripcion,
             'usuario': item.usuario.username if item.usuario else 'Sistema',
+            'objeto': item
+        })
+
+    fups_maestro = FUP.objects.filter(maestro=maestro).select_related('maestro')
+    for item in fups_maestro:
+        fecha_dt_naive = datetime.combine(item.fecha, datetime.min.time())
+        fecha_dt_aware = timezone.make_aware(fecha_dt_naive, timezone.get_current_timezone())
+        timeline.append({
+            'fecha': fecha_dt_aware,
+            'tipo': 'FUP',
+            'descripcion': 'Captura de FUP',
+            'detalle': f"Folio: {item.folio}",
+            'usuario': 'Sistema',
             'objeto': item
         })
 
