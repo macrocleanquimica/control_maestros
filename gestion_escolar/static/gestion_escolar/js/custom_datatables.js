@@ -51,6 +51,39 @@ $(document).ready(function() {
         });
     }
 
+    // Inicializar la tabla de FUPs con Server-Side Processing
+    if ($('#tablaFUPs').length) {
+        $('#tablaFUPs').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: $('#tablaFUPs').data('ajax-url'),
+                type: 'GET'
+            },
+            columns: [
+                { data: 0 }, // Folio
+                { data: 1 }, // Fecha
+                { data: 2 }, // Maestro
+                { data: 3 }, // RFC
+                { data: 4 }, // Clave Presupuestal
+                { data: 5 }, // Techo Financiero
+                { data: 6 }, // Efectos
+                { data: 7, orderable: false, searchable: false }, // PDF
+                { data: 8, orderable: false, searchable: false }  // Acciones
+            ],
+            language: {
+                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
+                processing: `
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>
+                    </div>`
+            },
+            "columnDefs": [
+                { "type": "html-accent-neutral", "targets": "_all" }
+            ]
+        });
+    }
+
     // Inicializar otras tablas que puedan existir con la configuración simple
     $('.datatable-search:not(#tablaMaestros)').DataTable({
         language: {
@@ -61,18 +94,19 @@ $(document).ready(function() {
         ]
     });
 
-    // Lógica para el botón de exportar a Excel
+    // Lógica para el botón de exportar a Excel de Maestros
     $('#export-excel-btn').on('click', function() {
-        // Obtener la instancia de la tabla específica por su ID
         var tablaMaestros_instance = $('#tablaMaestros').DataTable();
-        
-        // Obtener el valor actual del campo de búsqueda de esa instancia
         var filtro = tablaMaestros_instance.search();
-
-        // Construir la URL para la exportación
         var url = '/maestros/exportar/excel/?filtro=' + encodeURIComponent(filtro);
+        window.location.href = url;
+    });
 
-        // Redirigir para iniciar la descarga
+    // Lógica para el botón de exportar a Excel de FUPs
+    $('#export-excel-fup-btn').on('click', function() {
+        var tablaFUPs_instance = $('#tablaFUPs').DataTable();
+        var filtro = tablaFUPs_instance.search();
+        var url = '/fup/exportar/excel/?filtro=' + encodeURIComponent(filtro);
         window.location.href = url;
     });
 

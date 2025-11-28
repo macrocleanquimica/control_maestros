@@ -128,6 +128,8 @@ urlpatterns = [
 
     # URLs para FUP
     path('fup/', views.lista_fup, name='lista_fup'),
+    path('fup/ajax/', views.fup_datatable_ajax, name='fup_datatable_ajax'),
+    path('fup/exportar/excel/', views.exportar_fup_excel, name='exportar_fup_excel'),
     path('fup/crear/', views.crear_fup, name='crear_fup'),
     path('fup/editar/<int:pk>/', views.editar_fup, name='editar_fup'),
     path('fup/eliminar/<int:pk>/', views.eliminar_fup, name='eliminar_fup'),

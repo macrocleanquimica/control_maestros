@@ -524,9 +524,9 @@ class FUPForm(UppercaseFormMixin, forms.ModelForm):
             'techo_financiero': forms.TextInput(attrs={'class': 'form-control'}),
             'efectos': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ejemplo: 202509-202515',
-                'pattern': r'\d{6}-\d{6}',
-                'title': 'Formato: AAAAMM-AAAAMM (Ejemplo: 202509-202515)'
+                'placeholder': 'Ejemplo: 202509-202515 o 202515-999999 (definitivo)',
+                'pattern': r'\d{6}-(\d{6}|999999)',
+                'title': 'Formato: AAAAMM-AAAAMM (Ejemplo: 202509-202515) o AAAAMM-999999 para maestros definitivos'
             }),
             'folio': forms.TextInput(attrs={'class': 'form-control'}),
             'observaciones': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
@@ -536,18 +536,42 @@ class FUPForm(UppercaseFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # El queryset se maneja via AJAX para búsqueda dinámica
+        
+        # Hacer campos obligatorios y agregar mensajes personalizados
+        campos_obligatorios = {
+            'maestro': 'El nombre del maestro es obligatorio.',
+            'folio': 'El folio es obligatorio.',
+            'sostenimiento': 'El sostenimiento es obligatorio.',
+            'efectos': 'Los efectos son obligatorios.'
+        }
+        
+        for campo, mensaje in campos_obligatorios.items():
+            self.fields[campo].required = True
+            self.fields[campo].error_messages = {
+                'required': mensaje
+            }
+
+    def clean_folio(self):
+        folio = self.cleaned_data.get('folio')
+        if folio:
+            # Buscar si ya existe un FUP con este folio
+            # Excluir el registro actual si estamos editando (self.instance.pk)
+            existe = FUP.objects.filter(folio=folio).exclude(pk=self.instance.pk).exists()
+            
+            if existe:
+                raise forms.ValidationError('Este folio ya ha sido registrado anteriormente.')
+        return folio
 
     def clean_efectos(self):
         import re
         efectos = self.cleaned_data.get('efectos')
         
         if efectos:
-            # Validar formato AAAAMM-AAAAMM (6 dígitos - 6 dígitos)
-            pattern = r'^\d{6}-\d{6}$'
+            # Validar formato AAAAMM-AAAAMM (6 dígitos - 6 dígitos) o AAAAMM-999999 para maestros definitivos
+            pattern = r'^\d{6}-(\d{6}|999999)$'
             if not re.match(pattern, efectos):
                 raise forms.ValidationError(
-                    'El formato debe ser AAAAMM-AAAAMM (Ejemplo: 202509-202515)'
+                    'El formato debe ser AAAAMM-AAAAMM (Ejemplo: 202509-202515) o AAAAMM-999999 para maestros definitivos'
                 )
             
             # Validar que las partes sean válidas
@@ -555,28 +579,35 @@ class FUPForm(UppercaseFormMixin, forms.ModelForm):
             inicio = partes[0]
             fin = partes[1]
             
-            # Validar año (primeros 4 dígitos)
+            # Validar año (primeros 4 dígitos) del inicio
             año_inicio = int(inicio[:4])
-            año_fin = int(fin[:4])
             
             if año_inicio < 2000 or año_inicio > 2100:
                 raise forms.ValidationError('El año de inicio debe estar entre 2000 y 2100')
             
-            if año_fin < 2000 or año_fin > 2100:
-                raise forms.ValidationError('El año de fin debe estar entre 2000 y 2100')
-            
-            # Validar quincena (últimos 2 dígitos: 01-24)
+            # Validar quincena de inicio (últimos 2 dígitos: 01-24)
             quincena_inicio = int(inicio[4:6])
-            quincena_fin = int(fin[4:6])
             
             if quincena_inicio < 1 or quincena_inicio > 24:
                 raise forms.ValidationError('La quincena de inicio debe estar entre 01 y 24')
             
-            if quincena_fin < 1 or quincena_fin > 24:
-                raise forms.ValidationError('La quincena de fin debe estar entre 01 y 24')
-            
-            # Validar que el periodo de fin sea mayor o igual al de inicio
-            if int(fin) < int(inicio):
-                raise forms.ValidationError('El periodo de fin debe ser mayor o igual al de inicio')
+            # Si la fecha de fin es 999999, es un maestro definitivo (sin fecha de término)
+            if fin == '999999':
+                # No validar más, es válido para maestros definitivos
+                pass
+            else:
+                # Validar fecha de fin normal
+                año_fin = int(fin[:4])
+                quincena_fin = int(fin[4:6])
+                
+                if año_fin < 2000 or año_fin > 2100:
+                    raise forms.ValidationError('El año de fin debe estar entre 2000 y 2100')
+                
+                if quincena_fin < 1 or quincena_fin > 24:
+                    raise forms.ValidationError('La quincena de fin debe estar entre 01 y 24')
+                
+                # Validar que el periodo de fin sea mayor o igual al de inicio
+                if int(fin) < int(inicio):
+                    raise forms.ValidationError('El periodo de fin debe ser mayor o igual al de inicio')
         
         return efectos

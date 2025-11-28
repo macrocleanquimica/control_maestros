@@ -26,3 +26,6 @@ tramites_generados/
 
 /service_account_local.json
 google_sheets_credentials.json
+
+# Backups
+backups/
