@@ -1,0 +1,140 @@
+{% extends "gestion_escolar/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+    rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-user-edit"></i> {{ titulo }}</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="userForm">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <!-- Columna Izquierda -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Información Básica</h5>
+
+                                <div class="mb-3">
+                                    {{ form.username|as_crispy_field }}
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ form.email|as_crispy_field }}
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ form.first_name|as_crispy_field }}
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ form.last_name|as_crispy_field }}
+                                </div>
+
+                                {% if not editando %}
+                                <div class="mb-3">
+                                    {{ form.password1|as_crispy_field }}
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ form.password2|as_crispy_field }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Columna Derecha -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Permisos y Roles</h5>
+
+                                <div class="mb-3">
+                                    {{ form.groups|as_crispy_field }}
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ form.maestro|as_crispy_field }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                            {{ form.is_active.label }}
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_staff }}
+                                        <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">
+                                            {{ form.is_staff.label }}
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_superuser }}
+                                        <label class="form-check-label" for="{{ form.is_superuser.id_for_label }}">
+                                            {{ form.is_superuser.label }}
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {% if editando %}
+                                <div class="alert alert-info">
+                                    <strong>Nota:</strong> Para cambiar la contraseña de este usuario, usa el botón
+                                    "Cambiar Contraseña" en la lista de usuarios.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> {{ boton_texto }}
+                                </button>
+                                <a href="{% url 'user_list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Inicializar Select2
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Seleccionar...',
+            allowClear: true
+        });
+    });
+</script>
+{% endblock %}

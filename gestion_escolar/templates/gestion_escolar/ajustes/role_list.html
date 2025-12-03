@@ -1,81 +1,225 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<style>
+    .role-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .role-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .badge-count {
+        font-size: 1.2em;
+        padding: 0.5em 0.8em;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
-        <a href="{% url 'role_create' %}" class="btn btn-primary btn-icon-split">
-            <span class="icon text-white-50"><i class="fas fa-plus"></i></span>
-            <span class="text">Crear Nuevo Rol</span>
-        </a>
-    </div>
-
-    <!-- Tabla de Roles -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Roles del Sistema</h6>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Nombre del Rol</th>
-                            <th style="width: 30%;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for role in roles %}
-                        <tr>
-                            <td>{{ role.name }}</td>
-                            <td>
-                                <a href="{% url 'role_update' role.pk %}" class="btn btn-sm btn-primary">Editar Permisos</a>
-                                <a href="{% url 'role_members' role.pk %}" class="btn btn-sm btn-info">Gestionar Miembros</a>
-                                {% if role.name != 'Directores' %}
-                                <a href="{% url 'role_delete' role.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="2" class="text-center">No hay roles definidos.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-user-shield"></i> {{ titulo }}</h2>
+                <a href="{% url 'role_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Crear Nuevo Rol
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- Tabla de Resumen de Usuarios -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Resumen de Permisos por Usuario</h6>
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Total Roles</h6>
+                            <h2 class="mb-0">{{ roles|length }}</h2>
+                        </div>
+                        <i class="fas fa-users-cog fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered" id="userRolesTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>Usuario</th>
-                            <th>Roles Asignados</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ user.username }} {% if user.is_superuser %}<span class="badge bg-success">Superusuario</span>{% endif %}</td>
-                            <td>
-                                {% for group in user.groups.all %}
-                                    <span class="badge bg-secondary rounded-pill">{{ group.name }}</span>
-                                {% empty %}
-                                    <span class="text-muted">Sin roles asignados</span>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Total Usuarios</h6>
+                            <h2 class="mb-0">{{ users|length }}</h2>
+                        </div>
+                        <i class="fas fa-users fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Usuarios con Roles</h6>
+                            <h2 class="mb-0">{{ users_with_roles }}</h2>
+                        </div>
+                        <i class="fas fa-user-check fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Sin Roles</h6>
+                            <h2 class="mb-0">{{ users_without_roles }}</h2>
+                        </div>
+                        <i class="fas fa-user-times fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Roles -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h4 class="mb-3"><i class="fas fa-list"></i> Roles del Sistema</h4>
+        </div>
+        {% for role in roles %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card role-card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shield-alt"></i> {{ role.name }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="badge bg-info badge-count">
+                            <i class="fas fa-users"></i> {{ role.user_set.count }} miembro{{
+                            role.user_set.count|pluralize }}
+                        </span>
+                        <span class="badge bg-secondary badge-count ms-2">
+                            <i class="fas fa-key"></i> {{ role.permissions.count }} permiso{{
+                            role.permissions.count|pluralize }}
+                        </span>
+                    </div>
+
+                    {% if role.user_set.all %}
+                    <div class="mb-2">
+                        <strong>Miembros:</strong>
+                        <div class="mt-2">
+                            {% for user in role.user_set.all|slice:":5" %}
+                            <span class="badge bg-light text-dark me-1 mb-1">{{ user.username }}</span>
+                            {% endfor %}
+                            {% if role.user_set.count > 5 %}
+                            <span class="badge bg-light text-dark">+{{ role.user_set.count|add:"-5" }} más</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-2"><i class="fas fa-info-circle"></i> Sin miembros asignados</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'role_update' role.pk %}" class="btn btn-sm btn-primary"
+                            title="Editar Permisos">
+                            <i class="fas fa-edit"></i> Permisos
+                        </a>
+                        <a href="{% url 'role_members' role.pk %}" class="btn btn-sm btn-info"
+                            title="Gestionar Miembros">
+                            <i class="fas fa-users"></i> Miembros
+                        </a>
+                        {% if role.name != 'Directores' and role.name != 'Administrador' %}
+                        <a href="{% url 'role_delete' role.pk %}" class="btn btn-sm btn-danger" title="Eliminar Rol"
+                            onclick="return confirm('¿Estás seguro de eliminar este rol?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No hay roles definidos. Crea uno para comenzar.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Tabla de Resumen de Usuarios -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-table"></i> Resumen de Permisos por Usuario</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped" id="userRolesTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><i class="fas fa-user"></i> Usuario</th>
+                                    <th><i class="fas fa-envelope"></i> Email</th>
+                                    <th><i class="fas fa-shield-alt"></i> Roles Asignados</th>
+                                    <th><i class="fas fa-cog"></i> Estado</th>
+                                    <th><i class="fas fa-tools"></i> Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ user.username }}</strong>
+                                        {% if user.is_superuser %}
+                                        <span class="badge bg-danger ms-2">Superusuario</span>
+                                        {% elif user.is_staff %}
+                                        <span class="badge bg-warning ms-2">Staff</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.email|default:"-" }}</td>
+                                    <td>
+                                        {% for group in user.groups.all %}
+                                        <span class="badge bg-primary me-1">{{ group.name }}</span>
+                                        {% empty %}
+                                        <span class="text-muted"><i>Sin roles</i></span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% if user.is_active %}
+                                        <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'user_update' user.pk %}" class="btn btn-sm btn-outline-primary"
+                                            title="Editar Usuario">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
                                 {% endfor %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -83,14 +227,22 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
 <script>
-$(document).ready(function() {
-    $('#userRolesTable').DataTable({
-        "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/Spanish.json"
-        },
-        "pageLength": 10
+    $(document).ready(function () {
+        $('#userRolesTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+            },
+            "pageLength": 10,
+            "order": [[0, 'asc']],
+            "columnDefs": [
+                { "orderable": false, "targets": 4 }
+            ]
+        });
     });
-});
 </script>
 {% endblock %}

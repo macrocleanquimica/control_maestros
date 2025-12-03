@@ -22,6 +22,11 @@ class RoleListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['titulo'] = 'Gestión de Roles y Permisos'
         context['users'] = User.objects.all()
+        # Calcular estadísticas
+        users_with_roles = User.objects.filter(groups__isnull=False).distinct().count()
+        users_without_roles = User.objects.filter(groups__isnull=True).count()
+        context['users_with_roles'] = users_with_roles
+        context['users_without_roles'] = users_without_roles
         return context
 
 def get_permissions_matrix():

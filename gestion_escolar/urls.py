@@ -109,6 +109,15 @@ urlpatterns = [
     path('ajustes/roles/<int:pk>/miembros/', views.manage_role_members, name='role_members'),
     path('ajustes/roles/<int:pk>/eliminar/', views.RoleDeleteView.as_view(), name='role_delete'),
 
+    # URLs para Gestión de Usuarios (Admin)
+    path('ajustes/usuarios/', views.UserListView.as_view(), name='user_list'),
+    path('ajustes/usuarios/ajax/', views.user_datatable_ajax, name='user_datatable_ajax'),
+    path('ajustes/usuarios/nuevo/', views.UserCreateView.as_view(), name='user_create'),
+    path('ajustes/usuarios/<int:pk>/editar/', views.UserUpdateView.as_view(), name='user_update'),
+    path('ajustes/usuarios/<int:pk>/password/', views.UserPasswordChangeView.as_view(), name='user_password_change'),
+    path('ajustes/usuarios/<int:pk>/toggle-active/', views.user_toggle_active, name='user_toggle_active'),
+    path('ajustes/usuarios/<int:pk>/detalle/', views.UserDetailView.as_view(), name='user_detail'),
+
     # URLs para Gestión de Temas
     path('ajustes/temas/', views.ThemeListView.as_view(), name='tema_list'),
     path('ajustes/temas/nuevo/', views.ThemeCreateView.as_view(), name='tema_create'),

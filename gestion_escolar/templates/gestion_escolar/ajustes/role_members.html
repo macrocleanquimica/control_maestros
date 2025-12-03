@@ -1,66 +1,363 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-list {
+        max-height: 500px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding: 1rem;
+    }
+
+    .user-item {
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.25rem;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .user-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(5px);
+    }
+
+    .user-item.selected {
+        background-color: #e7f3ff;
+        border-left: 3px solid #0d6efd;
+    }
+
+    .transfer-buttons {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .search-box {
+        margin-bottom: 1rem;
+    }
+
+    .count-badge {
+        font-size: 0.9em;
+        padding: 0.35em 0.65em;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-users-cog"></i> {{ titulo }}</h2>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-info-circle"></i> Selecciona usuarios y usa los botones para moverlos entre
+                        listas
+                    </p>
+                </div>
+                <a href="{% url 'role_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a Roles
+                </a>
+            </div>
+        </div>
+    </div>
 
     {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show"
+        role="alert">
+        <i class="fas fa-check-circle"></i> {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
     {% endif %}
 
-    <form method="post">
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h6 class="card-title">Miembros Actuales</h6>
+                    <h2 id="currentMembersCount">{{ members|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h6 class="card-title">Usuarios Disponibles</h6>
+                    <h2 id="availableUsersCount">{{ non_members|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h6 class="card-title">Total Usuarios</h6>
+                    <h2>{{ members|length|add:non_members|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" id="membersForm">
         {% csrf_token %}
         <div class="row">
-            <!-- Columna de Usuarios Disponibles -->
-            <div class="col-lg-6">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Usuarios Disponibles</h6>
+            <!-- Usuarios Disponibles -->
+            <div class="col-lg-5">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-plus"></i> Usuarios Disponibles
+                            <span class="badge bg-light text-dark count-badge float-end" id="availableBadge">{{
+                                non_members|length }}</span>
+                        </h5>
                     </div>
-                    <div class="card-body" style="height: 400px; overflow-y: auto;">
-                        {% for user in non_members %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="users_to_add" value="{{ user.pk }}" id="add-user-{{ user.pk }}">
-                            <label class="form-check-label" for="add-user-{{ user.pk }}">
-                                {{ user.username }}
-                            </label>
+                    <div class="card-body">
+                        <div class="search-box">
+                            <input type="text" class="form-control" id="searchAvailable"
+                                placeholder="🔍 Buscar usuario...">
                         </div>
-                        {% empty %}
-                        <p class="text-muted">No hay más usuarios para agregar.</p>
-                        {% endfor %}
+                        <div class="user-list" id="availableList">
+                            {% for user in non_members %}
+                            <div class="user-item" data-user-id="{{ user.pk }}"
+                                data-username="{{ user.username|lower }}">
+                                <div class="form-check">
+                                    <input class="form-check-input available-checkbox" type="checkbox"
+                                        name="users_to_add" value="{{ user.pk }}" id="add-user-{{ user.pk }}">
+                                    <label class="form-check-label w-100" for="add-user-{{ user.pk }}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ user.username }}</strong>
+                                                {% if user.first_name or user.last_name %}
+                                                <br><small class="text-muted">{{ user.get_full_name }}</small>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                {% if user.is_superuser %}
+                                                <span class="badge bg-danger">Super</span>
+                                                {% elif user.is_staff %}
+                                                <span class="badge bg-warning">Staff</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-users fa-3x mb-3"></i>
+                                <p>No hay más usuarios para agregar</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-sm btn-outline-success" id="selectAllAvailable">
+                                <i class="fas fa-check-square"></i> Seleccionar Todos
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllAvailable">
+                                <i class="fas fa-square"></i> Deseleccionar Todos
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Columna de Miembros Actuales -->
-            <div class="col-lg-6">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Miembros Actuales del Rol</h6>
+            <!-- Botones de Transferencia -->
+            <div class="col-lg-2 d-flex align-items-center justify-content-center">
+                <div class="transfer-buttons">
+                    <button type="button" class="btn btn-primary btn-lg" id="addSelected"
+                        title="Agregar seleccionados al rol">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button type="button" class="btn btn-warning btn-lg" id="removeSelected"
+                        title="Quitar seleccionados del rol">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Miembros Actuales -->
+            <div class="col-lg-5">
+                <div class="card shadow">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-users"></i> Miembros del Rol
+                            <span class="badge bg-light text-dark count-badge float-end" id="membersBadge">{{
+                                members|length }}</span>
+                        </h5>
                     </div>
-                    <div class="card-body" style="height: 400px; overflow-y: auto;">
-                        {% for user in members %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="users_to_remove" value="{{ user.pk }}" id="remove-user-{{ user.pk }}">
-                            <label class="form-check-label" for="remove-user-{{ user.pk }}">
-                                {{ user.username }}
-                            </label>
+                    <div class="card-body">
+                        <div class="search-box">
+                            <input type="text" class="form-control" id="searchMembers"
+                                placeholder="🔍 Buscar miembro...">
                         </div>
-                        {% empty %}
-                        <p class="text-muted">Este rol no tiene miembros.</p>
-                        {% endfor %}
+                        <div class="user-list" id="membersList">
+                            {% for user in members %}
+                            <div class="user-item" data-user-id="{{ user.pk }}"
+                                data-username="{{ user.username|lower }}">
+                                <div class="form-check">
+                                    <input class="form-check-input member-checkbox" type="checkbox"
+                                        name="users_to_remove" value="{{ user.pk }}" id="remove-user-{{ user.pk }}">
+                                    <label class="form-check-label w-100" for="remove-user-{{ user.pk }}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ user.username }}</strong>
+                                                {% if user.first_name or user.last_name %}
+                                                <br><small class="text-muted">{{ user.get_full_name }}</small>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                {% if user.is_superuser %}
+                                                <span class="badge bg-danger">Super</span>
+                                                {% elif user.is_staff %}
+                                                <span class="badge bg-warning">Staff</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-user-slash fa-3x mb-3"></i>
+                                <p>Este rol no tiene miembros</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-sm btn-outline-info" id="selectAllMembers">
+                                <i class="fas fa-check-square"></i> Seleccionar Todos
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllMembers">
+                                <i class="fas fa-square"></i> Deseleccionar Todos
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <button type="submit" class="btn btn-success btn-lg">Guardar Cambios</button>
-        <a href="{% url 'role_list' %}" class="btn btn-secondary btn-lg">Salir</a>
+        <!-- Botones de Acción -->
+        <div class="row mt-4">
+            <div class="col-md-12 text-center">
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+                <a href="{% url 'role_list' %}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        // Búsqueda en usuarios disponibles
+        $('#searchAvailable').on('keyup', function () {
+            var searchText = $(this).val().toLowerCase();
+            $('#availableList .user-item').each(function () {
+                var username = $(this).data('username');
+                if (username.includes(searchText)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        // Búsqueda en miembros
+        $('#searchMembers').on('keyup', function () {
+            var searchText = $(this).val().toLowerCase();
+            $('#membersList .user-item').each(function () {
+                var username = $(this).data('username');
+                if (username.includes(searchText)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        // Seleccionar/Deseleccionar todos disponibles
+        $('#selectAllAvailable').click(function () {
+            $('.available-checkbox:visible').prop('checked', true);
+        });
+        $('#deselectAllAvailable').click(function () {
+            $('.available-checkbox').prop('checked', false);
+        });
+
+        // Seleccionar/Deseleccionar todos miembros
+        $('#selectAllMembers').click(function () {
+            $('.member-checkbox:visible').prop('checked', true);
+        });
+        $('#deselectAllMembers').click(function () {
+            $('.member-checkbox').prop('checked', false);
+        });
+
+        // Resaltar items seleccionados
+        $('.user-item input[type="checkbox"]').change(function () {
+            if ($(this).is(':checked')) {
+                $(this).closest('.user-item').addClass('selected');
+            } else {
+                $(this).closest('.user-item').removeClass('selected');
+            }
+        });
+
+        // Click en el item para seleccionar
+        $('.user-item').click(function (e) {
+            if (e.target.type !== 'checkbox') {
+                var checkbox = $(this).find('input[type="checkbox"]');
+                checkbox.prop('checked', !checkbox.prop('checked')).trigger('change');
+            }
+        });
+
+        // Botones de transferencia rápida
+        $('#addSelected').click(function () {
+            $('.available-checkbox:checked').each(function () {
+                $(this).prop('checked', true);
+            });
+            if ($('.available-checkbox:checked').length > 0) {
+                $('#membersForm').submit();
+            } else {
+                alert('Por favor selecciona al menos un usuario para agregar');
+            }
+        });
+
+        $('#removeSelected').click(function () {
+            $('.member-checkbox:checked').each(function () {
+                $(this).prop('checked', true);
+            });
+            if ($('.member-checkbox:checked').length > 0) {
+                if (confirm('¿Estás seguro de quitar los usuarios seleccionados de este rol?')) {
+                    $('#membersForm').submit();
+                }
+            } else {
+                alert('Por favor selecciona al menos un miembro para quitar');
+            }
+        });
+
+        // Prevenir submit accidental
+        $('#membersForm').submit(function (e) {
+            var adding = $('input[name="users_to_add"]:checked').length;
+            var removing = $('input[name="users_to_remove"]:checked').length;
+
+            if (adding === 0 && removing === 0) {
+                e.preventDefault();
+                alert('No has seleccionado ningún usuario para agregar o quitar');
+                return false;
+            }
+        });
+    });
+</script>
 {% endblock %}

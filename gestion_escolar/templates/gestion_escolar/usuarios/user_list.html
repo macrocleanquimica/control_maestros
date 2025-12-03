@@ -1,0 +1,181 @@
+{% extends "gestion_escolar/base.html" %}
+{% load static %}
+
+{% block title %}Gestión de Usuarios{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<style>
+    .badge {
+        font-size: 0.85em;
+    }
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-users"></i> Gestión de Usuarios</h2>
+                <a href="{% url 'user_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Agregar Usuario
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Usuarios</h5>
+                    <h2>{{ total_usuarios }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Activos</h5>
+                    <h2>{{ usuarios_activos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">Inactivos</h5>
+                    <h2>{{ usuarios_inactivos }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="btn-group" role="group">
+                <a href="?estado=todos" class="btn btn-outline-primary {% if estado_actual == 'todos' %}active{% endif %}">
+                    Todos
+                </a>
+                <a href="?estado=activos" class="btn btn-outline-success {% if estado_actual == 'activos' %}active{% endif %}">
+                    Activos
+                </a>
+                <a href="?estado=inactivos" class="btn btn-outline-danger {% if estado_actual == 'inactivos' %}active{% endif %}">
+                    Inactivos
+                </a>
+                <a href="?estado=staff" class="btn btn-outline-warning {% if estado_actual == 'staff' %}active{% endif %}">
+                    Staff
+                </a>
+                <a href="?estado=superusuarios" class="btn btn-outline-info {% if estado_actual == 'superusuarios' %}active{% endif %}">
+                    Superusuarios
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Usuarios -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <table id="usuariosTable" class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Nombre Completo</th>
+                                <th>Email</th>
+                                <th>Grupos/Roles</th>
+                                <th>Estado</th>
+                                <th>Permisos</th>
+                                <th>Último Login</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Los datos se cargan vía AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Obtener el estado actual de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const estadoActual = urlParams.get('estado') || 'todos';
+
+    // Inicializar DataTable
+    var table = $('#usuariosTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: '{% url "user_datatable_ajax" %}',
+            type: 'GET',
+            data: function(d) {
+                d.estado = estadoActual;
+            }
+        },
+        columns: [
+            { data: 'username' },
+            { data: 'nombre_completo' },
+            { data: 'email' },
+            { data: 'grupos' },
+            { data: 'estado', orderable: false },
+            { data: 'permisos', orderable: false },
+            { data: 'ultimo_login' },
+            { data: 'acciones', orderable: false, searchable: false }
+        ],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        },
+        order: [[0, 'asc']]
+    });
+
+    // Manejar activar/desactivar usuarios
+    $('#usuariosTable').on('click', '.toggle-active', function() {
+        const userId = $(this).data('user-id');
+        const currentState = $(this).data('current-state');
+        const actionText = currentState === 'active' ? 'desactivar' : 'activar';
+
+        if (confirm(`¿Estás seguro de que deseas ${actionText} este usuario?`)) {
+            $.ajax({
+                url: `/ajustes/usuarios/${userId}/toggle-active/`,
+                type: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        table.ajax.reload();
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    const response = JSON.parse(xhr.responseText);
+                    alert(response.message || 'Error al cambiar el estado del usuario');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

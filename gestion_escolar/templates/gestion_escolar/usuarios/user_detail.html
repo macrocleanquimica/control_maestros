@@ -1,0 +1,110 @@
+{% extends "gestion_escolar/base.html" %}
+{% load static %}
+
+{% block title %}Detalle de Usuario - {{ usuario.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-user"></i> Detalle de Usuario</h2>
+                <div>
+                    <a href="{% url 'user_update' usuario.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <a href="{% url 'user_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Básica -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Información Básica</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="40%">Usuario:</th>
+                            <td>{{ usuario.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>Nombre Completo:</th>
+                            <td>{{ usuario.get_full_name|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ usuario.email|default:"-" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Estado:</th>
+                            <td>
+                                {% if usuario.is_active %}
+                                <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Fecha de Registro:</th>
+                            <td>{{ usuario.date_joined|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Último Login:</th>
+                            <td>{{ usuario.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Permisos y Roles -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Permisos y Roles</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Nivel de Acceso:</h6>
+                    <ul>
+                        {% if usuario.is_superuser %}
+                        <li><span class="badge bg-danger">Superusuario</span> - Acceso total al sistema</li>
+                        {% elif usuario.is_staff %}
+                        <li><span class="badge bg-warning">Staff</span> - Acceso al panel de administración</li>
+                        {% else %}
+                        <li><span class="badge bg-info">Usuario Regular</span></li>
+                        {% endif %}
+                    </ul>
+
+                    <h6 class="mt-3">Grupos Asignados:</h6>
+                    {% if grupos %}
+                    <ul>
+                        {% for grupo in grupos %}
+                        <li>{{ grupo.name }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">Sin grupos asignados</p>
+                    {% endif %}
+
+                    {% if maestro_vinculado %}
+                    <h6 class="mt-3">Maestro Vinculado:</h6>
+                    <p>
+                        <a href="{% url 'detalle_maestro' maestro_vinculado.id_maestro %}">
+                            {{ maestro_vinculado }}
+                        </a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

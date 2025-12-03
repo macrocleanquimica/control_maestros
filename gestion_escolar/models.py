@@ -723,6 +723,7 @@ class Pendiente(models.Model):
 # --- FIN DE NUEVOS MODELOS ---
 
 class ModuloDashboard(models.Model):
+
     class Meta:
         managed = False
         verbose_name_plural = "Acceso al Módulo de Dashboard"
@@ -755,7 +756,9 @@ class Tema(models.Model):
     imagen_fondo = models.ImageField(upload_to='themes/', blank=True, null=True, verbose_name="Imagen de Fondo (Opcional)")
     color_principal = ColorField(default='#2c3e50', verbose_name="Color Principal (Gradiente Superior)")
     color_secundario = ColorField(default='#34495e', verbose_name="Color Secundario (Gradiente Inferior)")
-    color_texto = ColorField(default='#FFFFFF', verbose_name="Color del Texto")
+    color_texto = ColorField(default='#FFFFFF', verbose_name="Color del Texto del Sidebar")
+    color_dropdown = ColorField(default='#3a506b', verbose_name="Color de Fondo del Submenú", help_text="Color de fondo para los menús desplegables del sidebar")
+    usar_filtro_oscuro = models.BooleanField(default=True, verbose_name="Usar filtro oscuro en imagen", help_text="Si está activo, se aplicará un filtro oscuro sobre la imagen de fondo para mejorar la legibilidad del texto blanco.")
     activo = models.BooleanField(default=True, verbose_name="Activo", help_text="Solo un tema puede estar activo a la vez para un rango de fechas.")
 
     class Meta:

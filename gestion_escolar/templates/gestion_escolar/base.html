@@ -16,25 +16,44 @@
     <link rel="stylesheet" href="{% static 'gestion_escolar/css/custom.css' %}">
     <link href="{% static 'gestion_escolar/css/print.css' %}" rel="stylesheet" media="print">
 
-    {% if active_theme %}
+{% if active_theme %}
     <style>
         /* Estilos dinámicos para el tema activo */
         #accordionSidebar {
             background-color: {{ active_theme.color_principal }};
             {% if active_theme.imagen_fondo %}
-            background-image: linear-gradient(180deg, {{ active_theme.color_principal|hex_to_rgba:0.7 }}, {{ active_theme.color_secundario|hex_to_rgba:0.5 }}), url("{{ active_theme.imagen_fondo.url }}");
+            {% if active_theme.usar_filtro_oscuro %}
+            /* Con filtro oscuro: alta opacidad para oscurecer la imagen */
+            background-image: linear-gradient(180deg, {{ active_theme.color_principal|hex_to_rgba:0.85 }}, {{ active_theme.color_secundario|hex_to_rgba:0.85 }}), url("{{ active_theme.imagen_fondo.url }}");
+            background-blend-mode: overlay;
+            {% else %}
+            /* Sin filtro oscuro: baja opacidad para mostrar la imagen más clara */
+            background-image: linear-gradient(180deg, {{ active_theme.color_principal|hex_to_rgba:0.3 }}, {{ active_theme.color_secundario|hex_to_rgba:0.3 }}), url("{{ active_theme.imagen_fondo.url }}");
+            {% endif %}
             background-size: cover;
             background-position: center;
-            background-blend-mode: overlay;
             {% else %}
             background-image: linear-gradient(180deg, {{ active_theme.color_principal }}, {{ active_theme.color_secundario }});
             {% endif %}
         }
 
+        /* Aplicar color_texto a todos los elementos del sidebar */
         #accordionSidebar .sidebar-brand-text,
         #accordionSidebar .nav-item .nav-link span,
+        #accordionSidebar .nav-item .nav-link,
+        #accordionSidebar .dropdown-item,
         #accordionSidebar .sidebar-heading {
             color: {{ active_theme.color_texto }} !important;
+        }
+
+        /* Aplicar color de fondo al submenú desplegable */
+        .sidebar .nav-item .dropdown-menu {
+            background-color: {{ active_theme.color_dropdown }} !important;
+        }
+
+        /* Aplicar color de fondo al enlace activo del sidebar */
+        .sidebar .nav-link.active {
+            background-color: {{ active_theme.color_dropdown }} !important;
         }
     </style>
     {% else %}
@@ -329,10 +348,7 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
-        .sidebar .nav-item .dropdown-menu {
-            background-color: #3a506b;
-            /* Color más claro para el submenú */
-        }
+
 
         .dropdown-item {
             color: rgba(255, 255, 255, 0.8);
