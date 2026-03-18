@@ -1,0 +1,93 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Reporte de FUPs por Zona | Control de Maestros{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white border-0 pt-4 pb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 text-primary fw-bold">
+                            <i class="fas fa-file-excel me-2"></i> {{ titulo }}
+                        </h4>
+                        <a href="{% url 'lista_fup' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 btn-hover-animate">
+                            <i class="fas fa-arrow-left me-1"></i> Volver a FUPs
+                        </a>
+                    </div>
+                    <hr class="mt-3 mb-0 text-muted">
+                </div>
+                
+                <div class="card-body p-4">
+                    <form action="{% url 'exportar_fups_zona_excel' %}" method="GET" target="_blank">
+                        <!-- Selector de Zona -->
+                        <div class="mb-4">
+                            <label for="zona" class="form-label fw-bold text-dark">
+                                <i class="fas fa-map-marker-alt text-danger me-1"></i> Zona Escolar
+                            </label>
+                            <select name="zona" id="zona" class="form-select form-select-lg rounded-3 shadow-none border-secondary-subtle" required>
+                                <option value="" selected disabled>-- Seleccione una Zona --</option>
+                                {% for zona in zonas %}
+                                    <option value="{{ zona.id }}">Zona {{ zona.numero }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <!-- Rango de Fechas (Opcional) -->
+                            <div class="col-md-6 mb-4">
+                                <label for="fecha_inicio" class="form-label fw-bold text-dark">
+                                    <i class="fas fa-calendar-alt text-info me-1"></i> Fecha de Inicio <span class="text-muted fw-normal">(Opcional)</span>
+                                </label>
+                                <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control rounded-3 shadow-none border-secondary-subtle">
+                            </div>
+
+                            <div class="col-md-6 mb-4">
+                                <label for="fecha_fin" class="form-label fw-bold text-dark">
+                                    <i class="fas fa-calendar-check text-warning me-1"></i> Fecha de Fin <span class="text-muted fw-normal">(Opcional)</span>
+                                </label>
+                                <input type="date" name="fecha_fin" id="fecha_fin" class="form-control rounded-3 shadow-none border-secondary-subtle">
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                            <a href="{% url 'lista_fup' %}" class="btn btn-light border rounded-pill px-4 fw-bold btn-hover-animate">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success rounded-pill px-5 fw-bold text-white shadow-sm btn-hover-animate">
+                                <i class="fas fa-file-excel me-2"></i> Generar Reporte Excel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="alert alert-info border-0 rounded-4 shadow-sm mt-4 custom-alert">
+                <div class="d-flex">
+                    <div class="ms-1">
+                        <h6 class="alert-heading fw-bold mb-1"><i class="fas fa-info-circle me-1"></i> Información del Reporte</h6>
+                        <p class="mb-0 small">Este reporte generará un documento en formato Excel que contendrá todos los Formatos Únicos de Personal (FUP) cuyo maestro titular pertenezca a la <span class="fw-bold">Zona Escolar</span> seleccionada. Si no seleccionas un rango de fechas, se incluirán absolutamente todos los FUPs de la zona; si provees las fechas de inicio y/o fin, se filtrarán únicamente los que se encuentren en ese periodo. El documento incluirá un número consecutivo, nombre, folio, techo financiero, efectos del movimiento y observaciones.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-alert {
+        background-color: #e0f2fe;
+        color: #0369a1;
+    }
+    .custom-alert h6 {
+        color: #0284c7;
+    }
+    .form-select:focus {
+        border-color: #0ea5e9;
+        box-shadow: 0 0 0 0.25rem rgba(14, 165, 233, 0.25);
+    }
+</style>
+{% endblock %}

@@ -1,65 +1,266 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
+{% block title %}Detalle Zona {{ zona.numero }} | Control de Maestros{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">Información de la Zona {{ zona.numero }}</h4>
-        <a href="{% url 'lista_zonas' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver a la Lista de Zonas
-        </a>
+<style>
+    :root {
+        --pz-primary: #0ea5e9;
+        --pz-secondary: #64748b;
+        --pz-border: #e2e8f0;
+        --pz-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header Section */
+    .premium-header {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--pz-shadow);
+        border: 1px solid var(--pz-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .header-info h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    /* Main Card */
+    .premium-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid var(--pz-border);
+        box-shadow: var(--pz-shadow);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .card-section {
+        padding: 2rem 2.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background-color 0.2s;
+    }
+
+    .card-section:last-child {
+        border-bottom: none;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-header h5 {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #334155;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .section-icon {
+        width: 32px;
+        height: 32px;
+        background: #f0f9ff;
+        color: var(--pz-primary);
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2rem;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    /* Table Styles */
+    .table-container {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid var(--pz-border);
+        overflow: hidden;
+    }
+
+    .table thead th {
+        background: #f8fafc;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--pz-border);
+    }
+
+    .table tbody td {
+        padding: 1rem 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f0f9ff;
+    }
+
+    /* Badges */
+    .badge-soft {
+        font-weight: 700;
+        padding: 0.4em 1em;
+        border-radius: 2rem;
+    }
+    .bg-soft-info { background: #e0f2fe; color: #0369a1; }
+
+    @media print {
+        .premium-header, .btn, footer, .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate {
+            display: none !important;
+        }
+        .page-container { padding: 0; }
+        .premium-card { border: none; box-shadow: none; }
+        .card-section { padding: 1.5rem 0; }
+    }
+</style>
+
+<div class="page-container">
+    <!-- Header -->
+    <div class="premium-header">
+        <div class="header-info">
+            <h1><i class="fas fa-map-marked-alt text-info me-2"></i> Zona Escolar {{ zona.numero }}</h1>
+            <p class="text-muted small mb-0">Gestión de centros de trabajo y supervisión académica.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print();" class="btn btn-info rounded-pill px-4 fw-bold text-white small btn-hover-animate">
+                <i class="fas fa-print me-2"></i> Imprimir Ficha
+            </button>
+            <a href="{% url 'lista_zonas' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted small btn-hover-animate">
+                <i class="fas fa-arrow-left me-2"></i> Regresar
+            </a>
+        </div>
     </div>
 
-    <!-- Tarjeta de Información de la Zona y Supervisor -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Supervisor Asignado</h5>
-                    {% if zona.supervisor %}
-                        <p><strong>Nombre:</strong> {{ zona.supervisor.nombres }} {{ zona.supervisor.a_paterno }} {{ zona.supervisor.a_materno }}</p>
-                        <p><strong>Contacto:</strong> {{ zona.supervisor.telefono|default:"No especificado" }}</p>
-                        <p><strong>Email:</strong> {{ zona.supervisor.email|default:"No especificado" }}</p>
-                    {% else %}
-                        <p class="text-muted">No hay un supervisor asignado a esta zona.</p>
-                    {% endif %}
+    <!-- Main Content -->
+    <div class="premium-card">
+        <!-- Section 1: Supervisor Information -->
+        <div class="card-section">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-user-tie"></i></div>
+                <h5>Supervisión de Zona</h5>
+            </div>
+            {% if zona.supervisor %}
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Nombre del Supervisor</span>
+                    <span class="info-value text-primary fw-bold">{{ zona.supervisor.nombres }} {{ zona.supervisor.a_paterno }} {{ zona.supervisor.a_materno }}</span>
                 </div>
-                <div class="col-md-6">
-                    <h5>Observaciones de la Zona</h5>
-                    <p>{{ zona.observaciones|default:"No hay observaciones."|linebreaksbr }}</p>
+                <div class="info-item">
+                    <span class="info-label">Correo Electrónico</span>
+                    <span class="info-value"><i class="fas fa-envelope me-2 text-muted"></i>{{ zona.supervisor.email|default:"---" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Teléfono de Contacto</span>
+                    <span class="info-value"><i class="fas fa-phone me-2 text-muted"></i>{{ zona.supervisor.telefono|default:"---" }}</span>
                 </div>
             </div>
+            {% else %}
+            <div class="text-center py-4 bg-light rounded-4">
+                <i class="fas fa-user-slash text-muted mb-2 opacity-50"></i>
+                <p class="text-muted small mb-0 fw-bold">No hay un supervisor asignado actualmente a esta zona.</p>
+            </div>
+            {% endif %}
         </div>
-    </div>
 
-    <!-- Lista de Centros de Trabajo en la Zona -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Centros de Trabajo en esta Zona</h5>
+        <!-- Section 2: Zone Remarks -->
+        <div class="card-section bg-light bg-opacity-25">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-sticky-note"></i></div>
+                <h5>Observaciones Generales</h5>
+            </div>
+            <div class="p-0">
+                <p class="mb-0 text-muted small fw-medium">{{ zona.observaciones|default:"Sin observaciones adicionales registradas para esta zona."|linebreaksbr }}</p>
+            </div>
         </div>
-        <div class="card-body">
+
+        <!-- Section 3: Schools in Zone -->
+        <div class="card-section">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-school"></i></div>
+                <h5>Centros de Trabajo Adscritos ({{ escuelas.count }})</h5>
+            </div>
+            
             {% if escuelas %}
-            <div class="table-responsive">
-                <table id="tablaEscuelas" class="table table-striped table-hover">
+            <div class="table-responsive table-container shadow-sm mt-2">
+                <table id="tablaEscuelas" class="table table-hover align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>C.C.T.</th>
+                            <th class="ps-4">C.C.T.</th>
                             <th>Nombre del Centro de Trabajo</th>
                             <th>Turno</th>
                             <th>Domicilio</th>
-                            <th>Acciones</th>
+                            <th class="text-end pe-4">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for escuela in escuelas %}
                         <tr>
-                            <td>{{ escuela.id_escuela }}</td>
-                            <td>{{ escuela.nombre_ct }}</td>
+                            <td class="ps-4">
+                                <span class="badge bg-soft-info text-info rounded-pill px-3">{{ escuela.id_escuela }}</span>
+                            </td>
+                            <td><span class="fw-bold">{{ escuela.nombre_ct }}</span></td>
                             <td>{{ escuela.get_turno_display }}</td>
-                            <td>{{ escuela.domicilio }}</td>
-                            <td>
-                                <a href="{% url 'detalle_escuela' escuela.pk %}" class="btn btn-sm btn-outline-info" title="Ver Detalles de la Escuela">
-                                    <i class="fas fa-eye"></i>
+                            <td class="small">{{ escuela.domicilio|truncatechars:50 }}</td>
+                            <td class="text-end pe-4">
+                                <a href="{% url 'detalle_escuela' escuela.pk %}" class="btn btn-sm btn-light border rounded-pill px-3 fw-bold btn-hover-animate" title="Ver Detalles">
+                                    <i class="fas fa-eye me-1"></i> Detalles
                                 </a>
                             </td>
                         </tr>
@@ -68,9 +269,9 @@
                 </table>
             </div>
             {% else %}
-            <div class="text-center py-4">
-                <i class="fas fa-school fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No hay centros de trabajo registrados en esta zona.</h5>
+            <div class="text-center py-5 bg-white rounded-4 border border-dashed">
+                <i class="fas fa-school fa-3x text-muted opacity-25 mb-3"></i>
+                <p class="text-muted fw-bold mb-0">No hay centros de trabajo registrados en esta zona.</p>
             </div>
             {% endif %}
         </div>
@@ -80,12 +281,17 @@
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    $('#tablaEscuelas').DataTable({
-        language: {
-            url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-        }
+    $(document).ready(function () {
+        $('#tablaEscuelas').DataTable({
+            language: {
+                ...window.SpanishDataTable,
+                search: "_INPUT_",
+                searchPlaceholder: "Buscar por nombre o CCT..."
+            },
+            pageLength: 10,
+            responsive: true,
+            dom: '<"d-flex justify-content-between align-items-center mb-3"<"small"l><"small"f>>t<"d-flex justify-content-between align-items-center mt-3"<"small"i><"small"p>>'
+        });
     });
-});
 </script>
 {% endblock %}

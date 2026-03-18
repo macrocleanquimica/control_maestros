@@ -1,0 +1,5 @@
+--------------------------------------------------
+FUNC: APOYO TECNICO PEDAGOGICO | COUNT: 17
+FUNC: MAESTRO ESPECIALISTA DOCENTE DE APOYO | COUNT: 2
+FUNC: MAESTRO(A) ESPECIALISTA DOCENTE DE APOYO | COUNT: 473
+--------------------------------------------------

@@ -112,9 +112,22 @@ def eliminar_escuela(request, pk):
 def detalle_escuela(request, pk):
     escuela = get_object_or_404(Escuela, pk=pk)
     personal = Maestro.objects.filter(id_escuela=escuela)
+    
+    # Buscar director: prioridad al modelo Director, respaldo en la función del maestro
+    director = None
+    try:
+        if hasattr(escuela, 'director'):
+            director = escuela.director.maestro
+    except:
+        pass
+    
+    if not director:
+        director = personal.filter(funcion__icontains='DIRECTOR').first()
+        
     context = {
         'escuela': escuela,
         'personal': personal,
+        'director_escuela': director,
         'titulo': 'Detalle de la Escuela'
     }
     return render(request, 'gestion_escolar/detalle_escuela.html', context)

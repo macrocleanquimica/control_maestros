@@ -1,457 +1,819 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
+{% load historial_filters %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{{ titulo }}</h4>
-                </div>
-                <div class="card-body">
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                    
-                    <form method="post">
-                        {% csrf_token %}
+<style>
+    :root {
+        --of-primary: #6366f1;
+        --of-secondary: #64748b;
+        --of-border: #e2e8f0;
+        --of-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.plantilla.id_for_label }}" class="form-label">{{ form.plantilla.label }}:</label>
-                                    {{ form.plantilla }}
-                                    {% if form.plantilla.errors %}
-                                        <div class="text-danger">{{ form.plantilla.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-6" id="motivo-tramite-wrapper">
-                                <div class="mb-3">
-                                    <label for="{{ form.motivo_tramite.id_for_label }}" class="form-label">{{ form.motivo_tramite.label }}:</label>
-                                    {{ form.motivo_tramite }}
-                                    {% if form.motivo_tramite.errors %}
-                                        <div class="text-danger">{{ form.motivo_tramite.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
 
-                        <div id="datos-titular-section">
-                            <hr><h4 class="form-section-heading">Datos del Titular</h4><hr>
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="mb-3" data-field-name="maestro_titular">
-                                        <label for="id_maestro_titular" class="form-label">Maestro Titular:</label>
-                                        <select name="maestro_titular" id="id_maestro_titular" class="form-control" style="width: 100%;"></select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3" data-field-name="maestro_titular">
-                                        <label for="{{ form.curp_titular_display.id_for_label }}" class="form-label">{{ form.curp_titular_display.label }}:</label>
-                                        {{ form.curp_titular_display }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3" data-field-name="maestro_titular">
-                                        <label for="{{ form.rfc_titular_display.id_for_label }}" class="form-label">{{ form.rfc_titular_display.label }}:</label>
-                                        {{ form.rfc_titular_display }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3" data-field-name="maestro_titular">
-                                        <label for="{{ form.clave_presupuestal_titular_display.id_for_label }}" class="form-label">{{ form.clave_presupuestal_titular_display.label }}:</label>
-                                        {{ form.clave_presupuestal_titular_display }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3" data-field-name="maestro_titular">
-                                        <label for="{{ form.categoria_titular_display.id_for_label }}" class="form-label">{{ form.categoria_titular_display.label }}:</label>
-                                        {{ form.categoria_titular_display }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3" data-field-name="maestro_titular">
-                                        <label for="{{ form.funcion_titular_display.id_for_label }}" class="form-label">{{ form.funcion_titular_display.label }}:</label>
-                                        {{ form.funcion_titular_display }}
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- FECHAS DEL TITULAR MOVIDAS AQUÍ -->
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3" data-field-name="fecha_efecto1">
-                                        <label for="{{ form.fecha_efecto1.id_for_label }}" class="form-label">Fecha Inicial Titular:</label>
-                                        {{ form.fecha_efecto1 }}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3" data-field-name="fecha_efecto2">
-                                        <label for="{{ form.fecha_efecto2.id_for_label }}" class="form-label">Fecha Final Titular:</label>
-                                        {{ form.fecha_efecto2 }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 
-                        <div id="datos-interino-section">
-                            <hr><h4 class="form-section-heading">Datos del Interino</h4><hr>
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="mb-3" data-field-name="maestro_interino">
-                                        <label for="id_maestro_interino" class="form-label">Maestro Interino:</label>
-                                        <select name="maestro_interino" id="id_maestro_interino" class="form-control" style="width: 100%;"></select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row" data-field-name="maestro_interino">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="{{ form.no_prel_display.id_for_label }}" class="form-label">{{ form.no_prel_display.label }}:</label>
-                                        {{ form.no_prel_display }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="{{ form.folio_prel_display.id_for_label }}" class="form-label">{{ form.folio_prel_display.label }}:</label>
-                                        {{ form.folio_prel_display }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="{{ form.tipo_val_display.id_for_label }}" class="form-label">{{ form.tipo_val_display.label }}:</label>
-                                        {{ form.tipo_val_display }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row" data-field-name="maestro_interino">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="{{ form.curp_interino_display.id_for_label }}" class="form-label">{{ form.curp_interino_display.label }}:</label>
-                                        {{ form.curp_interino_display }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="{{ form.rfc_interino_display.id_for_label }}" class="form-label">{{ form.rfc_interino_display.label }}:</label>
-                                        {{ form.rfc_interino_display }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="{{ form.clave_presupuestal_interino_display.id_for_label }}" class="form-label">{{ form.clave_presupuestal_interino_display.label }}:</label>
-                                        {{ form.clave_presupuestal_interino_display }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row" data-field-name="maestro_interino">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="{{ form.funcion_interino_display.id_for_label }}" class="form-label">{{ form.funcion_interino_display.label }}:</label>
-                                        {{ form.funcion_interino_display }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="{{ form.tipo_movimiento_interino.id_for_label }}" class="form-label">{{ form.tipo_movimiento_interino.label }}:</label>
-                                        {{ form.tipo_movimiento_interino }}
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- FECHAS DEL INTERINO MOVIDAS AQUÍ -->
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3" data-field-name="fecha_efecto3">
-                                        <label for="{{ form.fecha_efecto3.id_for_label }}" class="form-label">Fecha Inicial Interino:</label>
-                                        {{ form.fecha_efecto3 }}
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3" data-field-name="fecha_efecto4">
-                                        <label for="{{ form.fecha_efecto4.id_for_label }}" class="form-label">Fecha Final Interino:</label>
-                                        {{ form.fecha_efecto4 }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    /* Header Section */
+    .premium-header {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--of-shadow);
+        border: 1px solid var(--of-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
 
-                        <div id="otros-datos-section">
-                            <hr><h4 class="form-section-heading">Otros Datos del Trámite</h4><hr>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3" data-field-name="folio">
-                                        <label for="{{ form.folio.id_for_label }}" class="form-label">{{ form.folio.label }}:</label>
-                                        {{ form.folio }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3" data-field-name="quincena_inicial">
-                                        <label for="{{ form.quincena_inicial.id_for_label }}" class="form-label">{{ form.quincena_inicial.label }}:</label>
-                                        {{ form.quincena_inicial }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3" data-field-name="quincena_final">
-                                        <label for="{{ form.quincena_final.id_for_label }}" class="form-label">{{ form.quincena_final.label }}:</label>
-                                        {{ form.quincena_final }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3" data-field-name="observaciones">
-                                <label for="{{ form.observaciones.id_for_label }}" class="form-label">{{ form.observaciones.label }}:</label>
-                                {{ form.observaciones }}
-                            </div>
-                        </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" class="btn btn-primary">Generar Trámite</button>
-                        </div>
-                    </form>
-                </div>
+    .header-info h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    /* Form Container */
+    .form-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid var(--of-border);
+        box-shadow: var(--of-shadow);
+        overflow: hidden;
+        margin-bottom: 3rem;
+    }
+
+    .section-container {
+        padding: 2.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.3s ease;
+    }
+
+    .section-container:last-child {
+        border-bottom: none;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .section-title h4 {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #334155;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .section-icon {
+        width: 36px;
+        height: 36px;
+        background: #f5f3ff;
+        color: var(--of-primary);
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    /* Input Styling */
+    .form-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 0.75rem;
+        border: 1px solid var(--of-border);
+        padding: 0.6rem 1rem;
+        background-color: #f8fafc;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 500;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background-color: white;
+        border-color: var(--of-primary);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .form-control[readonly] {
+        background-color: #f1f5f9;
+        color: #64748b;
+        cursor: not-allowed;
+    }
+
+    /* Alert Styling */
+    .alert-premium {
+        border-radius: 1rem;
+        border: none;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        padding: 1rem 1.5rem;
+    }
+
+    /* Buttons */
+    .btn-generate {
+        background: var(--of-primary);
+        color: white;
+        border: none;
+        padding: 1rem 3rem;
+        border-radius: 2rem;
+        font-weight: 800;
+        font-size: 1rem;
+        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+        transition: all 0.2s;
+    }
+
+    .btn-generate:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.5);
+        color: white;
+    }
+
+    /* Select2 integration */
+    .select2-container--default .select2-selection--single {
+        border-radius: 0.75rem !important;
+        border: 1px solid var(--of-border) !important;
+        height: 45px !important;
+        background-color: #f8fafc !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 45px !important;
+        padding-left: 12px !important;
+        font-weight: 500 !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 43px !important;
+    }
+</style>
+
+<div class="page-container">
+    <!-- Header -->
+    <div class="premium-header">
+        <div class="header-info">
+            <h1><i class="fas fa-file-signature text-primary me-2"></i> {{ titulo }}</h1>
+            <p class="text-muted small mb-0">Generación automatizada de documentos y oficios oficiales.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'historial' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted small btn-hover-animate">
+                <i class="fas fa-history me-2"></i> Ver Historial
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-premium alert-dismissible fade show d-flex align-items-center gap-3" role="alert">
+            <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} fa-lg"></i>
+            <span class="fw-bold">{{ message }}</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="form-card">
+        {% if form.errors and not messages %}
+        <div class="alert alert-danger alert-premium m-4 d-flex align-items-center gap-3">
+            <i class="fas fa-exclamation-triangle fa-lg"></i>
+            <div>
+                <span class="fw-bold">Error de validación:</span>
+                <ul class="mb-0 small">
+                    {% for field, errors in form.errors.items %}
+                        <li>{{ field }}: {{ errors.0 }}</li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
+        {% endif %}
+
+        <form method="post" id="formGenerarOficio">
+            {% csrf_token %}
+
+            <!-- SECCIÓN 1: CONFIGURACIÓN BASE -->
+            <div class="section-container bg-light bg-opacity-50">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-cog"></i></div>
+                    <h4>Configuración del Documento</h4>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label for="{{ form.plantilla.id_for_label }}" class="form-label">{{ form.plantilla.label }}</label>
+                        {{ form.plantilla }}
+                        {% if form.plantilla.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.plantilla.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6" id="motivo-tramite-wrapper">
+                        <label for="{{ form.motivo_tramite.id_for_label }}" class="form-label">{{ form.motivo_tramite.label }}</label>
+                        <select name="motivo_tramite" id="id_motivo_tramite" class="form-control">
+                            {% if is_edit %}
+                                {% with motivo_id=historial_item.datos_tramite|get_item:"motivo_tramite" %}
+                                    {% if motivo_id %}
+                                        {% with motivo_obj=motivo_id|get_motivo_by_id %}
+                                            <option value="{{ motivo_id }}" selected>{{ motivo_obj }}</option>
+                                        {% endwith %}
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </select>
+                        {% if form.motivo_tramite.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.motivo_tramite.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-12" data-field-name="archivo_plantilla_especifico">
+                        <div class="p-3 rounded-4 border bg-white shadow-sm">
+                            <label for="{{ form.archivo_plantilla_especifico.id_for_label }}" class="form-label text-primary">{{ form.archivo_plantilla_especifico.label }}</label>
+                            {{ form.archivo_plantilla_especifico }}
+                            <div class="form-text mt-2"><i class="fas fa-info-circle me-1"></i> Seleccione 'PRORROGA' para Art. 3 o 'INTERINATO NUEVO' para Art. 36</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: DATOS DEL TITULAR -->
+            <div class="section-container" id="datos-titular-section">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-user-tie"></i></div>
+                    <h4>Datos del Maestro Titular</h4>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-12" data-field-name="maestro_titular">
+                        <label for="id_maestro_titular" class="form-label">Búsqueda de Maestro:</label>
+                        <select name="maestro_titular" id="id_maestro_titular" class="form-control" style="width: 100%;">
+                            {% if is_edit and historial_item.maestro %}
+                                <option value="{{ historial_item.maestro.id_maestro }}" selected>{{ historial_item.maestro }}</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-12" data-field-name="maestro_titular">
+                        <label class="form-label">{{ form.nombre_titular_display.label }}</label>
+                        {{ form.nombre_titular_display }}
+                    </div>
+                    
+                    <div class="col-md-4" data-field-name="maestro_titular">
+                        <label class="form-label">{{ form.curp_titular_display.label }}</label>
+                        {{ form.curp_titular_display }}
+                    </div>
+                    <div class="col-md-4" data-field-name="maestro_titular">
+                        <label class="form-label">{{ form.rfc_titular_display.label }}</label>
+                        {{ form.rfc_titular_display }}
+                    </div>
+                    <div class="col-md-4" data-field-name="maestro_titular">
+                        <label class="form-label">{{ form.clave_presupuestal_titular_display.label }}</label>
+                        {{ form.clave_presupuestal_titular_display }}
+                    </div>
+
+                    <div class="col-md-6" data-field-name="maestro_titular">
+                        <label class="form-label">{{ form.categoria_titular_display.label }}</label>
+                        {{ form.categoria_titular_display }}
+                    </div>
+                    <div class="col-md-6" data-field-name="maestro_titular">
+                        <label class="form-label">{{ form.funcion_titular_display.label }}</label>
+                        {{ form.funcion_titular_display }}
+                    </div>
+
+                    <!-- Fechas Titular -->
+                    <div class="col-md-6" data-field-name="fecha_efecto1">
+                        <label for="{{ form.fecha_efecto1.id_for_label }}" class="form-label">Fecha Inicial Titular</label>
+                        {{ form.fecha_efecto1 }}
+                    </div>
+                    <div class="col-md-6" data-field-name="fecha_efecto2">
+                        <label for="{{ form.fecha_efecto2.id_for_label }}" class="form-label">Fecha Final Titular</label>
+                        {{ form.fecha_efecto2 }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: DATOS DEL INTERINO -->
+            <div class="section-container" id="datos-interino-section">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-user-clock"></i></div>
+                    <h4>Datos del Maestro Interino</h4>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-12" data-field-name="maestro_interino">
+                        <label for="id_maestro_interino" class="form-label">Búsqueda de Interino:</label>
+                        <select name="maestro_interino" id="id_maestro_interino" class="form-control" style="width: 100%;">
+                            {% if is_edit %}
+                                {% with interino_id=historial_item.datos_tramite|get_item:"maestro_interino" %}
+                                    {% if interino_id %}
+                                        {% with interino_obj=interino_id|get_maestro_by_id %}
+                                            <option value="{{ interino_id }}" selected>{{ interino_obj }}</option>
+                                        {% endwith %}
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-12" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.nombre_interino_display.label }}</label>
+                        {{ form.nombre_interino_display }}
+                    </div>
+
+                    <div class="col-md-4" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.no_prel_display.label }}</label>
+                        {{ form.no_prel_display }}
+                    </div>
+                    <div class="col-md-4" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.folio_prel_display.label }}</label>
+                        {{ form.folio_prel_display }}
+                    </div>
+                    <div class="col-md-4" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.tipo_val_display.label }}</label>
+                        {{ form.tipo_val_display }}
+                    </div>
+
+                    <div class="col-md-4" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.curp_interino_display.label }}</label>
+                        {{ form.curp_interino_display }}
+                    </div>
+                    <div class="col-md-4" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.rfc_interino_display.label }}</label>
+                        {{ form.rfc_interino_display }}
+                    </div>
+                    <div class="col-md-4" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.clave_presupuestal_interino_display.label }}</label>
+                        {{ form.clave_presupuestal_interino_display }}
+                    </div>
+
+                    <div class="col-md-6" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.funcion_interino_display.label }}</label>
+                        {{ form.funcion_interino_display }}
+                    </div>
+                    <div class="col-md-6" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.tipo_movimiento_interino.label }}</label>
+                        {{ form.tipo_movimiento_interino }}
+                    </div>
+
+                    <!-- Fechas Interino -->
+                    <div class="col-md-6" data-field-name="fecha_efecto3">
+                        <label for="{{ form.fecha_efecto3.id_for_label }}" class="form-label">Fecha Inicial Interino</label>
+                        {{ form.fecha_efecto3 }}
+                    </div>
+                    <div class="col-md-6" data-field-name="fecha_efecto4">
+                        <label for="{{ form.fecha_efecto4.id_for_label }}" class="form-label">Fecha Final Interino</label>
+                        {{ form.fecha_efecto4 }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 4: OTROS DATOS -->
+            <div class="section-container" id="otros-datos-section">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-list-alt"></i></div>
+                    <h4>Otros Datos del Trámite</h4>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-4" data-field-name="folio">
+                        <label class="form-label">{{ form.folio.label }}</label>
+                        {{ form.folio }}
+                    </div>
+                    <div class="col-md-4" data-field-name="quincena_inicial">
+                        <label class="form-label">{{ form.quincena_inicial.label }}</label>
+                        {{ form.quincena_inicial }}
+                    </div>
+                    <div class="col-md-4" data-field-name="quincena_final">
+                        <label class="form-label">{{ form.quincena_final.label }}</label>
+                        {{ form.quincena_final }}
+                    </div>
+
+                    <div class="col-md-12" data-field-name="observaciones">
+                        <label class="form-label">{{ form.observaciones.label }}</label>
+                        {{ form.observaciones }}
+                    </div>
+
+                    <div class="col-md-6" data-field-name="fecha_al_corte">
+                        <label class="form-label">{{ form.fecha_al_corte.label }}</label>
+                        {{ form.fecha_al_corte }}
+                    </div>
+                    <div class="col-md-6" data-field-name="fecha_del_calculo">
+                        <label class="form-label">{{ form.fecha_del_calculo.label }}</label>
+                        {{ form.fecha_del_calculo }}
+                    </div>
+
+                    <div class="col-md-6" data-field-name="antiguedad_funcion">
+                        <label class="form-label">{{ form.antiguedad_funcion.label }}</label>
+                        {{ form.antiguedad_funcion }}
+                    </div>
+                    <div class="col-md-6" data-field-name="antiguedad_categoria">
+                        <label class="form-label">{{ form.antiguedad_categoria.label }}</label>
+                        {{ form.antiguedad_categoria }}
+                    </div>
+
+                    <div class="col-md-6" data-field-name="fecha_adscripcion">
+                        <label class="form-label">{{ form.fecha_adscripcion.label }}</label>
+                        {{ form.fecha_adscripcion }}
+                    </div>
+                    <div class="col-md-12" data-field-name="incentivos">
+                        <label class="form-label">{{ form.incentivos.label }}</label>
+                        {{ form.incentivos }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acción Final -->
+            <div class="section-container bg-light bg-opacity-50 text-center py-5" id="accion-final-section">
+                <button type="submit" class="btn-generate">
+                    <i class="fas fa-{% if is_edit %}save{% else %}file-word{% endif %} me-2"></i> 
+                    {% if is_edit %}Corregir y Regenerar Documento{% else %}Generar y Descargar Trámite{% endif %}
+                </button>
+                <p class="text-muted small mt-3 px-5">
+                    {% if is_edit %}
+                    Se actualizará el registro en el historial y se reemplazará el archivo anterior por uno nuevo con los datos corregidos.
+                    {% else %}
+                    Al generar el trámite, se creará automáticamente un registro en el historial para futuras consultas y una descarga inmediata del archivo Word.
+                    {% endif %}
+                </p>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    // Aplicar Select2 a los campos de selección
-    $('#id_plantilla').select2({ placeholder: "Selecciona una plantilla", allowClear: true, width: '100%' });
-    $('#id_motivo_tramite').select2({ placeholder: "Selecciona un motivo de trámite", allowClear: true, width: '100%' });
+    $(document).ready(function () {
+        window.isInitialLoad = true;
+        // Aplicar Select2 a los campos de selección
+        $('#id_plantilla').select2({ placeholder: "Selecciona una plantilla", allowClear: true, width: '100%' });
+        $('#id_motivo_tramite').select2({ placeholder: "Selecciona un motivo de trámite", allowClear: true, width: '100%' });
 
-    // --- NUEVA LÓGICA DE VISIBILIDAD INICIAL ---
-    const motivoTramiteWrapper = $('#motivo-tramite-wrapper');
-    motivoTramiteWrapper.hide();
+        // --- LÓGICA DE VISIBILIDAD INICIAL ---
+        const motivoTramiteWrapper = $('#motivo-tramite-wrapper');
+        motivoTramiteWrapper.hide();
 
-    function setupMaestroSelect2(selector, placeholder) {
-        $(selector).select2({
-            placeholder: placeholder,
-            allowClear: true,
-            width: '100%',
-            ajax: {
-                url: "{% url 'buscar_maestros_ajax' %}",
-                dataType: 'json',
-                delay: 250,
-                data: function (params) {
-                    return {
-                        term: params.term // 'term' es el texto que el usuario escribe
-                    };
+        function setupMaestroSelect2(selector, placeholder) {
+            $(selector).select2({
+                placeholder: placeholder,
+                allowClear: true,
+                width: '100%',
+                ajax: {
+                    url: "{% url 'buscar_maestros_ajax' %}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            term: params.term // 'term' es el texto que el usuario escribe
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results
+                        };
+                    },
+                    cache: true
                 },
-                processResults: function (data) {
-                    return {
-                        results: data.results
-                    };
-                },
-                cache: true
-            },
-            minimumInputLength: 2, // Empezar a buscar después de 2 caracteres
-            language: {
-                inputTooShort: function () {
-                    return 'Ingresa nombres o apellidos';
-                },
-                noResults: function () {
-                    return 'No se encontraron resultados';
-                },
-                searching: function () {
-                    return 'Buscando...';
-                }
-            }
-        });
-    }
-
-    setupMaestroSelect2('#id_maestro_titular', 'Busca y selecciona un maestro titular');
-    setupMaestroSelect2('#id_maestro_interino', 'Busca y selecciona un maestro interino');
-
-    // --- LÓGICA DE VISIBILIDAD DE CONTROLES ---
-    const allManagedFields = ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones', 'quincena_inicial', 'quincena_final'];
-    const allSections = ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'];
-
-    const visibleFieldsConfig = {
-        "REINGRESO": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-        "FILIACION": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-        "REINGRESO SIN PRELACION": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-        "SOLICITUD DE ASIGNACION": { fields: ['maestro_titular', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-        "JUSTIFICACION DE PERFIL": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-        "CONSTANCIAS": { fields: ['maestro_titular', 'folio', 'quincena_inicial', 'quincena_final'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-        "OFICIO DE REINCORPORACION": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-        "CAMBIO DEL CENTRO DE TRABAJO": { fields: ['maestro_titular'], sections: ['#datos-titular-section'] },
-        "CUADRO CAMBIOS CON FOLIO": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-        "PROPUESTA DE MOVIMIENTO": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-        "ALTA INICIAL": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-        "REPORTE DE VACANCIA": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-    };
-
-    function updateFormVisibility() {
-        const selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
-        const config = visibleFieldsConfig[selectedPlantillaText];
-
-        allManagedFields.forEach(fieldName => { $(`[data-field-name="${fieldName}"]`).hide(); });
-        allSections.forEach(sectionId => { $(sectionId).hide(); });
-
-        if (config) {
-            config.fields.forEach(fieldName => { $(`[data-field-name="${fieldName}"]`).show(); });
-            config.sections.forEach(sectionId => { $(sectionId).show(); });
-        }
-    }
-
-    function getDateDiffInMonths(d1, d2) {
-        var months = (d2.getFullYear() - d1.getFullYear()) * 12 - d1.getMonth() + d2.getMonth();
-        if (d2.getDate() < d1.getDate()) { months--; }
-        return months;
-    }
-
-    function calculateTipoMovimientoInterino() {
-        var motivoTramiteText = $('#id_motivo_tramite option:selected').text().trim().toUpperCase();
-        var fechaEfecto3Str = $('#id_fecha_efecto3').val();
-        var fechaEfecto4Str = $('#id_fecha_efecto4').val();
-        var resultadoAlta = "";
-
-        switch (motivoTramiteText) {
-            case "LIC. DE GRAVIDEZ": resultadoAlta = "ALTA INTERINA EN GRAVIDEZ"; break;
-            case "LIC. POR PASAR A OTRO EMPLEO": resultadoAlta = "ALTA INICIAL POR PROMOCIÓN O ADMISIÓN"; break;
-            default:
-                if (!fechaEfecto3Str || !fechaEfecto4Str) { resultadoAlta = "FECHAS INSUFICIENTES"; break; }
-                var fechaEfecto3 = new Date(fechaEfecto3Str + 'T00:00:00');
-                var fechaEfecto4 = new Date(fechaEfecto4Str + 'T00:00:00');
-                if (isNaN(fechaEfecto3.getTime()) || isNaN(fechaEfecto4.getTime())) { resultadoAlta = "FECHAS INSUFICIENTES"; break; }
-                var diferenciaMeses = getDateDiffInMonths(fechaEfecto3, fechaEfecto4);
-                switch (motivoTramiteText) {
-                    case "LIC. PREPENSIONARIA": case "PREJUBILATORIO": resultadoAlta = diferenciaMeses < 6 ? "ALTA EN PENSION" : "ALTA PROVISIONAL"; break;
-                    case "BECA COMISIÓN": case "PRORROGA DE BECA COMISION": resultadoAlta = diferenciaMeses < 6 ? "SUSTITUTO BECARIO" : "ALTA PROVISIONAL"; break;
-                    case "BAJA POR DEFUNCIÓN": case "LIC. POR ASUNTOS PARTICULARES": case "LIC. POR COM. SINDICAL": case "PRORROGA DE LIC. POR COM. SINDICAL": resultadoAlta = diferenciaMeses < 6 ? "ALTA INTERINA LIMITADA" : "ALTA PROVISIONAL"; break;
-                    case "JUBILACIÓN": resultadoAlta = diferenciaMeses < 6 ? "ALTA INTERINA LIMITADA EN VACANTE DEFINITIVA" : "ALTA PROVISIONAL EN VACANTE DEFINITIVA"; break;
-                    default: resultadoAlta = "NO PROCEDENTE";
-                }
-        }
-        $('#id_tipo_movimiento_interino').val(resultadoAlta);
-    }
-
-    function cargarPrelacionAutomatica(curpInterino) {
-        if (!curpInterino) { $('#id_no_prel_display, #id_folio_prel_display, #id_tipo_val_display').val(''); return; }
-        $.get('{% url "get_prelacion_data_ajax" %}', { curp_interino: curpInterino }, function(data) {
-            $('#id_no_prel_display').val(data.encontrado ? data.numero_prelacion : '');
-            $('#id_folio_prel_display').val(data.encontrado ? data.folio_prelacion : '');
-            $('#id_tipo_val_display').val(data.encontrado ? data.tipo_val : '');
-        }).fail(function() { console.error('Error al cargar datos de prelación'); $('#id_no_prel_display, #id_folio_prel_display, #id_tipo_val_display').val(''); });
-    }
-
-    $('#id_plantilla').on('change', function() {
-        var plantillaId = $(this).val();
-        var motivoTramiteSelect = $('#id_motivo_tramite');
-        
-        // --- LÓGICA DE VISIBILIDAD DEL MOTIVO ---
-        if (plantillaId) { motivoTramiteWrapper.show(); } else { motivoTramiteWrapper.hide(); }
-
-        updateFormVisibility();
-        motivoTramiteSelect.empty().append(new Option('', '', true, true)).trigger('change');
-
-        if (plantillaId) {
-            $.ajax({ url: '{% url "get_motivos_tramite_ajax" %}', data: { 'plantilla_id': plantillaId }, dataType: 'json',
-                success: function(data) {
-                    $.each(data, function(key, value) { motivoTramiteSelect.append(new Option(value.text, value.id)); });
-                    motivoTramiteSelect.trigger('change');
+                minimumInputLength: 2, // Empezar a buscar después de 2 caracteres
+                language: {
+                    inputTooShort: function () {
+                        return 'Ingresa nombres o apellidos';
+                    },
+                    noResults: function () {
+                        return 'No se encontraron resultados';
+                    },
+                    searching: function () {
+                        return 'Buscando...';
+                    }
                 }
             });
         }
-    });
 
-    function getMaestroData(maestroId, prefix) {
-        if (!maestroId) { limpiarCamposMaestro(prefix); return; }
-        $.ajax({ url: '{% url "get_maestro_data" %}', data: { 'maestro_id': maestroId }, dataType: 'json',
-            success: function(data) {
-                if (data.error) { console.error('Error:', data.error); limpiarCamposMaestro(prefix); return; }
-                if (prefix === 'titular') {
-                    $('#id_curp_titular_display').val(data.curp); $('#id_rfc_titular_display').val(data.rfc);
-                    $('#id_clave_presupuestal_titular_display').val(data.clave_presupuestal); $('#id_categoria_titular_display').val(data.categoria);
-                    $('#id_funcion_titular_display').val(data.funcion);
-                    var interinoId = $('#id_maestro_interino').val();
-                    if (interinoId) { getMaestroData(interinoId, 'interino'); }
-                } else if (prefix === 'interino') {
-                    $('#id_curp_interino_display').val(data.curp); $('#id_rfc_interino_display').val(data.rfc);
-                    var presupuestal_titular = $('#id_clave_presupuestal_titular_display').val();
-                    var motivo_tramite_text = $('#id_motivo_tramite option:selected').text().trim().toUpperCase();
-                    var calculated_presupuestal_interino = presupuestal_titular;
-                    if (presupuestal_titular && presupuestal_titular.length >= 2) {
-                        if (motivo_tramite_text === "BECA COMISIÓN" || motivo_tramite_text === "PRORROGA DE BECA COMISION") {
-                            calculated_presupuestal_interino = "48" + presupuestal_titular.substring(2);
-                        } else if (motivo_tramite_text === "LIC. DE GRAVIDEZ") {
-                            calculated_presupuestal_interino = "14" + presupuestal_titular.substring(2);
-                        } else if (motivo_tramite_text === "LIC. PREPENSIONARIA" || motivo_tramite_text === "PREJUBILATORIO") {
-                            calculated_presupuestal_interino = "15" + presupuestal_titular.substring(2);
-                        }
-                    }
-                    $('#id_clave_presupuestal_interino_display').val(calculated_presupuestal_interino);
-                    $('#id_funcion_interino_display').val($('#id_funcion_titular_display').val());
-                    cargarPrelacionAutomatica(data.curp);
-                }
-            },
-            error: function() { console.error('Error AJAX'); limpiarCamposMaestro(prefix); }
-        });
-    }
+        setupMaestroSelect2('#id_maestro_titular', 'Busca y selecciona un maestro titular');
+        setupMaestroSelect2('#id_maestro_interino', 'Busca y selecciona un maestro interino');
 
-    function limpiarCamposMaestro(prefix) {
-        if (prefix === 'titular') {
-            $('#id_curp_titular_display, #id_rfc_titular_display, #id_clave_presupuestal_titular_display, #id_categoria_titular_display, #id_funcion_titular_display, #id_clave_presupuestal_interino_display, #id_funcion_interino_display').val('');
-        } else if (prefix === 'interino') {
-            $('#id_curp_interino_display, #id_rfc_interino_display, #id_clave_presupuestal_interino_display, #id_funcion_interino_display').val('');
-            cargarPrelacionAutomatica('');
-        }
-    }
+        // --- LÓGICA DE VISIBILIDAD DE CONTROLES ---
+        const allManagedFields = ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones', 'quincena_inicial', 'quincena_final', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'antiguedad_categoria', 'fecha_adscripcion', 'incentivos', 'archivo_plantilla_especifico'];
+        const allSections = ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section', '#accion-final-section'];
 
-    // --- NUEVA LÓGICA PARA LIMPIAR FORMULARIO TRAS ÉXITO ---
-    $('form').on('submit', function(e) {
-        // Usamos un timeout para permitir que la descarga inicie y que los errores de validación (si los hay) aparezcan.
-        setTimeout(() => {
-            // Si no hay alertas de error de Django, asumimos que fue exitoso.
-            if ($('.alert-danger').length === 0) {
-                // 1. Crear y mostrar mensaje de éxito
-                const successAlert = `
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        Trámite generado y descargado correctamente.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                `;
-                $('.card-body').prepend(successAlert);
+        const visibleFieldsConfig = {
+            "REINGRESO": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+            "FILIACION": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+            "REINGRESO SIN PRELACION": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+            "SOLICITUD DE ASIGNACION": { fields: ['maestro_titular', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones', 'archivo_plantilla_especifico'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+            "JUSTIFICACION DE PERFIL": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+            "CONSTANCIAS": { fields: ['maestro_titular', 'motivo_tramite', 'folio', 'quincena_inicial', 'quincena_final'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+            "OFICIO DE REINCORPORACION": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+            "CAMBIO DEL CENTRO DE TRABAJO": { fields: ['maestro_titular'], sections: ['#datos-titular-section'] },
+            "CUADRO CAMBIOS CON FOLIO": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+            "PROPUESTA DE MOVIMIENTO": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+            "ALTA INICIAL": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+            "REPORTE DE VACANCIA": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+            "CONSTANCIA DE CAMBIO": { fields: ['maestro_titular', 'motivo_tramite', 'folio', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'antiguedad_categoria', 'fecha_adscripcion', 'incentivos'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+            "CONSTANCIA DE HORIZONTAL": { fields: ['maestro_titular', 'motivo_tramite', 'folio', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'incentivos'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+            "PRESENTACION LABORAL": { fields: ['maestro_titular', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+        };
 
-                // 2. Limpiar todos los campos del formulario
-                $(this)[0].reset();
+        function updateFormVisibility() {
+            const selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
+            const config = visibleFieldsConfig[selectedPlantillaText];
 
-                // 3. Resetear los campos Select2
-                $('#id_plantilla, #id_motivo_tramite, #id_maestro_titular, #id_maestro_interino').val(null).trigger('change');
+            allManagedFields.forEach(fieldName => { $(`[data-field-name="${fieldName}"]`).hide(); });
+            allSections.forEach(sectionId => { $(sectionId).hide(); });
 
-                // 4. Forzar la actualización de la visibilidad para ocultar todo
-                // El .trigger('change') en #id_plantilla ya se encarga de esto.
+            if (config) {
+                config.fields.forEach(fieldName => { $(`[data-field-name="${fieldName}"]`).show(); });
+                config.sections.forEach(sectionId => { $(sectionId).show(); });
+                $('#accion-final-section').show();
             }
-        }, 1000); // 1 segundo de espera
-    });
+        }
 
-    // Event listeners
-    $('#id_maestro_titular').on('change', function() { getMaestroData($(this).val(), 'titular'); });
-    $('#id_maestro_interino').on('change', function() { getMaestroData($(this).val(), 'interino'); });
-    $('#id_motivo_tramite').on('change', function() {
-        var interinoId = $('#id_maestro_interino').val();
-        if (interinoId) { getMaestroData(interinoId, 'interino'); }
+        function getDateDiffInMonths(d1, d2) {
+            var months = (d2.getFullYear() - d1.getFullYear()) * 12 - d1.getMonth() + d2.getMonth();
+            if (d2.getDate() < d1.getDate()) { months--; }
+            return months;
+        }
+
+        function calculateTipoMovimientoInterino() {
+            if (window.isInitialLoad && {{ is_edit|lower|default:"false" }}) return;
+            var motivoTramiteText = $('#id_motivo_tramite option:selected').text().trim().toUpperCase();
+            var fechaEfecto3Str = $('#id_fecha_efecto3').val();
+            var fechaEfecto4Str = $('#id_fecha_efecto4').val();
+            var resultadoAlta = "";
+
+            switch (motivoTramiteText) {
+                case "LIC. DE GRAVIDEZ": resultadoAlta = "ALTA INTERINA EN GRAVIDEZ"; break;
+                default:
+                    if (!fechaEfecto3Str || !fechaEfecto4Str) { resultadoAlta = "FECHAS INSUFICIENTES"; break; }
+                    var fechaEfecto3 = new Date(fechaEfecto3Str + 'T00:00:00');
+                    var fechaEfecto4 = new Date(fechaEfecto4Str + 'T00:00:00');
+                    if (isNaN(fechaEfecto3.getTime()) || isNaN(fechaEfecto4.getTime())) { resultadoAlta = "FECHAS INSUFICIENTES"; break; }
+                    var diferenciaMeses = getDateDiffInMonths(fechaEfecto3, fechaEfecto4);
+                    switch (motivoTramiteText) {
+                        case "LIC. PREPENSIONARIA": case "PREJUBILATORIO": resultadoAlta = diferenciaMeses < 6 ? "ALTA EN PENSION" : "ALTA PROVISIONAL"; break;
+                        case "BECA COMISIÓN": case "PRORROGA DE BECA COMISION": resultadoAlta = diferenciaMeses < 6 ? "SUSTITUTO BECARIO" : "ALTA PROVISIONAL"; break;
+                        case "BAJA POR DEFUNCIÓN": case "LIC. POR ASUNTOS PARTICULARES": case "LIC. POR COM. SINDICAL": case "PRORROGA DE LIC. POR COM. SINDICAL": case "LIC. POR PASAR A OTRO EMPLEO": resultadoAlta = diferenciaMeses < 6 ? "ALTA INTERINA LIMITADA" : "ALTA PROVISIONAL"; break;
+                        case "JUBILACIÓN": resultadoAlta = diferenciaMeses < 6 ? "ALTA INTERINA LIMITADA EN VACANTE DEFINITIVA" : "ALTA PROVISIONAL EN VACANTE DEFINITIVA"; break;
+                        default: resultadoAlta = "NO PROCEDENTE";
+                    }
+            }
+            $('#id_tipo_movimiento_interino').val(resultadoAlta);
+        }
+
+        function cargarPrelacionAutomatica(curpInterino) {
+            if (!curpInterino) { $('#id_no_prel_display, #id_folio_prel_display, #id_tipo_val_display').val(''); return; }
+            $.get('{% url "get_prelacion_data_ajax" %}', { curp_interino: curpInterino }, function (data) {
+                $('#id_no_prel_display').val(data.encontrado ? data.numero_prelacion : '');
+                $('#id_folio_prel_display').val(data.encontrado ? data.folio_prelacion : '');
+                $('#id_tipo_val_display').val(data.encontrado ? data.tipo_val : '');
+            }).fail(function () { console.error('Error al cargar datos de prelación'); $('#id_no_prel_display, #id_folio_prel_display, #id_tipo_val_display').val(''); });
+        }
+
+        function calculateAntiguedad() {
+            const fechaAlCorteStr = $('#id_fecha_al_corte').val();
+            const fechaDelCalculoStr = $('#id_fecha_del_calculo').val();
+            const selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
+            const isCambio = selectedPlantillaText === 'CONSTANCIA DE CAMBIO';
+            const isHorizontal = selectedPlantillaText === 'CONSTANCIA DE HORIZONTAL';
+
+            if ((isCambio || isHorizontal) && fechaAlCorteStr && fechaDelCalculoStr) {
+                const fechaAlCorte = new Date(fechaAlCorteStr + 'T00:00:00');
+                const fechaDelCalculo = new Date(fechaDelCalculoStr + 'T00:00:00');
+
+                if (isNaN(fechaAlCorte.getTime()) || isNaN(fechaDelCalculo.getTime())) {
+                    $('#id_antiguedad_funcion').val('');
+                    $('#id_antiguedad_categoria').val('');
+                    return;
+                }
+
+                let date1 = fechaAlCorte;
+                let date2 = fechaDelCalculo;
+
+                if (date1 > date2) { [date1, date2] = [date2, date1]; }
+
+                let years = date2.getFullYear() - date1.getFullYear();
+                let months = date2.getMonth() - date1.getMonth();
+                let days = date2.getDate() - date1.getDate();
+
+                if (days < 0) {
+                    months--;
+                    const lastDayOfPrevMonth = new Date(date2.getFullYear(), date2.getMonth(), 0).getDate();
+                    days = lastDayOfPrevMonth - date1.getDate() + date2.getDate();
+                }
+
+                if (months < 0) { years--; months += 12; }
+
+                let result = [];
+                if (years > 0) result.push(`${years} año${years > 1 ? 's' : ''}`);
+                if (months > 0) result.push(`${months} mes${months > 1 ? 'es' : ''}`);
+                if (days > 0) result.push(`${days} día${days > 1 ? 's' : ''}`);
+
+                const antiguedadStr = result.length > 0 ? result.join(' ') : '0 días';
+                $('#id_antiguedad_funcion').val(antiguedadStr);
+                if (isCambio) {
+                    $('#id_antiguedad_categoria').val(antiguedadStr);
+                }
+            } else {
+                $('#id_antiguedad_funcion').val('');
+                if (isCambio) $('#id_antiguedad_categoria').val('');
+            }
+        }
+
+        function updateLabels() {
+            const selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
+            const labelCorte = $('label[for="id_fecha_al_corte"]');
+            const labelFuncion = $('label[for="id_fecha_del_calculo"]');
+
+            if (selectedPlantillaText === 'CONSTANCIA DE HORIZONTAL') {
+                labelCorte.text('Fecha de Corte');
+                labelFuncion.text('Fecha en su Función');
+            } else {
+                labelCorte.text('Fecha al Corte');
+                labelFuncion.text('Fecha del Cálculo');
+            }
+        }
+
+        $('#id_plantilla').on('change', function () {
+            var plantillaId = $(this).val();
+            var motivoTramiteSelect = $('#id_motivo_tramite');
+            var selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
+
+            if (plantillaId) {
+                motivoTramiteWrapper.show();
+                if (!window.isInitialLoad || !{{ is_edit|lower|default:"false" }}) {
+                    motivoTramiteSelect.empty().append(new Option('', '', true, true)).trigger('change');
+                }
+            } else {
+                motivoTramiteWrapper.hide();
+            }
+
+            updateFormVisibility();
+            updateLabels();
+
+            if (plantillaId) {
+                $.ajax({
+                    url: '{% url "get_motivos_tramite_ajax" %}', data: { 'plantilla_id': plantillaId }, dataType: 'json',
+                    success: function (data) {
+                        $.each(data, function (key, value) { motivoTramiteSelect.append(new Option(value.text, value.id)); });
+                        motivoTramiteSelect.trigger('change');
+                    }
+                });
+            }
+            calculateAntiguedad();
+        });
+
+        function getMaestroData(maestroId, prefix) {
+            if (!maestroId) { limpiarCamposMaestro(prefix); return; }
+            $.ajax({
+                url: '{% url "get_maestro_data" %}', data: { 'maestro_id': maestroId }, dataType: 'json',
+                success: function (data) {
+                    if (data.error) { console.error('Error:', data.error); limpiarCamposMaestro(prefix); return; }
+                    if (prefix === 'titular') {
+                        $('#id_nombre_titular_display').val(data.nombre_completo);
+                        $('#id_curp_titular_display').val(data.curp);
+                        $('#id_rfc_titular_display').val(data.rfc);
+                        $('#id_clave_presupuestal_titular_display').val(data.clave_presupuestal);
+                        $('#id_categoria_titular_display').val(data.categoria);
+                        $('#id_funcion_titular_display').val(data.funcion);
+                        
+                        // Automatizar incentivos
+                        if (data.incentivos !== undefined) {
+                            console.log('Autocompletando incentivos: ' + data.incentivos);
+                            $('#id_incentivos').val(data.incentivos);
+                        }
+                        
+                        var interinoId = $('#id_maestro_interino').val();
+                        if (interinoId) { getMaestroData(interinoId, 'interino'); }
+                    } else if (prefix === 'interino') {
+                        $('#id_nombre_interino_display').val(data.nombre_completo);
+                        $('#id_curp_interino_display').val(data.curp); $('#id_rfc_interino_display').val(data.rfc);
+                        var presupuestal_titular = $('#id_clave_presupuestal_titular_display').val();
+                        var motivo_tramite_text = $('#id_motivo_tramite option:selected').text().trim().toUpperCase();
+                        var calculated_presupuestal_interino = presupuestal_titular;
+                        if (presupuestal_titular && presupuestal_titular.length >= 2) {
+                            if (motivo_tramite_text === "BECA COMISIÓN" || motivo_tramite_text === "PRORROGA DE BECA COMISION") {
+                                calculated_presupuestal_interino = "48" + presupuestal_titular.substring(2);
+                            } else if (motivo_tramite_text === "LIC. DE GRAVIDEZ") {
+                                calculated_presupuestal_interino = "14" + presupuestal_titular.substring(2);
+                            } else if (motivo_tramite_text === "LIC. PREPENSIONARIA" || motivo_tramite_text === "PREJUBILATORIO") {
+                                calculated_presupuestal_interino = "15" + presupuestal_titular.substring(2);
+                            }
+                        }
+                        $('#id_clave_presupuestal_interino_display').val(calculated_presupuestal_interino);
+                        $('#id_funcion_interino_display').val($('#id_funcion_titular_display').val());
+                        cargarPrelacionAutomatica(data.curp);
+                    }
+                },
+                error: function () { console.error('Error AJAX'); limpiarCamposMaestro(prefix); }
+            });
+        }
+
+        function limpiarCamposMaestro(prefix) {
+            if (window.isInitialLoad && {{ is_edit|lower|default:"false" }}) {
+                console.log('Omitiendo limpiar campos durante carga inicial en edición');
+                return; 
+            }
+            if (prefix === 'titular') {
+                $('#id_nombre_titular_display, #id_curp_titular_display, #id_rfc_titular_display, #id_clave_presupuestal_titular_display, #id_categoria_titular_display, #id_funcion_titular_display, #id_clave_presupuestal_interino_display, #id_funcion_interino_display, #id_incentivos').val('');
+            } else if (prefix === 'interino') {
+                $('#id_nombre_interino_display, #id_curp_interino_display, #id_rfc_interino_display, #id_clave_presupuestal_interino_display, #id_funcion_interino_display').val('');
+                cargarPrelacionAutomatica('');
+            }
+        }
+
+        // --- LÓGICA PARA LIMPIAR FORMULARIO TRAS ÉXITO ---
+        $('form').on('submit', function (e) {
+            {% if is_edit %}
+            // No resetear el formulario si estamos en modo edición para que el usuario vea sus cambios
+            return;
+            {% endif %}
+            setTimeout(() => {
+                if ($('.alert-danger').length === 0) {
+                    $(this)[0].reset();
+                    $('#id_plantilla, #id_motivo_tramite, #id_maestro_titular, #id_maestro_interino, #id_archivo_plantilla_especifico').val(null).trigger('change');
+                }
+            }, 1000);
+        });
+
+        // Event listeners
+        $('#id_maestro_titular').on('change', function () { getMaestroData($(this).val(), 'titular'); });
+        $('#id_maestro_interino').on('change', function () { getMaestroData($(this).val(), 'interino'); });
+        $('#id_motivo_tramite').on('change', function () {
+            var interinoId = $('#id_maestro_interino').val();
+            if (interinoId) { getMaestroData(interinoId, 'interino'); }
+            calculateTipoMovimientoInterino();
+        });
+        $('#id_fecha_efecto3, #id_fecha_efecto4').on('change', function () { calculateTipoMovimientoInterino(); });
+        $('#id_fecha_al_corte, #id_fecha_del_calculo').on('change', calculateAntiguedad);
+
+        // Cargar datos y visibilidad iniciales
+        updateFormVisibility();
+        
+        {% if is_edit %}
+        console.log('Modo edición: Respetando datos pre-cargados del servidor');
+        // Mostrar el wrapper de motivo si ya hay un motivo seleccionado
+        if ($('#id_motivo_tramite').val()) {
+            motivoTramiteWrapper.show();
+        }
+        // Cargar la lista completa de motivos disponibles para la plantilla actual
+        var plantillaIdEdit = $('#id_plantilla').val();
+        if (plantillaIdEdit) {
+            $.ajax({
+                url: '{% url "get_motivos_tramite_ajax" %}',
+                data: { 'plantilla_id': plantillaIdEdit },
+                dataType: 'json',
+                success: function(data) {
+                    var currentMotivo = $('#id_motivo_tramite').val();
+                    if (data.length > 0) {
+                        motivoTramiteWrapper.show();
+                        // Guardar el valor actual, agregar opciones, y restaurar
+                        var currentOption = $('#id_motivo_tramite option:selected').clone();
+                        $('#id_motivo_tramite').empty().append(new Option('', '', false, false));
+                        $.each(data, function(key, value) {
+                            var isSelected = (String(value.id) === String(currentMotivo));
+                            $('#id_motivo_tramite').append(new Option(value.text, value.id, isSelected, isSelected));
+                        });
+                        // Si no quedó seleccionado, restaurar
+                        if (currentMotivo && !$('#id_motivo_tramite').val()) {
+                            $('#id_motivo_tramite').append(currentOption).val(currentMotivo);
+                        }
+                        $('#id_motivo_tramite').trigger('change.select2');
+                    }
+                }
+            });
+        }
+        {% else %}
+        $('#id_maestro_titular').trigger('change');
+        $('#id_maestro_interino').trigger('change');
+        {% endif %}
+        
         calculateTipoMovimientoInterino();
+        calculateAntiguedad();
+        
+        // Pequeño retardo para asegurar que Select2 esté listo antes de marcar carga terminada
+        setTimeout(function() {
+            window.isInitialLoad = false;
+            console.log('Carga inicial completada');
+        }, 500);
     });
-    $('#id_fecha_efecto3, #id_fecha_efecto4').on('change', function() { calculateTipoMovimientoInterino(); });
-
-    // Cargar datos y visibilidad iniciales
-    updateFormVisibility();
-    $('#id_maestro_titular').trigger('change');
-    $('#id_maestro_interino').trigger('change');
-    calculateTipoMovimientoInterino();
-});
 </script>
 {% endblock %}

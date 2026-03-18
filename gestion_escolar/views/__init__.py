@@ -8,6 +8,7 @@ from .reportes import *
 from .ajax import *
 from .vacancias import *
 from .kardex import *
+from .prelacion import *
 from .pendientes import *
 from .correspondencia import *
 from .roles import *

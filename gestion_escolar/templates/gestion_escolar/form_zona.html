@@ -1,59 +1,261 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
-{% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 mx-auto">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{{ titulo }}</h4>
-                </div>
-                <div class="card-body">
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.numero.id_for_label }}" class="form-label">Número de Zona</label>
-                            {{ form.numero }}
-                            {% if form.numero.errors %}
-                                <div class="text-danger">{{ form.numero.errors }}</div>
-                            {% endif %}
-                        </div>
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
-                        <div class="mb-3">
-                            <label for="{{ form.supervisor.id_for_label }}" class="form-label">Asignar Supervisor</label>
-                            {{ form.supervisor }}
-                            {% if form.supervisor.errors %}
-                                <div class="text-danger">{{ form.supervisor.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.observaciones.id_for_label }}" class="form-label">Observaciones</label>
-                            {{ form.observaciones }}
-                            {% if form.observaciones.errors %}
-                                <div class="text-danger">{{ form.observaciones.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'lista_zonas' %}" class="btn btn-secondary me-md-2">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">Guardar</button>
-                        </div>
-                    </form>
-                </div>
+{% block content %}
+<style>
+    :root {
+        --fz-primary: #0ea5e9;
+        --fz-secondary: #64748b;
+        --fz-border: #e2e8f0;
+        --fz-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: calc(100vh - 100px);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid var(--fz-border);
+        box-shadow: var(--fz-shadow);
+        width: 100%;
+        max-width: 600px;
+        overflow: hidden;
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        padding: 2rem;
+        border-bottom: 1px solid var(--fz-border);
+        text-align: center;
+    }
+
+    .header-icon {
+        width: 56px;
+        height: 56px;
+        background: white;
+        color: var(--fz-primary);
+        border-radius: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin: 0 auto 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-header h1 {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .form-body {
+        padding: 2.5rem;
+    }
+
+    /* Form Styles */
+    .form-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 0.75rem;
+        border: 1px solid var(--fz-border);
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        color: #1e293b;
+        transition: all 0.2s;
+        background-color: #f8fafc;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--fz-primary);
+        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        background-color: white;
+    }
+
+    .input-group-text {
+        background: white;
+        border-color: var(--fz-border);
+        color: #94a3b8;
+        border-radius: 0.75rem 0 0 0.75rem;
+    }
+
+    /* Select2 Style Integration */
+    .select2-container--default .select2-selection--single {
+        height: 48px !important;
+        border-radius: 0.75rem !important;
+        border: 1px solid var(--fz-border) !important;
+        background-color: #f8fafc !important;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Alert Styling */
+    .alert-premium {
+        border-radius: 1rem;
+        border: none;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .btn-save {
+        background: var(--fz-primary);
+        border: none;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1.5rem;
+        font-weight: 700;
+        color: white;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-save:hover {
+        background: #0284c7;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.4);
+    }
+
+    .btn-cancel {
+        background: white;
+        border: 1px solid var(--fz-border);
+        border-radius: 0.75rem;
+        padding: 0.75rem 1.5rem;
+        font-weight: 700;
+        color: #64748b;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel:hover {
+        background: #f8fafc;
+        color: #1e293b;
+    }
+</style>
+
+<div class="page-container">
+    <div class="form-card">
+        <div class="form-header">
+            <div class="header-icon">
+                <i class="fas {% if 'Editar' in titulo %}fa-edit{% else %}fa-plus-circle{% endif %}"></i>
             </div>
+            <h1>{{ titulo }}</h1>
+            <p class="text-muted small mb-0 mt-2">Complete la información de la zona escolar.</p>
+        </div>
+
+        <div class="form-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-premium fade show shadow-sm" role="alert">
+                        <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                        <div>{{ message }}</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" class="needs-validation">
+                {% csrf_token %}
+                
+                <!-- Número de Zona -->
+                <div class="mb-4">
+                    <label for="{{ form.numero.id_for_label }}" class="form-label">
+                        <i class="fas fa-hashtag text-info"></i> Número de Zona
+                    </label>
+                    {{ form.numero }}
+                    {% if form.numero.errors %}
+                        <div class="invalid-feedback d-block mt-1 ps-2">
+                            {% for error in form.numero.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Supervisor -->
+                <div class="mb-4">
+                    <label for="{{ form.supervisor.id_for_label }}" class="form-label">
+                        <i class="fas fa-user-tie text-info"></i> Supervisor Asignado
+                    </label>
+                    <div class="select2-modern">
+                        {{ form.supervisor }}
+                    </div>
+                    {% if form.supervisor.errors %}
+                        <div class="invalid-feedback d-block mt-1 ps-2">
+                            {% for error in form.supervisor.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="form-text small opacity-75 mt-1">
+                        Solo se muestran maestros con función de Supervisor(a).
+                    </div>
+                </div>
+
+                <!-- Observaciones -->
+                <div class="mb-4">
+                    <label for="{{ form.observaciones.id_for_label }}" class="form-label">
+                        <i class="fas fa-sticky-note text-info"></i> Observaciones
+                    </label>
+                    {{ form.observaciones }}
+                    {% if form.observaciones.errors %}
+                        <div class="invalid-feedback d-block mt-1 ps-2">
+                            {% for error in form.observaciones.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Acciones -->
+                <div class="d-flex flex-column flex-md-row gap-3 mt-5">
+                    <button type="submit" class="btn btn-save flex-grow-1">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                    <a href="{% url 'lista_zonas' %}" class="btn btn-cancel text-center">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aplicar clases de Bootstrap a los widgets de Django
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            if (!input.classList.contains('select2-hidden-accessible')) {
+                input.classList.add('form-control');
+            }
+            if (input.tagName === 'SELECT') {
+                input.classList.add('form-select');
+            }
+        });
+    });
+</script>
 {% endblock %}

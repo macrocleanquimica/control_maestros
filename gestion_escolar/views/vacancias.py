@@ -16,23 +16,34 @@ from ..forms import VacanciaForm
 from .helpers import get_month_diff, get_full_name, send_to_google_sheet, generate_word_document, serialize_form_data, format_date_for_solicitud_asignacion
 
 @permission_required('gestion_escolar.acceder_vacancias', raise_exception=True)
-def gestionar_lote_vacancia(request):
-    lotes_en_proceso = LoteReporteVacancia.objects.filter(
-        usuario_generador=request.user,
-        estado='EN_PROCESO'
-    ).order_by('-fecha_creacion')
-
-    if lotes_en_proceso.exists():
-        lote = lotes_en_proceso.first()
-        if lotes_en_proceso.count() > 1:
-            for old_lote in lotes_en_proceso[1:]:
-                old_lote.estado = 'CANCELADO'
-                old_lote.save()
-    else:
-        lote = LoteReporteVacancia.objects.create(
+def gestionar_lote_vacancia(request, lote_id=None):
+    if lote_id:
+        lote = get_object_or_404(LoteReporteVacancia, id=lote_id, usuario_generador=request.user)
+        if lote.estado == 'GENERADO':
+            messages.warning(request, "Este lote ya ha sido procesado y no puede ser modificado.")
+            return redirect('lista_lotes_vacancia')
+        # Cancel any other EN_PROCESO lotes if this one is being explicitly edited
+        LoteReporteVacancia.objects.filter(
             usuario_generador=request.user,
             estado='EN_PROCESO'
-        )
+        ).exclude(id=lote.id).update(estado='CANCELADO')
+    else:
+        lotes_en_proceso = LoteReporteVacancia.objects.filter(
+            usuario_generador=request.user,
+            estado='EN_PROCESO'
+        ).order_by('-fecha_creacion')
+
+        if lotes_en_proceso.exists():
+            lote = lotes_en_proceso.first()
+            if lotes_en_proceso.count() > 1:
+                for old_lote in lotes_en_proceso[1:]:
+                    old_lote.estado = 'CANCELADO'
+                    old_lote.save()
+        else:
+            lote = LoteReporteVacancia.objects.create(
+                usuario_generador=request.user,
+                estado='EN_PROCESO'
+            )
 
     if request.method == 'POST':
         form = VacanciaForm(request.POST)
@@ -87,6 +98,19 @@ def gestionar_lote_vacancia(request):
 
             vacancia.save()
 
+            datos_vacancia = {
+                'tipo_vacante': vacancia.get_tipo_vacante_display(),
+                'tipo_movimiento': vacancia.tipo_movimiento_original,
+                'fecha_inicio': vacancia.fecha_inicio.strftime('%Y-%m-%d') if vacancia.fecha_inicio else '',
+                'fecha_final': vacancia.fecha_final.strftime('%Y-%m-%d') if vacancia.fecha_final else '',
+                'interino': vacancia.nombre_interino or 'N/A',
+                'curp_interino': vacancia.curp_interino or '',
+                'observaciones': vacancia.observaciones or '',
+                'techo_financiero': vacancia.techo_financiero or '',
+                'clave_presupuestal': vacancia.clave_presupuestal or '',
+                'centro_trabajo': vacancia.clave_ct or ''
+            }
+
             Historial.objects.create(
                 usuario=request.user,
                 tipo_documento="Asignación de Vacancia",
@@ -95,11 +119,14 @@ def gestionar_lote_vacancia(request):
                 ruta_archivo="",
                 motivo="Asignación de Vacancia",
                 lote_reporte=lote,
-                datos_tramite={}
+                datos_tramite=datos_vacancia
             )
 
             messages.success(request, "Vacancia agregada al lote actual.")
-            return redirect('gestionar_lote_vacancia')
+            if lote_id:
+                return redirect('gestionar_lote_vacancia_con_id', lote_id=lote.id)
+            else:
+                return redirect('gestionar_lote_vacancia')
         else:
             messages.error(request, "Por favor corrige los errores en el formulario.")
     else:
@@ -110,7 +137,7 @@ def gestionar_lote_vacancia(request):
         'form': form,
         'lote': lote,
         'vacancias_en_lote': vacancias_en_lote,
-        'titulo': 'Generar Reporte de Vacancia'
+        'titulo': f'Generar Reporte de Vacancia (Lote #{lote.id})'
     }
     return render(request, 'gestion_escolar/gestionar_lote_vacancia.html', context)
 
@@ -146,52 +173,61 @@ def exportar_paso_word(request, lote_id):
 
     for vacancia in vacancias:
         if vacancia.maestro_interino and vacancia.fecha_inicio and vacancia.fecha_final:
-            duration_months = get_month_diff(vacancia.fecha_inicio, vacancia.fecha_final)
-            if duration_months <= 3:
-                form_data_for_word = {
-                    'plantilla': plantilla_solicitud_asignacion,
-                    'maestro_titular': vacancia.maestro_titular,
-                    'maestro_interino': vacancia.maestro_interino,
-                    'fecha_efecto1': vacancia.fecha_inicio, 
-                    'fecha_efecto2': vacancia.fecha_final,
-                    'fecha_efecto3': vacancia.fecha_inicio, 
-                    'fecha_efecto4': vacancia.fecha_final,
-                    'folio': vacancia.folio_prelacion, 
-                    'observaciones': vacancia.observaciones,
-                    'no_prel_display': vacancia.posicion_orden, 
-                    'folio_prel_display': vacancia.folio_prelacion,
-                }
-                
-                motivo_tramite_obj = MotivoTramite.objects.filter(motivo_tramite=vacancia.tipo_movimiento_original).first()
-                form_data_for_word['motivo_tramite'] = motivo_tramite_obj
-                
-                tipo_val_display = ''
-                if vacancia.maestro_interino.curp:
-                    prelacion = Prelacion.objects.filter(curp=vacancia.maestro_interino.curp).first()
-                    if prelacion:
-                        tipo_val_display = prelacion.tipo_val
-                form_data_for_word['tipo_val_display'] = tipo_val_display
+            form_data_for_word = {
+                'plantilla': plantilla_solicitud_asignacion,
+                'maestro_titular': vacancia.maestro_titular,
+                'maestro_interino': vacancia.maestro_interino,
+                'fecha_efecto1': vacancia.fecha_inicio, 
+                'fecha_efecto2': vacancia.fecha_final,
+                'fecha_efecto3': vacancia.fecha_inicio, 
+                'fecha_efecto4': vacancia.fecha_final,
+                'folio': vacancia.folio_prelacion, 
+                'observaciones': vacancia.observaciones,
+                'no_prel_display': vacancia.posicion_orden, 
+                'folio_prel_display': vacancia.folio_prelacion,
+            }
+            
+            motivo_tramite_obj = MotivoTramite.objects.filter(motivo_tramite=vacancia.tipo_movimiento_original).first()
+            form_data_for_word['motivo_tramite'] = motivo_tramite_obj
+            
+            tipo_val_display = ''
+            if vacancia.maestro_interino.curp:
+                prelacion = Prelacion.objects.filter(curp=vacancia.maestro_interino.curp).first()
+                if prelacion:
+                    tipo_val_display = prelacion.tipo_val
+            form_data_for_word['tipo_val_display'] = tipo_val_display
 
-                success, doc_path = generate_word_document(form_data_for_word, plantilla_solicitud_asignacion, request.user)
-                if success:
-                    try:
-                        historial_word = Historial.objects.create(
-                            usuario=request.user,
-                            tipo_documento=f"Oficio - {plantilla_solicitud_asignacion.nombre}",
-                            maestro=vacancia.maestro_titular,
-                            ruta_archivo=doc_path,
-                            motivo=motivo_tramite_obj.motivo_tramite if motivo_tramite_obj else '',
-                            maestro_secundario_nombre=get_full_name(vacancia.maestro_interino),
-                            datos_tramite=serialize_form_data(form_data_for_word)
-                        )
-                        word_docs_info.append({
-                            'id': historial_word.id,
-                            'nombre': os.path.basename(doc_path),
-                            'url': reverse('descargar_archivo_historial', args=[historial_word.id])
-                        })
-                        documentos_word_generados += 1
-                    except Exception as e:
-                        print(f"DEBUG: ❌ Error creando historial para Word: {e}")
+            plantilla_actual = plantilla_solicitud_asignacion
+            if vacancia.plantilla_doc == 'NUMERO_36':
+                plantilla_36 = PlantillaTramite.objects.filter(nombre="SOLICITUD DE ASIGNACION 36").first()
+                if plantilla_36:
+                    plantilla_actual = plantilla_36
+                else:
+                    # Fallback if the specific template object doesn't exist, try to clone and adapt path
+                    # but ideally the user should create it in the database.
+                    # For now, let's assume it should exist or we can try to find it.
+                    print("DEBUG: ⚠️ Plantilla 'SOLICITUD DE ASIGNACION 36' no encontrada en BD. Usando normal.")
+
+            success, doc_path = generate_word_document(form_data_for_word, plantilla_actual, request.user)
+            if success:
+                try:
+                    historial_word = Historial.objects.create(
+                        usuario=request.user,
+                        tipo_documento=f"Oficio - {plantilla_solicitud_asignacion.nombre}",
+                        maestro=vacancia.maestro_titular,
+                        ruta_archivo=doc_path,
+                        motivo=motivo_tramite_obj.motivo_tramite if motivo_tramite_obj else '',
+                        maestro_secundario_nombre=get_full_name(vacancia.maestro_interino),
+                        datos_tramite=serialize_form_data(form_data_for_word)
+                    )
+                    word_docs_info.append({
+                        'id': historial_word.id,
+                        'nombre': os.path.basename(doc_path),
+                        'url': reverse('descargar_archivo_historial', args=[historial_word.id])
+                    })
+                    documentos_word_generados += 1
+                except Exception as e:
+                    print(f"DEBUG: ❌ Error creando historial para Word: {e}")
     
     return JsonResponse({
         'status': 'success',
@@ -208,10 +244,11 @@ def exportar_paso_gsheets(request, lote_id):
     except ValueError as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
-    vacancias_enviadas = 0
-    errores_gsheets = []
-    for vacancia in vacancias:
-        if vacancia.maestro_interino and vacancia.fecha_inicio and vacancia.fecha_final:
+    try:
+        vacancias_enviadas = 0
+        errores_gsheets = []
+        for vacancia in vacancias:
+            # Datos para Google Sheets - se envían todas las vacancias
             google_sheet_row_data = [
                 str(vacancias.filter(id__lte=vacancia.id).count()),
                 datetime.now().strftime("%Y-%m-%d"),
@@ -236,11 +273,11 @@ def exportar_paso_gsheets(request, lote_id):
                 vacancia.clave_ct or '',
                 vacancia.turno or '',
                 vacancia.tipo_movimiento_original or '',
-                vacancia.observaciones or '',
-                vacancia.maestro_interino.curp or '',
-                '',
-                vacancia.maestro_interino.form_academica or '',
-                "N/A" if vacancia.tipo_plaza == "JORNADA" else (vacancia.apreciacion.descripcion if vacancia.apreciacion else ''),
+                            vacancia.observaciones or '',
+                            vacancia.curp_interino or '', # Usar el campo pre-populado en Vacancia, que ya contiene el CURP si se ha asignado un interino, o es vacío en caso contrario.
+                            '',
+                            (vacancia.maestro_interino.form_academica if vacancia.maestro_interino else '') or '', # Acceso seguro para form_academica si maestro_interino no es None.
+                                            "N/A" if vacancia.tipo_plaza == "JORNADA" else (vacancia.apreciacion.descripcion if vacancia.apreciacion else ''),
                 '', '', '', '',
                 format_date_for_solicitud_asignacion(vacancia.fecha_inicio) if vacancia.fecha_inicio else '',
                 format_date_for_solicitud_asignacion(vacancia.fecha_final) if vacancia.fecha_final else '',
@@ -254,17 +291,26 @@ def exportar_paso_gsheets(request, lote_id):
                 errores_gsheets.append(error_msg)
             else:
                 vacancias_enviadas += 1
-    
-    mensaje_final = f'Se enviaron datos de {vacancias_enviadas} vacancia(s) a Google Sheets.'
-    if errores_gsheets:
-        mensaje_final += f' Hubo {len(errores_gsheets)} error(es).'
+        
+        mensaje_final = f'Se enviaron datos de {vacancias_enviadas} vacancia(s) a Google Sheets.'
+        if errores_gsheets:
+            mensaje_final += f' Hubo {len(errores_gsheets)} error(es).'
 
-    return JsonResponse({
-        'status': 'success',
-        'message': mensaje_final,
-        'gsheets_count': vacancias_enviadas,
-        'gsheets_errors': errores_gsheets
-    })
+        return JsonResponse({
+            'status': 'success',
+            'message': mensaje_final,
+            'gsheets_count': vacancias_enviadas,
+            'gsheets_errors': errores_gsheets
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"DEBUG: ❌ Error en exportar_paso_gsheets: {str(e)}")
+        print(f"DEBUG: Traceback completo: {traceback.format_exc()}")
+        # Si ocurre un error, revertir el estado del lote para que se pueda reintentar
+        lote.estado = 'EN_PROCESO'
+        lote.save()
+        return JsonResponse({'status': 'error', 'message': f"Error interno del servidor al procesar Google Sheets: {str(e)}"}, status=500)
 
 @login_required
 @transaction.atomic
@@ -372,4 +418,32 @@ def eliminar_vacancia_lote(request, pk):
             return JsonResponse({'status': 'success'})
         else:
             return JsonResponse({'status': 'error', 'message': 'No autorizado para eliminar esta vacancia.'}, status=403)
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido.'}, status=405)
+
+@login_required
+@permission_required('gestion_escolar.acceder_vacancias', raise_exception=True)
+def lista_lotes_vacancia(request):
+    lotes = LoteReporteVacancia.objects.filter(usuario_generador=request.user).order_by('-fecha_creacion')
+    context = {
+        'lotes': lotes,
+        'titulo': 'Histórico de Lotes de Vacancia'
+    }
+    return render(request, 'gestion_escolar/lista_lotes_vacancia.html', context)
+
+@login_required
+@permission_required('gestion_escolar.acceder_vacancias', raise_exception=True)
+@transaction.atomic
+def cancelar_lote_vacancia(request, lote_id):
+    if request.method == 'POST':
+        try:
+            lote = get_object_or_404(LoteReporteVacancia, id=lote_id, usuario_generador=request.user)
+            if lote.estado == 'EN_PROCESO':
+                lote.estado = 'CANCELADO'
+                lote.save()
+                messages.success(request, f"Lote #{lote.id} cancelado exitosamente.")
+                return JsonResponse({'status': 'success', 'message': f"Lote #{lote.id} cancelado exitosamente."})
+            else:
+                return JsonResponse({'status': 'error', 'message': f"El lote #{lote.id} no puede ser cancelado en su estado actual ({lote.estado})."}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f"Error al cancelar el lote: {str(e)}"}, status=500)
     return JsonResponse({'status': 'error', 'message': 'Método no permitido.'}, status=405)

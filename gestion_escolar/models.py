@@ -124,6 +124,18 @@ class Escuela(models.Model):
                 'id_escuela': 'Formato de CCT inválido. Debe ser: 2 dígitos + 3 letras + 4 dígitos + 1 letra (ej: 10DML0013Q)'
             })
 
+class Incentivo(models.Model):
+    codigo = models.CharField(max_length=10, unique=True, verbose_name="Código")
+    descripcion = models.CharField(max_length=100, verbose_name="Descripción", blank=True, null=True)
+
+    def __str__(self):
+        return self.codigo
+
+    class Meta:
+        verbose_name = "Incentivo"
+        verbose_name_plural = "Incentivos"
+        ordering = ['codigo']
+
 class Categoria(models.Model):
     id_categoria = models.CharField(max_length=50, primary_key=True, verbose_name="ID Categoría")
     descripcion = models.CharField(max_length=255, verbose_name="Descripción")
@@ -205,7 +217,7 @@ class Maestro(models.Model):
         ('VELADOR', 'VELADOR'),
         ('VIGILANTE', 'VIGILANTE'),
     ]
-    
+
     # Datos personales
     id_maestro = models.CharField(
         max_length=5,
@@ -245,11 +257,23 @@ class Maestro(models.Model):
     telefono = models.CharField(max_length=50, verbose_name="Teléfono", blank=True, null=True)
     email = models.EmailField(verbose_name="Email", blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_OPCIONES, default='ACTIVO', verbose_name="Status", blank=True, null=True)
+    incentivos = models.ManyToManyField('Incentivo', verbose_name="Incentivos", blank=True)
     observaciones = models.TextField(verbose_name="Observaciones", blank=True, null=True)
     fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
     fecha_actualizacion = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
     clave_presupuestal = models.CharField(max_length=50, verbose_name="Clave Presupuestal", blank=True, null=True, editable=False)
-    
+
+    # Campo para vincular plazas secundarias al maestro principal
+    maestro_principal = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='plazas_secundarias',
+        verbose_name="Plaza Principal",
+        help_text="Si este registro es una plaza adicional, seleccionar el registro principal del mismo maestro."
+    )
+
     # Campos para búsqueda normalizada
     a_paterno_normalized = models.CharField(max_length=50, editable=False, db_index=True, blank=True, null=True)
     a_materno_normalized = models.CharField(max_length=50, editable=False, db_index=True, blank=True, null=True)
@@ -307,7 +331,7 @@ class Maestro(models.Model):
 
         # Lógica solicitada por el usuario para el nuevo campo
         from unidecode import unidecode
-        full_name = f"{self.nombres or ''} {self.a_paterno or ''} {self.a_materno or ''}".strip().upper()
+        full_name = " ".join(f"{self.nombres or ''} {self.a_paterno or ''} {self.a_materno or ''}".split()).upper()
         self.nombre_completo_unaccented = unidecode(full_name)
 
         # Mantener la lógica de normalización anterior para otros campos si es necesario
@@ -463,12 +487,18 @@ class Vacancia(models.Model):
         ('DEFINITIVA', 'Definitiva'),
     ]
 
+    PLANTILLA_CHOICES = [
+        ('NORMAL', 'SOLICITUDASIGNACION.docx (Prorroga usar Art.3)'),
+        ('NUMERO_36', 'SOLICITUDASIGNACION36.docx (No prorroga usar Art. 36)'),
+    ]
+
     lote = models.ForeignKey(LoteReporteVacancia, related_name='vacancias', on_delete=models.CASCADE, verbose_name="Lote de Reporte")
     # Campos del formulario original
     maestro_titular = models.ForeignKey(Maestro, on_delete=models.CASCADE, verbose_name="Maestro Titular")
     maestro_interino = models.ForeignKey(Maestro, on_delete=models.SET_NULL, null=True, blank=True, related_name='vacancias_interino', verbose_name="Maestro Interino")
     apreciacion = models.ForeignKey(TipoApreciacion, on_delete=models.PROTECT, verbose_name="Apreciación")
     tipo_vacante = models.CharField(max_length=100, choices=TIPO_VACANTE_CHOICES, verbose_name="Tipo de Vacante")
+    plantilla_doc = models.CharField(max_length=20, choices=PLANTILLA_CHOICES, default='NORMAL', verbose_name="Plantilla de Oficio")
     tipo_movimiento_original = models.CharField(max_length=100, choices=MOTIVO_MOVIMIENTO_CHOICES, verbose_name="Motivo del Movimiento", null=True, blank=True) # Ej: BECA COMISIÓN
     fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
     fecha_final = models.DateField(verbose_name="Fecha Final", null=True)
@@ -689,6 +719,13 @@ class ModuloFUP(models.Model):
         permissions = (("acceder_fup", "Puede acceder al módulo de FUP"),)
 
 
+class ModuloKardex(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de Kardex"
+        permissions = (("acceder_kardex", "Puede acceder al módulo de Kardex"),)
+
+
 class Notificacion(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notificaciones', verbose_name="Usuario")
     mensaje = models.CharField(max_length=255, verbose_name="Mensaje")
@@ -756,8 +793,10 @@ class Tema(models.Model):
     imagen_fondo = models.ImageField(upload_to='themes/', blank=True, null=True, verbose_name="Imagen de Fondo (Opcional)")
     color_principal = ColorField(default='#2c3e50', verbose_name="Color Principal (Gradiente Superior)")
     color_secundario = ColorField(default='#34495e', verbose_name="Color Secundario (Gradiente Inferior)")
-    color_texto = ColorField(default='#FFFFFF', verbose_name="Color del Texto del Sidebar")
-    color_dropdown = ColorField(default='#3a506b', verbose_name="Color de Fondo del Submenú", help_text="Color de fondo para los menús desplegables del sidebar")
+    color_texto = ColorField(default='#FFFFFF', verbose_name="Color del Texto del Sidebar")
+
+    color_dropdown = ColorField(default='#3a506b', verbose_name="Color de Fondo del Submenú", help_text="Color de fondo para los menús desplegables del sidebar")
+
     usar_filtro_oscuro = models.BooleanField(default=True, verbose_name="Usar filtro oscuro en imagen", help_text="Si está activo, se aplicará un filtro oscuro sobre la imagen de fondo para mejorar la legibilidad del texto blanco.")
     activo = models.BooleanField(default=True, verbose_name="Activo", help_text="Solo un tema puede estar activo a la vez para un rango de fechas.")
 
@@ -768,6 +807,12 @@ class Tema(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    def save(self, *args, **kwargs):
+        if self.activo:
+            # Desactivar todos los demás temas si este se marca como activo
+            Tema.objects.exclude(pk=self.pk).update(activo=False)
+        super().save(*args, **kwargs)
 
 class FUP(models.Model):
     """Formato Único de Personal - Registro de documentos FUP con snapshot de datos del maestro"""
@@ -828,3 +873,9 @@ class FUP(models.Model):
             self.maestro.save(update_fields=['techo_f'])
         
         super().save(*args, **kwargs)
+
+class ModuloPrelacion(models.Model):
+    class Meta:
+        managed = False
+        verbose_name_plural = "Acceso al Módulo de Prelación"
+        permissions = (("acceder_prelacion", "Puede acceder al módulo de Prelación"),)

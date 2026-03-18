@@ -1,31 +1,117 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
-{% block extra_head %}
-{% endblock %}
+{% block title %}{{ titulo|default:"Kardex del Personal" }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>{{ titulo|default:"Kardex del Personal" }}</h2> 
+<style>
+    :root {
+        --kd-primary: #f59e0b;
+        --kd-border: #e2e8f0;
+        --kd-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header */
+    .header-section {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--kd-shadow);
+        border: 1px solid var(--kd-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Table Card */
+    .table-container-card {
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid var(--kd-border);
+        box-shadow: var(--kd-shadow);
+        padding: 2rem;
+    }
+
+    .table thead th {
+        background: #f8fafc;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748b;
+        padding: 1rem;
+        border-bottom: 2px solid var(--kd-border);
+    }
+
+    .table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .btn-kd-view {
+        background-color: #fffbeb;
+        color: #d97706;
+        border: 1px solid #fde68a;
+        font-weight: 700;
+        font-size: 0.8rem;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        transition: all 0.2s;
+    }
+
+    .btn-kd-view:hover {
+        background-color: #f59e0b;
+        color: white;
+        transform: translateY(-2px);
+    }
+</style>
+
+<div class="page-container">
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="header-title">
+            <h1 class="mb-0"><i class="fas fa-history text-warning me-2"></i> {{ titulo }}</h1>
+            <p class="text-muted small mb-0">Listado general de personal para consulta de historial y movimientos de Kardex.</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'reportes_dashboard' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted small btn-hover-animate">
+                <i class="fas fa-arrow-left me-2"></i> Volver al Dashboard
+            </a>
+        </div>
     </div>
-    
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table id="tablaKardex" class="table table-striped table-hover" style="width:100%;" data-ajax-url="{% url 'kardex_maestros_ajax' %}">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Clave Presupuestal</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        
-                    </tbody>
-                </table>
-            </div>
+
+    <!-- Table Section -->
+    <div class="table-container-card">
+        <div class="table-responsive">
+            <table id="tablaKardex" class="table table-hover w-100" data-ajax-url="{% url 'kardex_maestros_ajax' %}">
+                <thead>
+                    <tr>
+                        <th>Nombre del Maestro</th>
+                        <th>Clave Presupuestal</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data AJAX -->
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -43,17 +129,27 @@ $(document).ready(function() {
                 type: 'GET'
             },
             columns: [
-                { data: 0 }, // Nombre
-                { data: 1 }, // Clave Presupuestal
-                { data: 2, orderable: false, searchable: false } // Acciones
+                { 
+                    className: 'fw-bold text-dark'
+                },
+                { 
+                    className: 'text-muted font-monospace small'
+                },
+                { 
+                    className: 'text-center',
+                    orderable: false
+                }
             ],
             language: {
-                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
+                ...window.SpanishDataTable,
+                search: "_INPUT_",
+                searchPlaceholder: "Buscar maestro por nombre o clave...",
                 processing: `
-                    <div class="d-flex justify-content-center">
-                        <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
+                    <div class="d-flex justify-content-center py-4">
+                        <div class="spinner-border text-fup-primary" role="status"></div>
                     </div>`
-            }
+            },
+            dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>'
         });
     }
 });

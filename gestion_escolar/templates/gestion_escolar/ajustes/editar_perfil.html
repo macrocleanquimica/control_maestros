@@ -1,21 +1,168 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{{ titulo }}</h4>
+<div class="container py-4">
+    <!-- Breadcrumb & Header -->
+    <div class="row mb-4 animate__animated animate__fadeIn">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="{% url 'ajustes' %}" class="text-decoration-none">Ajustes</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ titulo }}</li>
+                </ol>
+            </nav>
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary bg-opacity-10 p-3 rounded-4">
+                    <i class="fas fa-user-edit text-primary fs-3"></i>
                 </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        {{ form.as_p }}
-                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                    </form>
+                <div>
+                    <h2 class="fw-extrabold text-dark mb-0">{{ titulo }}</h2>
+                    <p class="text-muted mb-0">Actualiza tu información personal y de contacto para mantener tu cuenta al día.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-premium fade show shadow-sm mb-4" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <!-- Main Content Card -->
+            <div class="card premium-card shadow-sm border-0 border-top border-primary border-4">
+                <div class="card-body p-4 p-md-5">
+                    <div class="row">
+                        <!-- Sidebar-like Info -->
+                        <div class="col-md-4 text-center border-end-md mb-4 mb-md-0 d-flex flex-column align-items-center justify-content-center">
+                            <div class="profile-avatar-container mb-3 position-relative">
+                                <div class="profile-avatar bg-light rounded-circle shadow-sm d-flex align-items-center justify-content-center border border-4 border-white" style="width: 120px; height: 120px;">
+                                    <i class="fas fa-user fa-4x text-gray-300"></i>
+                                </div>
+                                <div class="position-absolute bottom-0 end-0 bg-primary text-white p-2 rounded-circle shadow-sm" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-camera fs-xs"></i>
+                                </div>
+                            </div>
+                            <h5 class="fw-bold mb-1">{{ request.user.get_full_name|default:request.user.username }}</h5>
+                            <p class="text-muted small mb-0">{{ request.user.username }}</p>
+                            <span class="badge badge-soft-primary mt-2">{{ request.user.groups.first.name|default:"Usuario" }}</span>
+                            
+                            <hr class="w-75 my-4 d-md-block d-none">
+                            
+                            <div class="text-start d-none d-md-block w-100 px-3">
+                                <h6 class="fs-xs fw-bold text-uppercase text-muted letter-spacing-wider mb-3">Información de Cuenta</h6>
+                                <div class="mb-2 d-flex align-items-center gap-2">
+                                    <i class="far fa-calendar-alt text-primary fs-xs"></i>
+                                    <span class="small text-muted">Unido: {{ request.user.date_joined|date:"M Y" }}</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="far fa-clock text-primary fs-xs"></i>
+                                    <span class="small text-muted">Último acceso: {{ request.user.last_login|date:"d/m/Y" }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Area -->
+                        <div class="col-md-8 ps-md-5">
+                            <h4 class="fw-bold mb-4">Detalles del Perfil</h4>
+                            <form method="post" class="needs-validation">
+                                {% csrf_token %}
+                                
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        {{ form.username|as_crispy_field }}
+                                    </div>
+                                    <div class="col-6">
+                                        {{ form.first_name|as_crispy_field }}
+                                    </div>
+                                    <div class="col-6">
+                                        {{ form.last_name|as_crispy_field }}
+                                    </div>
+                                    <div class="col-12">
+                                        {{ form.email|as_crispy_field }}
+                                    </div>
+                                </div>
+
+                                <div class="d-grid pt-4 mt-4 border-top">
+                                    <button type="submit" class="btn btn-primary btn-lg rounded-3 fw-bold py-3 shadow-sm transition-all hover-lift d-flex align-items-center justify-content-center gap-2 btn-hover-animate">
+                                        <i class="fas fa-save"></i>
+                                        <span>Guardar Cambios</span>
+                                    </button>
+                                    <a href="{% url 'ajustes' %}" class="btn btn-light btn-lg rounded-3 fw-bold mt-2 border text-muted hover-bg-light transition-all">
+                                        Cancelar
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Message -->
+            <div class="card bg-light-info border-0 rounded-4 mt-4 shadow-xs">
+                <div class="card-body p-4 d-flex gap-3 align-items-start">
+                    <i class="fas fa-info-circle text-info fs-4"></i>
+                    <div>
+                        <h6 class="fw-bold text-info mb-1 text-uppercase letter-spacing-wider fs-xs">Información Importante</h6>
+                        <p class="text-muted small mb-0">Esta información es la que otros usuarios verán cuando se comuniquen contigo o cuando se generen reportes y oficios vinculados a tu cuenta. Asegúrate de que tu nombre esté escrito correctamente.</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .fw-extrabold { font-weight: 800; }
+    .fs-xs { font-size: 0.7rem; }
+    .letter-spacing-wider { letter-spacing: 0.05em; }
+    .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .hover-lift:hover { transform: translateY(-2px); }
+    .transition-all { transition: all 0.3s ease; }
+    .bg-light-info { background-color: #f0f9ff; border: 1px solid #e0f2fe !important; }
+    .text-info { color: #0ea5e9 !important; }
+    
+    @media (min-width: 768px) {
+        .border-end-md { border-right: 1px solid #e5e7eb !important; }
+    }
+
+    /* Crispy Form Customizations */
+    .form-control, .form-select {
+        border-radius: 0.75rem !important;
+        border: 1px solid #e2e8f0;
+        background-color: #f8fafc;
+        padding: 0.75rem 1rem;
+        transition: all 0.2s;
+    }
+    .form-control:focus {
+        background-color: white;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+    .form-label {
+        font-weight: 600;
+        color: #4b5563;
+        font-size: 0.85rem;
+        margin-bottom: 0.4rem;
+    }
+    .badge-soft-primary {
+        background-color: #ebf5ff;
+        color: #2563eb;
+        border: 1px solid #bfdbfe;
+        font-size: 0.75rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 50px;
+    }
+</style>
 {% endblock %}

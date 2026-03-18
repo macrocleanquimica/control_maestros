@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime
 
-from ..models import Maestro, Historial, RegistroCorrespondencia, KardexMovimiento, FUP
+from ..models import Maestro, Historial, RegistroCorrespondencia, KardexMovimiento, FUP, DocumentoExpediente
 
 @login_required
 def kardex_maestros_ajax(request):
@@ -91,8 +91,27 @@ def kardex_maestro_detail(request, maestro_id):
     historial_maestro = Historial.objects.filter(
         Q(maestro=maestro) | Q(maestro_secundario_nombre=maestro_full_name)
     ).select_related('usuario')
+    # Pre-cargar vacancias para el historial
+    from ..models import Vacancia
+    vacancias_list = {v.maestro_titular_id: v for v in Vacancia.objects.filter(maestro_titular=maestro)}
+
     for item in historial_maestro:
         detalle_display = item.motivo or 'Ver documento'
+        # Si es una asignación de vacancia, buscar detalles adicionales
+        if item.tipo_documento == "Asignación de Vacancia":
+            if item.datos_tramite:
+                try:
+                    inicio = item.datos_tramite.get('fecha_inicio', 'N/A')
+                    fin = item.datos_tramite.get('fecha_final', 'Indefinido')
+                    interino = item.datos_tramite.get('interino', 'N/A')
+                    detalle_display = f"Periodo: {inicio} al {fin} | Interino: {interino}"
+                except:
+                    pass
+            elif maestro.pk in vacancias_list:
+                # Fallback para registros antiguos sin datos_tramite poblados
+                v = vacancias_list[maestro.pk]
+                detalle_display = f"Periodo: {v.fecha_inicio} al {v.fecha_final or 'Indefinido'} | Interino: {v.nombre_interino or 'N/A'}"
+
         timeline.append({
             'fecha': item.fecha_creacion,
             'tipo': 'Trámite',
@@ -126,16 +145,36 @@ def kardex_maestro_detail(request, maestro_id):
             'objeto': item
         })
 
-    fups_maestro = FUP.objects.filter(maestro=maestro).select_related('maestro')
+    fups_maestro = FUP.objects.filter(maestro=maestro)
     for item in fups_maestro:
         fecha_dt_naive = datetime.combine(item.fecha, datetime.min.time())
         fecha_dt_aware = timezone.make_aware(fecha_dt_naive, timezone.get_current_timezone())
+        
+        detalle_partes = [f"Folio: {item.folio}"]
+        if item.efectos:
+            detalle_partes.append(f"Efectos: {item.efectos}")
+        if item.techo_financiero:
+            detalle_partes.append(f"Techo: {item.techo_financiero}")
+        if item.observaciones:
+            detalle_partes.append(f"Obs: {item.observaciones}")
+
         timeline.append({
             'fecha': fecha_dt_aware,
             'tipo': 'FUP',
             'descripcion': 'Captura de FUP',
-            'detalle': f"Folio: {item.folio}",
+            'detalle': " | ".join(detalle_partes),
             'usuario': 'Sistema',
+            'objeto': item
+        })
+
+    documentos_expediente = DocumentoExpediente.objects.filter(maestro=maestro).select_related('subido_por')
+    for item in documentos_expediente:
+        timeline.append({
+            'fecha': item.fecha_subida,
+            'tipo': 'Expediente',
+            'descripcion': f"Documento Anexado: {item.get_tipo_documento_display()}",
+            'detalle': f"Archivo: {item.get_file_name()}",
+            'usuario': item.subido_por.username if item.subido_por else 'N/A',
             'objeto': item
         })
 

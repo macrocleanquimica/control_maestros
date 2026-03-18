@@ -1,21 +1,165 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{{ titulo }}</h4>
+<div class="container py-4">
+    <!-- Breadcrumb & Header -->
+    <div class="row mb-4 animate__animated animate__fadeIn">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="{% url 'ajustes' %}" class="text-decoration-none">Ajustes</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ titulo }}</li>
+                </ol>
+            </nav>
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary bg-opacity-10 p-3 rounded-4">
+                    <i class="fas fa-user-tie text-primary fs-3"></i>
                 </div>
-                <div class="card-body">
-                    <form method="post">
+                <div>
+                    <h2 class="fw-extrabold text-dark mb-0">{{ titulo|default:"Vincular Maestro con Usuario" }}</h2>
+                    <p class="text-muted mb-0">Habilita el acceso al sistema para personal directivo vinculando su ficha técnica con una cuenta.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-premium fade show shadow-sm mb-4" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row justify-content-center">
+        <div class="col-xl-7 col-lg-9">
+            <!-- Form Card -->
+            <div class="card premium-card shadow-sm border-0 border-top border-primary border-4 mb-4">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-5">
+                        <div class="mb-3">
+                            <i class="fas fa-link fa-3x text-light"></i>
+                        </div>
+                        <h4 class="fw-bold">Formulario de Vinculación</h4>
+                        <p class="text-muted small">Selecciona al trabajador y la cuenta de acceso correspondiente.</p>
+                    </div>
+
+                    <form method="post" class="needs-validation">
                         {% csrf_token %}
-                        {{ form.as_p }}
-                        <button type="submit" class="btn btn-primary">Asignar Director</button>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold letter-spacing-wider text-muted fs-xs text-uppercase mb-2">Seleccionar Maestro</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 rounded-start-3"><i class="fas fa-chalkboard-teacher text-primary"></i></span>
+                                {{ form.maestro|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="mb-5">
+                            <label class="form-label fw-bold letter-spacing-wider text-muted fs-xs text-uppercase mb-2">Cuenta de Usuario (Login)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 rounded-start-3"><i class="fas fa-user-circle text-primary"></i></span>
+                                {{ form.usuario|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="d-grid pt-3 border-top mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-3 fw-bold py-3 shadow-sm transition-all hover-lift d-flex align-items-center justify-content-center gap-2 btn-hover-animate">
+                                <i class="fas fa-user-check"></i>
+                                <span>Asignar y Otorgar Permisos</span>
+                            </button>
+                            <a href="{% url 'ajustes' %}" class="btn btn-link text-muted mt-2 text-decoration-none small">
+                                Cancelar y volver
+                            </a>
+                        </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- Guía de Funcionamiento (Requested Footer) -->
+            <div class="card border-0 rounded-4 bg-light shadow-xs overflow-hidden">
+                <div class="card-header bg-dark p-3">
+                    <h6 class="text-white mb-0 fw-bold d-flex align-items-center gap-2">
+                        <i class="fas fa-question-circle text-info"></i>
+                        ¿Cómo funciona esta sección?
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="text-center p-3">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle mb-3 mx-auto shadow-sm" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-link fs-5"></i>
+                                </div>
+                                <h6 class="fw-bold mb-2">1. Vinculación</h6>
+                                <p class="text-muted small mb-0">Se asocia la ficha técnica del maestro con un nombre de usuario creado previamente en el sistema.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3 border-start border-end border-light">
+                                <div class="bg-success bg-opacity-10 text-success rounded-circle mb-3 mx-auto shadow-sm" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-shield-alt fs-5"></i>
+                                </div>
+                                <h6 class="fw-bold mb-2">2. Permisos</h6>
+                                <p class="text-muted small mb-0">El usuario se agrega automáticamente al grupo <strong>'Directores'</strong>, otorgándole los permisos del rol.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3">
+                                <div class="bg-info bg-opacity-10 text-info rounded-circle mb-3 mx-auto shadow-sm" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-school fs-5"></i>
+                                </div>
+                                <h6 class="fw-bold mb-2">3. Acceso</h6>
+                                <p class="text-muted small mb-0">A partir de ahora, el docente podrá entrar al sistema para gestionar tareas específicas de su cargo.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .fw-extrabold { font-weight: 800; }
+    .fs-xs { font-size: 0.7rem; }
+    .letter-spacing-wider { letter-spacing: 0.05em; }
+    .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .hover-lift:hover { transform: translateY(-2px); }
+    .transition-all { transition: all 0.3s ease; }
+    
+    /* Crispy Form Customizations */
+    .asteriskField { display: none; }
+    .form-control, .form-select {
+        border-radius: 0 0.75rem 0.75rem 0 !important;
+        border: 1px solid #e2e8f0;
+        background-color: #f8fafc;
+        padding: 0.75rem 1rem;
+        transition: all 0.2s;
+    }
+    .form-control:focus {
+        background-color: white;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+    .mb-3 { margin-bottom: 0 !important; width: 100%; } /* Overriding crispy default spacer for input groups */
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('select').select2({
+            width: '100%',
+            placeholder: "Escribe para buscar..."
+        });
+    });
+</script>
 {% endblock %}

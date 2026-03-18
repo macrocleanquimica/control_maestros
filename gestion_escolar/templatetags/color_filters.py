@@ -10,8 +10,10 @@ def hex_to_rgba(hex_color, alpha):
     """
     hex_color = hex_color.lstrip('#')
     try:
+        if len(hex_color) == 3:
+            hex_color = ''.join([c*2 for c in hex_color])
         r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
         return f'rgba({r}, {g}, {b}, {alpha})'
-    except ValueError:
-        # Return a default color if the hex is invalid
-        return 'rgba(0, 0, 0, 0.5)'
+    except (ValueError, IndexError):
+        # Return a dark default if the hex is invalid
+        return f'rgba(0, 0, 0, {alpha})'

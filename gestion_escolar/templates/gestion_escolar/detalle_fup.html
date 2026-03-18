@@ -1,92 +1,301 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Detalle del FUP: {{ fup.folio }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Detalle del FUP: {{ fup.folio }}</h1>
-        <a href="{% url 'lista_fup' %}" class="btn btn-secondary btn-sm shadow-sm">
-            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver al Listado
-        </a>
+<style>
+    :root {
+        --fd-primary: #6366f1;
+        --fd-success: #10b981;
+        --fd-border: #e2e8f0;
+        --fd-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header Section */
+    .header-section {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--fd-shadow);
+        border: 1px solid var(--fd-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Main Detail Card */
+    .detail-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid var(--fd-border);
+        box-shadow: var(--fd-shadow);
+        overflow: hidden;
+    }
+
+    .card-banner {
+        background: #f8fafc;
+        padding: 1.5rem 2.5rem;
+        border-bottom: 1px solid var(--fd-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-body-custom {
+        padding: 3rem;
+    }
+
+    /* Info Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .info-item label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.05em;
+    }
+
+    .info-item p {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid var(--fd-border);
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .data-table td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .data-table tr:last-child td { border-bottom: none; }
+
+    .label-cell {
+        background: #f8fafc;
+        width: 35%;
+        font-weight: 700;
+        color: #475569;
+        font-size: 0.85rem;
+    }
+
+    .value-cell {
+        color: #1e293b;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    /* Observation Box */
+    .observation-box {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-top: 3rem;
+    }
+
+    /* Sidebar cards */
+    .side-card {
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid var(--fd-border);
+        box-shadow: var(--fd-shadow);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-action-side {
+        border-radius: 0.75rem;
+        padding: 0.6rem 1rem;
+        font-weight: 700;
+        width: 100%;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    @media print {
+        .header-section, .print-hide, .btn-action-side, .side-card-container { display: none !important; }
+        .page-container { padding: 0; }
+        .detail-card { border: none; box-shadow: none; width: 100% !important; }
+        .col-lg-8 { width: 100% !important; flex: 0 0 100%; max-width: 100%; }
+        .card-banner { border-bottom: 2px solid #000; }
+    }
+</style>
+
+<div class="page-container">
+    <!-- Header -->
+    <div class="header-section d-print-none">
+        <div>
+            <h1 class="h3 fw-bold mb-1"><i class="fas fa-id-card text-primary me-2"></i> Detalle del FUP</h1>
+            <p class="text-muted small mb-0">Folio de Registro: <span class="fw-bold">#{{ fup.folio }}</span></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'lista_fup' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted btn-hover-animate">
+                <i class="fas fa-arrow-left me-2"></i> Volver
+            </a>
+            <button onclick="window.print();" class="btn btn-info text-white rounded-pill px-4 fw-bold shadow-sm btn-hover-animate">
+                <i class="fas fa-print me-2"></i> Imprimir Ficha
+            </button>
+        </div>
     </div>
 
     <div class="row">
+        <!-- Main Column -->
         <div class="col-lg-8">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Información General</h6>
+            <div class="detail-card">
+                <div class="card-banner">
+                    <h5 class="mb-0 fw-bold text-dark">Información del Formato Único</h5>
+                    <span class="badge bg-light text-primary border px-3 rounded-pill fw-bold">ID: {{ fup.pk }}</span>
                 </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-4 font-weight-bold">Maestro:</div>
-                        <div class="col-md-8">{{ fup.nombre_completo }}</div>
+
+                <div class="card-body-custom">
+                    <!-- Top Info Grid -->
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Folio del Documento</label>
+                            <p class="text-primary font-monospace">#{{ fup.folio }}</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Fecha de Emisión</label>
+                            <p><i class="far fa-calendar-alt text-muted me-2"></i>{{ fup.fecha|date:"d F Y" }}</p>
+                        </div>
+                        <div class="info-item">
+                            <label>Sostenimiento</label>
+                            <p><span class="badge bg-soft-success text-success border px-2">{{ fup.get_sostenimiento_display }}</span></p>
+                        </div>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 font-weight-bold">RFC:</div>
-                        <div class="col-md-8">{{ fup.rfc }}</div>
+
+                    <h6 class="text-uppercase fw-bold text-dark border-bottom pb-2 mb-4 mt-5" style="font-size: 0.8rem; letter-spacing: 0.1em;">
+                        <i class="fas fa-user-tie text-primary me-2"></i> Datos del Maestro Asignado
+                    </h6>
+
+                    <table class="data-table">
+                        <tbody>
+                            <tr>
+                                <td class="label-cell">Nombre Completo</td>
+                                <td class="value-cell">{{ fup.nombre_completo }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">RFC</td>
+                                <td class="value-cell font-monospace">{{ fup.rfc }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">CURP</td>
+                                <td class="value-cell font-monospace">{{ fup.curp }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">Clave Presupuestal</td>
+                                <td class="value-cell font-monospace text-primary">{{ fup.clave_presupuestal }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h6 class="text-uppercase fw-bold text-dark border-bottom pb-2 mb-4 mt-5" style="font-size: 0.8rem; letter-spacing: 0.1em;">
+                        <i class="fas fa-building text-primary me-2"></i> Detalles de Adscripción y Efectos
+                    </h6>
+
+                    <table class="data-table">
+                        <tbody>
+                            <tr>
+                                <td class="label-cell">CCT Techo Financiero</td>
+                                <td class="value-cell">{{ fup.techo_financiero }}</td>
+                            </tr>
+                            {% if zona_techo_financiero %}
+                            <tr>
+                                <td class="label-cell">Zona del Techo Financiero</td>
+                                <td class="value-cell">Zona {{ zona_techo_financiero }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td class="label-cell">Efectos del Movimiento</td>
+                                <td class="value-cell">{{ fup.efectos }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    {% if fup.observaciones %}
+                    <div class="observation-box">
+                        <label class="form-label fw-bold text-dark mb-2"><i class="fas fa-comment-alt text-warning me-2"></i> Observaciones</label>
+                        <p class="mb-0 text-muted small" style="white-space: pre-wrap;">{{ fup.observaciones }}</p>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 font-weight-bold">CURP:</div>
-                        <div class="col-md-8">{{ fup.curp }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 font-weight-bold">Clave Presupuestal:</div>
-                        <div class="col-md-8">{{ fup.clave_presupuestal }}</div>
-                    </div>
-                    <hr>
-                    <div class="row mb-3">
-                        <div class="col-md-4 font-weight-bold">Fecha:</div>
-                        <div class="col-md-8">{{ fup.fecha|date:"d/m/Y" }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 font-weight-bold">Techo Financiero:</div>
-                        <div class="col-md-8">{{ fup.techo_financiero }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 font-weight-bold">Efectos:</div>
-                        <div class="col-md-8">{{ fup.efectos }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 font-weight-bold">Sostenimiento:</div>
-                        <div class="col-md-8">{{ fup.get_sostenimiento_display }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4 font-weight-bold">Observaciones:</div>
-                        <div class="col-md-8">{{ fup.observaciones|default:"-"|linebreaks }}</div>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Documento</h6>
+        <!-- Sidebar -->
+        <div class="col-lg-4 side-card-container">
+            <!-- PDF Card -->
+            <div class="side-card text-center">
+                <h6 class="fw-bold text-dark mb-4 border-bottom pb-2">Expediente Digital</h6>
+                {% if fup.archivo %}
+                <div class="mb-4">
+                    <i class="fas fa-file-pdf fa-5x text-danger opacity-75"></i>
                 </div>
-                <div class="card-body text-center">
-                    {% if fup.archivo %}
-                    <div class="mb-3">
-                        <i class="fas fa-file-pdf fa-5x text-danger"></i>
-                    </div>
-                    <a href="{{ fup.archivo.url }}" target="_blank" class="btn btn-primary btn-block">
-                        <i class="fas fa-download"></i> Descargar PDF
-                    </a>
-                    {% else %}
-                    <p class="text-muted">No hay archivo adjunto.</p>
-                    {% endif %}
+                <a href="{{ fup.archivo.url }}" target="_blank" class="btn btn-primary d-block rounded-pill fw-bold shadow-sm btn-hover-animate">
+                    <i class="fas fa-download me-2"></i> Descargar PDF
+                </a>
+                <p class="text-muted small mt-3 mb-0">Archivo verificado y guardado en servidor.</p>
+                {% else %}
+                <div class="py-4">
+                    <i class="fas fa-file-upload fa-3x text-muted mb-3"></i>
+                    <p class="text-muted small">No se adjuntó archivo digital para este folio.</p>
                 </div>
+                {% endif %}
             </div>
 
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Acciones</h6>
-                </div>
-                <div class="card-body">
-                    <a href="{% url 'editar_fup' fup.pk %}" class="btn btn-warning btn-block mb-2">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                    <a href="{% url 'eliminar_fup' fup.pk %}" class="btn btn-danger btn-block">
-                        <i class="fas fa-trash"></i> Eliminar
-                    </a>
+            <!-- Actions Card -->
+            <div class="side-card">
+                <h6 class="fw-bold text-dark mb-4 border-bottom pb-2">Control de Registro</h6>
+                <a href="{% url 'editar_fup' fup.pk %}" class="btn btn-light border btn-action-side text-primary">
+                    <i class="fas fa-edit"></i> Modificar Datos
+                </a>
+                <a href="{% url 'eliminar_fup' fup.pk %}" class="btn btn-light border btn-action-side text-danger">
+                    <i class="fas fa-trash"></i> Eliminar Registro
+                </a>
+            </div>
+
+            <!-- Quick Info -->
+            <div class="side-card bg-light border-0 shadow-none">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-white p-2 rounded-circle shadow-sm">
+                        <i class="fas fa-history text-muted"></i>
+                    </div>
+                    <div>
+                        <span class="d-block small text-muted">Última actualización</span>
+                        <span class="fw-bold small text-dark">Recientemente consultado</span>
+                    </div>
                 </div>
             </div>
         </div>

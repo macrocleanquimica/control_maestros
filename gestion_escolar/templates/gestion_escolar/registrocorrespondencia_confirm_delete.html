@@ -1,21 +1,127 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Confirmar Eliminación | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+<style>
+    .page-container {
+        padding: 4rem 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.4s ease-out;
+    }
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Confirmar Eliminación</h6>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .delete-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid #fee2e2;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        max-width: 500px;
+        width: 100%;
+        overflow: hidden;
+        text-align: center;
+    }
+
+    .delete-header {
+        background: #fef2f2;
+        padding: 3rem 2rem 2rem;
+    }
+
+    .warning-icon {
+        width: 80px;
+        height: 80px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: #ef4444;
+        margin: 0 auto 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);
+    }
+
+    .delete-body {
+        padding: 2.5rem;
+    }
+
+    .delete-title {
+        font-weight: 800;
+        color: #1e293b;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .delete-text {
+        color: #64748b;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+
+    .record-info {
+        background: #f8fafc;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        margin-bottom: 2.5rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .record-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #94a3b8;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .record-value {
+        font-weight: 700;
+        color: #334155;
+        word-break: break-all;
+    }
+</style>
+
+<div class="page-container">
+    <div class="delete-card">
+        <div class="delete-header">
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2 class="delete-title">¿Confirmar eliminación?</h2>
         </div>
-        <div class="card-body">
-            <p>¿Estás seguro de que deseas eliminar el registro de correspondencia con folio <strong>{{ registro.folio_documento|default:"S/F" }}</strong> del remitente <strong>{{ registro.remitente }}</strong>?</p>
-            <p>Esta acción no se puede deshacer.</p>
-            
-            <form method="post">
+
+        <div class="delete-body">
+            <div class="delete-text">
+                Estás a punto de eliminar permanentemente este registro de correspondencia. Esta acción no se puede deshacer.
+            </div>
+
+            <div class="record-info">
+                <div class="mb-3">
+                    <span class="record-label">Folio del Documento</span>
+                    <span class="record-value">{{ object.folio_documento|default:"SIN FOLIO" }}</span>
+                </div>
+                <div>
+                    <span class="record-label">Remitente</span>
+                    <span class="record-value">{{ object.remitente }}</span>
+                </div>
+            </div>
+
+            <form method="post" class="d-flex flex-column gap-2">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Sí, eliminar</button>
-                <a href="{% url 'registrocorrespondencia_detail' registro.pk %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-danger rounded-pill py-3 fw-bold shadow-sm btn-hover-animate">
+                    <i class="fas fa-trash-alt me-2"></i> Sí, eliminar registro
+                </button>
+                <a href="{% url 'registrocorrespondencia_detail' object.pk %}" class="btn btn-light border rounded-pill py-2 fw-bold text-muted btn-hover-animate">
+                    Cancelar y volver
+                </a>
             </form>
         </div>
     </div>

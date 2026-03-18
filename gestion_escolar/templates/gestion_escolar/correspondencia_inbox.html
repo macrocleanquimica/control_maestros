@@ -1,39 +1,243 @@
 {% extends "gestion_escolar/base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>{{ titulo }}</h2>
-        <a href="{% url 'correspondencia_crear' %}" class="btn btn-primary">+ Redactar Nuevo Mensaje</a>
+<style>
+    .inbox-container {
+        max-width: 900px;
+        margin: 0 auto;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .premium-header {
+        background: white;
+        padding: 1.5rem 2rem;
+        border-radius: 1.25rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .header-info h2 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .btn-compose {
+        background: #0ea5e9;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .btn-compose:hover {
+        background: #0284c7;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        color: white;
+    }
+
+    .inbox-list {
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .message-item {
+        padding: 1.25rem 2rem;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        transition: background-color 0.2s;
+        text-decoration: none !important;
+        position: relative;
+    }
+
+    .message-item:last-child {
+        border-bottom: none;
+    }
+
+    .message-item:hover {
+        background-color: #f8fafc;
+    }
+
+    .message-item.unread {
+        background-color: #f0f9ff;
+        border-left: 4px solid #0ea5e9;
+    }
+
+    .avatar-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #64748b;
+        flex-shrink: 0;
+    }
+
+    .unread .avatar-circle {
+        background: #0ea5e9;
+        color: white;
+    }
+
+    .message-content {
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .message-subject {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .unread .message-subject {
+        color: #0369a1;
+    }
+
+    .message-sender {
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+
+    .message-meta {
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .message-date {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-delete-msg {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        background: transparent;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .btn-delete-msg:hover {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .empty-state {
+        padding: 5rem 2rem;
+        text-align: center;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #e2e8f0;
+        margin-bottom: 1.5rem;
+    }
+
+    .badge-unread {
+        background: #0ea5e9;
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.5rem;
+        margin-left: 0.75rem;
+        vertical-align: middle;
+    }
+</style>
+
+<div class="inbox-container py-4">
+    <!-- Header Premium -->
+    <div class="premium-header">
+        <div class="header-info">
+            <h2><i class="fas fa-inbox text-primary me-2"></i>{{ titulo }}</h2>
+        </div>
+        <a href="{% url 'correspondencia_crear' %}" class="btn-compose">
+            <i class="fas fa-pen-to-square"></i>
+            Redactar Mensaje
+        </a>
     </div>
 
-    <div class="card">
-        <div class="card-body p-0">
-            {% if mensajes %}
-                <div class="list-group list-group-flush">
-                    {% for mensaje in mensajes %}
-                        <a href="{% url 'correspondencia_detail' mensaje.pk %}" class="list-group-item list-group-item-action {% if not mensaje.leido %}list-group-item-primary font-weight-bold{% endif %}">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">{{ mensaje.asunto }}</h5>
-                                <small>{{ mensaje.fecha_creacion|date:"d/m/Y H:i" }}</small>
-                            </div>
-                            <p class="mb-1">De: {{ mensaje.remitente.get_full_name|default:mensaje.remitente.username }}</p>
+    <!-- Lista de Mensajes -->
+    <div class="inbox-list">
+        {% if mensajes %}
+            {% for mensaje in mensajes %}
+                <div class="position-relative">
+                    <a href="{% url 'correspondencia_detail' mensaje.pk %}" class="message-item {% if not mensaje.leido %}unread{% endif %}">
+                        <div class="avatar-circle">
+                            {{ mensaje.remitente.username|slice:":1"|upper }}
                         </div>
-                        <div class="d-flex align-items-center">
-                            <form method="post" action="{% url 'correspondencia_eliminar' mensaje.pk %}" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de que quieres eliminar este mensaje?');">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                        <div class="message-content">
+                            <h5 class="message-subject">
+                                {{ mensaje.asunto }}
+                                {% if not mensaje.leido %}
+                                    <span class="badge-unread">Nuevo</span>
+                                {% endif %}
+                            </h5>
+                            <p class="message-sender mb-0">
+                                De: <strong>{{ mensaje.remitente.get_full_name|default:mensaje.remitente.username }}</strong>
+                            </p>
                         </div>
-                        </a>
-                    {% endfor %}
+                        <div class="message-meta">
+                            <span class="message-date">{{ mensaje.fecha_creacion|date:"d/m/Y" }}</span>
+                            <span class="message-date small opacity-75">{{ mensaje.fecha_creacion|date:"H:i" }}</span>
+                        </div>
+                    </a>
+                    <!-- Botón de eliminar separado para no interferir con el link del mensaje -->
+                    <div style="position: absolute; right: 2rem; bottom: 1.25rem; z-index: 10;">
+                        <form method="post" action="{% url 'correspondencia_eliminar' mensaje.pk %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-delete-msg" onclick="return confirm('¿Eliminar este mensaje permanentemente?');" title="Eliminar mensaje">
+                                <i class="fas fa-trash-alt smaller"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            {% else %}
-                <p class="text-center text-muted p-4">No tienes mensajes en tu bandeja de entrada.</p>
-            {% endif %}
-        </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-envelope-open"></i>
+                <h4 class="text-dark fw-bold">Bandeja Vacía</h4>
+                <p class="text-muted">No tienes mensajes nuevos en este momento.</p>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

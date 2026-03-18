@@ -1,8 +1,10 @@
 import json
 import openpyxl
+import datetime
 from datetime import date
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import HttpResponse
 from django.db.models import Q, Count
@@ -276,4 +278,353 @@ def export_personal_fuera_adscripcion_excel(request):
     wb.save(response)
 
     return response
+
+@login_required
+def exportar_escuelas_excel(request):
+    """Exporta el reporte de escuelas a un archivo Excel, aplicando un filtro de búsqueda."""
+    filtro = request.GET.get('filtro', '')
+
+    # 1. Obtener el queryset base
+    escuelas_qs = Escuela.objects.select_related('zona_esc').all().order_by('id_escuela') # Ordenar por CCT
+
+    # 2. Aplicar el filtro si existe
+    if filtro:
+        escuelas_qs = escuelas_qs.filter(
+            Q(id_escuela__icontains=filtro) |
+            Q(nombre_ct__icontains=filtro) |
+            Q(zona_esc__numero__icontains=filtro) |
+            Q(zona_economica__icontains=filtro) |
+            Q(u_d__icontains=filtro) |
+            Q(turno__icontains=filtro) |
+            Q(sostenimiento__icontains=filtro)
+        )
+
+    # 3. Crear el libro de Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Escuelas"
+
+    # 4. Definir los encabezados
+    headers = [
+        "CCT", "Nombre", "Zona", "Turno", "Zona Económica", 
+        "U.D.", "Sostenimiento", "Domicilio", "Localidad", "Municipio"
+    ]
+    ws.append(headers)
+
+    # 5. Escribir los datos de cada escuela
+    for escuela in escuelas_qs:
+        zona_numero = escuela.zona_esc.numero if escuela.zona_esc else ''
+        
+        row = [
+            escuela.id_escuela,
+            escuela.nombre_ct,
+            zona_numero,
+            escuela.get_turno_display(),
+            escuela.zona_economica,
+            escuela.u_d,
+            escuela.get_sostenimiento_display(),
+            escuela.domicilio,
+            '', # Localidad no disponible en modelo
+            ''  # Municipio no disponible en modelo
+        ]
+        ws.append(row)
+
+    # 6. Ajustar ancho de columnas
+    ws.column_dimensions['A'].width = 15 # CCT
+    ws.column_dimensions['B'].width = 40 # Nombre
+    ws.column_dimensions['H'].width = 30 # Domicilio
+
+    # 7. Preparar la respuesta para la descarga
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': 'attachment; filename="reporte_escuelas.xlsx"'},
+    )
+    wb.save(response)
+
+    return response
+
+@login_required
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
+def exportar_maestros_personalizado_excel(request):
+    """
+    Exporta el reporte 'BD de Horizontal' con 24 columnas en el orden solicitado.
+    """
+    maestros_qs = Maestro.objects.select_related(
+        'id_escuela', 
+        'id_escuela__zona_esc', 
+        'categog'
+    ).prefetch_related('incentivos').all().order_by('a_paterno', 'a_materno', 'nombres')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "BD Horizontal"
+
+    # Encabezados solicitados (24 columnas)
+    headers = [
+        "RFC", "CURP", "NOMBRE COMPLETO", "NIVEL EDUCATIVO", "CLAVE PRESUPUESTAL",
+        "DESCRIPCION CATEGORIA", "FUNCION", "TECHO FINANCIERO", "C.C.T",
+        "NOMBRE DEL C.C.T COMPLETO", "NOMBRE DEL CENTRO DE TRABAJO", "ZONA",
+        "SEXO", "CÓDIGO", "FECHA DE INGRESO", "FORMACIÓN ACADEMICA",
+        "SITUACIÓN", "FECHA DE PROMOCIÓN", "ESTADO CIVIL", "TELEFONO",
+        "STATUS", "OBSERVACIONES", "SOSTENIMIENTO", "DESCRIPCION DEL CODIGO"
+    ]
+    ws.append(headers)
+
+    # Mapeo de códigos
+    codigo_map = {
+        '10': 'BASE',
+        '95': 'INTERINO LIMITADO',
+        '96': 'INTERINO POR VACANTE DEFINITIVA',
+        '09': 'PROVISIONAL',
+        '20': 'HONORARIOS',
+    }
+
+    for maestro in maestros_qs:
+        escuela = maestro.id_escuela
+        zona_numero = escuela.zona_esc.numero if escuela and escuela.zona_esc else ''
+        
+        # Situación: 10 -> BASE, otros -> INTERINO
+        situacion = "BASE" if maestro.codigo == '10' else "INTERINO"
+        desc_codigo = codigo_map.get(maestro.codigo, "OTRO")
+
+        row = [
+            maestro.rfc or '',
+            maestro.curp or '',
+            f"{maestro.nombres or ''} {maestro.a_paterno or ''} {maestro.a_materno or ''}".strip().upper(),
+            "EDUCACIÓN ESPECIAL",
+            maestro.clave_presupuestal or '',
+            maestro.categog.descripcion if maestro.categog else '',
+            maestro.get_funcion_display() or '',
+            maestro.techo_f or '',
+            escuela.id_escuela if escuela else '',
+            escuela.nombre_ct if escuela else '',
+            escuela.nombre_ct if escuela else '',
+            zona_numero,
+            maestro.get_sexo_display() or '',
+            maestro.codigo or '',
+            maestro.fecha_ingreso.strftime("%d/%m/%Y") if maestro.fecha_ingreso else '',
+            maestro.form_academica or '',
+            situacion,
+            maestro.fecha_promocion.strftime("%d/%m/%Y") if maestro.fecha_promocion else '',
+            maestro.get_est_civil_display() or '',
+            maestro.telefono or '',
+            maestro.get_status_display() or '',
+            maestro.observaciones or '',
+            escuela.get_sostenimiento_display() if escuela else '',
+            desc_codigo
+        ]
+        ws.append(row)
+
+    # Ajuste de ancho de columnas
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        ws.column_dimensions[column].width = min(max_length + 2, 50)
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': 'attachment; filename="reporte_bd_horizontal.xlsx"'},
+    )
+    wb.save(response)
+
+    return response
+
+@login_required
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
+def reporteador_datos(request):
+    """
+    Muestra la página de selección de campos para el reporte personalizado.
+    """
+    # Definición de campos disponibles agrupados por categoría beneficiando al Maestro y Escuela
+    campos_maestro = [
+        ('id_maestro', 'ID Maestro'),
+        ('a_paterno', 'Apellido Paterno'),
+        ('a_materno', 'Apellido Materno'),
+        ('nombres', 'Nombres'),
+        ('curp', 'CURP'),
+        ('rfc', 'RFC'),
+        ('sexo', 'Sexo'),
+        ('est_civil', 'Estado Civil'),
+        ('fecha_nacimiento', 'Fecha de Nacimiento'),
+        ('techo_f', 'Techo Financiero'),
+        ('dep', 'Dependencia'),
+        ('unid', 'Unidad'),
+        ('sub_unid', 'Subunidad'),
+        ('categog', 'Categoría'),
+        ('hrs', 'Horas'),
+        ('num_plaza', 'Número de Plaza'),
+        ('codigo', 'Código'),
+        ('fecha_ingreso', 'Fecha de Ingreso'),
+        ('fecha_promocion', 'Fecha de Promoción'),
+        ('form_academica', 'Formación Académica'),
+        ('horario', 'Horario'),
+        ('funcion', 'Función'),
+        ('nivel_estudio', 'Nivel de Estudio'),
+        ('domicilio_part', 'Domicilio Particular'),
+        ('poblacion', 'Población'),
+        ('codigo_postal', 'Código Postal'),
+        ('telefono', 'Teléfono'),
+        ('email', 'Email'),
+        ('status', 'Status'),
+        ('incentivo', 'Incentivo'),
+        ('observaciones', 'Observaciones'),
+        ('clave_presupuestal', 'Clave Presupuestal'),
+    ]
+
+    campos_escuela = [
+        ('id_escuela', 'CCT (Clave)'),
+        ('nombre_ct', 'Nombre del Centro de Trabajo'),
+        ('zona_esc', 'Zona Escolar'),
+        ('turno', 'Turno'),
+        ('domicilio', 'Domicilio CCT'),
+        ('telefono_ct', 'Teléfono CCT'),
+        ('zona_economica', 'Zona Económica'),
+        ('region', 'Región'),
+        ('u_d', 'U.D.'),
+        ('sostenimiento', 'Sostenimiento'),
+    ]
+
+    context = {
+        'titulo': 'Reporteador de Datos Personalizado',
+        'campos_maestro': campos_maestro,
+        'campos_escuela': campos_escuela,
+    }
+    return render(request, 'gestion_escolar/reporteador_personalizado.html', context)
+
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
+def exportar_datos_dinamicos_excel(request):
+    """
+    Genera un archivo Excel dinámico basado en los campos seleccionados.
+    """
+    if request.method != 'POST':
+        return redirect('reporteador_datos')
+
+    campos_seleccionados = request.POST.getlist('campos')
+    if not campos_seleccionados:
+        messages.warning(request, "Debe seleccionar al menos un campo para exportar.")
+        return redirect('reporteador_datos')
+
+    # Diccionarios de mapeo para encabezados y acceso a datos
+    mapeo_campos = {
+        'id_maestro': 'ID Maestro',
+        'a_paterno': 'APELLIDO PATERNO',
+        'a_materno': 'APELLIDO MATERNO',
+        'nombres': 'NOMBRES',
+        'curp': 'CURP',
+        'rfc': 'RFC',
+        'sexo': 'SEXO',
+        'est_civil': 'ESTADO CIVIL',
+        'fecha_nacimiento': 'FECHA NACIMIENTO',
+        'techo_f': 'TECHO FINANCIERO',
+        'dep': 'DEPENDENCIA',
+        'unid': 'UNIDAD',
+        'sub_unid': 'SUBUNIDAD',
+        'categog': 'CATEGORÍA',
+        'hrs': 'HORAS',
+        'num_plaza': 'NÚMERO DE PLAZA',
+        'codigo': 'CÓDIGO',
+        'fecha_ingreso': 'FECHA INGRESO',
+        'fecha_promocion': 'FECHA PROMOCIÓN',
+        'form_academica': 'FORMACIÓN ACADÉMICA',
+        'horario': 'HORARIO',
+        'funcion': 'FUNCIÓN',
+        'nivel_estudio': 'NIVEL ESTUDIO',
+        'domicilio_part': 'DOMICILIO PARTICULAR',
+        'poblacion': 'POBLACIÓN',
+        'codigo_postal': 'CÓDIGO POSTAL',
+        'telefono': 'TELÉFONO',
+        'email': 'EMAIL',
+        'status': 'STATUS',
+        'incentivo': 'INCENTIVO',
+        'observaciones': 'OBSERVACIONES',
+        'clave_presupuestal': 'CLAVE PRESUPUESTAL',
+        
+        # Campos de Escuela
+        'id_escuela': 'CCT',
+        'nombre_ct': 'NOMBRE CENTRO TRABAJO',
+        'zona_esc': 'ZONA ESCOLAR',
+        'turno': 'TURNO',
+        'domicilio': 'DOMICILIO CCT',
+        'telefono_ct': 'TELÉFONO CCT',
+        'zona_economica': 'ZONA ECONÓMICA',
+        'region': 'REGIÓN',
+        'u_d': 'U.D.',
+        'sostenimiento': 'SOSTENIMIENTO',
+    }
+
+    maestros_qs = Maestro.objects.select_related(
+        'id_escuela', 
+        'id_escuela__zona_esc', 
+        'categog'
+    ).prefetch_related('incentivos').all().order_by('a_paterno', 'a_materno', 'nombres')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Reporte Personalizado"
+
+    # Encabezados
+    headers = [mapeo_campos.get(c, c.upper()) for c in campos_seleccionados]
+    ws.append(headers)
+
+    for maestro in maestros_qs:
+        row = []
+        escuela = maestro.id_escuela
+        for campo in campos_seleccionados:
+            valor = ''
+            
+            # Lógica para campos de Maestro
+            if hasattr(maestro, campo):
+                if campo == 'categog':
+                    valor = maestro.categog.id_categoria if maestro.categog else ''
+                elif campo == 'id_escuela':
+                    valor = escuela.id_escuela if escuela else ''
+                elif campo == 'incentivo':
+                    valor = ", ".join([i.codigo for i in maestro.incentivos.all()])
+                elif hasattr(maestro, f'get_{campo}_display'):
+                    valor = getattr(maestro, f'get_{campo}_display')()
+                else:
+                    valor = getattr(maestro, campo)
+                    if isinstance(valor, (datetime.date, datetime.datetime)):
+                        valor = valor.strftime("%d/%m/%Y")
+            
+            # Lógica para campos de Escuela
+            elif escuela and hasattr(escuela, campo):
+                if campo == 'zona_esc':
+                    valor = escuela.zona_esc.numero if escuela.zona_esc else ''
+                elif hasattr(escuela, f'get_{campo}_display'):
+                    valor = getattr(escuela, f'get_{campo}_display')()
+                else:
+                    valor = getattr(escuela, campo)
+                    if isinstance(valor, (datetime.date, datetime.datetime)):
+                        valor = valor.strftime("%d/%m/%Y")
+            
+            row.append(str(valor) if valor is not None else '')
+        ws.append(row)
+
+    # Ajuste de ancho de columnas
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        ws.column_dimensions[column].width = min(max_length + 2, 50)
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': 'attachment; filename="reporte_personalizado.xlsx"'},
+    )
+    wb.save(response)
+
+    return response
+
 

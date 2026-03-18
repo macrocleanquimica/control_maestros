@@ -1,175 +1,191 @@
 {% extends 'gestion_escolar/base_auth.html' %}
 {% load static %}
 
+{% block title %}Iniciar Sesión | Control de Maestros{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="card shadow-lg border-0">
-                <!-- Header con imagen -->
-                <div class="card-header bg-primary text-white text-center py-4">
-                    <div class="d-flex justify-content-center mb-3">
-                        <div class="login-icon bg-white rounded-circle d-flex align-items-center justify-content-center">
-                            <i class="bi bi-person-fill text-primary fs-2"></i>
-                        </div>
-                    </div>
-                    <h3 class="mb-0 fw-bold">{{ titulo|default:"Iniciar Sesión" }}</h3>
-                </div>
-                
-                <div class="card-body p-4 p-md-5">
-                    <!-- Mensajes de alerta -->
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show d-flex align-items-center" role="alert">
-                                <i class="bi bi-{% if message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'success' %}check-circle{% else %}info-circle{% endif %}-fill me-2"></i>
-                                <div>{{ message }}</div>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-
-                    <!-- Formulario -->
-                    <form method="post" class="needs-validation" novalidate>
-                        {% csrf_token %}
-                        
-                        {% for field in form %}
-                            <div class="mb-4">
-                                <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
-                                    {{ field.label }}
-                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                </label>
-                                
-                                <div class="input-group">
-                                    {% if field.name == "username" %}
-                                        <span class="input-group-text bg-light border-end-0">
-                                            <i class="bi bi-person text-muted"></i>
-                                        </span>
-                                        {{ field }}
-                                    {% elif field.name == "password" %}
-                                        <span class="input-group-text bg-light border-end-0">
-                                            <i class="bi bi-lock text-muted"></i>
-                                        </span>
-                                        {{ field }}
-                                        <button class="btn btn-outline-secondary toggle-password" type="button">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                    {% else %}
-                                        {{ field }}
-                                    {% endif %}
-                                </div>
-                                
-                                {% if field.help_text %}
-                                    <div class="form-text text-muted small mt-1">{{ field.help_text }}</div>
-                                {% endif %}
-                                
-                                {% if field.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {% for error in field.errors %}
-                                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                        
-                        <!-- Recordar contraseña -->
-                        <div class="mb-3 form-check d-flex justify-content-between align-items-center">
-                            <div>
-                                <input type="checkbox" class="form-check-input" id="rememberMe">
-                                <label class="form-check-label small" for="rememberMe">Recordar mi sesión</label>
-                            </div>
-                            <a href="{% url 'reset_password' %}" class="small text-decoration-none">¿Olvidaste tu contraseña?</a>
-                        </div>
-                        
-                        <!-- Botón de envío -->
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg fw-semibold py-2">
-                                <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
-                            </button>
-                        </div>
-                    </form>
-                    
-                    <!-- Separador -->
-                    <div class="text-center my-4">
-                        <span class="bg-light px-3 text-muted small">O</span>
-                    </div>
-                    
-                    <!-- Enlace de registro -->
-                    <div class="text-center">
-                        <p class="mb-0">¿No tienes una cuenta? 
-                            <a href="{% url 'signup' %}" class="text-decoration-none fw-semibold">Regístrate aquí</a>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Estilos adicionales -->
 <style>
-    .login-icon {
-        width: 80px;
-        height: 80px;
-    }
-    
-    .card {
-        border-radius: 15px;
+    .auth-card {
+        background: white;
+        border-radius: 1.5rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         overflow: hidden;
     }
-    
-    .card-header {
-        border-bottom: none;
+
+    .auth-header {
+        padding: 3rem 2.5rem 2rem;
+        text-align: center;
     }
-    
-    .form-control:focus {
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-        border-color: #86b7fe;
+
+    .auth-logo {
+        width: 64px;
+        height: 64px;
+        background: var(--auth-primary);
+        color: white;
+        border-radius: 1.25rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
     }
-    
-    .input-group-text {
-        transition: all 0.3s ease;
+
+    .auth-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
     }
-    
-    .toggle-password {
-        border-left: none;
+
+    .auth-subtitle {
+        color: #64748b;
+        font-size: 0.95rem;
     }
-    
-    .toggle-password:focus {
-        box-shadow: none;
+
+    .auth-body {
+        padding: 0 2.5rem 3rem;
+    }
+
+    .input-icon-group {
+        position: relative;
+    }
+
+    .input-icon-group .bi {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 1.1rem;
+    }
+
+    .input-icon-group .form-control-auth {
+        padding-left: 3rem;
+    }
+
+    .btn-password-toggle {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #94a3b8;
+        padding: 0.5rem;
+        transition: color 0.2s;
+    }
+
+    .btn-password-toggle:hover {
+        color: var(--auth-primary);
+    }
+
+    .alert-auth {
+        border-radius: 1rem;
+        font-size: 0.9rem;
+        border: none;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 </style>
 
-<!-- Script para mostrar/ocultar contraseña -->
+<div class="auth-card">
+    <div class="auth-header">
+        <div class="auth-logo">
+            <i class="bi bi-person-badge"></i>
+        </div>
+        <h1 class="auth-title">{{ titulo|default:"Bienvenido al Sistema" }}</h1>
+        <p class="auth-subtitle">Ingresa tus credenciales para continuar.</p>
+    </div>
+
+    <div class="auth-body">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-auth fade show shadow-sm" role="alert">
+                    <i class="bi bi-{% if message.tags == 'error' %}exclamation-triangle{% else %}check-circle{% endif %}-fill"></i>
+                    <div>{{ message }}</div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div class="mb-4">
+                    <label for="{{ field.id_for_label }}" class="form-label-auth">
+                        {{ field.label }}
+                    </label>
+                    
+                    <div class="input-icon-group">
+                        {% if field.name == "username" %}
+                            <i class="bi bi-person"></i>
+                            <input type="text" name="{{ field.name }}" id="{{ field.id_for_label }}" 
+                                   class="form-control-auth w-100" placeholder="Nombre de usuario" required>
+                        {% elif field.name == "password" %}
+                            <i class="bi bi-lock"></i>
+                            <input type="password" name="{{ field.name }}" id="{{ field.id_for_label }}" 
+                                   class="form-control-auth w-100" placeholder="••••••••" required>
+                            <button type="button" class="btn-password-toggle" id="togglePassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                    </div>
+                    
+                    {% if field.errors %}
+                        <div class="text-danger smaller mt-1">
+                            {% for error in field.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="rememberMe">
+                    <label class="form-check-label smaller text-muted" for="rememberMe">
+                        Recordarme
+                    </label>
+                </div>
+                <a href="{% url 'reset_password' %}" class="smaller text-primary fw-bold text-decoration-none">
+                    ¿Olvidaste tu contraseña?
+                </a>
+            </div>
+
+            <button type="submit" class="btn-auth-primary w-100 py-3 mb-4 d-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Iniciar Sesión
+            </button>
+
+            <div class="text-center">
+                <p class="mb-0 smaller text-muted"> ¿No tienes una cuenta? 
+                    <a href="{% url 'signup' %}" class="text-primary fw-bold text-decoration-none">Regístrate ahora</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Toggle password visibility
-        const toggleButtons = document.querySelectorAll('.toggle-password');
-        toggleButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const passwordInput = this.closest('.input-group').querySelector('input');
-                const icon = this.querySelector('i');
-                
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    icon.classList.remove('bi-eye');
-                    icon.classList.add('bi-eye-slash');
-                } else {
-                    passwordInput.type = 'password';
-                    icon.classList.remove('bi-eye-slash');
-                    icon.classList.add('bi-eye');
-                }
-            });
-        });
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.querySelector('input[type="password"]');
         
-        // Añadir clases Bootstrap a los campos del formulario
-        const formInputs = document.querySelectorAll('input:not([type="checkbox"])');
-        formInputs.forEach(input => {
-            if (!input.classList.contains('form-control')) {
-                input.classList.add('form-control');
-                input.classList.add('border-start-0');
-            }
-        });
+        if (togglePassword && passwordInput) {
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.querySelector('i').classList.toggle('bi-eye');
+                this.querySelector('i').classList.toggle('bi-eye-slash');
+            });
+        }
     });
 </script>
+{% endblock %}
 {% endblock %}

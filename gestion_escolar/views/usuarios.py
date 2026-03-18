@@ -306,21 +306,21 @@ def user_datatable_ajax(request):
         
         # Acciones
         acciones = f'''
-            <div class="btn-group btn-group-sm" role="group">
-                <a href="/ajustes/usuarios/{user.pk}/detalle/" class="btn btn-info btn-sm" title="Ver Detalles">
-                    <i class="fas fa-eye"></i>
+            <div class="d-flex gap-1 justify-content-center">
+                <a href="/ajustes/usuarios/{user.pk}/detalle/" class="btn btn-sm btn-light border btn-action-custom" title="Ver Detalles">
+                    <i class="fas fa-eye text-info"></i>
                 </a>
-                <a href="/ajustes/usuarios/{user.pk}/editar/" class="btn btn-primary btn-sm" title="Editar">
-                    <i class="fas fa-edit"></i>
+                <a href="/ajustes/usuarios/{user.pk}/editar/" class="btn btn-sm btn-light border btn-action-custom" title="Editar">
+                    <i class="fas fa-edit text-primary"></i>
                 </a>
-                <a href="/ajustes/usuarios/{user.pk}/password/" class="btn btn-warning btn-sm" title="Cambiar Contraseña">
-                    <i class="fas fa-key"></i>
+                <a href="/ajustes/usuarios/{user.pk}/password/" class="btn btn-sm btn-light border btn-action-custom" title="Cambiar Contraseña">
+                    <i class="fas fa-key text-warning"></i>
                 </a>
-                <button class="btn btn-{'danger' if user.is_active else 'success'} btn-sm toggle-active" 
+                <button class="btn btn-sm btn-light border btn-action-custom toggle-active" 
                         data-user-id="{user.pk}" 
                         data-current-state="{'active' if user.is_active else 'inactive'}"
                         title="{'Desactivar' if user.is_active else 'Activar'}">
-                    <i class="fas fa-{'ban' if user.is_active else 'check'}"></i>
+                    <i class="fas fa-{'ban text-danger' if user.is_active else 'check text-success'}"></i>
                 </button>
             </div>
         '''

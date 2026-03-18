@@ -1,0 +1,290 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Importar Lista de Prelación | Control de Maestros{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --im-primary: #6366f1;
+        --im-danger: #ef4444;
+        --im-warning: #f59e0b;
+        --im-border: #e2e8f0;
+        --im-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .import-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid var(--im-border);
+        box-shadow: var(--im-shadow);
+        overflow: hidden;
+    }
+
+    .import-header {
+        background: #fffbeb;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #fef3c7;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .body-section {
+        padding: 2.5rem;
+    }
+
+    /* Warning box */
+    .danger-zone {
+        background: #fef2f2;
+        border: 1px solid #fee2e2;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    /* Instructions */
+    .instruction-list {
+        padding-left: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .instruction-list li {
+        color: #475569;
+        margin-bottom: 0.75rem;
+        font-weight: 500;
+        position: relative;
+    }
+
+    .instruction-list li code {
+        background: #f1f5f9;
+        color: var(--im-primary);
+        padding: 0.1rem 0.4rem;
+        border-radius: 0.3rem;
+        font-weight: 700;
+    }
+
+    /* Format table */
+    .format-preview {
+        background: #f8fafc;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        border: 1px solid var(--im-border);
+        margin-bottom: 2.5rem;
+    }
+
+    .format-preview th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.05em;
+        background: white !important;
+    }
+
+    /* Custom File Input */
+    .file-drop-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 1rem;
+        padding: 2.5rem;
+        text-align: center;
+        transition: all 0.2s;
+        cursor: pointer;
+        background: #f8fafc;
+        margin-bottom: 2rem;
+    }
+
+    .file-drop-area:hover {
+        border-color: var(--im-primary);
+        background: #f5f3ff;
+    }
+
+    .file-drop-area i {
+        font-size: 3rem;
+        color: #94a3b8;
+        margin-bottom: 1rem;
+    }
+
+    .file-drop-area.has-file {
+        border-color: var(--im-primary);
+        background: #f5f3ff;
+    }
+
+    .file-drop-area.has-file i { color: var(--im-primary); }
+
+    /* Buttons */
+    .btn-import-confirm {
+        background: var(--im-primary);
+        color: white;
+        border-radius: 2rem;
+        padding: 0.8rem 2.5rem;
+        font-weight: 700;
+        border: none;
+        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        transition: all 0.2s;
+    }
+
+    .btn-import-confirm:disabled {
+        background: #cbd5e1;
+        box-shadow: none;
+        cursor: not-allowed;
+    }
+
+    .btn-import-confirm:not(:disabled):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.5);
+    }
+</style>
+
+<div class="page-container">
+    <div class="import-card">
+        <div class="import-header">
+            <div>
+                <h4 class="mb-0 fw-bold text-dark"><i class="fas fa-file-import text-warning me-2"></i> Asistente de Importación</h4>
+                <p class="text-muted small mb-0">Sincronización de lista anual de prelación.</p>
+            </div>
+            <a href="{% url 'lista_prelacion' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted small btn-hover-animate">
+                <i class="fas fa-arrow-left me-2"></i> Volver
+            </a>
+        </div>
+
+        <div class="body-section">
+            <!-- Alert Section -->
+            <div class="danger-zone">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="bg-white p-3 rounded-circle shadow-sm" style="color: var(--im-danger);">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-danger mb-1">Acción Destructiva Irreversible</h6>
+                        <p class="mb-0 text-muted small">
+                            Al importar un nuevo archivo, el sistema <span class="fw-bold text-dark">eliminará permanentemente todos los registros actuales</span> de la lista de prelación para reemplazarlos por los nuevos datos.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <h6 class="text-uppercase fw-bold text-dark mb-3" style="font-size: 0.8rem; letter-spacing: 0.1em;">
+                <i class="fas fa-info-circle text-primary me-2"></i> Especificaciones del Archivo
+            </h6>
+            <ul class="instruction-list small">
+                <li>Formatos aceptados: <code>.xlsx</code> o <code>.xls</code> únicamente.</li>
+                <li>Columnas obligatorias (en la primera fila): <code>pos_orden</code>, <code>folio</code>, <code>curp</code>, <code>nombre</code>, <code>tipo_val</code>.</li>
+                <li>No incluya filas vacías ni formatos complejos; mantenga los datos limpios y planos.</li>
+            </ul>
+
+            <!-- Table Preview -->
+            <div class="format-preview shadow-sm">
+                <p class="small fw-bold text-muted mb-3">Estructura esperada por el sistema:</p>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0" style="font-size: 0.75rem;">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>pos_orden</th>
+                                <th>folio</th>
+                                <th>curp</th>
+                                <th>nombre</th>
+                                <th>tipo_val</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-primary fw-bold">1</td>
+                                <td>001-VAL-25</td>
+                                <td class="font-monospace">ABCD123...</td>
+                                <td class="fw-bold">GARCÍA PÉREZ JUAN</td>
+                                <td>BÁSICA</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Upload Form -->
+            <form method="post" enctype="multipart/form-data" id="formImportar">
+                {% csrf_token %}
+                
+                <div class="file-drop-area" id="dropArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h5 class="fw-bold text-dark mb-1">Cargar Archivo Excel</h5>
+                    <p class="text-muted small mb-0" id="fileName">Arrastre su archivo aquí o haga clic para buscar en su equipo</p>
+                    <input type="file" name="archivo_excel" id="id_archivo_excel" accept=".xlsx,.xls" hidden required>
+                </div>
+
+                <div class="form-check bg-light p-3 rounded-4 border mb-4">
+                    <input class="form-check-input ms-0" type="checkbox" id="confirmar" required>
+                    <label class="form-check-label ms-2 text-dark small fw-bold" for="confirmar">
+                        Entiendo que esta acción es definitiva y reemplazará toda la base de datos de prelación.
+                    </label>
+                </div>
+
+                <div class="d-flex justify-content-end gap-3 mt-5">
+                    <button type="submit" class="btn-import-confirm" id="btnImportar" disabled>
+                        <i class="fas fa-check-circle me-2"></i> Confirmar e Importar Ahora
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        const dropArea = $('#dropArea');
+        const fileInput = $('#id_archivo_excel');
+        const fileNameDisplay = $('#fileName');
+
+        // Trigger input al hacer clic en el area
+        dropArea.on('click', function() {
+            fileInput.click();
+        });
+
+        // Mostrar nombre del archivo seleccionado
+        fileInput.on('change', function() {
+            if (this.files && this.files.length > 0) {
+                const name = this.files[0].name;
+                fileNameDisplay.text("Archivo listo: " + name).addClass('text-primary fw-bold');
+                dropArea.addClass('has-file');
+            }
+        });
+
+        // Drag & Drop visual feedback
+        dropArea.on('dragover', function(e) {
+            e.preventDefault();
+            $(this).addClass('bg-light border-primary');
+        });
+
+        dropArea.on('dragleave', function() {
+            $(this).removeClass('bg-light border-primary');
+        });
+
+        // Habilitar botón solo cuando se confirma check
+        $('#confirmar').on('change', function () {
+            $('#btnImportar').prop('disabled', !this.checked);
+        });
+
+        // Doble confirmación
+        $('#formImportar').on('submit', function (e) {
+            if (!confirm('¿CONFIRMACIÓN FINAL?\n\nEsta operación es definitiva. ¿Está seguro de proceder con el reemplazo de la lista de prelación?')) {
+                e.preventDefault();
+                return false;
+            }
+            $(this).find('button').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> Procesando archivo...');
+        });
+    });
+</script>
+{% endblock %}

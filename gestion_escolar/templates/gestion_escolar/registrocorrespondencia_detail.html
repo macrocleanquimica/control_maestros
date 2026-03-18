@@ -1,70 +1,289 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
-        <div>
-            <a href="{% url 'registrocorrespondencia_list' %}" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-arrow-left"></i> Volver a la Lista
+<style>
+    :root {
+        --rd-primary: #6366f1;
+        --rd-secondary: #64748b;
+        --rd-success: #10b981;
+        --rd-info: #0ea5e9;
+        --rd-warning: #f59e0b;
+        --rd-danger: #ef4444;
+        --rd-border: #e2e8f0;
+        --rd-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header Section */
+    .header-section {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--rd-shadow);
+        border: 1px solid var(--rd-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    /* Info Card */
+    .detail-card {
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid var(--rd-border);
+        box-shadow: var(--rd-shadow);
+        overflow: hidden;
+    }
+
+    .detail-card-header {
+        background: #f8fafc;
+        padding: 1.25rem 2rem;
+        border-bottom: 1px solid var(--rd-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .detail-card-body {
+        padding: 2.5rem;
+    }
+
+    /* Grid Layout */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .info-group label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.05em;
+    }
+
+    .info-group p {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0;
+    }
+
+    .info-group .folio-tag {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 0.3rem 0.7rem;
+        border-radius: 0.5rem;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Content Section */
+    .content-box {
+        background: #f8fafc;
+        border-radius: 1rem;
+        padding: 2rem;
+        border: 1px solid var(--rd-border);
+        margin-bottom: 2rem;
+    }
+
+    .content-box h5 {
+        font-size: 0.85rem;
+        font-weight: 800;
+        color: #1e293b;
+        text-transform: uppercase;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .content-text {
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #475569;
+        white-space: pre-wrap;
+    }
+
+    /* Attachment Section */
+    .attachment-card {
+        background: #f0f9ff;
+        border: 1px border var(--rd-info);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        transition: transform 0.2s;
+    }
+
+    .attachment-card:hover {
+        transform: scale(1.01);
+    }
+
+    .attachment-icon {
+        width: 48px;
+        height: 48px;
+        background: white;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--rd-info);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Print Hide Utilities */
+    @media print {
+        .page-container { padding: 0; }
+        .header-section, .detail-card-header button:not(.print-btn), .header-actions {
+            display: none !important;
+        }
+        .detail-card { border: none; box-shadow: none; }
+        .detail-card-header { border-bottom: 2px solid #000; }
+        .content-box { background: white; border: 1px solid #eee; }
+    }
+</style>
+
+<div class="page-container">
+    <!-- Header -->
+    <div class="header-section d-print-none">
+        <div class="header-title">
+            <h1 class="mb-1"><i class="fas fa-file-invoice text-primary me-2"></i> Detalle de Registro</h1>
+            <p class="text-muted small mb-0">Visualización detallada de la correspondencia oficial recibida.</p>
+        </div>
+        <div class="header-actions d-flex gap-2">
+            <a href="{% url 'registrocorrespondencia_list' %}" class="btn btn-light border rounded-pill px-3 fw-bold text-muted btn-hover-animate">
+                <i class="fas fa-arrow-left me-1"></i> Volver
             </a>
-            <a href="{% url 'registrocorrespondencia_update' registro.pk %}" class="btn btn-primary btn-sm">
-                <i class="fas fa-edit"></i> Editar
+            <a href="{% url 'registrocorrespondencia_update' registro.pk %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
+                <i class="fas fa-edit me-1"></i> Editar
             </a>
             {% if perms.gestion_escolar.delete_registrocorrespondencia %}
-                <a href="{% url 'registrocorrespondencia_delete' registro.pk %}" class="btn btn-danger btn-sm">
-                    <i class="fas fa-trash"></i> Eliminar
-                </a>
+            <a href="{% url 'registrocorrespondencia_delete' registro.pk %}" class="btn btn-danger rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
+                <i class="fas fa-trash me-1"></i> Eliminar
+            </a>
             {% endif %}
         </div>
     </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Información del Registro</h6>
+    <!-- Main Card -->
+    <div class="detail-card">
+        <div class="detail-card-header d-print-none">
+            <h5 class="mb-0 fw-bold text-dark">Ficha Técnica de Correspondencia</h5>
+            <button onclick="window.print();" class="btn btn-info text-white rounded-pill px-4 shadow-sm fw-bold print-btn btn-hover-animate">
+                <i class="fas fa-print me-2"></i> Imprimir Ficha
+            </button>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Fecha de Recibido:</strong> {{ registro.fecha_recibido|date:"d/m/Y" }}</p>
-                    <p><strong>Fecha del Oficio:</strong> {{ registro.fecha_oficio|date:"d/m/Y" }}</p>
-                    <p><strong>Folio del Documento:</strong> {{ registro.folio_documento|default:"S/F" }}</p>
-                    <p><strong>Remitente:</strong> {{ registro.remitente }}</p>
-                    <p><strong>Quien Recibió:</strong> {{ registro.quien_recibio|default:"N/A" }}</p>
+
+        <div class="detail-card-body">
+            <!-- Info Grid -->
+            <div class="info-grid">
+                <div class="info-group">
+                    <label>Fecha Recibido</label>
+                    <p><i class="fas fa-calendar-check text-success me-2"></i>{{ registro.fecha_recibido|date:"d/m/Y" }}</p>
                 </div>
-                <div class="col-md-6">
-                    <p><strong>Tipo de Documento:</strong> {{ registro.get_tipo_documento_display }}</p>
-                    <p><strong>Área Destino:</strong> {{ registro.get_area_display }}</p>
-                    <p><strong>Maestro Relacionado:</strong> 
+                <div class="info-group">
+                    <label>Folio del Documento</label>
+                    <span class="folio-tag">{{ registro.folio_documento|default:"SIN FOLIO" }}</span>
+                </div>
+                <div class="info-group">
+                    <label>Tipo de Documento</label>
+                    <p>
+                        <span class="badge-soft badge-soft-info px-3">
+                            <i class="fas fa-tag me-2"></i>{{ registro.get_tipo_documento_display }}
+                        </span>
+                    </p>
+                </div>
+                <div class="info-group">
+                    <label>Área Destino</label>
+                    <p><i class="fas fa-building text-muted me-2"></i>{{ registro.get_area_display }}</p>
+                </div>
+                <div class="info-group">
+                    <label>Remitente / Origen</label>
+                    <p class="fw-bold">{{ registro.remitente }}</p>
+                </div>
+                <div class="info-group">
+                    <label>Maestro Relacionado</label>
+                    <p>
                         {% if registro.maestro %}
-                            <a href="{% url 'detalle_maestro' registro.maestro.pk %}">{{ registro.maestro }}</a>
+                        <a href="{% url 'detalle_maestro' registro.maestro.pk %}" class="text-primary text-decoration-none">
+                            <i class="fas fa-user-circle me-1"></i>{{ registro.maestro }}
+                        </a>
                         {% else %}
-                            N/A
+                        <span class="text-muted">N/A</span>
                         {% endif %}
                     </p>
-                    <p><strong>Fecha de Registro en Sistema:</strong> {{ registro.fecha_registro|date:"d/m/Y H:i" }}</p>
                 </div>
             </div>
-            <hr>
-            <h5>Contenido del Oficio</h5>
-            <p style="white-space: pre-wrap;">{{ registro.contenido }}</p>
-            <hr>
-            <h5>Observaciones</h5>
-            <p style="white-space: pre-wrap;">{{ registro.observaciones|default:"Sin observaciones." }}</p>
-            {% if registro.archivo_adjunto %}
-            <div class="card mt-4">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0">Archivo Adjunto</h5>
+
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <div class="content-box h-100">
+                        <h5><i class="fas fa-align-left text-primary"></i> Contenido del Oficio</h5>
+                        <div class="content-text">{{ registro.contenido }}</div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p>
-                        <a href="{{ registro.archivo_adjunto.url }}" target="_blank">
-                            <i class="fas fa-file-pdf"></i> Ver Archivo Adjunto ({{ registro.archivo_adjunto.name|cut:"correspondencia/" }})
+                <div class="col-lg-5">
+                    <div class="content-box h-100">
+                        <h5><i class="fas fa-comment-dots text-warning"></i> Observaciones</h5>
+                        <div class="content-text">{{ registro.observaciones|default:"Sin observaciones registradas." }}</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if registro.archivo_adjunto %}
+            <div class="mt-5">
+                <h5 class="text-uppercase small fw-bold text-muted mb-3">Evidencia Digital</h5>
+                <div class="attachment-card">
+                    <div class="attachment-icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-1 fw-bold text-dark">Documento Digitalizado</h6>
+                        <p class="text-muted small mb-2">{{ registro.archivo_adjunto.name|cut:"correspondencia/" }}</p>
+                        <a href="{{ registro.archivo_adjunto.url }}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-4 btn-hover-animate">
+                            <i class="fas fa-external-link-alt me-1"></i> Abrir Documento
                         </a>
-                    </p>
+                    </div>
                 </div>
             </div>
             {% endif %}
+            
+            <div class="mt-5 pt-4 border-top">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted small">
+                        Registrado el: <strong>{{ registro.fecha_registro|date:"d/m/Y" }}</strong> a las <strong>{{ registro.fecha_registro|date:"H:i" }}</strong>
+                    </div>
+                    <div class="text-muted small">
+                        Recibido por: <strong>{{ registro.quien_recibio|default:"No especificado" }}</strong>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

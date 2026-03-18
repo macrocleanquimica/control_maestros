@@ -1,40 +1,174 @@
 {% extends "gestion_escolar/base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">{{ titulo }}</h4>
+<style>
+    :root {
+        --pe-primary: #6366f1;
+        --pe-border: #e2e8f0;
+        --pe-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid var(--pe-border);
+        box-shadow: var(--pe-shadow);
+        overflow: hidden;
+    }
+
+    .form-header {
+        background: #f8fafc;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--pe-border);
+    }
+
+    .form-body {
+        padding: 2rem;
+    }
+
+    .form-group-premium {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label-premium {
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        display: block;
+        letter-spacing: 0.05em;
+    }
+
+    .form-control-premium {
+        border-radius: 0.75rem;
+        border: 1px solid var(--pe-border);
+        padding: 0.75rem 1rem;
+        transition: all 0.2s;
+        background: #f8fafc;
+    }
+
+    .form-control-premium:focus {
+        background: white;
+        border-color: var(--pe-primary);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        outline: none;
+    }
+
+    .btn-save {
+        background: var(--pe-primary);
+        color: white;
+        border-radius: 2rem;
+        padding: 0.8rem 2.5rem;
+        font-weight: 700;
+        border: none;
+        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        transition: all 0.2s;
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.5);
+    }
+
+    .btn-cancel {
+        color: #64748b;
+        font-weight: 700;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .btn-cancel:hover {
+        color: #1e293b;
+    }
+</style>
+
+<div class="page-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h4 class="mb-0 fw-bold text-dark"><i class="fas fa-plus-circle text-primary me-2"></i> {{ titulo }}</h4>
+            <p class="text-muted small mb-0">Define una nueva tarea para tu seguimiento personal.</p>
         </div>
-        <div class="card-body">
-            <form method="post" novalidate>
+
+        <div class="form-body">
+            <form method="post" novalidate id="pendienteForm">
                 {% csrf_token %}
                 
-                <div class="mb-3">
-                    <label for="{{ form.titulo.id_for_label }}" class="form-label">{{ form.titulo.label }}</label>
+                <div class="form-group-premium">
+                    <label class="form-label-premium">{{ form.titulo.label }}</label>
                     {{ form.titulo }}
+                    {% if form.titulo.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.titulo.errors.0 }}</div>
+                    {% endif %}
                 </div>
                 
-                <div class="mb-3">
-                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">{{ form.descripcion.label }}</label>
+                <div class="form-group-premium">
+                    <label class="form-label-premium">{{ form.descripcion.label }}</label>
                     {{ form.descripcion }}
+                    {% if form.descripcion.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.descripcion.errors.0 }}</div>
+                    {% endif %}
                 </div>
 
                 <div class="row">
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="{{ form.fecha_programada.id_for_label }}" class="form-label">{{ form.fecha_programada.label }}</label>
+                    <div class="col-md-6">
+                        <div class="form-group-premium">
+                            <label class="form-label-premium">{{ form.fecha_programada.label }}</label>
                             {{ form.fecha_programada }}
+                            {% if form.fecha_programada.errors %}
+                                <div class="text-danger small mt-1 fw-bold">{{ form.fecha_programada.errors.0 }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">Guardar Pendiente</button>
-                    <a href="{% url 'pendientes_activos' %}" class="btn btn-secondary">Cancelar</a>
+                <div class="d-flex align-items-center justify-content-between mt-5 pt-3 border-top">
+                    <a href="{% url 'pendientes_activos' %}" class="btn-cancel small">
+                        <i class="fas fa-times me-1"></i> Cancelar y Volver
+                    </a>
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-save me-2"></i> Guardar Tarea
+                    </button>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- Tips -->
+    <div class="mt-4 p-4 rounded-4 bg-light border border-dashed text-center">
+        <p class="text-muted small mb-0">
+            <i class="fas fa-lightbulb text-warning me-2"></i> 
+            <strong>Tip:</strong> Puedes programar tareas para fechas futuras y aparecerán en tu lista del día correspondiente.
+        </p>
+    </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aplicar clases a los inputs dinámicamente
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.classList.add('form-control', 'form-control-premium');
+        });
+
+        // Focus inicial
+        const firstInput = document.querySelector('input[name="titulo"]');
+        if (firstInput) firstInput.focus();
+    });
+</script>
 {% endblock %}

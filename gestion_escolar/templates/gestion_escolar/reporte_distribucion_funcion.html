@@ -1,158 +1,238 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
-{% block title %}{{ titulo }}{% endblock %}
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="h3 mb-2 text-gray-800">{{ titulo }}</h1>
-    <p class="mb-4">Este reporte muestra la distribución del personal por función, con filtros por zona escolar y centro de trabajo.</p>
+<style>
+    :root {
+        --rd-primary: #6366f1;
+        --rd-secondary: #64748b;
+        --rd-border: #e2e8f0;
+        --rd-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header */
+    .header-section {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--rd-shadow);
+        border: 1px solid var(--rd-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Filter Card */
+    .filter-card {
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid var(--rd-border);
+        box-shadow: var(--rd-shadow);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .filter-header {
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--rd-border);
+        font-weight: 700;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-body {
+        padding: 2rem;
+    }
+
+    .form-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Chart Card */
+    .chart-card {
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid var(--rd-border);
+        box-shadow: var(--rd-shadow);
+        padding: 2.5rem;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 450px;
+        width: 100%;
+    }
+
+    /* Select Customization */
+    .form-select-premium {
+        border-radius: 0.75rem;
+        border: 1px solid var(--rd-border);
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .form-select-premium:focus {
+        border-color: var(--rd-primary);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+</style>
+
+<div class="page-container">
+    <!-- Header -->
+    <div class="header-section">
+        <div>
+            <h1 class="h3 fw-bold mb-1"><i class="fas fa-chart-pie text-primary me-2"></i> {{ titulo }}</h1>
+            <p class="text-muted small mb-0">Análisis demográfico de la fuerza laboral según su asignación funcional.</p>
         </div>
-        <div class="card-body">
+        <div>
+            <button onclick="window.print();" class="btn btn-light border rounded-pill px-4 fw-bold shadow-sm btn-hover-animate">
+                <i class="fas fa-print me-2"></i> Imprimir Gráfico
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card d-print-none">
+        <div class="filter-header">
+            <i class="fas fa-filter text-primary"></i> Parámetros de Filtrado
+        </div>
+        <div class="filter-body">
             <form method="get" action="{% url 'reporte_distribucion_funcion' %}">
-                <div class="row">
+                <div class="row g-4 align-items-end">
                     <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="zona">Zona Escolar</label>
-                            <select name="zona" id="zona" class="form-control">
-                                <option value="">Todas</option>
-                                {% for zona in zonas %}
-                                    <option value="{{ zona.pk }}" {% if zona.pk == selected_zona %}selected{% endif %}>
-                                        {{ zona.numero }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                        <label for="zona" class="form-label">Zona Escolar</label>
+                        <select name="zona" id="zona" class="form-select form-select-premium">
+                            <option value="">Todas las Zonas</option>
+                            {% for zona in zonas %}
+                                <option value="{{ zona.pk }}" {% if zona.pk == selected_zona %}selected{% endif %}>
+                                    Zona {{ zona.numero }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="escuela">Centro de Trabajo</label>
-                            <select name="escuela" id="escuela" class="form-control">
-                                <option value="">Todos</option>
-                                {% for escuela in escuelas %}
-                                    <option value="{{ escuela.pk }}" data-zona="{{ escuela.zona_esc_id }}" {% if escuela.pk == selected_escuela %}selected{% endif %}>
-                                        {{ escuela.nombre_ct }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                        <label for="escuela" class="form-label">Centro de Trabajo</label>
+                        <select name="escuela" id="escuela" class="form-select form-select-premium">
+                            <option value="">Todos los Centros</option>
+                            {% for escuela in escuelas %}
+                                <option value="{{ escuela.pk }}" data-zona="{{ escuela.zona_esc_id }}" {% if escuela.pk == selected_escuela %}selected{% endif %}>
+                                    {{ escuela.nombre_ct }}
+                                </option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary">Filtrar</button>
-                        <a href="{% url 'reporte_distribucion_funcion' %}" class="btn btn-secondary ms-2">Limpiar</a>
+                    <div class="col-md-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold flex-grow-1 btn-hover-animate">
+                            Actualizar Gráfico
+                        </button>
+                        <a href="{% url 'reporte_distribucion_funcion' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted btn-hover-animate">
+                            Limpiar
+                        </a>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Gráfico de Distribución</h6>
+    <!-- Chart -->
+    <div class="chart-card">
+        <h5 class="fw-bold text-dark mb-4 border-bottom pb-3">Distribución Estadística</h5>
+        <div class="chart-container">
+            <canvas id="distribucionChart"></canvas>
         </div>
-        <div class="card-body">
-            <div class="chart-bar">
-                <canvas id="myBarChart"></canvas>
-            </div>
+        <div class="mt-4 text-center">
+            <p class="small text-muted mb-0">
+                <i class="fas fa-info-circle me-1"></i> 
+                Los datos reflejan el total de personal activo filtrado por los criterios seleccionados.
+            </p>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<style>
-.chart-bar {
-  position: relative;
-  height: 20rem;
-  width: 100%;
-}
-</style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Bar Chart
-    var ctx = document.getElementById("myBarChart");
-    var myBarChart = new Chart(ctx, {
+    var ctx = document.getElementById("distribucionChart").getContext('2d');
+    var distribucionChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: {{ labels|safe }},
             datasets: [{
-                label: "Total",
-                backgroundColor: "#4e73df",
-                hoverBackgroundColor: "#2e59d9",
-                borderColor: "#4e73df",
+                label: "Cantidad de Personal",
+                backgroundColor: "rgba(99, 102, 241, 0.8)",
+                hoverBackgroundColor: "rgba(99, 102, 241, 1)",
+                borderColor: "#6366f1",
+                borderWidth: 1,
+                borderRadius: 8,
                 data: {{ data|safe }},
             }],
         },
         options: {
             maintainAspectRatio: false,
-            layout: {
-                padding: {
-                    left: 10,
-                    right: 25,
-                    top: 25,
-                    bottom: 0
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    cornerRadius: 8,
+                    displayColors: false
                 }
             },
             scales: {
-                xAxes: [{
-                    gridLines: {
-                        display: false,
-                        drawBorder: false
-                    },
-                    ticks: {
-                        maxTicksLimit: 20
-                    },
-                    maxBarThickness: 25,
-                }],
-                yAxes: [{
-                    ticks: {
-                        min: 0,
-                        padding: 10,
-                    },
-                    gridLines: {
-                        color: "rgb(234, 236, 244)",
-                        zeroLineColor: "rgb(234, 236, 244)",
-                        drawBorder: false,
-                        borderDash: [2],
-                        zeroLineBorderDash: [2]
-                    }
-                }],
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { weight: 'bold', size: 11 } }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#f1f5f9' },
+                    ticks: { stepSize: 1 }
+                }
             },
-            legend: {
-                display: false
-            },
-            tooltips: {
-                titleMarginBottom: 10,
-                titleFontColor: '#6e707e',
-                titleFontSize: 14,
-                backgroundColor: "rgb(255,255,255)",
-                bodyFontColor: "#858796",
-                borderColor: '#dddfeb',
-                borderWidth: 1,
-                xPadding: 15,
-                yPadding: 15,
-                displayColors: false,
-                caretPadding: 10,
-            },
+            animation: { duration: 1000, easing: 'easeOutQuart' }
         }
     });
 
-    // Cascading dropdowns
+    // Cascading dropdowns (Select2 would be better but let's fix the native logic)
     const zonaSelect = document.getElementById('zona');
     const escuelaSelect = document.getElementById('escuela');
     const escuelaOptions = Array.from(escuelaSelect.options);
 
     zonaSelect.addEventListener('change', function() {
         const selectedZona = this.value;
-        escuelaSelect.innerHTML = '<option value="">Todos</option>';
-
+        const currentEscuelaValue = escuelaSelect.value;
+        
+        escuelaSelect.innerHTML = '';
+        
         escuelaOptions.forEach(option => {
             if (option.value === "" || option.dataset.zona === selectedZona) {
-                escuelaSelect.add(option.cloneNode(true));
+                const newOption = option.cloneNode(true);
+                if (newOption.value === currentEscuelaValue) newOption.selected = true;
+                escuelaSelect.add(newOption);
             }
         });
     });

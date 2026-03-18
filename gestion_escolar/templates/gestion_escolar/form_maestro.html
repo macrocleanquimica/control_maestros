@@ -1,281 +1,496 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>{% if maestro %}Editar Personal{% else %}Agregar Personal{% endif %}</h2>
-        <a href="{% url 'lista_maestros' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver a la lista
-        </a>
+<style>
+    :root {
+        --ps-primary: #0ea5e9;
+        --ps-secondary: #64748b;
+        --ps-border: #e2e8f0;
+        --ps-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header Section */
+    .premium-header {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--ps-shadow);
+        border: 1px solid var(--ps-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .header-info h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    /* Form Card */
+    .form-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid var(--ps-border);
+        box-shadow: var(--ps-shadow);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .section-container {
+        padding: 2rem 2.5rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .section-container:last-child {
+        border-bottom: none;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #f8fafc;
+    }
+
+    .section-title h4 {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #334155;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .section-icon {
+        width: 32px;
+        height: 32px;
+        background: #f0f9ff;
+        color: var(--ps-primary);
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    /* Input Styling */
+    .form-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 0.75rem;
+        border: 1px solid var(--ps-border);
+        padding: 0.6rem 1rem;
+        background-color: #f8fafc;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background-color: white;
+        border-color: var(--ps-primary);
+        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+    }
+
+    /* Document Row Style */
+    .doc-item {
+        transition: all 0.2s;
+    }
+    .doc-item:hover {
+        background-color: #f0f9ff !important;
+    }
+
+    .btn-save-personal {
+        background: var(--ps-primary);
+        color: white;
+        border: none;
+        padding: 0.8rem 2.5rem;
+        border-radius: 2rem;
+        font-weight: 800;
+        box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3);
+        transition: all 0.3s;
+    }
+
+    .btn-save-personal:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 20px -5px rgba(14, 165, 233, 0.4);
+        color: white;
+    }
+</style>
+
+<div class="page-container">
+    <!-- Header -->
+    <div class="premium-header">
+        <div class="header-info">
+            <h1><i class="fas fa-user-edit text-info me-2"></i> {{ titulo }}</h1>
+            <p class="text-muted small mb-0">Gestión integral de la ficha profesional del docente.</p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if maestro and not es_clonado %}
+            <a href="{% url 'agregar_otra_plaza' maestro.id_maestro %}" class="btn btn-success rounded-pill px-4 fw-bold small btn-hover-animate">
+                <i class="fas fa-plus-circle me-2"></i> Agregar Otra Plaza
+            </a>
+            {% endif %}
+            <a href="{% url 'lista_maestros' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted small btn-hover-animate">
+                <i class="fas fa-arrow-left me-2"></i> Regresar
+            </a>
+        </div>
     </div>
+
+    {% if es_clonado %}
+    <div class="alert alert-info alert-premium bg-soft-info border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center gap-3">
+        <div class="section-icon bg-info text-white shadow-sm"><i class="fas fa-copy"></i></div>
+        <div>
+            <h5 class="fw-bold mb-1">Modo: Agregar Nueva Plaza</h5>
+            <p class="mb-0 small">Se han precargado los datos personales de <strong>{{ maestro.nombres }} {{ maestro.a_paterno }}</strong>. Por favor, captura únicamente la información de la nueva plaza (CCT, Función, Categoría, etc.).</p>
+        </div>
+    </div>
+    {% endif %}
 
     {% if messages %}
+    <div class="mb-4">
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show rounded-4 border-0 shadow-sm d-flex align-items-center gap-3" role="alert">
+            <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+            <div>{{ message }}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         {% endfor %}
-    {% endif %}
-
-    <div class="card">
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <!-- AGREGAR ESTO PARA VER ERRORES DETALLADOS -->
-    {% if form.errors %}
-    <div class="alert alert-danger">
-        <h5 class="alert-heading">Errores en el formulario:</h5>
-        <ul class="mb-0">
-            {% for field, errors in form.errors.items %}
-                <li>
-                    <strong>{{ field|title }}:</strong> 
-                    {% for error in errors %}
-                        {{ error }}
-                    {% endfor %}
-                </li>
-            {% endfor %}
-        </ul>
     </div>
     {% endif %}
-                <!-- Apellido Paterno, Apellido Materno, Nombres -->
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.a_paterno.id_for_label }}" class="form-label">Apellido Paterno</label>
+
+    <div class="form-card">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% if form.errors %}
+            <div class="bg-danger bg-opacity-10 p-4 border-bottom border-danger border-opacity-20 text-danger">
+                <h5 class="fw-bold fs-6 mb-2"><i class="fas fa-exclamation-triangle me-2"></i> Errores Detectados:</h5>
+                <ul class="mb-0 small">
+                    {% for field, errors in form.errors.items %}
+                        <li><strong>{{ field|title }}:</strong> {{ errors.0 }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- SECCIÓN 1: DATOS GENERALES -->
+            <div class="section-container">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-id-card"></i></div>
+                    <h4>Identificación y Nombres</h4>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Apellido Paterno</label>
                         {{ form.a_paterno }}
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.a_materno.id_for_label }}" class="form-label">Apellido Materno</label>
+                    <div class="col-md-4">
+                        <label class="form-label">Apellido Materno</label>
                         {{ form.a_materno }}
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.nombres.id_for_label }}" class="form-label">Nombres</label>
+                    <div class="col-md-4">
+                        <label class="form-label">Nombres</label>
                         {{ form.nombres }}
                     </div>
-                </div>
-
-                <!-- CURP, RFC -->
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.curp.id_for_label }}" class="form-label">CURP</label>
+                    <div class="col-md-6">
+                        <label class="form-label">CURP</label>
                         {{ form.curp }}
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.rfc.id_for_label }}" class="form-label">RFC</label>
+                    <div class="col-md-6">
+                        <label class="form-label">RFC</label>
                         {{ form.rfc }}
                     </div>
                 </div>
+            </div>
 
-                <!-- Escuela, Techo Financiero -->
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.id_escuela.id_for_label }}" class="form-label">Escuela</label>
+            <!-- SECCIÓN 2: PERFIL LABORAL -->
+            <div class="section-container bg-light bg-opacity-25">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-briefcase"></i></div>
+                    <h4>Perfil y Adscripción Laboral</h4>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Centro de Trabajo (Escuela)</label>
                         {{ form.id_escuela }}
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.techo_f.id_for_label }}" class="form-label">Techo Financiero</label>
+                    <div class="col-md-4">
+                        <label class="form-label">Techo Financiero</label>
                         {{ form.techo_f }}
                     </div>
-                </div>
 
-                <!-- DEP, UNID, SUB UNID, HRS, Categoría, Número de Plaza -->
-                <div class="row">
-                    <div class="col-md-2 mb-3">
-                        <label for="{{ form.dep.id_for_label }}" class="form-label">DEP</label>
+                    <div class="col-md-2">
+                        <label class="form-label">DEP</label>
                         {{ form.dep }}
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="{{ form.unid.id_for_label }}" class="form-label">UNID</label>
+                    <div class="col-md-2">
+                        <label class="form-label">UNID</label>
                         {{ form.unid }}
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="{{ form.sub_unid.id_for_label }}" class="form-label">SUB UNID</label>
+                    <div class="col-md-2">
+                        <label class="form-label">SUB UNID</label>
                         {{ form.sub_unid }}
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="{{ form.categog.id_for_label }}" class="form-label">Categoría</label>
+                    <div class="col-md-2">
+                        <label class="form-label">Categoría</label>
                         {{ form.categog }}
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="{{ form.hrs.id_for_label }}" class="form-label">HRS</label>
+                    <div class="col-md-2">
+                        <label class="form-label">HRS</label>
                         {{ form.hrs }}
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="{{ form.num_plaza.id_for_label }}" class="form-label">No. de Plaza</label>
+                    <div class="col-md-2">
+                        <label class="form-label">No. de Plaza</label>
                         {{ form.num_plaza }}
                     </div>
-                </div>
 
-                <!-- Código -->
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label for="{{ form.codigo.id_for_label }}" class="form-label">Código</label>
+                    <div class="col-md-4">
+                        <label class="form-label">Código</label>
                         {{ form.codigo }}
                     </div>
-                </div>
-
-                <!-- Sexo, Estado Civil, Fecha de Nacimiento -->
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.sexo.id_for_label }}" class="form-label">Sexo</label>
-                        {{ form.sexo }}
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.est_civil.id_for_label }}" class="form-label">Estado Civil</label>
-                        {{ form.est_civil }}
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">Fecha de Nacimiento</label>
-                        {{ form.fecha_nacimiento }}
-                    </div>
-                </div>
-
-                <!-- Fecha de Ingreso, Fecha de Promoción -->
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.fecha_ingreso.id_for_label }}" class="form-label">Fecha de Ingreso</label>
-                        {{ form.fecha_ingreso }}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.fecha_promocion.id_for_label }}" class="form-label">Fecha de Promoción</label>
-                        {{ form.fecha_promocion }}
-                    </div>
-                </div>
-
-                <!-- Formación Académica, Horario -->
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.form_academica.id_for_label }}" class="form-label">Formación Académica</label>
-                        {{ form.form_academica }}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.horario.id_for_label }}" class="form-label">Horario</label>
-                        {{ form.horario }}
-                    </div>
-                </div>
-
-                <!-- Función, Nivel de Estudio -->
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.funcion.id_for_label }}" class="form-label">Función</label>
+                    <div class="col-md-4">
+                        <label class="form-label">Función</label>
                         {{ form.funcion }}
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.nivel_estudio.id_for_label }}" class="form-label">Titulo o Tratamiento (Prefijo a usar)</label>
+                    <div class="col-md-4">
+                        <label class="form-label">Incentivos (Multiselección)</label>
+                        {{ form.incentivos }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Título/Prefijo</label>
                         {{ form.nivel_estudio }}
                     </div>
                 </div>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.domicilio_part.id_for_label }}" class="form-label">Domicilio Particular</label>
-                        {{ form.domicilio_part }}
+            <!-- SECCIÓN 3: INFORMACIÓN BIOGRÁFICA -->
+            <div class="section-container">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-user"></i></div>
+                    <h4>Información Personal y Académica</h4>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Sexo</label>
+                        {{ form.sexo }}
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="{{ form.poblacion.id_for_label }}" class="form-label">Población</label>
-                        {{ form.poblacion }}
+                    <div class="col-md-4">
+                        <label class="form-label">Estado Civil</label>
+                        {{ form.est_civil }}
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label for="{{ form.codigo_postal.id_for_label }}" class="form-label">Código Postal</label>
-                        {{ form.codigo_postal }}
+                    <div class="col-md-4">
+                        <label class="form-label">Fecha de Nacimiento</label>
+                        {{ form.fecha_nacimiento }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Formación Académica</label>
+                        {{ form.form_academica }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Horario Laboral</label>
+                        {{ form.horario }}
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.telefono.id_for_label }}" class="form-label">Teléfono</label>
+            </div>
+
+            <!-- SECCIÓN 4: TRAYECTORIA -->
+            <div class="section-container bg-light bg-opacity-25">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <h4>Fechas de Control</h4>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Fecha de Ingreso</label>
+                        {{ form.fecha_ingreso }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Fecha de Promoción</label>
+                        {{ form.fecha_promocion }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 5: CONTACTO -->
+            <div class="section-container">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-map-marker-alt"></i></div>
+                    <h4>Contacto y Localización</h4>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Domicilio Particular</label>
+                        {{ form.domicilio_part }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Población</label>
+                        {{ form.poblacion }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Código Postal</label>
+                        {{ form.codigo_postal }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Teléfono</label>
                         {{ form.telefono }}
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                    <div class="col-md-6">
+                        <label class="form-label">Correo Electrónico</label>
                         {{ form.email }}
                     </div>
                 </div>
+            </div>
 
-                <!-- Status, Observaciones, Usuario Asociado -->
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+            <!-- SECCIÓN 6: ESTADO -->
+            <div class="section-container bg-light bg-opacity-25">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-toggle-on"></i></div>
+                    <h4>Observaciones y Estado</h4>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Status Actual</label>
                         {{ form.status }}
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.observaciones.id_for_label }}" class="form-label">Observaciones</label>
+                    <div class="col-md-8">
+                        <label class="form-label">Observaciones Generales</label>
                         {{ form.observaciones }}
                     </div>
-                </div>
-                {% if form.user %}
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.user.id_for_label }}" class="form-label">Usuario Asociado</label>
+                    {% if form.user %}
+                    <div class="col-md-6">
+                        <label class="form-label">Usuario de Acceso Ligado</label>
                         {{ form.user }}
                     </div>
-                </div>
-                {% endif %}
-
-                <button type="submit" class="btn btn-primary">Guardar</button>
-            </form>
-        </div>
-    </div>
-
-    {% if maestro %}
-    <div class="card mt-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="mb-0">Documentos del Expediente</h5>
-        </div>
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data" class="mb-4">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ doc_form.tipo_documento.id_for_label }}" class="form-label">Tipo de Documento</label>
-                        {{ doc_form.tipo_documento }}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ doc_form.archivo.id_for_label }}" class="form-label">Archivo (PDF)</label>
-                        {{ doc_form.archivo }}
-                    </div>
-                </div>
-                <button type="submit" name="submit_documento" class="btn btn-success">Subir Documento</button>
-            </form>
-
-            {% if documentos %}
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Tipo de Documento</th>
-                                    <th>Archivo</th>
-                                    <th>Fecha de Subida</th>
-                                    <th>Subido por</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for documento in documentos %}
-                                <tr>
-                                    <td>{{ documento.get_tipo_documento_display }}</td>
-                                    <td><a href="{{ documento.archivo.url }}" target="_blank">{{ documento.get_file_name }}</a></td>
-                                    <td>{{ documento.fecha_subida|date:"d/m/Y H:i" }}</td>
-                                    <td>{{ documento.subido_por.username }}</td>
-                                    <td>
-                                        <form action="{% url 'eliminar_documento_expediente' documento.pk %}" method="post" style="display:inline;">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Estás seguro de que deseas eliminar este documento?');">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p>No hay documentos en el expediente.</p>
                     {% endif %}
                 </div>
             </div>
+
+            <div class="section-container text-center py-4 border-top">
+                <button type="submit" class="btn-save-personal">
+                    <i class="fas fa-save me-2"></i> Guardar Cambios en Ficha
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- SECCIÓN DOCUMENTOS -->
+    {% if maestro %}
+    <div class="form-card mt-4">
+        <div class="section-container bg-info bg-opacity-10">
+            <div class="section-title border-info border-opacity-25">
+                <div class="section-icon bg-white text-info shadow-sm"><i class="fas fa-folder-open"></i></div>
+                <h4 class="text-info">Expediente Digitalizado</h4>
+            </div>
+            
+            <form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded-4 shadow-sm border mb-4">
+                {% csrf_token %}
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label">Tipo de Documento</label>
+                        {{ doc_form.tipo_documento }}
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Archivo PDF</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-file-pdf text-danger"></i></span>
+                            {{ doc_form.archivo }}
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" name="submit_documento" class="btn btn-info text-white w-100 rounded-pill fw-bold btn-hover-animate">
+                            <i class="fas fa-upload me-1"></i> Subir
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            {% if documentos %}
+            <div class="table-responsive bg-white rounded-4 border shadow-sm">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4 py-3 border-0">Tipo de Documento</th>
+                            <th class="py-3 border-0">Nombre del Archivo</th>
+                            <th class="py-3 border-0">Fecha / Usuario</th>
+                            <th class="text-end pe-4 py-3 border-0">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for documento in documentos %}
+                        <tr class="doc-item">
+                            <td class="ps-4">
+                                <span class="badge bg-soft-info text-info rounded-pill px-3">{{ documento.get_tipo_documento_display }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ documento.archivo.url }}" target="_blank" class="text-decoration-none fw-bold text-dark">
+                                    <i class="fas fa-file-pdf text-danger me-2"></i>{{ documento.get_file_name }}
+                                </a>
+                            </td>
+                            <td>
+                                <div class="small fw-bold">{{ documento.fecha_subida|date:"d/m/Y H:i" }}</div>
+                                <div class="text-muted smaller"><i class="fas fa-user-circle me-1"></i>{{ documento.subido_por.username }}</div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <form action="{% url 'eliminar_documento_expediente' documento.pk %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2" onclick="return confirm('¿Estás seguro de que deseas eliminar este documento?');">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 bg-white rounded-4 border border-dashed">
+                <div class="text-muted mb-2"><i class="fas fa-cloud-upload-alt fa-3x opacity-25"></i></div>
+                <p class="text-muted mb-0 fw-bold">No hay documentos cargados en el expediente digital.</p>
+                <small class="text-muted">Utiliza el formulario superior para añadir el primer archivo.</small>
+            </div>
             {% endif %}
         </div>
-        {% endblock %}
-        
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            width: '100%',
+            placeholder: "Seleccione una opción",
+            allowClear: true
+        });
+    });
+</script>
+{% endblock %}

@@ -3,245 +3,359 @@
 
 {% block title %}{{ titulo }}{% endblock %}
 
-{% block extra_css %}
-<!-- DataTables CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-<style>
-    .role-card {
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .role-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .badge-count {
-        font-size: 1.2em;
-        padding: 0.5em 0.8em;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container-fluid mt-4">
+<style>
+    :root {
+        --rl-primary: #2563eb;
+        --rl-secondary: #475569;
+        --rl-success: #10b981;
+        --rl-warning: #f59e0b;
+        --rl-danger: #ef4444;
+        --rl-light: #f8fafc;
+        --rl-border: #e2e8f0;
+        --rl-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .page-container {
+        padding: 1.5rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header Styling */
+    .header-section {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--rl-shadow);
+        border: 1px solid var(--rl-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Stat Cards Overlay */
+    .stat-card-modern {
+        background: white;
+        border: 1px solid var(--rl-border);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s;
+        box-shadow: var(--rl-shadow);
+        height: 100%;
+    }
+
+    .stat-card-modern:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-card-modern .icon-bg {
+        position: absolute;
+        right: -10px;
+        bottom: -10px;
+        font-size: 4rem;
+        opacity: 0.05;
+        color: var(--rl-primary);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        margin: 0;
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Role Cards */
+    .role-grid-card {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid var(--rl-border);
+        box-shadow: var(--rl-shadow);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .role-grid-card:hover {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        border-color: var(--rl-primary);
+    }
+
+    .role-card-header {
+        padding: 1.25rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-bottom: 1px solid var(--rl-border);
+        border-radius: 1rem 1rem 0 0;
+    }
+
+    .role-card-body {
+        padding: 1.25rem;
+        flex-grow: 1;
+    }
+
+    .role-card-footer {
+        padding: 1rem;
+        background: #fdfdfd;
+        border-top: 1px solid var(--rl-border);
+        border-radius: 0 0 1rem 1rem;
+    }
+
+    .badge-soft {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .badge-soft-primary { background: #eff6ff; color: #1d4ed8; }
+    .badge-soft-success { background: #ecfdf5; color: #059669; }
+    .badge-soft-info { background: #f0f9ff; color: #0369a1; }
+
+    /* Table Styling */
+    .table-card {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid var(--rl-border);
+        box-shadow: var(--rl-shadow);
+        overflow: hidden;
+    }
+
+    .table thead th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        border-bottom: 2px solid var(--rl-border);
+        padding: 1rem;
+    }
+
+</style>
+
+<div class="page-container">
     <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="fas fa-user-shield"></i> {{ titulo }}</h2>
-                <a href="{% url 'role_create' %}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Crear Nuevo Rol
-                </a>
+    <div class="header-section">
+        <div>
+            <h1 class="h3 mb-1"><i class="fas fa-shield-alt text-primary me-2"></i> {{ titulo }}</h1>
+            <p class="text-muted small mb-0">Gestión centralizada de roles, permisos y accesos del sistema.</p>
+        </div>
+        <a href="{% url 'role_create' %}" class="btn btn-primary rounded-pill px-4 shadow-sm btn-hover-animate">
+            <i class="fas fa-plus-circle me-1"></i> Crear Nuevo Rol
+        </a>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="stat-card-modern">
+                <div class="icon-bg"><i class="fas fa-users-cog"></i></div>
+                <label class="stat-label">Total Roles</label>
+                <p class="stat-value text-primary">{{ roles|length }}</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card-modern">
+                <div class="icon-bg"><i class="fas fa-users"></i></div>
+                <label class="stat-label">Total Usuarios</label>
+                <p class="stat-value">{{ users|length }}</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card-modern">
+                <div class="icon-bg"><i class="fas fa-user-check"></i></div>
+                <label class="stat-label">Con Roles</label>
+                <p class="stat-value text-success">{{ users_with_roles }}</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card-modern">
+                <div class="icon-bg"><i class="fas fa-user-times"></i></div>
+                <label class="stat-label">Sin Roles</label>
+                <p class="stat-value text-warning">{{ users_without_roles }}</p>
             </div>
         </div>
     </div>
 
-    <!-- Estadísticas Rápidas -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-white bg-primary">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-title mb-0">Total Roles</h6>
-                            <h2 class="mb-0">{{ roles|length }}</h2>
-                        </div>
-                        <i class="fas fa-users-cog fa-3x opacity-50"></i>
-                    </div>
-                </div>
+    <!-- Grid de Roles -->
+    <div class="mb-5">
+        <div class="d-flex align-items-center mb-4">
+            <div class="flex-shrink-0 bg-primary text-white p-2 rounded-3 me-3">
+                <i class="fas fa-list-ul"></i>
             </div>
+            <h4 class="mb-0">Roles del Sistema</h4>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-success">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-title mb-0">Total Usuarios</h6>
-                            <h2 class="mb-0">{{ users|length }}</h2>
-                        </div>
-                        <i class="fas fa-users fa-3x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-info">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-title mb-0">Usuarios con Roles</h6>
-                            <h2 class="mb-0">{{ users_with_roles }}</h2>
-                        </div>
-                        <i class="fas fa-user-check fa-3x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-warning">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-title mb-0">Sin Roles</h6>
-                            <h2 class="mb-0">{{ users_without_roles }}</h2>
-                        </div>
-                        <i class="fas fa-user-times fa-3x opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Tarjetas de Roles -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <h4 class="mb-3"><i class="fas fa-list"></i> Roles del Sistema</h4>
-        </div>
-        {% for role in roles %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card role-card h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-shield-alt"></i> {{ role.name }}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <span class="badge bg-info badge-count">
-                            <i class="fas fa-users"></i> {{ role.user_set.count }} miembro{{
-                            role.user_set.count|pluralize }}
-                        </span>
-                        <span class="badge bg-secondary badge-count ms-2">
-                            <i class="fas fa-key"></i> {{ role.permissions.count }} permiso{{
-                            role.permissions.count|pluralize }}
-                        </span>
+        <div class="row g-4">
+            {% for role in roles %}
+            <div class="col-md-6 col-lg-4">
+                <div class="role-grid-card">
+                    <div class="role-card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 font-weight-bold text-dark">{{ role.name }}</h5>
+                        <i class="fas fa-shield-virus text-primary opacity-50"></i>
                     </div>
+                    <div class="role-card-body">
+                        <div class="d-flex gap-2 mb-4">
+                            <div class="badge-soft badge-soft-info">
+                                <i class="fas fa-user-friends"></i> {{ role.user_set.count }} miembro{{ role.user_set.count|pluralize:"s" }}
+                            </div>
+                            <div class="badge-soft badge-soft-primary">
+                                <i class="fas fa-key"></i> {{ role.permissions.count }} permiso{{ role.permissions.count|pluralize:"s" }}
+                            </div>
+                        </div>
 
-                    {% if role.user_set.all %}
-                    <div class="mb-2">
-                        <strong>Miembros:</strong>
-                        <div class="mt-2">
-                            {% for user in role.user_set.all|slice:":5" %}
-                            <span class="badge bg-light text-dark me-1 mb-1">{{ user.username }}</span>
-                            {% endfor %}
-                            {% if role.user_set.count > 5 %}
-                            <span class="badge bg-light text-dark">+{{ role.user_set.count|add:"-5" }} más</span>
+                        <div class="members-preview">
+                            <label class="x-small fw-bold text-muted text-uppercase mb-2 d-block" style="font-size: 0.65rem;">Miembros Principales:</label>
+                            {% if role.user_set.all %}
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for user in role.user_set.all|slice:":5" %}
+                                    <span class="badge bg-light text-dark border p-2" style="font-size: 0.7rem;">{{ user.username }}</span>
+                                    {% endfor %}
+                                    {% if role.user_set.count > 5 %}
+                                    <span class="badge bg-white text-primary border border-primary p-2" style="font-size: 0.7rem;">+{{ role.user_set.count|add:"-5" }} más</span>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <span class="text-muted small italic"><i class="fas fa-info-circle me-1"></i> Sin miembros asignados</span>
                             {% endif %}
                         </div>
                     </div>
-                    {% else %}
-                    <p class="text-muted mb-2"><i class="fas fa-info-circle"></i> Sin miembros asignados</p>
-                    {% endif %}
-                </div>
-                <div class="card-footer bg-light">
-                    <div class="btn-group w-100" role="group">
-                        <a href="{% url 'role_update' role.pk %}" class="btn btn-sm btn-primary"
-                            title="Editar Permisos">
-                            <i class="fas fa-edit"></i> Permisos
-                        </a>
-                        <a href="{% url 'role_members' role.pk %}" class="btn btn-sm btn-info"
-                            title="Gestionar Miembros">
-                            <i class="fas fa-users"></i> Miembros
-                        </a>
-                        {% if role.name != 'Directores' and role.name != 'Administrador' %}
-                        <a href="{% url 'role_delete' role.pk %}" class="btn btn-sm btn-danger" title="Eliminar Rol"
-                            onclick="return confirm('¿Estás seguro de eliminar este rol?')">
-                            <i class="fas fa-trash"></i>
-                        </a>
-                        {% endif %}
+                    <div class="role-card-footer">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <a href="{% url 'role_update' role.pk %}" class="btn btn-sm btn-outline-primary w-100 rounded-pill btn-hover-animate">
+                                    <i class="fas fa-lock-open me-1"></i> Permisos
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{% url 'role_members' role.pk %}" class="btn btn-sm btn-info text-white w-100 rounded-pill btn-hover-animate">
+                                    <i class="fas fa-users me-1"></i> Miembros
+                                </a>
+                            </div>
+                            {% if role.name != 'Directores' and role.name != 'Administrador' %}
+                            <div class="col-12">
+                                <a href="{% url 'role_delete' role.pk %}" class="btn btn-sm btn-link text-danger w-100 text-decoration-none" 
+                                   onclick="return confirm('¿Estás seguro de eliminar este rol?')">
+                                    <i class="fas fa-trash-alt me-1"></i> Eliminar Rol
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        {% empty %}
-        <div class="col-md-12">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> No hay roles definidos. Crea uno para comenzar.
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-light border border-dashed text-center py-5">
+                    <i class="fas fa-box-open fa-3x mb-3 text-muted opacity-25"></i>
+                    <p class="text-muted">No se han definido roles todavía.</p>
+                </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
 
-    <!-- Tabla de Resumen de Usuarios -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-table"></i> Resumen de Permisos por Usuario</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped" id="userRolesTable">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th><i class="fas fa-user"></i> Usuario</th>
-                                    <th><i class="fas fa-envelope"></i> Email</th>
-                                    <th><i class="fas fa-shield-alt"></i> Roles Asignados</th>
-                                    <th><i class="fas fa-cog"></i> Estado</th>
-                                    <th><i class="fas fa-tools"></i> Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user in users %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ user.username }}</strong>
+    <!-- Tabla Resumen -->
+    <div class="table-card">
+        <div class="card-header bg-white p-4 border-bottom d-flex align-items-center">
+            <div class="bg-dark text-white p-2 rounded-3 me-3">
+                <i class="fas fa-table"></i>
+            </div>
+            <h4 class="mb-0">Resumen de Permisos por Usuario</h4>
+        </div>
+        <div class="p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="userRolesTable">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Email</th>
+                            <th>Roles Asignados</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm bg-light rounded-circle p-2 me-2 text-center" style="width: 35px; height: 35px; line-height: 18px;">
+                                        {{ user.username|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ user.username }}</div>
                                         {% if user.is_superuser %}
-                                        <span class="badge bg-danger ms-2">Superusuario</span>
+                                        <span class="badge bg-danger x-small" style="font-size: 0.6rem;">SUPERUSUARIO</span>
                                         {% elif user.is_staff %}
-                                        <span class="badge bg-warning ms-2">Staff</span>
+                                        <span class="badge bg-warning text-dark x-small" style="font-size: 0.6rem;">STAFF</span>
                                         {% endif %}
-                                    </td>
-                                    <td>{{ user.email|default:"-" }}</td>
-                                    <td>
-                                        {% for group in user.groups.all %}
-                                        <span class="badge bg-primary me-1">{{ group.name }}</span>
-                                        {% empty %}
-                                        <span class="text-muted"><i>Sin roles</i></span>
-                                        {% endfor %}
-                                    </td>
-                                    <td>
-                                        {% if user.is_active %}
-                                        <span class="badge bg-success">Activo</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">Inactivo</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'user_update' user.pk %}" class="btn btn-sm btn-outline-primary"
-                                            title="Editar Usuario">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                    </td>
-                                </tr>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-muted small">{{ user.email|default:"-" }}</td>
+                            <td>
+                                {% for group in user.groups.all %}
+                                <span class="badge-soft badge-soft-primary me-1 mb-1">{{ group.name }}</span>
+                                {% empty %}
+                                <span class="text-muted small">Sin roles</span>
                                 {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                <span class="badge-soft badge-soft-success">Activo</span>
+                                {% else %}
+                                <span class="badge bg-light text-muted border">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'user_update' user.pk %}" class="btn btn-sm btn-light border" title="Editar Perfil">
+                                    <i class="fas fa-user-edit text-primary"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<!-- DataTables JS -->
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
     $(document).ready(function () {
+        if ($.fn.DataTable.isDataTable('#userRolesTable')) {
+            $('#userRolesTable').DataTable().destroy();
+        }
+        
         $('#userRolesTable').DataTable({
             "language": {
-                "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+                ...window.SpanishDataTable,
+                "search": "_INPUT_",
+                "searchPlaceholder": "Buscar usuario..."
             },
             "pageLength": 10,
             "order": [[0, 'asc']],
-            "columnDefs": [
-                { "orderable": false, "targets": 4 }
-            ]
+            "responsive": true,
+            "dom": '<"d-flex justify-content-between align-items-center mb-3"lf>rt<"d-flex justify-content-between align-items-center mt-3"ip>'
         });
     });
 </script>

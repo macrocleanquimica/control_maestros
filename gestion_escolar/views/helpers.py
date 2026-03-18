@@ -1,7 +1,7 @@
 import os
 import openpyxl
 from docxtpl import DocxTemplate
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from django.conf import settings
 import gspread
 from google.oauth2 import service_account
@@ -198,11 +198,54 @@ def send_to_google_sheet(row_data):
         # print(f"DEBUG GS: ❌ {error_msg}") # Comentado para producción
         return False, error_msg
 
+def calculate_time_difference(date1, date2):
+    """
+    Calcula la diferencia entre dos fechas y la formatea como "X años Y meses Z dias".
+    Las fechas deben ser objetos datetime.date.
+    """
+    if not isinstance(date1, date) or not isinstance(date2, date):
+        return ""
+
+    if date1 > date2:
+        date1, date2 = date2, date1 # Asegurarse de que date1 sea la fecha menor
+
+    years = date2.year - date1.year
+    months = date2.month - date1.month
+    days = date2.day - date1.day
+
+    if days < 0:
+        months -= 1
+        # Calcular los días restantes en el mes anterior
+        # Ejemplo: 2023-03-05 - 2023-02-28. days = 5 - 28 = -23.
+        # El mes de febrero tiene 28 días. 28 - 23 = 5 días.
+        # Es decir, la diferencia es de 5 días de marzo.
+        last_day_of_prev_month = date(date2.year, date2.month, 1) - timedelta(days=1)
+        days = last_day_of_prev_month.day + days + 1 # +1 para incluir el día de inicio
+
+    if months < 0:
+        years -= 1
+        months += 12
+
+    result = []
+    if years > 0:
+        result.append(f"{years} año{'s' if years > 1 else ''}")
+    if months > 0:
+        result.append(f"{months} {'meses' if months > 1 else 'mes'}")
+    if days > 0:
+        result.append(f"{days} día{'s' if days > 1 else ''}")
+    
+    if not result:
+        return "0 días"
+
+    return " ".join(result)
+
 def generate_word_document(form_data, plantilla_tramite, user):
     try:
         maestro_titular = form_data.get('maestro_titular')
+        maestro_interino = form_data.get('maestro_interino')
+
         template_name_upper = plantilla_tramite.nombre.upper().strip()
-        ruta_plantilla_final = plantilla_tramite.ruta_archivo
+        template_path = plantilla_tramite.ruta_archivo # Usar la ruta absoluta directamente
         is_desubicado = False
         if maestro_titular and maestro_titular.techo_f and maestro_titular.id_escuela:
             if maestro_titular.techo_f.strip().upper() != maestro_titular.id_escuela.id_escuela.strip().upper():
@@ -212,12 +255,15 @@ def generate_word_document(form_data, plantilla_tramite, user):
             "FILIACION": "FILIACIONDESUBICADO.docx",
         }
         if template_name_upper in plantillas_especiales and is_desubicado:
-            nueva_plantilla = plantillas_especiales[template_name_upper]
-            ruta_plantilla_final = nueva_plantilla
-            print(f"DEBUG: Maestro desubicado detectado para {template_name_upper}. Usando plantilla especial: {ruta_plantilla_final}")
-        template_path = os.path.join(settings.BASE_DIR, 'tramites', 'Plantillas', 'Word', ruta_plantilla_final)
+            nueva_plantilla_nombre = plantillas_especiales[template_name_upper]
+            # Obtiene el directorio de la plantilla actual (ya es una ruta absoluta)
+            directorio_plantilla = os.path.dirname(template_path)
+            # Construye la ruta absoluta a la plantilla especial
+            template_path = os.path.join(directorio_plantilla, nueva_plantilla_nombre)
+            print(f"DEBUG: Maestro desubicado detectado para {template_name_upper}. Usando plantilla especial: {template_path}")
+        
         doc = DocxTemplate(template_path)
-        maestro_interino = form_data.get('maestro_interino')
+        
         motivo_tramite_obj = form_data.get('motivo_tramite')
         nombre_titular = get_full_name(maestro_titular)
         curp_titular = maestro_titular.curp or '' if maestro_titular else ''
@@ -226,6 +272,10 @@ def generate_word_document(form_data, plantilla_tramite, user):
         presupuestal_titular = maestro_titular.clave_presupuestal or '' if maestro_titular else ''
         techo_financiero_titular = maestro_titular.techo_f or '' if maestro_titular else ''
         funcion_titular = maestro_titular.funcion or '' if maestro_titular else ''
+        codigo_titular = maestro_titular.codigo or '' if maestro_titular else ''
+        
+
+
         nombre_interino = get_full_name(maestro_interino)
         curp_interino = maestro_interino.curp or '' if maestro_interino else ''
         rfc_interino = maestro_interino.rfc or '' if maestro_interino else ''
@@ -260,52 +310,52 @@ def generate_word_document(form_data, plantilla_tramite, user):
         quincena_inicial = form_data.get('quincena_inicial') or ''
         quincena_final = form_data.get('quincena_final') or ''
         motivo_tramite_text = motivo_tramite_obj.motivo_tramite.upper().strip() if motivo_tramite_obj else ''
-        tipo_movimiento_interino = ""
-        if motivo_tramite_text == "LIC. DE GRAVIDEZ":
-            tipo_movimiento_interino = "ALTA INTERINA EN GRAVIDEZ"
-        elif motivo_tramite_text == "LIC. POR PASAR A OTRO EMPLEO":
-            tipo_movimiento_interino = "ALTA INICIAL POR PROMOCIÓN O ADMISIÓN"
-        else:
-            if not fecha_efecto3 or not fecha_efecto4:
-                tipo_movimiento_interino = "FECHAS INSUFICIENTES"
+        tipo_movimiento_interino = form_data.get('tipo_movimiento_interino')
+        if not tipo_movimiento_interino:
+            if motivo_tramite_text == "LIC. DE GRAVIDEZ":
+                tipo_movimiento_interino = "ALTA INTERINA EN GRAVIDEZ"
             else:
-                diferencia_meses = get_month_diff(fecha_efecto3, fecha_efecto4)
-                if motivo_tramite_text in ["LIC. PREPENSIONARIA", "PREJUBILATORIO"]:
-                    if diferencia_meses < 6:
-                        tipo_movimiento_interino = "ALTA EN PENSION"
-                    else:
-                        tipo_movimiento_interino = "ALTA PROVISIONAL"
-                elif motivo_tramite_text in ["BECA COMISIÓN", "PRORROGA DE BECA COMISION", "PRÓRROGA DE BECA COMISIÓN"]:
-                    if diferencia_meses < 6:
-                        tipo_movimiento_interino = "SUSTITUTO BECARIO"
-                    else:
-                        tipo_movimiento_interino = "ALTA PROVISIONAL"
-                elif motivo_tramite_text in ["BAJA POR DEFUNCIÓN", "LIC. POR ASUNTOS PARTICULARES", "LIC. POR COM. SINDICAL", "PRORROGA DE LIC. POR COM. SINDICAL"]:
-                    if diferencia_meses < 6:
-                        tipo_movimiento_interino = "ALTA INTERINA LIMITADA"
-                    else:
-                        tipo_movimiento_interino = "ALTA PROVISIONAL"
-                elif motivo_tramite_text == "JUBILACIÓN":
-                    if diferencia_meses < 6:
-                        tipo_movimiento_interino = "ALTA INTERINA LIMITADA EN VACANTE DEFINITIVA"
-                    else:
-                        tipo_movimiento_interino = "ALTA PROVISIONAL EN VACante DEFINITIVA"
+                if not fecha_efecto3 or not fecha_efecto4:
+                    tipo_movimiento_interino = "FECHAS INSUFICIENTES"
                 else:
-                    tipo_movimiento_interino = "NO PROCEDENTE"
+                    diferencia_meses = get_month_diff(fecha_efecto3, fecha_efecto4)
+                    if motivo_tramite_text in ["LIC. PREPENSIONARIA", "PREJUBILATORIO"]:
+                        if diferencia_meses < 6:
+                            tipo_movimiento_interino = "ALTA EN PENSION"
+                        else:
+                            tipo_movimiento_interino = "ALTA PROVISIONAL"
+                    elif motivo_tramite_text in ["BECA COMISIÓN", "PRORROGA DE BECA COMISION", "PRÓRROGA DE BECA COMISIÓN"]:
+                        if diferencia_meses < 6:
+                            tipo_movimiento_interino = "SUSTITUTO BECARIO"
+                        else:
+                            tipo_movimiento_interino = "ALTA PROVISIONAL"
+                    elif motivo_tramite_text in ["BAJA POR DEFUNCIÓN", "LIC. POR ASUNTOS PARTICULARES", "LIC. POR COM. SINDICAL", "PRORROGA DE LIC. POR COM. SINDICAL", "LIC. POR PASAR A OTRO EMPLEO"]:
+                        if diferencia_meses < 6:
+                            tipo_movimiento_interino = "ALTA INTERINA LIMITADA"
+                        else:
+                            tipo_movimiento_interino = "ALTA PROVISIONAL"
+                    elif motivo_tramite_text == "JUBILACIÓN":
+                        if diferencia_meses < 6:
+                            tipo_movimiento_interino = "ALTA INTERINA LIMITADA EN VACANTE DEFINITIVA"
+                        else:
+                            tipo_movimiento_interino = "ALTA PROVISIONAL EN VACante DEFINITIVA"
+                    else:
+                        tipo_movimiento_interino = "NO PROCEDENTE"
         today = datetime.now()
         meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
         f_hoy = f"{today.day} de {meses[today.month - 1]} del {today.year}"
         f_hoy_letras = convertir_fecha_a_letras(today)
-        escuela_adscripcion = None
-        if maestro_titular:
-            escuela_adscripcion = maestro_titular.id_escuela
+
+        fecha_del_calculo_obj = form_data.get('fecha_del_calculo')
+        f_calculo = fecha_del_calculo_obj.strftime("%d-%m-%Y") if fecha_del_calculo_obj else ''
+
+        # --- Obtener información de la escuela de adscripción ---
+        escuela_adscripcion = maestro_titular.id_escuela if maestro_titular else None
         escuela_adscripcion_info = get_school_info(escuela_adscripcion)
-        if escuela_adscripcion:
-            director_adscripcion_info = get_director_info(escuela_adscripcion)
-            supervisor_adscripcion_info = get_supervisor_info(escuela_adscripcion.zona_esc)
-        else:
-            director_adscripcion_info = {'nombre': 'DIRECTOR NO ENCONTRADO', 'nivel': ''}
-            supervisor_adscripcion_info = {'nombre': 'SUPERVISOR NO ENCONTRADO', 'nivel': ''}
+        director_adscripcion_info = get_director_info(escuela_adscripcion) if escuela_adscripcion else {'nombre': 'DIRECTOR NO ENCONTRADO', 'nivel': ''}
+        supervisor_adscripcion_info = get_supervisor_info(escuela_adscripcion.zona_esc) if escuela_adscripcion else {'nombre': 'SUPERVISOR NO ENCONTRADO', 'nivel': ''}
+
+        # --- Obtener información de la escuela de pago (Techo Financiero) ---
         escuela_pago = None
         if maestro_titular and maestro_titular.techo_f:
             try:
@@ -313,12 +363,17 @@ def generate_word_document(form_data, plantilla_tramite, user):
             except Escuela.DoesNotExist:
                 escuela_pago = None
         escuela_pago_info = get_school_info(escuela_pago)
-        if escuela_pago:
-            director_pago_info = get_director_info(escuela_pago)
-            supervisor_pago_info = get_supervisor_info(escuela_pago.zona_esc)
-        else:
-            director_pago_info = {'nombre': 'DIRECTOR (PAGO) NO ENCONTRADO', 'nivel': ''}
-            supervisor_pago_info = {'nombre': 'SUPERVISOR (PAGO) NO ENCONTRADO', 'nivel': ''}
+        director_pago_info = get_director_info(escuela_pago) if escuela_pago else {'nombre': 'DIRECTOR (PAGO) NO ENCONTRADO', 'nivel': ''}
+        supervisor_pago_info = get_supervisor_info(escuela_pago.zona_esc) if escuela_pago else {'nombre': 'SUPERVISOR (PAGO) NO ENCONTRADO', 'nivel': ''}
+
+        # --- Lógica para maestros desubicados ---
+        # Se determina si el maestro es desubicado para potencialmente usar plantillas especiales,
+        # pero ya no se sobrescriben las variables principales del contexto.
+        if maestro_titular and maestro_titular.techo_f:
+            if not maestro_titular.id_escuela or (maestro_titular.id_escuela and maestro_titular.techo_f.strip().upper() != maestro_titular.id_escuela.id_escuela.strip().upper()):
+                is_desubicado = True
+
+        # --- Preparación del contexto para la plantilla ---
         quincena_inicial = form_data.get('quincena_inicial') or ''
         quincena_final = form_data.get('quincena_final') or ''
         i_dia = f"{fecha_efecto3.day:02d}" if fecha_efecto3 else ''
@@ -331,6 +386,7 @@ def generate_word_document(form_data, plantilla_tramite, user):
         folio_prel = form_data.get('folio_prel_display') or ''
         tipo_val = form_data.get('tipo_val_display') or ''
         quienlohizo = get_user_initials(user)
+
         context = {
             'quienlohizo': quienlohizo,
             'Nombre_Titular': nombre_titular,
@@ -339,7 +395,20 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'Categoria_Titular': categoria_titular,
             'Presupuestal_Titular': presupuestal_titular,
             'Techo_Financiero': techo_financiero_titular,
-            'Funcion_Titular': funcion_titular,
+            'FUNCION_TITULAR': funcion_titular,       
+            'Codigo_Titular': str(codigo_titular),
+            'CODIGO_TITULAR': str(codigo_titular),
+            'Codigo': str(codigo_titular),
+            'Situacion_Titular': "BASE" if str(codigo_titular) == '10' else "INTERINO",
+            'Desc_Codigo_Titular': {
+                '10': 'BASE',
+                '95': 'INTERINO LIMITADO',
+                '96': 'INTERINO POR VACANTE DEFINITIVA',
+                '09': 'PROVISIONAL',
+                '20': 'HONORARIOS',
+            }.get(str(codigo_titular), "OTRO"),
+
+            # --- Variables del CT de Adscripción (donde labora) ---
             'Clave_CT': escuela_adscripcion_info['id_escuela'],
             'Nombre_CT': escuela_adscripcion_info['nombre_ct'],
             'Turno': escuela_adscripcion_info['turno'],
@@ -350,12 +419,26 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'U_D': escuela_adscripcion_info['u_d'],
             'Sostenimiento': escuela_adscripcion_info['sostenimiento'],
             'Nom_CTCompleto': escuela_adscripcion_info['nombre_ct'],
+            'Supervisor': supervisor_adscripcion_info['nombre'],
+            'P_Sup': supervisor_adscripcion_info['nivel'],
+            'Director': director_adscripcion_info['nombre'],
+            'P_Dir': director_adscripcion_info['nivel'],
+            'Municipio': escuela_adscripcion_info['region'],
+            'Region': escuela_adscripcion_info['region'],
+
+            # --- Variables explícitas del Techo Financiero (donde se paga) ---
             'Clave_CT_Techo_F': escuela_pago_info['id_escuela'],
             'Nombre_CT_Techo_F': escuela_pago_info['nombre_ct'],
             'Turno_Techo_F': escuela_pago_info['turno'],
             'Domicilio_CT_Techo_F': escuela_pago_info['domicilio'],
             'Poblacion_Techo_F': escuela_pago_info['region'],
             'Nom_CT_Techo_F_Completo': escuela_pago_info['nombre_ct'],
+            'Supervisor_Techo_F': supervisor_pago_info['nombre'],
+            'P_Sup_Techo_F': supervisor_pago_info['nivel'],
+            'Director_Techo_F': director_pago_info['nombre'],
+            'P_Dir_Techo_F': director_pago_info['nivel'],
+            
+            # --- Resto del contexto ---
             'T_Movimiento': motivo_movimiento,
             'Efecto_1': fecha_efecto1.strftime("%d/%m/%Y") if fecha_efecto1 else '',
             'Efecto_2': fecha_efecto2.strftime("%d/%m/%Y") if fecha_efecto2 else '',
@@ -363,6 +446,7 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'Efecto_4': format_date_for_solicitud_asignacion(fecha_efecto4) if plantilla_tramite.nombre == "SOLICITUD DE ASIGNACION" else (fecha_efecto4.strftime("%d/%m/%Y") if fecha_efecto4 else ''),
             'F_Hoy': f_hoy,
             'F_OfPres': folio,
+            'F_Calculo': f_calculo, # Added F_Calculo here
             'COMENTARIOS': observaciones,
             'Nombre_Interino': nombre_interino,
             'CURP_Interino': curp_interino,
@@ -382,14 +466,6 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'No_Prel': no_prel,
             'Folio_Prel': folio_prel,
             'Tipo_Val': tipo_val,
-            'Supervisor': supervisor_adscripcion_info['nombre'],
-            'P_Sup': supervisor_adscripcion_info['nivel'],
-            'Director': director_adscripcion_info['nombre'],
-            'P_Dir': director_adscripcion_info['nivel'],
-            'Supervisor_Techo_F': supervisor_pago_info['nombre'],
-            'P_Sup_Techo_F': supervisor_pago_info['nivel'],
-            'Director_Techo_F': director_pago_info['nombre'],
-            'P_Dir_Techo_F': director_pago_info['nivel'],
             'Resultado_Alta': tipo_movimiento_interino,
             'QuincenaInicial': '',
             'QuincenaFinal': '',
@@ -398,9 +474,6 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'Horas': maestro_titular.hrs.split('.')[0] if (maestro_titular and maestro_titular.hrs and '.' in maestro_titular.hrs) else '',
             'Nivel': 'Educación Especial',
             'Entidad': 'DURANGO',
-            'Municipio': escuela_adscripcion_info['region'],
-            'Region': escuela_adscripcion_info['region'],
-            'ZonaEconomica': escuela_adscripcion_info['zona_economica'],
             'Destino': '',
             'Apreciacion': '',
             'TipoVacante': '',
@@ -419,6 +492,11 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'F_Mes': f_mes,
             'F_Ano': f_ano,
             'F_HoyLetra': f_hoy_letras,
+            'fecha_al_corte': form_data.get('fecha_al_corte', '').strftime("%d/%m/%Y") if form_data.get('fecha_al_corte') else '', # Added new fields to context
+            'antiguedad_funcion': form_data.get('antiguedad_funcion', '') ,
+            'antiguedad_categoria': form_data.get('antiguedad_categoria', '') ,
+            'fecha_adscripcion': form_data.get('fecha_adscripcion', '').strftime("%d/%m/%Y") if form_data.get('fecha_adscripcion') else '',
+            'incentivos': form_data.get('incentivos', '') ,
         }
         doc.render(context)
         output_base_dir = os.path.join(settings.BASE_DIR, 'tramites_generados')
@@ -435,6 +513,7 @@ def generate_word_document(form_data, plantilla_tramite, user):
             "CUADRO_CAMBIOS_CON_FOLIO": "cuadro_cambios",
             "PROPUESTA_DE_MOVIMIENTO": "propuesta_movimiento",
             "OFICIO_DE_REINCORPORACION": "oficio_reincorporacion",
+            "PRESENTACION_LABORAL": "presentacion_laboral",
         }
         subfolder = subfolder_map.get(template_name_clean, "otros_tramites")
         output_dir = os.path.join(output_base_dir, subfolder)

@@ -19,6 +19,7 @@ urlpatterns = [
     path('escuelas/editar/<int:pk>/', views.editar_escuela, name='editar_escuela'),
     path('escuelas/eliminar/<int:pk>/', views.eliminar_escuela, name='eliminar_escuela'),
     path('escuelas/detalle/<int:pk>/', views.detalle_escuela, name='detalle_escuela'),
+    path('escuelas/exportar/excel/', views.exportar_escuelas_excel, name='exportar_escuelas_excel'),
 
     # URLs para Categorias
     path('categorias/', views.lista_categorias, name='lista_categorias'),
@@ -32,6 +33,7 @@ urlpatterns = [
     path('maestros/editar/<str:pk>/', views.editar_maestro, name='editar_maestro'),
     path('maestros/eliminar/<str:pk>/', views.eliminar_maestro, name='eliminar_maestro'),
     path('maestros/detalle/<str:pk>/', views.detalle_maestro, name='detalle_maestro'),
+    path('maestros/agregar-plaza/<str:pk>/', views.agregar_otra_plaza, name='agregar_otra_plaza'),
     path('maestros/detalle/<str:pk>/export/excel/', views.export_maestro_excel, name='export_maestro_excel'),
     path('maestros/exportar/excel/', views.exportar_maestros_excel, name='exportar_maestros_excel'),
     path('maestros/eliminar_documento/<int:doc_pk>/', views.eliminar_documento_expediente, name='eliminar_documento_expediente'),
@@ -56,6 +58,7 @@ urlpatterns = [
 
     # URLs para Reporte de Vacancia
     path('vacancias/gestionar/', views.gestionar_lote_vacancia, name='gestionar_lote_vacancia'),
+    path('vacancias/gestionar/<int:lote_id>/', views.gestionar_lote_vacancia, name='gestionar_lote_vacancia_con_id'),
     path('vacancias/exportar/paso_word/<int:lote_id>/', views.exportar_paso_word, name='exportar_paso_word'),
     path('vacancias/exportar/paso_gsheets/<int:lote_id>/', views.exportar_paso_gsheets, name='exportar_paso_gsheets'),
     path('vacancias/exportar/paso_excel/<int:lote_id>/', views.exportar_paso_excel, name='exportar_paso_excel'),
@@ -63,6 +66,8 @@ urlpatterns = [
     path('vacancias/get_interino_data_ajax/', views.get_maestro_data_for_vacancia, name='get_interino_data_for_vacancia'),
     path('vacancias/get_interino_and_prelacion_data_ajax/', views.get_interino_and_prelacion_data_ajax, name='get_interino_and_prelacion_data_ajax'),
     path('vacancias/eliminar/<int:pk>/', views.eliminar_vacancia_lote, name='eliminar_vacancia_lote'),
+    path('vacancias/lotes/', views.lista_lotes_vacancia, name='lista_lotes_vacancia'),
+    path('vacancias/lotes/<int:lote_id>/cancelar/', views.cancelar_lote_vacancia, name='cancelar_lote_vacancia'),
     path('tramites/get_prelacion_data/', views.get_prelacion_data_ajax, name='get_prelacion_data_ajax'),
 
     # URLs para Historial
@@ -72,12 +77,16 @@ urlpatterns = [
     path('historial/guardar_observacion/<int:item_id>/', views.guardar_observacion_historial, name='guardar_observacion_historial'),
     path('historial/detalle_lote/<int:historial_id>/', views.historial_detalle_lote, name='historial_detalle_lote'),
     path('historial/detalle_tramite/<int:historial_id>/', views.historial_detalle_tramite, name='historial_detalle_tramite'),
+    path('historial/corregir/<int:item_id>/', views.corregir_tramite, name='corregir_tramite'),
 
     # URLs para Reportes
     path('reportes/', views.reportes_dashboard, name='reportes_dashboard'),
     path('reportes/personal_fuera_adscripcion/', views.reporte_personal_fuera_adscripcion, name='reporte_personal_fuera_adscripcion'),
     path('reportes/distribucion_funcion/', views.reporte_distribucion_funcion, name='reporte_distribucion_funcion'),
     path('reportes/personal_fuera_adscripcion/export/excel/', views.export_personal_fuera_adscripcion_excel, name='export_personal_fuera_adscripcion_excel'),
+    path('reportes/exportar/horizontal/', views.exportar_maestros_personalizado_excel, name='exportar_maestros_personalizado_excel'),
+    path('reportes/reporteador/', views.reporteador_datos, name='reporteador_datos'),
+    path('reportes/reporteador/exportar/', views.exportar_datos_dinamicos_excel, name='exportar_datos_dinamicos_excel'),
 
     # URLs para Pendientes y Correspondencia
     path('pendientes/', views.PendienteActiveListView.as_view(), name='pendientes_activos'),
@@ -139,6 +148,8 @@ urlpatterns = [
     path('fup/', views.lista_fup, name='lista_fup'),
     path('fup/ajax/', views.fup_datatable_ajax, name='fup_datatable_ajax'),
     path('fup/exportar/excel/', views.exportar_fup_excel, name='exportar_fup_excel'),
+    path('fup/reporte-zona/', views.reporte_fups_opciones, name='reporte_fups_opciones'),
+    path('fup/reporte-zona/exportar/', views.exportar_fups_zona_excel, name='exportar_fups_zona_excel'),
     path('fup/crear/', views.crear_fup, name='crear_fup'),
     path('fup/editar/<int:pk>/', views.editar_fup, name='editar_fup'),
     path('fup/eliminar/<int:pk>/', views.eliminar_fup, name='eliminar_fup'),
@@ -149,4 +160,9 @@ urlpatterns = [
     path('kardex/ajax/', views.kardex_maestros_ajax, name='kardex_maestros_ajax'),
     path('kardex/', views.kardex_maestro_list, name='kardex_list'),
     path('kardex/maestro/<str:maestro_id>/', views.kardex_maestro_detail, name='kardex_maestro_detail'),
+
+    # URLs para Prelación
+    path('prelacion/', views.lista_prelacion, name='lista_prelacion'),
+    path('prelacion/ajax/', views.lista_prelacion_ajax, name='lista_prelacion_ajax'),
+    path('prelacion/importar/', views.importar_prelacion_excel, name='importar_prelacion_excel'),
 ]

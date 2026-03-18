@@ -1,151 +1,325 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-10 mx-auto">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{{ titulo }}</h4>
-                </div>
-                <div class="card-body">
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.id_escuela.id_for_label }}" class="form-label">CCT:</label>
-                                    {{ form.id_escuela }}
-                                    <small class="form-text text-muted">Formato: 10DML0013Q (2 dígitos + 3 letras + 4 dígitos + 1 letra)</small>
-                                    {% if form.id_escuela.errors %}
-                                        <div class="text-danger">{{ form.id_escuela.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.nombre_ct.id_for_label }}" class="form-label">Nombre:</label>
-                                    {{ form.nombre_ct }}
-                                    {% if form.nombre_ct.errors %}
-                                        <div class="text-danger">{{ form.nombre_ct.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
+<style>
+    :root {
+        --fe-primary: #0ea5e9;
+        --fe-secondary: #64748b;
+        --fe-border: #e2e8f0;
+        --fe-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid var(--fe-border);
+        box-shadow: var(--fe-shadow);
+        overflow: hidden;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        padding: 2.5rem;
+        border-bottom: 1px solid var(--fe-border);
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .header-icon {
+        width: 64px;
+        height: 64px;
+        background: white;
+        color: var(--fe-primary);
+        border-radius: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-header h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .form-body {
+        padding: 2.5rem;
+    }
+
+    .form-section {
+        margin-bottom: 3rem;
+    }
+
+    .section-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--fe-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    /* Form Styles */
+    .form-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 0.75rem;
+        border: 1px solid var(--fe-border);
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        color: #1e293b;
+        transition: all 0.2s;
+        background-color: #f8fafc;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--fe-primary);
+        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        background-color: white;
+    }
+
+    /* Alert Styling */
+    .alert-premium {
+        border-radius: 1rem;
+        border: none;
+        padding: 1rem 1.25rem;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .btn-save {
+        background: var(--fe-primary);
+        border: none;
+        border-radius: 0.75rem;
+        padding: 0.85rem 2.5rem;
+        font-weight: 700;
+        color: white;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .btn-save:hover {
+        background: #0284c7;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.4);
+    }
+
+    .btn-cancel {
+        background: white;
+        border: 1px solid var(--fe-border);
+        border-radius: 0.75rem;
+        padding: 0.85rem 2rem;
+        font-weight: 700;
+        color: #64748b;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel:hover {
+        background: #f8fafc;
+        color: #1e293b;
+    }
+</style>
+
+<div class="page-container">
+    <div class="form-card">
+        <div class="form-header">
+            <div class="header-icon">
+                <i class="fas {% if 'Editar' in titulo %}fa-edit{% else %}fa-school{% endif %}"></i>
+            </div>
+            <div>
+                <h1>{{ titulo }}</h1>
+                <p class="text-muted small mb-0 mt-1">Gestión administrativa de centros de trabajo.</p>
+            </div>
+        </div>
+
+        <div class="form-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-premium fade show shadow-sm" role="alert">
+                        <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                        <div>{{ message }}</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" class="needs-validation">
+                {% csrf_token %}
+                
+                <!-- Sección 1: Identificación -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-fingerprint"></i> Identificación del C.T.
+                    </div>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label for="{{ form.id_esc_maestro.id_for_label }}" class="form-label">Clave (CCT)</label>
+                            {{ form.id_escuela }}
+                            {% if form.id_escuela.errors %}
+                                <div class="invalid-feedback d-block mt-1 ps-2">{% for error in form.id_escuela.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                            <div class="form-text small opacity-75 mt-2">Ej: 10DML0013Q</div>
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="{{ form.zona_esc.id_for_label }}" class="form-label">Zona:</label>
-                                    {{ form.zona_esc }}
-                                    {% if form.zona_esc.errors %}
-                                        <div class="text-danger">{{ form.zona_esc.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="{{ form.turno.id_for_label }}" class="form-label">Turno:</label>
-                                    {{ form.turno }}
-                                    {% if form.turno.errors %}
-                                        <div class="text-danger">{{ form.turno.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="{{ form.zona_economica.id_for_label }}" class="form-label">Zona Económica:</label>
-                                    {{ form.zona_economica }}
-                                    {% if form.zona_economica.errors %}
-                                        <div class="text-danger">{{ form.zona_economica.errors %}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="{{ form.u_d.id_for_label }}" class="form-label">U.D.:</label>
-                                    {{ form.u_d }}
-                                    {% if form.u_d.errors %}
-                                        <div class="text-danger">{{ form.u_d.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="{{ form.sostenimiento.id_for_label }}" class="form-label">Sostenimiento:</label>
-                                    {{ form.sostenimiento }}
-                                    {% if form.sostenimiento.errors %}
-                                        <div class="text-danger">{{ form.sostenimiento.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="{{ form.region.id_for_label }}" class="form-label">Región:</label>
-                                    {{ form.region }}
-                                    {% if form.region.errors %}
-                                        <div class="text-danger">{{ form.region.errors }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.domicilio.id_for_label }}" class="form-label">Domicilio:</label>
-                            {{ form.domicilio }}
-                            {% if form.domicilio.errors %}
-                                <div class="text-danger">{{ form.domicilio.errors }}</div>
+                        <div class="col-md-8">
+                            <label for="{{ form.nombre_ct.id_for_label }}" class="form-label">Nombre Oficial del Centro de Trabajo</label>
+                            {{ form.nombre_ct }}
+                            {% if form.nombre_ct.errors %}
+                                <div class="invalid-feedback d-block mt-1 ps-2">{% for error in form.nombre_ct.errors %}{{ error }}{% endfor %}</div>
                             {% endif %}
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.telefono_ct.id_for_label }}" class="form-label">Teléfono:</label>
+                    </div>
+                </div>
+
+                <!-- Sección 2: Perfil y Clasificación -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-tags"></i> Perfil y Clasificación
+                    </div>
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <label for="{{ form.zona_esc.id_for_label }}" class="form-label">Zona Escolar</label>
+                            {{ form.zona_esc }}
+                            {% if form.zona_esc.errors %}
+                                <div class="invalid-feedback d-block mt-1 ps-2">{% for error in form.zona_esc.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.turno.id_for_label }}" class="form-label">Turno</label>
+                            {{ form.turno }}
+                            {% if form.turno.errors %}
+                                <div class="invalid-feedback d-block mt-1 ps-2">{% for error in form.turno.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.zona_economica.id_for_label }}" class="form-label">Zona Económica</label>
+                            {{ form.zona_economica }}
+                            {% if form.zona_economica.errors %}
+                                <div class="invalid-feedback d-block mt-1 ps-2">{% for error in form.zona_economica.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="{{ form.sostenimiento.id_for_label }}" class="form-label">Sostenimiento</label>
+                            {{ form.sostenimiento }}
+                            {% if form.sostenimiento.errors %}
+                                <div class="invalid-feedback d-block mt-1 ps-2">{% for error in form.sostenimiento.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 3: Ubicación y Datos Técnicos -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="fas fa-map-marked-alt"></i> Ubicación y Datos Técnicos
+                    </div>
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-4">
+                            <label for="{{ form.u_d.id_for_label }}" class="form-label">U.D. (Unidad de Dependencia)</label>
+                            {{ form.u_d }}
+                            {% if form.u_d.errors %}
+                                <div class="invalid-feedback d-block mt-1 ps-2">{% for error in form.u_d.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.region.id_for_label }}" class="form-label">Región</label>
+                            {{ form.region }}
+                            {% if form.region.errors %}
+                                <div class="invalid-feedback d-block mt-1 ps-2">{% for error in form.region.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.telefono_ct.id_for_label }}" class="form-label">Teléfono Oficial</label>
                             {{ form.telefono_ct }}
                             {% if form.telefono_ct.errors %}
-                                <div class="text-danger">{{ form.telefono_ct.errors }}</div>
+                                <div class="invalid-feedback d-block mt-1 ps-2">{% for error in form.telefono_ct.errors %}{{ error }}{% endfor %}</div>
                             {% endif %}
                         </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'lista_escuelas' %}" class="btn btn-secondary me-md-2">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <label for="{{ form.domicilio.id_for_label }}" class="form-label">Domicilio Completo</label>
+                            {{ form.domicilio }}
+                            {% if form.domicilio.errors %}
+                                <div class="invalid-feedback d-block mt-1 ps-2">{% for error in form.domicilio.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
                         </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+
+                <!-- Acciones -->
+                <div class="d-flex justify-content-end gap-3 mt-5 pt-4 border-top">
+                    <a href="{% url 'lista_escuelas' %}" class="btn btn-cancel">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-save">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
-{% endblock %}
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    var form = document.querySelector('form');
-    var inputs = form.querySelectorAll('input[type="text"], textarea');
 
-    inputs.forEach(function(input) {
-        input.style.textTransform = 'uppercase';
-        input.addEventListener('input', function(e) {
-            var start = this.selectionStart;
-            var end = this.selectionEnd;
-            this.value = this.value.toUpperCase();
-            this.setSelectionRange(start, end);
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aplicar clases de Bootstrap a los widgets de Django
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            if (!input.classList.contains('select2-hidden-accessible')) {
+                input.classList.add('form-control');
+            }
+            if (input.tagName === 'SELECT') {
+                input.classList.add('form-select');
+            }
+        });
+
+        // Forzar mayúsculas en campos de texto
+        const textInputs = document.querySelectorAll('input[type="text"], textarea');
+        textInputs.forEach(input => {
+            input.style.textTransform = 'uppercase';
+            input.addEventListener('input', function() {
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                this.value = this.value.toUpperCase();
+                this.setSelectionRange(start, end);
+            });
         });
     });
-});
 </script>
 {% endblock %}

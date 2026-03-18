@@ -1,91 +1,191 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
+{% block title %}Gestión de Zonas Escolares | Control de Maestros{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestión de Zonas Escolares</h2>
-        <a href="{% url 'agregar_zona' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Agregar Zona
-        </a>
-    </div>
+<style>
+    :root {
+        --zn-primary: #2563eb;
+        --zn-border: #e2e8f0;
+        --zn-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .page-container {
+        padding: 1.5rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header Section */
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        background: white;
+        padding: 1.25rem 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid var(--zn-border);
+        box-shadow: var(--zn-shadow);
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Table Container */
+    .table-container-card {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid var(--zn-border);
+        box-shadow: var(--zn-shadow);
+        overflow: hidden;
+    }
+
+    thead th {
+        background: #f8fafc !important;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border-bottom: 2px solid var(--zn-border) !important;
+        padding: 1rem !important;
+    }
+
+    /* Homogenized Action Buttons */
+    .btn-action-custom {
+        transition: all 0.2s;
+    }
     
+    .btn-action-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .zona-number-badge {
+        background: #eff6ff;
+        color: #1d4ed8;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        font-weight: 800;
+        font-size: 1rem;
+        border: 1px solid #dbeafe;
+    }
+
+</style>
+
+<div class="page-container">
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="header-title">
+            <h1 class="mb-0"><i class="fas fa-map-marked-alt text-primary me-2"></i> Gestión de Zonas Escolares</h1>
+            <p class="text-muted small mb-0">Administración de las zonas geográficas y supervisores asignados.</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'agregar_zona' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
+                <i class="fas fa-plus-circle me-1"></i> Agregar Zona
+            </a>
+        </div>
+    </div>
+
     {% if messages %}
+    <div class="mb-4">
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {% endfor %}
+    </div>
     {% endif %}
-    
-    <div class="card">
-        <div class="card-body">
-            {% if zonas %}
+
+    <!-- Table Section -->
+    <div class="table-container-card">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table id="tablaZonas" class="table table-striped table-hover">
+                <table id="tablaZonasPremium" class="table table-hover align-middle mb-0 w-100">
                     <thead>
                         <tr>
-                            <th>Número</th>
-                            <th>Supervisor</th>
-                            <th>Contacto</th>
-                            <th>Email</th>
-                            <th>Acciones</th>
+                            <th style="width: 100px;">Número</th>
+                            <th>Supervisor Asignado</th>
+                            <th>Teléfono / Contacto</th>
+                            <th>Correo Electrónico</th>
+                            <th class="text-center" style="width: 180px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for zona in zonas %}
                         <tr>
-                            <td>{{ zona.numero }}</td>
                             <td>
-                                {% if zona.supervisor %}
-                                    {{ zona.supervisor.nombres }} {{ zona.supervisor.a_paterno }} {{ zona.supervisor.a_materno }}
-                                {% else %}
-                                    <span class="text-muted">Sin Asignar</span>
-                                {% endif %}
+                                <div class="zona-number-badge">{{ zona.numero }}</div>
                             </td>
                             <td>
                                 {% if zona.supervisor %}
-                                    {{ zona.supervisor.telefono|default:"-" }}
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-light rounded-circle p-2 me-2 text-center d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem;">
+                                            {{ zona.supervisor.nombres|slice:":1"|upper }}
+                                        </div>
+                                        <div class="fw-bold text-dark">
+                                            {{ zona.supervisor.nombres }} {{ zona.supervisor.a_paterno }}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-light text-muted border py-2 px-3"><i class="fas fa-user-slash me-1"></i> Sin Asignar</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted">
+                                {% if zona.supervisor %}
+                                    <i class="fas fa-phone-alt me-1 opacity-50"></i> {{ zona.supervisor.telefono|default:"-" }}
                                 {% else %}
                                     -
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="text-muted">
                                 {% if zona.supervisor %}
-                                    {{ zona.supervisor.email|default:"-" }}
+                                    <i class="fas fa-envelope me-1 opacity-50"></i> {{ zona.supervisor.email|default:"-" }}
                                 {% else %}
                                     -
                                 {% endif %}
                             </td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'detalle_zona' zona.pk %}" class="btn btn-sm btn-outline-info" title="Ver Centros de Trabajo">
-                                        <i class="fas fa-school"></i>
+                            <td class="text-center">
+                                <div class="d-flex gap-1 justify-content-center">
+                                    <a href="{% url 'detalle_zona' zona.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Ver Centros de Trabajo">
+                                        <i class="fas fa-eye text-info"></i>
                                     </a>
-                                    <a href="{% url 'editar_zona' zona.pk %}" class="btn btn-sm btn-outline-primary" title="Editar Zona">
-                                        <i class="fas fa-edit"></i>
+                                    <a href="{% url 'editar_zona' zona.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Editar Zona">
+                                        <i class="fas fa-edit text-primary"></i>
                                     </a>
-                                    <a href="{% url 'eliminar_zona' zona.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar Zona">
-                                        <i class="fas fa-trash"></i>
+                                    <a href="{% url 'eliminar_zona' zona.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Eliminar Zona">
+                                        <i class="fas fa-trash text-danger"></i>
                                     </a>
                                 </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fas fa-map-marked fa-3x mb-3 opacity-25"></i>
+                                <p class="mb-0">No se encontraron zonas registradas.</p>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-            {% else %}
-            <div class="text-center py-4">
-                <i class="fas fa-map-marked fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No hay zonas registradas</h5>
-                <p class="text-muted">Comienza agregando tu primera zona escolar</p>
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -93,24 +193,30 @@
 $(document).ready(function() {
     // Función para normalizar texto (quitar acentos)
     var accent_normalize = function(data) {
-        if (typeof data !== 'string') {
-            return data;
-        }
+        if (typeof data !== 'string') return data;
         return data.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     };
 
-    // Registrar la función de búsqueda para strings y html
     $.fn.dataTable.ext.type.search['string-accent-neutral'] = accent_normalize;
     $.fn.dataTable.ext.type.search['html-accent-neutral'] = accent_normalize;
 
-    $('#tablaZonas').DataTable({
+    $('#tablaZonasPremium').DataTable({
+        responsive: true,
         language: {
-            url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            ...window.SpanishDataTable,
+            search: "_INPUT_",
+            searchPlaceholder: "Buscar zona..."
         },
-        "columnDefs": [
-            { "type": "num", "targets": 0 }, // Ordenar la primera columna (Número) como número
-            { "type": "html-accent-neutral", "targets": "_all" } // Aplicar búsqueda sin acentos a todas las columnas
-        ]
+        pageLength: 20,
+        order: [[0, 'asc']],
+        columnDefs: [
+            { type: "num", targets: 0 },
+            { type: "html-accent-neutral", targets: "_all" }
+        ],
+        drawCallback: function() {
+            $('.dataTables_paginate > .pagination').addClass('pagination-sm justify-content-end px-3 py-2');
+            $('.dataTables_info').addClass('px-3 small text-muted');
+        }
     });
 });
 </script>

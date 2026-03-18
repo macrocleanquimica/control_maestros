@@ -1,0 +1,237 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
+{% block content %}
+<div class="page-container p-4">
+    <!-- Header Premium -->
+    <div class="premium-header mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-md-auto">
+                <div class="header-icon-container bg-soft-primary text-primary">
+                    <i class="fas fa-boxes-stacked"></i>
+                </div>
+            </div>
+            <div class="col-md">
+                <h1 class="header-title">{{ titulo }}</h1>
+                <p class="header-subtitle mb-0">Gestión de periodos y exportaciones coordinadas de vacantes.</p>
+            </div>
+            <div class="col-md-auto d-flex gap-2">
+                <a href="{% url 'gestionar_lote_vacancia' %}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm btn-hover-animate">
+                    <i class="fas fa-plus"></i>
+                    <span>Crear Nuevo Lote</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensajes -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-premium fade show shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                    <div>{{ message }}</div>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Tarjeta Principal con Tabla -->
+    <div class="card premium-card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="dataTableLotes">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">ID Lote</th>
+                            <th>Fecha de Creación</th>
+                            <th>Estado</th>
+                            <th class="text-center">Vacancias</th>
+                            <th>Archivo Excel</th>
+                            <th class="text-end pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lote in lotes %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="badge bg-light text-dark border font-monospace px-3">#{{ lote.id }}</span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ lote.fecha_creacion|date:"d/m/Y" }}</div>
+                                <div class="smaller text-muted">{{ lote.fecha_creacion|date:"H:i" }} hrs</div>
+                            </td>
+                            <td>
+                                {% if lote.estado == 'EN_PROCESO' %}
+                                    <span class="badge-soft bg-soft-warning text-warning">
+                                        <i class="fas fa-spinner fa-spin me-1"></i> En Proceso
+                                    </span>
+                                {% elif lote.estado == 'GENERADO' %}
+                                    <span class="badge-soft bg-soft-success text-success">
+                                        <i class="fas fa-check-circle me-1"></i> Generado
+                                    </span>
+                                {% elif lote.estado == 'PROCESANDO' %}
+                                    <span class="badge-soft bg-soft-info text-info">
+                                        <i class="fas fa-cog fa-spin me-1"></i> Procesando
+                                    </span>
+                                {% elif lote.estado == 'CANCELADO' %}
+                                    <span class="badge-soft bg-soft-danger text-danger">
+                                        <i class="fas fa-times-circle me-1"></i> Cancelado
+                                    </span>
+                                {% else %}
+                                    <span class="badge-soft bg-soft-secondary text-secondary">{{ lote.estado }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="fw-bold text-primary">{{ lote.vacancias.count }}</span>
+                            </td>
+                            <td>
+                                {% if lote.archivo_generado %}
+                                    <a href="{{ lote.archivo_generado.url }}" class="btn btn-light btn-sm border d-inline-flex align-items-center gap-2" target="_blank">
+                                        <i class="fas fa-file-excel text-success"></i>
+                                        <span>Descargar</span>
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted smaller"><i class="fas fa-clock-rotate-left me-1"></i> Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    {% if lote.estado == 'EN_PROCESO' %}
+                                        <a href="{% url 'gestionar_lote_vacancia_con_id' lote.id %}" class="btn-action-custom btn-info" title="Modificar Lote">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn-action-custom btn-danger cancelar-lote" data-id="{{ lote.id }}" title="Cancelar Lote">
+                                            <i class="fas fa-times-circle"></i>
+                                        </button>
+                                    {% elif lote.estado == 'GENERADO' %}
+                                        <a href="{% url 'gestionar_lote_vacancia_con_id' lote.id %}" class="btn-action-custom btn-secondary" title="Ver Detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="empty-state">
+                                    <i class="fas fa-search-minus mb-3 opacity-25" style="font-size: 3rem;"></i>
+                                    <p class="text-muted">No se han encontrado lotes de vacancia registrados.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos Locales Consistentes */
+    .premium-header {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid #eef2f6;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    
+    .header-icon-container {
+        width: 48px;
+        height: 48px;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .bg-soft-primary { background: #e0f2fe; color: #0369a1; }
+    .header-title { font-size: 1.25rem; font-weight: 800; color: #1e293b; margin: 0; }
+    .header-subtitle { font-size: 0.85rem; color: #64748b; }
+    
+    .premium-card { border-radius: 1rem; overflow: hidden; }
+    .table thead th {
+        background: #f8fafc;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+        color: #64748b;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #eef2f6;
+    }
+    
+    /* Badges Soft */
+    .badge-soft {
+        padding: 0.35rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+    }
+    .bg-soft-warning { background: #fef3c7; color: #92400e; }
+    .bg-soft-success { background: #dcfce7; color: #15803d; }
+    .bg-soft-info { background: #e0f2fe; color: #0369a1; }
+    .bg-soft-danger { background: #fee2e2; color: #991b1b; }
+    .bg-soft-secondary { background: #f1f5f9; color: #475569; }
+
+    /* Alert Premium */
+    .alert-premium {
+        border-radius: 1rem;
+        border: none;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    if ($.fn.DataTable) {
+        $('#dataTableLotes').DataTable({
+            "order": [[ 1, "desc" ]],
+            "language": {
+                ...window.SpanishDataTable,
+                "search": "_INPUT_",
+                "searchPlaceholder": "Buscar lote..."
+            },
+            "pageLength": 10,
+            "dom": '<"p-3 d-flex justify-content-between align-items-center"fB>t<"p-3 d-flex justify-content-between align-items-center"ip>',
+            "buttons": []
+        });
+    }
+
+    $('.cancelar-lote').on('click', function() {
+        const loteId = $(this).data('id');
+        if (confirm('¿Está seguro de que desea cancelar este lote? Todas las vacancias asociadas serán marcadas como canceladas.')) {
+            const csrfToken = $('[name=csrfmiddlewaretoken]').val();
+            $.ajax({
+                url: `/vacancias/lotes/${loteId}/cancelar/`,
+                type: 'POST',
+                data: { 'csrfmiddlewaretoken': csrfToken },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error al cancelar el lote: ' + response.message);
+                    }
+                },
+                error: function(xhr) {
+                    alert('Error de servidor al cancelar el lote.');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock extra_js %}

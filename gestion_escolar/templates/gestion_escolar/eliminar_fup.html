@@ -1,26 +1,137 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Eliminar FUP | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow mb-4 border-left-danger">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-danger">Eliminar FUP</h6>
-                </div>
-                <div class="card-body">
-                    <p>¿Estás seguro de que deseas eliminar el FUP con folio <strong>{{ fup.folio }}</strong> del
-                        maestro <strong>{{ fup.nombre_completo }}</strong>?</p>
-                    <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+<style>
+    :root {
+        --ef-danger: #ef4444;
+        --ef-border: #e2e8f0;
+        --ef-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
 
-                    <form method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger btn-block">Eliminar</button>
-                        <a href="{% url 'lista_fup' %}" class="btn btn-secondary btn-block">Cancelar</a>
-                    </form>
-                </div>
-            </div>
+    .page-container {
+        padding: 4rem 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .confirm-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid var(--ef-border);
+        box-shadow: var(--ef-shadow);
+        padding: 3rem;
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .warning-icon {
+        width: 80px;
+        height: 80px;
+        background: #fef2f2;
+        color: var(--ef-danger);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 0 auto 2rem;
+        border: 4px solid #fee2e2;
+    }
+
+    .confirm-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 1rem;
+    }
+
+    .confirm-text {
+        color: #64748b;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 2.5rem;
+    }
+
+    .maestro-tag {
+        background: #f8fafc;
+        border: 1px solid var(--ef-border);
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        color: #1e293b;
+        display: block;
+        margin-top: 0.5rem;
+    }
+
+    .btn-confirm-delete {
+        background: var(--ef-danger);
+        color: white;
+        border-radius: 2rem;
+        padding: 0.8rem 2rem;
+        font-weight: 700;
+        width: 100%;
+        border: none;
+        transition: all 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-confirm-delete:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.5);
+    }
+
+    .btn-cancel {
+        display: block;
+        margin-top: 1rem;
+        color: #64748b;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: color 0.2s;
+    }
+
+    .btn-cancel:hover {
+        color: #1e293b;
+    }
+</style>
+
+<div class="page-container">
+    <div class="confirm-card">
+        <div class="warning-icon">
+            <i class="fas fa-exclamation-triangle"></i>
         </div>
+        
+        <h2 class="confirm-title">¿Confirmar Eliminación?</h2>
+        <p class="confirm-text">
+            Está a punto de eliminar permanentemente el registro FUP con folio:
+            <span class="maestro-tag">#{{ fup.folio }} - {{ fup.nombre_completo }}</span>
+            <br>
+            <small class="text-danger fw-bold"><i class="fas fa-info-circle me-1"></i> Esta acción no se puede deshacer.</small>
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-confirm-delete">
+                Sí, Eliminar Registro
+            </button>
+        </form>
+        
+        <a href="{% url 'detalle_fup' fup.pk %}" class="btn btn-cancel">
+            No, Cancelar y Volver
+        </a>
     </div>
 </div>
 {% endblock %}

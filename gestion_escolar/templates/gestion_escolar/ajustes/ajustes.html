@@ -1,34 +1,231 @@
 {% extends 'gestion_escolar/base.html' %}
-{% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{{ titulo }}</h4>
-                </div>
-                <div class="card-body">
-                    <h5>Ajustes de la Cuenta</h5>
-                    <ul>
-                        <li><a href="{% url 'cambiar_password' %}">Cambiar contraseña</a></li>
-                        <li><a href="{% url 'editar_perfil' %}">Editar perfil</a></li>
-                    </ul>
+{% load static %}
 
-                    {% if user.is_superuser %}
-                    <hr>
-                    <h5>Gestión del Sistema</h5>
-                    <ul>
-                        <li><a href="{% url 'user_list' %}"><i class="fas fa-users"></i> Gestión de Usuarios</a></li>
-                        <li><a href="{% url 'asignar_director' %}">Asignar Director</a></li>
-                        <li><a href="{% url 'role_list' %}">Roles y Permisos</a></li>
-                        {% if perms.gestion_escolar.view_tema %}
-                        <li><a href="{% url 'tema_list' %}">Gestión de Temas</a></li>
-                        {% endif %}
-                    </ul>
-                    {% endif %}
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --ah-primary: #2563eb;
+        --ah-secondary: #64748b;
+        --ah-bg: #f8fafc;
+        --ah-card-bg: #ffffff;
+        --ah-border: #e2e8f0;
+        --ah-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .hub-container {
+        padding: 2rem;
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hub-header {
+        margin-bottom: 2.5rem;
+    }
+
+    .hub-title {
+        font-weight: 800;
+        color: #1e293b;
+        letter-spacing: -0.025em;
+    }
+
+    .hub-section-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--ah-secondary);
+        letter-spacing: 0.05em;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .hub-section-title::after {
+        content: "";
+        flex-grow: 1;
+        height: 1px;
+        background: var(--ah-border);
+    }
+
+    /* Hub Cards */
+    .hub-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .hub-card {
+        background: var(--ah-card-bg);
+        border: 1px solid var(--ah-border);
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .hub-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border-color: var(--ah-primary);
+    }
+
+    .hub-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 0;
+        background: var(--ah-primary);
+        transition: height 0.3s ease;
+    }
+
+    .hub-card:hover::before {
+        height: 100%;
+    }
+
+    .hub-icon-wrapper {
+        width: 56px;
+        height: 56px;
+        border-radius: 1rem;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.25rem;
+        font-size: 1.5rem;
+        color: var(--ah-primary);
+        transition: all 0.3s ease;
+    }
+
+    .hub-card:hover .hub-icon-wrapper {
+        background: var(--ah-primary);
+        color: white;
+    }
+
+    .hub-card-title {
+        font-weight: 700;
+        font-size: 1.125rem;
+        margin-bottom: 0.5rem;
+        color: #0f172a;
+    }
+
+    .hub-card-desc {
+        color: #64748b;
+        font-size: 0.875rem;
+        line-height: 1.5;
+    }
+
+    .hub-arrow {
+        position: absolute;
+        right: 1.5rem;
+        top: 1.5rem;
+        opacity: 0;
+        transform: translateX(-10px);
+        transition: all 0.3s ease;
+        color: var(--ah-primary);
+    }
+
+    .hub-card:hover .hub-arrow {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    /* Category Badges */
+    .cat-personal { color: #f59e0b; }
+    .cat-system { color: #2563eb; }
+    .cat-security { color: #ef4444; }
+
+</style>
+
+<div class="hub-container">
+    <!-- Header -->
+    <div class="hub-header">
+        <h1 class="hub-title h2 mb-2"><i class="fas fa-cog text-primary me-2"></i> {{ titulo|default:"Ajustes Generales" }}</h1>
+        <p class="text-muted">Centro de control para la configuración de su cuenta y la administración del sistema.</p>
+    </div>
+
+    <!-- Sección: Mi Cuenta -->
+    <div class="hub-section">
+        <h2 class="hub-section-title"><i class="fas fa-user-circle cat-personal"></i> Ajustes de la Cuenta</h2>
+        <div class="hub-grid">
+            <a href="{% url 'editar_perfil' %}" class="hub-card">
+                <i class="fas fa-arrow-right hub-arrow"></i>
+                <div class="hub-icon-wrapper">
+                    <i class="fas fa-user-edit"></i>
                 </div>
-            </div>
+                <h3 class="hub-card-title">Editar Perfil</h3>
+                <p class="hub-card-desc">Actualice su información personal, correo electrónico y datos de contacto.</p>
+            </a>
+
+            <a href="{% url 'cambiar_password' %}" class="hub-card">
+                <i class="fas fa-arrow-right hub-arrow"></i>
+                <div class="hub-icon-wrapper" style="color: #ef4444;">
+                    <i class="fas fa-key"></i>
+                </div>
+                <h3 class="hub-card-title">Cambiar Contraseña</h3>
+                <p class="hub-card-desc">Mejore la seguridad de su cuenta actualizando su clave de acceso periódicamente.</p>
+            </a>
         </div>
     </div>
+
+    <!-- Sección: Gestión del Sistema (Superusuatio) -->
+    {% if user.is_superuser %}
+    <div class="hub-section mt-4">
+        <h2 class="hub-section-title"><i class="fas fa-server cat-system"></i> Gestión del Sistema</h2>
+        <div class="hub-grid">
+            <a href="{% url 'user_list' %}" class="hub-card">
+                <i class="fas fa-arrow-right hub-arrow"></i>
+                <div class="hub-icon-wrapper">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <h3 class="hub-card-title">Gestión de Usuarios</h3>
+                <p class="hub-card-desc">Control total sobre las cuentas de usuario, activación, desactivación y registros.</p>
+            </a>
+
+            <a href="{% url 'role_list' %}" class="hub-card">
+                <i class="fas fa-arrow-right hub-arrow"></i>
+                <div class="hub-icon-wrapper" style="color: #10b981;">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h3 class="hub-card-title">Roles y Permisos</h3>
+                <p class="hub-card-desc">Defina qué puede hacer cada grupo de usuarios y gestione accesos detallados.</p>
+            </a>
+
+            <a href="{% url 'asignar_director' %}" class="hub-card">
+                <i class="fas fa-arrow-right hub-arrow"></i>
+                <div class="hub-icon-wrapper" style="color: #6366f1;">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h3 class="hub-card-title">Asignar Director</h3>
+                <p class="hub-card-desc">Configuración específica para la jerarquía directiva de la institución.</p>
+            </a>
+
+            {% if perms.gestion_escolar.view_tema %}
+            <a href="{% url 'tema_list' %}" class="hub-card">
+                <i class="fas fa-arrow-right hub-arrow"></i>
+                <div class="hub-icon-wrapper" style="color: #ec4899;">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <h3 class="hub-card-title">Gestión de Temas</h3>
+                <p class="hub-card-desc">Personalice la apariencia visual y la identidad gráfica del sistema.</p>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

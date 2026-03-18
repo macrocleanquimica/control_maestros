@@ -1,100 +1,233 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
-    </div>
+<style>
+    :root {
+        --ff-primary: #6366f1;
+        --ff-secondary: #64748b;
+        --ff-border: #e2e8f0;
+        --ff-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Datos del FUP</h6>
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid var(--ff-border);
+        box-shadow: var(--ff-shadow);
+        overflow: hidden;
+    }
+
+    .form-header {
+        background: #f8fafc;
+        padding: 1.5rem 2.5rem;
+        border-bottom: 1px solid var(--ff-border);
+    }
+
+    .form-body {
+        padding: 2.5rem;
+    }
+
+    /* Floating Labels Styling */
+    .form-group-premium {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-control-premium {
+        border-radius: 0.75rem;
+        border: 1px solid var(--ff-border);
+        padding: 0.75rem 1rem;
+        height: auto;
+        transition: all 0.2s;
+        background: #f8fafc;
+    }
+
+    .form-control-premium:focus {
+        background: white;
+        border-color: var(--ff-primary);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .form-label-premium {
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        display: block;
+        letter-spacing: 0.05em;
+    }
+
+    /* Maestro Info Panel */
+    #maestro-info {
+        background: #f0f9ff;
+        border: 1px dashed #7dd3fc;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        display: none;
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .info-tag {
+        font-size: 0.75rem;
+        background: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e0f2fe;
+        color: #0369a1;
+        font-weight: 700;
+    }
+
+    /* Select2 Skinning */
+    .select2-container--default .select2-selection--single {
+        border: 1px solid var(--ff-border) !important;
+        border-radius: 0.75rem !important;
+        height: 48px !important;
+        background: #f8fafc !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 46px !important;
+        padding-left: 1rem !important;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 46px !important;
+    }
+</style>
+
+<div class="page-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h4 class="mb-0 fw-bold text-dark"><i class="fas fa-edit text-primary me-2"></i> {{ titulo }}</h4>
+            <p class="text-muted small mb-0">Complete la información del formato FUP para el registro en sistema.</p>
         </div>
-        <div class="card-body">
+
+        <div class="form-body">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
 
                 {% if form.errors %}
-                <div class="alert alert-danger">
-                    <strong>Error:</strong> Por favor corrige los errores abajo indicados.
-                    {{ form.errors }}
+                <div class="alert alert-danger rounded-4 border-0 shadow-sm mb-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-exclamation-circle fa-lg"></i>
+                        <h6 class="mb-0 fw-bold">Por favor corrija los errores indicados:</h6>
+                    </div>
+                    <ul class="mt-2 mb-0 small">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    </ul>
                 </div>
                 {% endif %}
 
-                <div class="form-row">
-                    <div class="form-group col-md-10">
-                        <label for="{{ form.maestro.id_for_label }}">Maestro *</label>
-                        {{ form.maestro }}
-                        {% if form.maestro.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.maestro.errors }}
+                <div class="row g-4">
+                    <!-- Maestro Selection -->
+                    <div class="col-md-9">
+                        <div class="form-group-premium">
+                            <label class="form-label-premium">Personal Docente (Maestro) *</label>
+                            {{ form.maestro }}
                         </div>
-                        {% endif %}
                     </div>
-                    <div class="form-group col-md-2">
-                        <label for="{{ form.folio.id_for_label }}">Folio</label>
-                        {{ form.folio }}
-                        {% if form.folio.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.folio.errors }}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
 
-                <!-- Campos de solo lectura para mostrar datos del maestro -->
-                <div class="card mb-4 mt-3" id="maestro-info"
-                    style="display: none; max-width: 900px; margin-left: auto; margin-right: auto;">
-                    <div class="card-header bg-info text-white">
-                        <h6 class="m-0">Datos del Maestro Seleccionado</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-row">
-                            <div class="form-group col-md-4">
-                                <label>RFC</label>
-                                <input type="text" class="form-control" id="display-rfc" readonly>
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label>CURP</label>
-                                <input type="text" class="form-control" id="display-curp" readonly>
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label>Clave Presupuestal</label>
-                                <input type="text" class="form-control" id="display-clave" readonly>
-                            </div>
+                    <!-- Folio -->
+                    <div class="col-md-3">
+                        <div class="form-group-premium">
+                            <label class="form-label-premium">Folio del Sistema</label>
+                            {{ form.folio }}
                         </div>
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group col-md-2">
-                        <label for="{{ form.techo_financiero.id_for_label }}">Techo Financiero</label>
-                        {{ form.techo_financiero }}
-                        <small class="form-text text-muted">Si se deja vacío, se tomará el del maestro.</small>
+                <!-- Maestro Info Panel -->
+                <div id="maestro-info">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-info-circle text-info me-2"></i> Datos de Referencia</h6>
+                        <span class="small text-muted fw-bold">Actualizado desde base de datos</span>
                     </div>
-                    <div class="form-group col-md-2">
-                        <label for="{{ form.efectos.id_for_label }}">Efectos</label>
-                        {{ form.efectos }}
-                    </div>
-                    <div class="form-group col-md-2">
-                        <label for="{{ form.sostenimiento.id_for_label }}">Sostenimiento</label>
-                        {{ form.sostenimiento }}
+                    <div class="d-flex flex-wrap gap-2">
+                        <div class="info-tag">RFC: <span id="display-rfc" class="font-monospace">---</span></div>
+                        <div class="info-tag">CURP: <span id="display-curp" class="font-monospace">---</span></div>
+                        <div class="info-tag">Clave: <span id="display-clave" class="font-monospace">---</span></div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="{{ form.observaciones.id_for_label }}">Observaciones</label>
+                <div class="row g-4 mt-1">
+                    <!-- Techo Financiero -->
+                    <div class="col-md-4">
+                        <div class="form-group-premium">
+                            <label class="form-label-premium">CCT Techo Financiero</label>
+                            {{ form.techo_financiero }}
+                            <div class="form-text mt-1" style="font-size: 0.7rem;">Vacío = se usará el del maestro.</div>
+                        </div>
+                    </div>
+
+                    <!-- Efectos -->
+                    <div class="col-md-4">
+                        <div class="form-group-premium">
+                            <label class="form-label-premium">Efectos del Movimiento</label>
+                            {{ form.efectos }}
+                        </div>
+                    </div>
+
+                    <!-- Sostenimiento -->
+                    <div class="col-md-4">
+                        <div class="form-group-premium">
+                            <label class="form-label-premium">Sostenimiento</label>
+                            {{ form.sostenimiento }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observaciones -->
+                <div class="form-group-premium mt-3">
+                    <label class="form-label-premium">Observaciones Adicionales</label>
                     {{ form.observaciones }}
                 </div>
 
-                <div class="form-group mt-3">
-                    <label for="{{ form.archivo.id_for_label }}">Archivo PDF</label>
-                    {{ form.archivo }}
+                <!-- Archivo -->
+                <div class="bg-light p-4 rounded-4 border mt-4 mb-5">
+                    <label class="form-label-premium"><i class="fas fa-file-upload me-2"></i> Expediente Digital (PDF)</label>
+                    <div class="mt-2">
+                        {{ form.archivo }}
+                    </div>
+                    <p class="text-muted small mt-2 mb-0"><i class="fas fa-info-circle me-1"></i> Asegúrese de que el archivo sea un PDF legible y no exceda los 5MB.</p>
                 </div>
 
-                <hr>
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a href="{% url 'lista_fup' %}" class="btn btn-secondary">Cancelar</a>
+                <!-- Buttons -->
+                <div class="d-flex justify-content-end gap-3 border-top pt-4">
+                    <a href="{% url 'lista_fup' %}" class="btn btn-light border rounded-pill px-5 fw-bold text-muted btn-hover-animate">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow btn-hover-animate">
+                        Guardar Registro
+                    </button>
+                </div>
             </form>
         </div>
     </div>
@@ -104,34 +237,31 @@
 {% block extra_js %}
 <script>
     $(document).ready(function () {
-        // Inicializar Select2 con AJAX para el campo de maestro (igual que en correspondencia)
+        // Aplicar clases premium a los inputs del formulario
+        $('input[type="text"], input[type="number"], select, textarea').addClass('form-control form-control-premium');
+        
+        // Inicializar Select2
         $('#id_maestro').select2({
-            placeholder: "Busque un maestro por nombre, apellidos o CURP",
+            placeholder: "Busque un maestro por nombre, rfc o curp...",
             minimumInputLength: 3,
             allowClear: true,
-            width: '100%',
             ajax: {
                 url: "{% url 'buscar_maestros_ajax' %}",
                 dataType: 'json',
                 delay: 250,
                 data: function (params) {
-                    return {
-                        term: params.term // término de búsqueda
-                    };
+                    return { term: params.term };
                 },
                 processResults: function (data) {
-                    return {
-                        results: data.results
-                    };
+                    return { results: data.results };
                 },
                 cache: true
             }
         });
 
-        // Función para cargar datos del maestro
         function cargarDatosMaestro(maestroId) {
             if (!maestroId) {
-                $('#maestro-info').hide();
+                $('#maestro-info').fadeOut();
                 return;
             }
 
@@ -140,33 +270,27 @@
                 data: { 'maestro_id': maestroId },
                 dataType: 'json',
                 success: function (data) {
-                    // Mostrar el card con los datos
-                    $('#maestro-info').show();
+                    $('#maestro-info').fadeIn();
+                    $('#display-rfc').text(data.rfc || '---');
+                    $('#display-curp').text(data.curp || '---');
+                    $('#display-clave').text(data.clave_presupuestal || '---');
 
-                    // Llenar los campos de solo lectura
-                    $('#display-rfc').val(data.rfc);
-                    $('#display-curp').val(data.curp);
-                    $('#display-clave').val(data.clave_presupuestal);
-
-                    // Auto-llenar el techo financiero si está vacío
+                    // Auto-llenar techo si está vacío
                     if (!$('#id_techo_financiero').val()) {
                         $('#id_techo_financiero').val(data.techo_financiero);
                     }
                 },
-                error: function (xhr, status, error) {
-                    console.error('Error al cargar datos del maestro:', error);
-                    $('#maestro-info').hide();
+                error: function () {
+                    $('#maestro-info').fadeOut();
                 }
             });
         }
 
-        // Evento cuando se selecciona un maestro
         $('#id_maestro').on('change', function () {
-            var maestroId = $(this).val();
-            cargarDatosMaestro(maestroId);
+            cargarDatosMaestro($(this).val());
         });
 
-        // Si ya hay un maestro seleccionado al cargar la página (modo edición)
+        // Caso inicial modo edición
         var maestroIdInicial = $('#id_maestro').val();
         if (maestroIdInicial) {
             cargarDatosMaestro(maestroIdInicial);

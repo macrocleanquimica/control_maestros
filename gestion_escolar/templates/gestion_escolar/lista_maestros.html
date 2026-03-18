@@ -1,50 +1,261 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
+{% block title %}Gestión de Personal | Control de Maestros{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestión de Personal</h2> 
-        <div>
-            <a href="{% url 'agregar_maestro' %}" class="btn btn-primary me-2">
-                <i class="fas fa-plus me-2"></i>Agregar Maestro
-            </a>
-            <button id="export-excel-btn" class="btn btn-success">
+<style>
+    :root {
+        --ml-primary: #2563eb;
+        --ml-success: #10b981;
+        --ml-danger: #ef4444;
+        --ml-warning: #f59e0b;
+        --ml-border: #e2e8f0;
+        --ml-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .page-container {
+        padding: 1.5rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header Styling */
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        background: white;
+        padding: 1.25rem 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid var(--ml-border);
+        box-shadow: var(--ml-shadow);
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Table Card */
+    .table-container-card {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid var(--ml-border);
+        box-shadow: var(--ml-shadow);
+        overflow: hidden;
+    }
+
+    .table-header-custom {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--ml-border);
+        background: #fdfdfd;
+    }
+
+
+    thead th {
+        background: #f8fafc !important;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border-bottom: 2px solid var(--ml-border) !important;
+        padding: 1rem !important;
+    }
+
+    /* Custom UI Elements in Table */
+    .avatar-circle {
+        width: 38px;
+        height: 38px;
+        background-color: #f1f5f9;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--ml-primary);
+        font-size: 0.9rem;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .badge-soft {
+        font-size: 0.7rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 2rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .badge-soft-success { background-color: #ecfdf5; color: #059669; }
+    .badge-soft-warning { background-color: #fffbeb; color: #d97706; }
+    .badge-soft-danger { background-color: #fef2f2; color: #dc2626; }
+    .badge-soft-info { background-color: #f0f9ff; color: #0284c7; }
+
+    .indicator-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        font-weight: 500;
+    }
+
+    /* Homogenized Action Buttons */
+    .btn-action-custom {
+        transition: all 0.2s;
+    }
+    
+    .btn-action-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+</style>
+
+<div class="page-container">
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="header-title">
+            <h1 class="mb-0"><i class="fas fa-chalkboard-teacher text-primary me-2"></i> Gestión de Personal</h1>
+            <p class="text-muted small mb-0">Administre la base de datos de maestros y personal administrativo del sistema.</p>
+        </div>
+        <div class="header-actions d-flex gap-2">
+            <button id="export-excel-btn" class="btn btn-success text-white border-0 rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
                 <i class="fas fa-file-excel me-2"></i>Exportar a Excel
             </button>
+            <a href="{% url 'agregar_maestro' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
+                <i class="fas fa-plus-circle me-1"></i> Agregar Maestro
+            </a>
         </div>
     </div>
-    
+
     {% if messages %}
+    <div class="mb-4">
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {% endfor %}
+    </div>
     {% endif %}
-    
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table id="tablaMaestros" class="table table-striped table-hover datatable-search" style="width:100%;" data-ajax-url="{% url 'lista_maestros_ajax' %}">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>CCT</th>
-                            <th>CURP</th>
-                            <th>Clave Presupuestal</th>
-                            <th>Status</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        
-                    </tbody>
-                </table>
-            </div>
+
+    <!-- Table Section -->
+    <div class="table-container-card">
+        <div class="p-0">
+            <table id="tablaMaestrosPremium" class="table table-hover align-middle w-100" data-ajax-url="{% url 'lista_maestros_ajax' %}">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Personal</th>
+                        <th>CCT</th>
+                        <th>CURP</th>
+                        <th>Clave Presupuestal</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data loaded via AJAX -->
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        var table = $('#tablaMaestrosPremium').DataTable({
+            destroy: true,
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: $('#tablaMaestrosPremium').data('ajax-url'),
+                type: 'GET'
+            },
+            responsive: true,
+            language: {
+                ...window.SpanishDataTable,
+                search: "_INPUT_",
+                searchPlaceholder: "Buscar personal..."
+            },
+            pageLength: 15,
+            order: [[1, 'asc']],
+            columns: [
+                { data: 0, className: 'text-muted small fw-bold' },
+                { 
+                    data: 1,
+                    render: function(data, type, row) {
+                        if (!data) return '';
+                        var initials = data.trim().split(' ').filter(n => n.length > 0).slice(0, 2).map(n => n[0]).join('').toUpperCase();
+                        if (initials === '') initials = '?';
+                        
+                        var indicators = '';
+                        if (row && row[7]) { // is_misplaced
+                            indicators += '<span class="indicator-pill ms-2 text-danger" title="Fuera de Adscripción"><i class="fas fa-exclamation-triangle"></i> Adscrip.</span>';
+                        }
+                        if (row && row[8]) { // is_interino
+                            indicators += '<span class="indicator-pill ms-1 text-info" title="Personal Interino"><i class="fas fa-user-clock"></i> Interino</span>';
+                        }
+                        return `
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-3">${initials}</div>
+                                <div>
+                                    <div class="fw-bold text-dark">${data}</div>
+                                    <div class="d-flex mt-1">${indicators}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                },
+                { data: 2, className: 'fw-bold text-primary' },
+                { data: 3, className: 'small text-muted font-monospace' },
+                { data: 4, className: 'small' },
+                { 
+                    data: 5,
+                    render: function(data) {
+                        if (!data) return '';
+                        var is_active = data.includes('ACTIVO');
+                        var badgeClass = is_active ? 'badge-soft-success' : 'badge-soft-warning';
+                        return `<span class="badge ${badgeClass}">${data.replace(/<\/?[^>]+(>|$)/g, "")}</span>`;
+                    }
+                },
+                { 
+                    data: 6, 
+                    orderable: false, 
+                    className: 'text-center',
+                    render: function(data) {
+                        return data || '';
+                    }
+                }
+            ],
+            drawCallback: function() {
+                $('.dataTables_paginate > .pagination').addClass('pagination-sm justify-content-end px-3 py-2');
+                $('.dataTables_info').addClass('px-3 small text-muted');
+            }
+        });
+
+        $('#export-excel-btn').on('click', function() {
+            var search = table.search();
+            window.location.href = "{% url 'exportar_maestros_excel' %}?search=" + encodeURIComponent(search);
+        });
+    });
+</script>
 {% endblock %}

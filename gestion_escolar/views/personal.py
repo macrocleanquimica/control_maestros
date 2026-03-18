@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.urls import reverse
 from django.db.models import Q
 from django.http import JsonResponse
@@ -65,14 +65,14 @@ def lista_maestros_ajax(request):
 
     data = []
     for maestro in queryset:
-        actions = '<div class="btn-group" role="group">'
-        actions += f'<a href="{reverse('detalle_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-info"><i class="fas fa-eye"></i></a>'
+        actions = '<div class="d-flex gap-1 justify-content-center">'
+        actions += f'<a href="{reverse("detalle_maestro", args=[maestro.pk])}" class="btn btn-sm btn-light border btn-action-custom" title="Ver Detalle"><i class="fas fa-eye text-info"></i></a>'
         
         if request.user.has_perm('gestion_escolar.change_maestro'):
-            actions += f'<a href="{reverse('editar_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>'
+            actions += f'<a href="{reverse("editar_maestro", args=[maestro.pk])}" class="btn btn-sm btn-light border btn-action-custom" title="Editar"><i class="fas fa-edit text-primary"></i></a>'
 
         if request.user.has_perm('gestion_escolar.delete_maestro'):
-            actions += f'<a href="{reverse('eliminar_maestro', args=[maestro.pk])}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>'
+            actions += f'<a href="{reverse("eliminar_maestro", args=[maestro.pk])}" class="btn btn-sm btn-light border btn-action-custom" title="Eliminar"><i class="fas fa-trash text-danger"></i></a>'
         
         actions += '</div>'
         status_map = {'ACTIVO': 'success', 'INACTIVO': 'warning'}
@@ -84,6 +84,10 @@ def lista_maestros_ajax(request):
             if maestro.id_escuela.id_escuela.strip().upper() != maestro.techo_f.strip().upper():
                 is_misplaced = True
 
+        is_interino = False
+        if maestro.codigo and maestro.codigo.strip() not in ['10', '96', '95', '09']:
+            is_interino = True
+
         data.append([
             maestro.id_maestro,
             f'{maestro.nombres} {maestro.a_paterno} {maestro.a_materno}',
@@ -92,7 +96,8 @@ def lista_maestros_ajax(request):
             maestro.clave_presupuestal or '-',
             status_html,
             actions,
-            is_misplaced
+            is_misplaced,
+            is_interino
         ])
 
     response = {
@@ -200,13 +205,103 @@ def detalle_maestro(request, pk):
     else:
         form = DocumentoExpedienteForm()
 
+    # Navegación anterior / siguiente (ordenado por id_maestro)
+    qs_base = Maestro.objects.exclude(id_maestro__isnull=True).exclude(id_maestro='').order_by('id_maestro')
+    maestro_anterior = qs_base.filter(id_maestro__lt=pk).last()
+    maestro_siguiente = qs_base.filter(id_maestro__gt=pk).first()
+
+    # --- Detección de otras plazas del mismo personal ---
+    # Opción 1: Por CURP (detección automática)
+    otras_por_curp = Maestro.objects.none()
+    if maestro.curp:
+        otras_por_curp = Maestro.objects.filter(
+            curp=maestro.curp
+        ).exclude(id_maestro=maestro.id_maestro)
+
+    # Opción 3: Por vínculo directo (maestro_principal)
+    # Determinar el maestro raíz (el principal de la cadena)
+    if maestro.maestro_principal:
+        maestro_raiz = maestro.maestro_principal
+    else:
+        maestro_raiz = None
+
+    otras_por_vinculo = Maestro.objects.none()
+    if maestro_raiz:
+        # Traer el registro principal + sus demás secundarios (hermanos)
+        otras_por_vinculo = Maestro.objects.filter(
+            Q(id_maestro=maestro_raiz.id_maestro) |
+            Q(maestro_principal=maestro_raiz)
+        ).exclude(id_maestro=maestro.id_maestro)
+    else:
+        # Este registro es el principal; traer sus plazas secundarias directas
+        otras_por_vinculo = maestro.plazas_secundarias.all()
+
+    # Combinar ambas listas y eliminar duplicados
+    otras_plazas = (otras_por_curp | otras_por_vinculo).distinct()
+
     context = {
         'maestro': maestro,
         'documentos': documentos,
         'form': form,
-        'titulo': 'Detalle del Personal'
+        'titulo': 'Detalle del Personal',
+        'maestro_anterior': maestro_anterior,
+        'maestro_siguiente': maestro_siguiente,
+        'otras_plazas': otras_plazas,
+        'maestro_raiz': maestro_raiz,
     }
     return render(request, 'gestion_escolar/detalle_maestro.html', context)
+    
+
+@login_required
+@permission_required('gestion_escolar.change_maestro', raise_exception=True)
+def agregar_otra_plaza(request, pk):
+    """
+    Crea un nuevo registro de maestro clonando los datos personales del original.
+    Establece automáticamente el maestro_principal.
+    """
+    maestro_original = get_object_or_404(Maestro, id_maestro=pk)
+    
+    # Determinar quién será el maestro_principal del nuevo registro
+    # Si el original ya tiene un principal, ese sigue siendo el principal para todos
+    maestro_raiz = maestro_original.maestro_principal if maestro_original.maestro_principal else maestro_original
+
+    if request.method == 'POST':
+        form = MaestroForm(request.POST, request=request)
+        if form.is_valid():
+            nueva_plaza = form.save(commit=False)
+            nueva_plaza.maestro_principal = maestro_raiz
+            nueva_plaza.save()
+            messages.success(request, f'Nueva plaza agregada correctamente para {maestro_original.nombres}.')
+            return redirect('detalle_maestro', pk=nueva_plaza.id_maestro)
+    else:
+        # Datos personales a clonar
+        initial_data = {
+            'nombres': maestro_original.nombres,
+            'a_paterno': maestro_original.a_paterno,
+            'a_materno': maestro_original.a_materno,
+            'curp': maestro_original.curp,
+            'rfc': maestro_original.rfc,
+            'fecha_nacimiento': maestro_original.fecha_nacimiento,
+            'sexo': maestro_original.sexo,
+            'est_civil': maestro_original.est_civil,
+            'domicilio_part': maestro_original.domicilio_part,
+            'poblacion': maestro_original.poblacion,
+            'codigo_postal': maestro_original.codigo_postal,
+            'telefono': maestro_original.telefono,
+            'email': maestro_original.email,
+            'nivel_estudio': maestro_original.nivel_estudio,
+            'form_academica': maestro_original.form_academica,
+            'maestro_principal': maestro_raiz,
+        }
+        form = MaestroForm(initial=initial_data, request=request)
+
+    return render(request, 'gestion_escolar/form_maestro.html', {
+        'form': form,
+        'titulo': f'Agregar Nueva Plaza para {maestro_original.nombres}',
+        'maestro': maestro_original,
+        'es_clonado': True
+    })
+
 
 @login_required
 def eliminar_documento_expediente(request, doc_pk):

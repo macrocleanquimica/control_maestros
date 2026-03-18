@@ -1,20 +1,167 @@
 {% extends "gestion_escolar/base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="card-title mb-0">{{ titulo }}</h2>
-            <h6 class="card-subtitle mb-2 text-muted">De: {{ mensaje.remitente.get_full_name|default:mensaje.remitente.username }}</h6>
-            <small>Recibido: {{ mensaje.fecha_creacion|date:"d/m/Y, H:i A" }}</small>
-        </div>
-        <a href="{% url 'correspondencia_inbox' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver a la Bandeja de Entrada
+<style>
+    .message-reader-container {
+        max-width: 800px;
+        margin: 0 auto;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .reader-header {
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .btn-back-inbox {
+        background: white;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        padding: 0.65rem 1.25rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-back-inbox:hover {
+        background: #f8fafc;
+        color: #1e293b;
+        transform: translateX(-3px);
+    }
+
+    .reader-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .message-meta-section {
+        background: #f8fafc;
+        padding: 2.5rem;
+        border-bottom: 1px solid #eef2f6;
+    }
+
+    .message-subject-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 1.5rem;
+        line-height: 1.25;
+    }
+
+    .sender-profile {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .avatar-large {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #0ea5e9;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 700;
+        box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2);
+    }
+
+    .sender-info-text {
+        flex-grow: 1;
+    }
+
+    .sender-name {
+        font-weight: 700;
+        color: #334155;
+        margin: 0;
+        display: block;
+    }
+
+    .message-timestamp {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        display: block;
+    }
+
+    .message-body-section {
+        padding: 3rem 2.5rem;
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: #334155;
+        min-height: 300px;
+        white-space: pre-wrap;
+    }
+
+    .reader-actions {
+        padding: 1.5rem 2.5rem;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: flex-end;
+    }
+</style>
+
+<div class="message-reader-container py-4">
+    <div class="reader-header">
+        <a href="{% url 'correspondencia_inbox' %}" class="btn-back-inbox">
+            <i class="fas fa-arrow-left"></i>
+            Bandeja de Entrada
         </a>
+        <div class="d-flex gap-2">
+            <form method="post" action="{% url 'correspondencia_eliminar' mensaje.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger border-0 rounded-pill px-3 btn-hover-animate" onclick="return confirm('¿Eliminar este mensaje?');">
+                    <i class="fas fa-trash-alt me-2"></i>Eliminar
+                </button>
+            </form>
+        </div>
     </div>
-    <div class="card">
-        <div class="card-body">
-            <p>{{ mensaje.cuerpo|linebreaksbr }}</p>
+
+    <div class="reader-card">
+        <div class="message-meta-section">
+            <h1 class="message-subject-title">{{ mensaje.asunto }}</h1>
+            
+            <div class="sender-profile">
+                <div class="avatar-large">
+                    {{ mensaje.remitente.username|slice:":1"|upper }}
+                </div>
+                <div class="sender-info-text">
+                    <span class="sender-name">{{ mensaje.remitente.get_full_name|default:mensaje.remitente.username }}</span>
+                    <span class="message-timestamp">
+                        <i class="far fa-clock me-1"></i>
+                        {{ mensaje.fecha_creacion|date:"l, d \d\e F \d\e Y" }} a las {{ mensaje.fecha_creacion|date:"H:i" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="message-body-section">
+            {{ mensaje.cuerpo|linebreaksbr }}
+        </div>
+
+        <div class="reader-actions">
+            <p class="text-muted smaller mb-0">
+                <i class="fas fa-shield-halved me-1 opacity-50"></i>
+                Mensajería interna cifrada del sistema.
+            </p>
         </div>
     </div>
 </div>

@@ -59,7 +59,7 @@ def get_permissions_matrix():
         'acceder_reportes', 'acceder_pendientes',
         'ver_estadisticas_generales', 'ver_grafico_distribucion_zona',
         'ver_lista_pendientes', 'ver_lista_ultimo_personal', 'ver_ultima_correspondencia',
-        'acceder_kardex', 'acceder_fup',
+        'acceder_kardex', 'acceder_fup', 'acceder_prelacion',
     ]
     
     for codename in custom_perms_codenames:

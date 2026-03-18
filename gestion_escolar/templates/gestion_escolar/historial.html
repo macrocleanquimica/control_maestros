@@ -1,69 +1,265 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load historial_filters %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+<style>
+    :root {
+        --hi-primary: #4f46e5;
+        --hi-success: #10b981;
+        --hi-info: #0ea5e9;
+        --hi-warning: #f59e0b;
+        --hi-danger: #ef4444;
+        --hi-border: #e2e8f0;
+        --hi-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Registros de Actividad</h6>
+    .page-container {
+        padding: 1.5rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header Section */
+    .header-section {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--hi-shadow);
+        border: 1px solid var(--hi-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Table Card */
+    .table-container-card {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid var(--hi-border);
+        box-shadow: var(--hi-shadow);
+        overflow: hidden;
+    }
+
+    .table thead th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        border-bottom: 2px solid var(--hi-border);
+        padding: 1rem;
+    }
+
+    .table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        font-size: 0.85rem;
+    }
+
+    /* Badges */
+    .badge-soft {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.6rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .badge-soft-primary { background: #eff6ff; color: #1d4ed8; }
+    .badge-soft-success { background: #ecfdf5; color: #059669; }
+    .badge-soft-info { background: #f0f9ff; color: #0369a1; }
+    .badge-soft-warning { background: #fffbeb; color: #d97706; }
+    .badge-soft-secondary { background: #f1f5f9; color: #475569; }
+
+    /* Observaciones Styles */
+    .observacion-cell {
+        min-width: 200px;
+        position: relative;
+    }
+
+    .observacion-display {
+        background: #f8fafc;
+        border: 1px solid transparent;
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .observacion-display:hover {
+        background: white;
+        border-color: var(--hi-border);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .btn-edit-observacion {
+        opacity: 0;
+        transition: opacity 0.2s;
+        color: var(--hi-primary);
+        padding: 0;
+    }
+
+    .observacion-display:hover .btn-edit-observacion {
+        opacity: 1;
+    }
+
+    /* Folio/Clave styling */
+    .text-code {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.3rem;
+        font-weight: 600;
+        color: #334155;
+    }
+
+    /* Homogenized Action Buttons */
+    .btn-action-custom {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+        background: white;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-action-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        background: #f8fafc;
+    }
+</style>
+
+<div class="page-container">
+    <!-- Header -->
+    <div class="header-section">
+        <div class="header-title">
+            <h1 class="mb-1"><i class="fas fa-history text-primary me-2"></i> {{ titulo }}</h1>
+            <p class="text-muted small mb-0">Seguimiento de todos los documentos y reportes generados en el sistema.</p>
         </div>
-        <div class="card-body">
+    </div>
+
+    <!-- Table Container -->
+    <div class="table-container-card">
+        <div class="p-4">
             <div class="table-responsive">
-                <table class="table table-striped table-hover" id="dataTable" width="100%" cellspacing="0">
+                <table id="historialTable" class="table table-hover align-middle w-100">
                     <thead>
                         <tr>
                             <th>Usuario</th>
-                            <th>Fecha</th>
-                            <th>Tipo de Documento</th>
-                            <th>Maestro Titular</th>
-                            <th>Maestro Interino</th>
-                            <th>Clave Presupuestal</th>
+                            <th>Fecha y Hora</th>
+                            <th>Documento</th>
+                            <th>Maestro / Titular</th>
+                            <th>Dato Clave</th>
                             <th>Motivo</th>
                             <th>Observaciones</th>
-                            <th>Acciones</th>
+                            <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in historial_items %}
                         <tr>
-                            <td>{{ item.usuario.username|default:"N/A" }}</td>
-                            <td>{{ item.fecha_creacion|date:"d/m/Y H:i" }}</td>
-                            <td>{{ item.tipo_documento }}</td>
-                            {% if item.tipo_documento == "Reporte de Vacancia" %}
-                                <td>Múltiples</td>
-                                <td>N/A</td>
-                                <td>N/A</td>
-                            {% else %}
-                                <td>{{ item.maestro|default:"N/A" }}</td>
-                                <td>{{ item.maestro_secundario_nombre|default:"N/A" }}</td>
-                                <td>{{ item.maestro.clave_presupuestal|default:"N/A" }}</td>
-                            {% endif %}
-                            <td>{{ item.motivo|default:"N/A" }}</td>
-                            <td class="observacion-cell" data-item-id="{{ item.id }}">
-                                <div class="observacion-display">
-                                    {{ item.observaciones|default:"Sin observaciones" }}
-                                    <button class="btn btn-link btn-sm btn-edit-observacion"><i class="fas fa-pencil-alt"></i></button>
-                                </div>
-                                <div class="observacion-edit" style="display: none;">
-                                    <textarea class="form-control">{{ item.observaciones|default:"" }}</textarea>
-                                    <button class="btn btn-success btn-sm mt-1 btn-save-observacion">Guardar</button>
-                                    <button class="btn btn-secondary btn-sm mt-1 btn-cancel-observacion">Cancelar</button>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light rounded-circle p-2 me-2 text-center d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem;">
+                                        {{ item.usuario.username|slice:":1"|upper }}
+                                    </div>
+                                    <span class="fw-bold">{{ item.usuario.username|default:"N/A" }}</span>
                                 </div>
                             </td>
+                            <td data-sort="{{ item.fecha_creacion|date:'YmdHis' }}">
+                                <div class="fw-bold text-dark">{{ item.fecha_creacion|date:"d/m/Y" }}</div>
+                                <div class="text-muted small">{{ item.fecha_creacion|date:"H:i" }} hrs.</div>
+                            </td>
                             <td>
-                                <div class="btn-group" role="group">
+                                {% with tipo=item.tipo_documento %}
+                                <span class="badge-soft {% if 'Oficio' in tipo %}badge-soft-primary{% elif 'Trámite' in tipo %}badge-soft-info{% elif 'Vacancia' in tipo %}badge-soft-success{% else %}badge-soft-secondary{% endif %}">
+                                    <i class="fas {% if 'Vacancia' in tipo %}fa-clipboard-check{% elif 'Oficio' in tipo %}fa-file-signature{% else %}fa-file-alt{% endif %} me-1"></i>
+                                    {{ tipo }}
+                                </span>
+                                {% endwith %}
+                            </td>
+                            <td>
+                                {% if item.tipo_documento == "Reporte de Vacancia" %}
+                                    <span class="text-muted italic">Múltiples registros</span>
+                                {% else %}
+                                    <div class="fw-bold text-dark">{{ item.maestro|default:"N/A" }}</div>
+                                    {% if item.maestro_secundario_nombre %}
+                                    <div class="text-muted small">Interino: {{ item.maestro_secundario_nombre }}</div>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.tipo_documento == "Reporte de Vacancia" %}
+                                    <span class="text-muted">-</span>
+                                {% else %}
+                                    <span class="text-code">{{ item.maestro.clave_presupuestal|default:"N/A" }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="text-muted small text-truncate" style="max-width: 150px;" title="{{ item.motivo }}">
+                                    {{ item.motivo|default:"N/A" }}
+                                </div>
+                            </td>
+                            <td class="observacion-cell" data-item-id="{{ item.id }}">
+                                <div class="observacion-display" title="Haz clic para editar">
+                                    <div class="obs-text text-muted small">
+                                        {{ item.observaciones|default:"Sin observaciones" }}
+                                    </div>
+                                    <button class="btn btn-link btn-edit-observacion"><i class="fas fa-pencil-alt"></i></button>
+                                </div>
+                                <div class="observacion-edit" style="display: none;">
+                                    <textarea class="form-control form-control-sm mb-2" rows="2">{{ item.observaciones|default:"" }}</textarea>
+                                    <div class="d-flex gap-1 justify-content-end">
+                                        <button class="btn btn-success btn-xs px-2 btn-save-observacion"><i class="fas fa-check"></i></button>
+                                        <button class="btn btn-light border btn-xs px-2 btn-cancel-observacion"><i class="fas fa-times"></i></button>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex gap-1 justify-content-center">
                                     {% if item.tipo_documento == "Reporte de Vacancia" and item.lote_reporte or item.tipo_documento == "Asignación de Vacancia" and item.lote_reporte %}
-                                        <a href="{% url 'historial_detalle_lote' item.id %}" class="btn btn-sm btn-outline-info" title="Ver Detalles"><i class="fas fa-eye"></i></a>
+                                        <a href="{% url 'historial_detalle_lote' item.id %}" class="btn btn-action-custom" title="Ver Detalles">
+                                            <i class="fas fa-eye text-info"></i>
+                                        </a>
                                     {% elif item.tipo_documento|startswith:"Trámite -" or item.tipo_documento|startswith:"Oficio -" %}
-                                        <a href="{% url 'historial_detalle_tramite' item.id %}" class="btn btn-sm btn-outline-info" title="Ver Detalles"><i class="fas fa-eye"></i></a>
+                                        <a href="{% url 'historial_detalle_tramite' item.id %}" class="btn btn-action-custom" title="Ver Detalles">
+                                            <i class="fas fa-eye text-info"></i>
+                                        </a>
                                     {% endif %}
+                                    
                                     {% if item.ruta_archivo or item.lote_reporte.archivo_generado %}
-                                        <a href="{% url 'descargar_archivo_historial' item.id %}" class="btn btn-sm btn-outline-primary" target="_blank" title="Descargar"><i class="fas fa-download"></i></a>
+                                        <a href="{% url 'descargar_archivo_historial' item.id %}" class="btn btn-action-custom" target="_blank" title="Descargar Documento">
+                                            <i class="fas fa-download text-primary"></i>
+                                        </a>
                                     {% endif %}
-                                    <button class="btn btn-sm btn-outline-danger btn-delete-historial" data-item-id="{{ item.id }}" title="Eliminar">
-                                        <i class="fas fa-trash"></i>
+                                    
+                                    <button class="btn btn-action-custom btn-delete-historial" data-item-id="{{ item.id }}" title="Eliminar Registro">
+                                        <i class="fas fa-trash text-danger"></i>
                                     </button>
                                 </div>
                             </td>
@@ -80,37 +276,22 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Configuración más robusta para DataTables
-    var table = $('#dataTable').DataTable({
-        "order": [[1, "desc"]],
-        "columnDefs": [
-            {
-                "targets": 1, // Columna de fecha
-                "type": "date",
-                "render": function (data, type, row) {
-                    // Forzar el formato de fecha para ordenamiento
-                    if (type === 'sort') {
-                        // Convertir "22/10/2025 10:43" a "2025-10-22 10:43" para ordenamiento
-                        var parts = data.split(' ');
-                        var datePart = parts[0].split('/');
-                        return datePart[2] + '-' + datePart[1] + '-' + datePart[0] + (parts[1] ? ' ' + parts[1] : '');
-                    }
-                    return data;
-                }
-            }
-        ],
-        "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+    // Inicializar DataTable Premium
+    var table = $('#historialTable').DataTable({
+        order: [[1, "desc"]],
+        pageLength: 25,
+        language: {
+            ...window.SpanishDataTable,
+            search: "_INPUT_",
+            searchPlaceholder: "Buscar en historial..."
         },
-        "stateSave": false, // Evitar que guarde el estado anterior
-        "destroy": true, // Destruir cualquier instancia previa
-        "retrieve": true
+        dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>',
+        drawCallback: function() {
+            $('.dataTables_paginate > .pagination').addClass('pagination-sm');
+        }
     });
 
-    // Forzar reordenamiento después de la inicialización
-    table.order([1, 'desc']).draw();
-
-    // Función para obtener el token CSRF de las cookies
+    // Helper CSRF
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -127,14 +308,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const csrftoken = getCookie('csrftoken');
 
-    // Evento para los botones de eliminar
-    $('#dataTable tbody').on('click', 'button.btn-delete-historial', function() {
+    // Manejo de eliminación
+    $('#historialTable tbody').on('click', '.btn-delete-historial', function() {
         const button = this;
         const itemId = $(this).data('item-id');
-        const deleteUrl = `/historial/eliminar/${itemId}/`;
-
-        if (confirm('¿Está seguro de que desea eliminar este registro del historial?')) {
-            fetch(deleteUrl, {
+        
+        if (confirm('¿Eliminar definitivamente este registro del historial?')) {
+            fetch(`/historial/eliminar/${itemId}/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrftoken,
@@ -145,38 +325,33 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.status === 'success') {
                     table.row($(button).parents('tr')).remove().draw();
-                    alert(data.message);
                 } else {
                     alert('Error: ' + data.message);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Ocurrió un error al intentar eliminar el registro.');
             });
         }
     });
 
-    // Edición en el lugar para observaciones
-    $('#dataTable tbody').on('click', '.btn-edit-observacion', function() {
+    // Edición de observaciones
+    $('#historialTable tbody').on('click', '.observacion-display', function() {
         const cell = $(this).closest('.observacion-cell');
         cell.find('.observacion-display').hide();
-        cell.find('.observacion-edit').show();
+        cell.find('.observacion-edit').fadeIn(200);
+        cell.find('textarea').focus();
     });
 
-    $('#dataTable tbody').on('click', '.btn-cancel-observacion', function() {
+    $('#historialTable tbody').on('click', '.btn-cancel-observacion', function() {
         const cell = $(this).closest('.observacion-cell');
         cell.find('.observacion-edit').hide();
-        cell.find('.observacion-display').show();
+        cell.find('.observacion-display').fadeIn(200);
     });
 
-    $('#dataTable tbody').on('click', '.btn-save-observacion', function() {
+    $('#historialTable tbody').on('click', '.btn-save-observacion', function() {
         const cell = $(this).closest('.observacion-cell');
         const itemId = cell.data('item-id');
         const newText = cell.find('textarea').val();
-        const saveUrl = `/historial/guardar_observacion/${itemId}/`;
 
-        fetch(saveUrl, {
+        fetch(`/historial/guardar_observacion/${itemId}/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrftoken,
@@ -187,21 +362,12 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                const displayDiv = cell.find('.observacion-display');
-                displayDiv.html(newText ? newText.replace(/\n/g, '<br>') : 'Sin observaciones');
-                displayDiv.append(' <button class="btn btn-link btn-sm btn-edit-observacion"><i class="fas fa-pencil-alt"></i></button>');
-                
+                cell.find('.obs-text').text(newText || 'Sin observaciones');
                 cell.find('.observacion-edit').hide();
-                displayDiv.show();
-                
-                table.row(cell.closest('tr')).invalidate('data').draw(false);
+                cell.find('.observacion-display').fadeIn(200);
             } else {
-                alert('Error: ' + data.message);
+                alert('Error al guardar');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Ocurrió un error al guardar la observación.');
         });
     });
 });

@@ -1,63 +1,186 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>{{ titulo }}</h2>
-        <div class="btn-toolbar">
-            <button id="exportarExcelBtn" class="btn btn-success me-2">
+<style>
+    :root {
+        --lf-primary: #2563eb;
+        --lf-success: #10b981;
+        --lf-border: #e2e8f0;
+        --lf-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .page-container {
+        padding: 1.5rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header Styling */
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        background: white;
+        padding: 1.25rem 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid var(--lf-border);
+        box-shadow: var(--lf-shadow);
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Table Card */
+    .table-container-card {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid var(--lf-border);
+        box-shadow: var(--lf-shadow);
+        overflow: hidden;
+    }
+
+    thead th {
+        background: #f8fafc !important;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        border-bottom: 2px solid var(--lf-border) !important;
+        padding: 1rem !important;
+    }
+
+    /* Custom UI Elements */
+    .avatar-circle {
+        width: 36px;
+        height: 36px;
+        background-color: #f1f5f9;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--lf-primary);
+        font-size: 0.85rem;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .badge-soft {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 2rem;
+        font-weight: 600;
+    }
+    
+    .badge-soft-success { background: #ecfdf5; color: #059669; }
+
+    /* Homogenized Action Buttons */
+    .btn-action-custom {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .btn-action-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .empty-state {
+        padding: 4rem 2rem;
+        text-align: center;
+    }
+
+</style>
+
+<div class="page-container">
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="header-title">
+            <h1 class="mb-0"><i class="fas fa-users-cog text-primary me-2"></i> {{ titulo }}</h1>
+            <p class="text-muted small mb-0">Listado especializado de personal con función de {{ funcion_display|lower }}.</p>
+        </div>
+        <div class="header-actions d-flex gap-2">
+            <button id="exportarExcelBtn" class="btn btn-success text-white border-0 rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
                 <i class="fas fa-file-excel me-2"></i>Exportar a Excel
             </button>
-            <a href="{% url 'agregar_maestro' %}" class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>Agregar {{ funcion_display }}
+            <a href="{% url 'agregar_maestro' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
+                <i class="fas fa-plus-circle me-1"></i> Agregar {{ funcion_display }}
             </a>
         </div>
     </div>
-    
+
     {% if messages %}
+    <div class="mb-4">
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {% endfor %}
+    </div>
     {% endif %}
-    
-    <div class="card">
-        <div class="card-body">
+
+    <!-- Table Section -->
+    <div class="table-container-card">
+        <div class="card-body p-0">
             {% if trabajadores %}
             <div class="table-responsive">
-                <table id="tablaFunciones" class="table table-striped table-hover datatable-search">
+                <table id="tablaFunciones" class="table table-hover align-middle datatable-search mb-0 w-100">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
+                            <th style="width: 100px;">ID</th>
+                            <th>Personal</th>
                             <th>CCT</th>
                             <th>Clave Presupuestal</th>
-                            <th>Acciones</th>
+                            <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for trabajador in trabajadores %}
                         <tr>
-                            <td>{{ trabajador.id_maestro }}</td>
-                            <td>{{ trabajador.a_paterno }} {{ trabajador.a_materno }} {{ trabajador.nombres }}</td>
-                            <td>{% if trabajador.id_escuela %}{{ trabajador.id_escuela.id_escuela }}{% else %}N/A{% endif %}</td>
-                            <td>{{ trabajador.clave_presupuestal|default:"-" }}</td>
+                            <td class="text-muted small fw-bold">{{ trabajador.id_maestro }}</td>
                             <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'detalle_maestro' trabajador.pk %}" class="btn btn-sm btn-outline-info">
-                                        <i class="fas fa-eye"></i>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3">
+                                        {{ trabajador.nombres|slice:":1"|upper }}
+                                    </div>
+                                    <span class="fw-bold text-dark">{{ trabajador.a_paterno }} {{ trabajador.a_materno }} {{ trabajador.nombres }}</span>
+                                </div>
+                            </td>
+                            <td><span class="fw-bold text-primary">{{ trabajador.id_escuela.id_escuela|default:"N/A" }}</span></td>
+                            <td><span class="small text-muted">{{ trabajador.clave_presupuestal|default:"-" }}</span></td>
+                            <td class="text-center">
+                                <div class="d-flex gap-1 justify-content-center">
+                                    <a href="{% url 'detalle_maestro' trabajador.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Ver detalle">
+                                        <i class="fas fa-eye text-info"></i>
                                     </a>
                                     {% if perms.gestion_escolar.change_maestro %}
-                                    <a href="{% url 'editar_maestro' trabajador.pk %}" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-edit"></i>
+                                    <a href="{% url 'editar_maestro' trabajador.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Editar">
+                                        <i class="fas fa-edit text-primary"></i>
                                     </a>
                                     {% endif %}
                                     {% if perms.gestion_escolar.delete_maestro %}
-                                    <a href="{% url 'eliminar_maestro' trabajador.pk %}" class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash"></i>
+                                    <a href="{% url 'eliminar_maestro' trabajador.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Eliminar">
+                                        <i class="fas fa-trash text-danger"></i>
                                     </a>
                                     {% endif %}
                                 </div>
@@ -68,42 +191,44 @@
                 </table>
             </div>
             {% else %}
-            <div class="text-center py-4">
-                <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No hay {{ funcion_display|lower }}s registrados</h5>
-                <p class="text-muted">Comienza agregando el primer {{ funcion_display|lower }}</p>
+            <div class="empty-state">
+                <div class="bg-light rounded-circle d-inline-flex p-4 mb-3">
+                    <i class="fas fa-users fa-3x text-muted"></i>
+                </div>
+                <h5 class="text-secondary fw-bold">No hay {{ funcion_display|lower }}s registrados</h5>
+                <p class="text-muted small">Comienza agregando el primer registro para esta función.</p>
+                <a href="{% url 'agregar_maestro' %}" class="btn btn-outline-primary btn-sm rounded-pill px-4 btn-hover-animate">
+                    <i class="fas fa-plus me-1"></i> Agregar Ahora
+                </a>
             </div>
             {% endif %}
         </div>
     </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const exportBtn = document.getElementById('exportarExcelBtn');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', function() {
-            // Get the function type from the template context
-            const funcion = '{{ funcion|escapejs }}';
-            
-            // Base URL for the export view
-            let url = `{% url 'exportar_maestros_excel' %}?funcion=${funcion}`;
-            
-            // Get the current search value from the DataTable instance
-            try {
-                const dataTable = $('#tablaFunciones').DataTable();
-                const filtro = dataTable.search();
-                if (filtro) {
-                    url += `&filtro=${encodeURIComponent(filtro)}`;
+    document.addEventListener('DOMContentLoaded', function () {
+        const exportBtn = document.getElementById('exportarExcelBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function () {
+                const funcion = '{{ funcion|escapejs }}';
+                let url = `{% url 'exportar_maestros_excel' %}?funcion=${funcion}`;
+
+                try {
+                    const dataTable = $('#tablaFunciones').DataTable();
+                    const filtro = dataTable.search();
+                    if (filtro) {
+                        url += `&filtro=${encodeURIComponent(filtro)}`;
+                    }
+                } catch (e) {
+                    console.error("Could not get DataTable search filter:", e);
                 }
-            } catch (e) {
-                console.error("Could not get DataTable search filter:", e);
-            }
-            
-            // Redirect to the constructed URL to trigger the download
-            window.location.href = url;
-        });
-    }
-});
+                window.location.href = url;
+            });
+        }
+    });
 </script>
 {% endblock %}

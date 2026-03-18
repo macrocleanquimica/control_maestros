@@ -1,92 +1,271 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fw-extrabold { font-weight: 800; }
+    .fs-xs { font-size: 0.7rem; }
+    .letter-spacing-wider { letter-spacing: 0.05em; }
+    .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .hover-lift:hover { transform: translateY(-2px); }
+    .transition-all { transition: all 0.3s ease; }
+    
+    /* Table Enhancements */
+    .table-permissions thead th {
+        background-color: #f8fafc;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        padding: 1rem 0.75rem;
+    }
+    .table-permissions tbody td {
+        vertical-align: middle;
+        padding: 0.85rem 0.75rem;
+    }
+    .table-permissions tr:hover {
+        background-color: #f1f5f9;
+        transition: background-color 0.2s;
+    }
+    
+    /* Section Headers */
+    .section-title {
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Checkbox Styles */
+    .form-check-input {
+        width: 1.5rem;
+        height: 1.5rem;
+        cursor: pointer;
+        border-color: #cbd5e1;
+    }
+    .form-check-input:checked {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    /* Custom Card for Roles */
+    .role-name-card {
+        background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+    }
+
+    .bg-gradient-soft-blue {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border: 1px solid #bfdbfe !important;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
-
-    <form method="post" novalidate>
-        {% csrf_token %}
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Nombre del Rol</h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
-                    {{ form.name }}
-                    {% if form.name.errors %}<div class="invalid-feedback d-block">{{ form.name.errors }}</div>{% endif %}
+<div class="container py-4">
+    <!-- Breadcrumb & Header -->
+    <div class="row mb-4 animate__animated animate__fadeIn">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="{% url 'ajustes' %}" class="text-decoration-none">Ajustes</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'role_list' %}" class="text-decoration-none">Roles</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{% if object %}Editar Rol{% else %}Crear Rol{% endif %}</li>
+                </ol>
+            </nav>
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary bg-opacity-10 p-3 rounded-4">
+                    <i class="fas fa-shield-alt text-primary fs-3"></i>
                 </div>
-            </div>
-        </div>
-
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Matriz de Permisos</h6>
                 <div>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="check-all">Marcar Todo</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="uncheck-all">Desmarcar Todo</button>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Módulo</th>
-                                <th class="text-center">Ver</th>
-                                <th class="text-center">Agregar</th>
-                                <th class="text-center">Modificar</th>
-                                <th class="text-center">Eliminar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in permissions_matrix %}
-                            <tr>
-                                <td><strong>{{ item.model_name }}</strong></td>
-                                
-                                {% if item.type == 'crud' %}
-                                    <td class="text-center">
-                                        {% if item.view %}<input class="form-check-input" type="checkbox" name="permissions" value="{{ item.view.id }}" {% if item.view in form.permissions.initial %}checked{% endif %}>{% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        {% if item.add %}<input class="form-check-input" type="checkbox" name="permissions" value="{{ item.add.id }}" {% if item.add in form.permissions.initial %}checked{% endif %}>{% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        {% if item.change %}<input class="form-check-input" type="checkbox" name="permissions" value="{{ item.change.id }}" {% if item.change in form.permissions.initial %}checked{% endif %}>{% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        {% if item.delete %}<input class="form-check-input" type="checkbox" name="permissions" value="{{ item.delete.id }}" {% if item.delete in form.permissions.initial %}checked{% endif %}>{% endif %}
-                                    </td>
-                                {% elif item.type == 'custom' %}
-                                    <td class="text-center">
-                                        {% if item.permission %}
-                                            <input class="form-check-input" type="checkbox" name="permissions" value="{{ item.permission.id }}" {% if item.permission in form.permissions.initial %}checked{% endif %}>
-                                        {% endif %}
-                                    </td>
-                                    <td colspan="3" class="table-light"></td>
-                                {% endif %}
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    <h2 class="fw-extrabold text-dark mb-0">{{ titulo }}</h2>
+                    <p class="text-muted mb-0">Define el nombre del rol y selecciona los permisos específicos para cada módulo del sistema.</p>
                 </div>
             </div>
         </div>
+    </div>
 
-        <button type="submit" class="btn btn-success btn-lg">Guardar Rol</button>
-        <a href="{% url 'role_list' %}" class="btn btn-secondary btn-lg">Cancelar</a>
+    <!-- Alert Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-premium fade show shadow-sm mb-4" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" novalidate id="roleForm">
+        {% csrf_token %}
+        
+        <div class="row g-4 justify-content-center">
+            <div class="col-xl-9">
+                <!-- Role Name Card -->
+                <div class="card premium-card shadow-sm border-0 mb-4 role-name-card">
+                    <div class="card-body p-4">
+                        <div class="section-title d-flex align-items-center gap-2">
+                            <i class="fas fa-tag text-primary opacity-75"></i>
+                            <h5 class="fw-bold mb-0">Identificación del Rol</h5>
+                        </div>
+                        <div class="mb-0">
+                            {{ form.name|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permissions Matrix Card -->
+                <div class="card premium-card shadow-sm border-0 overflow-hidden">
+                    <div class="card-header bg-white py-4 px-4 border-bottom d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-th-list text-primary opacity-75"></i>
+                            <h5 class="fw-bold mb-0">Matriz de Permisos</h5>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-light btn-sm fw-bold border shadow-xs px-3" id="check-all">
+                                <i class="fas fa-check-double me-1 text-success"></i> Marcar Todo
+                            </button>
+                            <button type="button" class="btn btn-light btn-sm fw-bold border shadow-xs px-3" id="uncheck-all">
+                                <i class="fas fa-times me-1 text-danger"></i> Desmarcar Todo
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-permissions align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">Módulo / Función</th>
+                                        <th class="text-center">Ver</th>
+                                        <th class="text-center">Agregar</th>
+                                        <th class="text-center">Editar</th>
+                                        <th class="text-center">Eliminar</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in permissions_matrix %}
+                                    <tr>
+                                        <td class="ps-4">
+                                            <span class="fw-bold text-dark d-flex align-items-center gap-2">
+                                                {% if item.type == 'crud' %}
+                                                    <i class="fas fa-cube text-muted fs-xs opacity-50"></i>
+                                                {% else %}
+                                                    <i class="fas fa-cog text-primary fs-xs opacity-75"></i>
+                                                {% endif %}
+                                                {{ item.model_name|capfirst }}
+                                            </span>
+                                        </td>
+                                        
+                                        {% if item.type == 'crud' %}
+                                            <td class="text-center">
+                                                {% if item.view %}
+                                                    <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.view.id }}" {% if item.view in form.permissions.initial %}checked{% endif %}>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if item.add %}
+                                                    <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.add.id }}" {% if item.add in form.permissions.initial %}checked{% endif %}>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if item.change %}
+                                                    <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.change.id }}" {% if item.change in form.permissions.initial %}checked{% endif %}>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {% if item.delete %}
+                                                    <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.delete.id }}" {% if item.delete in form.permissions.initial %}checked{% endif %}>
+                                                {% endif %}
+                                            </td>
+                                        {% elif item.type == 'custom' %}
+                                            <td class="text-center">
+                                                {% if item.permission %}
+                                                    <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.permission.id }}" {% if item.permission in form.permissions.initial %}checked{% endif %}>
+                                                {% endif %}
+                                            </td>
+                                            <td colspan="3" class="bg-light bg-opacity-25">
+                                                <span class="text-muted small italic fst-italic ps-2">Acceso directo a funcionalidad</span>
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Summary / Info -->
+                <div class="card border-0 rounded-4 bg-gradient-soft-blue shadow-xs mt-4">
+                    <div class="card-body p-4 d-flex gap-3 align-items-start text-dark">
+                        <i class="fas fa-info-circle text-primary fs-4 mt-1"></i>
+                        <div>
+                            <h6 class="fw-bold mb-1 fs-xs text-uppercase letter-spacing-wider">Nota sobre Permisos</h6>
+                            <p class="mb-0 small opacity-85">Los permisos marcados se aplicarán de forma inmediata a todos los usuarios vinculados a este rol. Asegúrate de revisar la matriz antes de guardar para evitar otorgar privilegios excesivos o restringir el trabajo necesario.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex flex-column flex-md-row gap-3 pt-5 mt-4 border-top">
+                    <button type="submit" class="btn btn-primary btn-lg px-5 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm transition-all hover-lift btn-hover-animate">
+                        <i class="fas fa-save"></i>
+                        <span>Guardar Rol y Permisos</span>
+                    </button>
+                    <a href="{% url 'role_list' %}" class="btn btn-light btn-lg px-4 rounded-3 fw-bold border text-muted hover-bg-light transition-all d-flex align-items-center justify-content-center gap-2 btn-hover-animate">
+                        <i class="fas fa-times"></i>
+                        <span>Cancelar</span>
+                    </a>
+                </div>
+            </div>
+        </div>
     </form>
 </div>
+
+<style>
+    /* Crispy Form Customizations */
+    .form-control {
+        border-radius: 0.75rem !important;
+        border: 1px solid #e2e8f0;
+        background-color: #fff;
+        padding: 0.75rem 1rem;
+        transition: all 0.2s;
+    }
+    .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+    .form-label {
+        font-weight: 600;
+        color: #4b5563;
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+    // Manejo de checkboxes All/None con efectos visuales
     $('#check-all').click(function() {
-        $('input[type="checkbox"]').prop('checked', true);
+        $('input[name="permissions"]').prop('checked', true);
+        $(this).addClass('bg-success bg-opacity-10');
+        setTimeout(() => $(this).removeClass('bg-success bg-opacity-10'), 300);
     });
+    
     $('#uncheck-all').click(function() {
-        $('input[type="checkbox"]').prop('checked', false);
+        $('input[name="permissions"]').prop('checked', false);
+        $(this).addClass('bg-danger bg-opacity-10');
+        setTimeout(() => $(this).removeClass('bg-danger bg-opacity-10'), 300);
+    });
+
+    // Validar al menos un nombre
+    $('#roleForm').on('submit', function() {
+        if ($('#id_name').val().trim() === '') {
+            return false;
+        }
     });
 });
 </script>

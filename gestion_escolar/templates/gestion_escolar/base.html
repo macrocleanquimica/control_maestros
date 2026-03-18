@@ -4,96 +4,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sistema de Control de Maestros{% endblock %}</title>
-    {% load static %}
-    {% load auth_extras %}
-    {% load color_filters %}
+    <title>{%block title%}Sistema de Control de Maestros{%endblock%}</title>
+    {%load static%}
+    {%load auth_extras%}
+    {%load color_filters%}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'gestion_escolar/css/custom.css' %}">
-    <link href="{% static 'gestion_escolar/css/print.css' %}" rel="stylesheet" media="print">
+    <link rel="stylesheet" href="{%static 'gestion_escolar/css/custom.css'%}">
+    <link href="{%static 'gestion_escolar/css/print.css'%}" rel="stylesheet" media="print">
 
-{% if active_theme %}
-    <style>
-        /* Estilos dinámicos para el tema activo */
-        #accordionSidebar {
-            background-color: {{ active_theme.color_principal }};
-            {% if active_theme.imagen_fondo %}
-            {% if active_theme.usar_filtro_oscuro %}
-            /* Con filtro oscuro: alta opacidad para oscurecer la imagen */
-            background-image: linear-gradient(180deg, {{ active_theme.color_principal|hex_to_rgba:0.85 }}, {{ active_theme.color_secundario|hex_to_rgba:0.85 }}), url("{{ active_theme.imagen_fondo.url }}");
-            background-blend-mode: overlay;
-            {% else %}
-            /* Sin filtro oscuro: baja opacidad para mostrar la imagen más clara */
-            background-image: linear-gradient(180deg, {{ active_theme.color_principal|hex_to_rgba:0.3 }}, {{ active_theme.color_secundario|hex_to_rgba:0.3 }}), url("{{ active_theme.imagen_fondo.url }}");
-            {% endif %}
-            background-size: cover;
-            background-position: center;
-            {% else %}
-            background-image: linear-gradient(180deg, {{ active_theme.color_principal }}, {{ active_theme.color_secundario }});
-            {% endif %}
-        }
-
-        /* Aplicar color_texto a todos los elementos del sidebar */
-        #accordionSidebar .sidebar-brand-text,
-        #accordionSidebar .nav-item .nav-link span,
-        #accordionSidebar .nav-item .nav-link,
-        #accordionSidebar .dropdown-item,
-        #accordionSidebar .sidebar-heading {
-            color: {{ active_theme.color_texto }} !important;
-        }
-
-        /* Aplicar color de fondo al submenú desplegable */
-        .sidebar .nav-item .dropdown-menu {
-            background-color: {{ active_theme.color_dropdown }} !important;
-        }
-
-        /* Aplicar color de fondo al enlace activo del sidebar */
-        .sidebar .nav-link.active {
-            background-color: {{ active_theme.color_dropdown }} !important;
-        }
-    </style>
-    {% else %}
-    <style>
-        #accordionSidebar {
-            background-color: var(--secondary-color);
-        }
-    </style>
-    {% endif %}
     <style>
         :root {
             --primary-color: #34495e;
-            /* Dark Gray - for main elements, buttons, active states */
+            /* Dark Gray - for main elements,  buttons,  active states */
             --secondary-color: #2c3e50;
-            /* Very Dark Gray/Near Black - for sidebar background, headers */
+            /* Very Dark Gray/Near Black - for sidebar background,  headers */
             --accent-color: #95a5a6;
-            /* Medium Gray - for subtle accents, borders, less critical highlights */
+            /* Medium Gray - for subtle accents,  borders,  less critical highlights */
             --light-color: #ecf0f1;
             /* Very Light Gray - for general backgrounds */
             --success-color: #27ae60;
-            /* Keep green for success messages, as it's a standard indicator */
+            /* Keep green for success messages,  as it's a standard indicator */
             --sidebar-width: 250px;
             --sidebar-collapsed-width: 70px;
             --transition-speed: 0.3s;
         }
 
-        /* Override Bootstrap primary color classes */
-        .btn-primary {
-            background-color: var(--primary-color) !important;
-            border-color: var(--primary-color) !important;
+        #accordionSidebar {
+            background-color: var(--theme-bg);
+            background-image: var(--theme-image);
+            background-blend-mode: var(--theme-blend, normal);
+            background-size: cover;
+            background-position: center;
         }
 
-        .btn-primary:hover {
-            background-color: var(--secondary-color) !important;
-            /* Darker on hover */
-            border-color: var(--secondary-color) !important;
+        #accordionSidebar .sidebar-brand-text,
+        #accordionSidebar .nav-item .nav-link span,
+        #accordionSidebar .nav-item .nav-link,
+        #accordionSidebar .dropdown-item,
+        #accordionSidebar .sidebar-heading {
+            color: var(--theme-text) !important;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
         }
 
-        .bg-primary {
-            background-color: var(--primary-color) !important;
+        .sidebar .nav-item .dropdown-menu,
+        .sidebar .nav-link.active {
+            background-color: var(--theme-dropdown) !important;
+        }
+
+        /* Asegurar que el fondo del dropdown también use la imagen si existe */
+        .sidebar .dropdown-menu {
+            background-image: var(--theme-image);
+            background-blend-mode: var(--theme-blend, normal);
+            background-size: cover;
+            background-position: center;
         }
 
         body {
@@ -154,59 +121,140 @@
             z-index: 1000;
             transition: all var(--transition-speed) ease;
             left: 0;
-            overflow-y: auto;
+            overflow-y: auto; /* Restaurado */
+            overflow-x: hidden; /* Evitar desborde horizontal */
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilo premium para el scrollbar */
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .sidebar.collapsed {
             width: var(--sidebar-collapsed-width);
+            overflow-x: hidden;
+        }
+
+        .sidebar .sidebar-text {
+            opacity: 1;
+            max-width: 170px; /* Reducido un poco para dar margen */
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis; /* Evita que el texto largo sobresalga */
+            vertical-align: middle;
+            transition: opacity 0.2s ease, max-width 0.3s ease, margin 0.3s ease;
         }
 
         .sidebar.collapsed .sidebar-text {
-            display: none;
+            opacity: 0;
+            max-width: 0;
+            margin: 0;
+            pointer-events: none;
         }
 
         .sidebar.collapsed .nav-link {
             text-align: center;
-            padding: 15px 5px;
+            padding: 12px 0;
+            justify-content: center;
+            margin: 4px 8px;
         }
 
         .sidebar.collapsed .nav-link i {
             margin-right: 0;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
+        }
+
+        .sidebar.collapsed .img-fluid {
+            max-height: 35px !important;
+            transition: max-height var(--transition-speed);
+        }
+
+        .sidebar:not(.collapsed) .img-fluid {
+            transition: max-height var(--transition-speed);
         }
 
         .sidebar.collapsed h3 {
+            opacity: 0;
+            max-width: 0;
+            overflow: hidden;
+        }
+
+        /* --- Tooltips CSS-only para modo colapsado --- */
+        .sidebar.collapsed .nav-link {
+            position: relative;
+        }
+
+        .sidebar.collapsed .nav-link::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: calc(100% + 12px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(30, 30, 30, 0.95);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 1100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            letter-spacing: 0.02em;
+        }
+
+        .sidebar.collapsed .nav-link:hover::after {
+            opacity: 1;
+        }
+
+        .sidebar.collapsed .nav-link .dropdown-toggle::after {
             display: none;
         }
 
         .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 15px 20px;
-            margin: 5px 10px;
-            border-radius: 5px;
+            color: rgba(255, 255, 255, 0.9);
+            padding: 10px 15px; /* Reducido verticalmente */
+            margin: 4px 10px;
+            border-radius: 8px;
             transition: all var(--transition-speed);
             display: flex;
             align-items: center;
-            white-space: nowrap;
+            white-space: nowrap; /* Cambiado de normal a nowrap para ellipsis */
+            line-height: 1.2;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            overflow: hidden; /* Garantiza contención */
         }
 
         .sidebar .nav-link:hover {
             background-color: rgba(255, 255, 255, 0.1);
             color: white;
-            transform: translateX(5px);
+            /* Eliminado transform: translateX(5px) para evitar el desborde reportado */
         }
 
         .sidebar .nav-link.active {
             background-color: var(--primary-color);
             color: white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         .sidebar .nav-link i {
             transition: transform var(--transition-speed);
             min-width: 25px;
             text-align: center;
+            font-size: 1.1rem; /* Un poco más grande para legibilidad */
         }
 
         .sidebar .nav-link.active i {
@@ -252,22 +300,41 @@
             background: var(--primary-color);
             border: none;
             color: white;
-            border-radius: 50%;
+            border-radius: 8px;
             width: 40px;
             height: 40px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            align-items: center;
+            justify-content: center;
         }
 
         #sidebarCollapse {
-            background: none;
-            border: none;
-            color: var(--secondary-color);
-            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 0.85rem;
             cursor: pointer;
-            transition: transform var(--transition-speed);
+            transition: all var(--transition-speed) ease;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
         }
 
         #sidebarCollapse:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        #sidebarCollapse i {
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed #sidebarCollapse i {
             transform: rotate(180deg);
         }
 
@@ -293,7 +360,7 @@
             }
 
             #sidebarToggle {
-                display: block;
+                display: flex;
             }
 
             .sidebar.collapsed {
@@ -347,8 +414,6 @@
             border: none;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
-
-
 
         .dropdown-item {
             color: rgba(255, 255, 255, 0.8);
@@ -427,15 +492,190 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
-
-        /* Forzar color en filas de tabla marcadas como danger */
+        /* Forzar color en filas de tabla marcadas como danger o orange */
         tr.text-danger td {
             color: #dc3545 !important;
             /* Color de peligro de Bootstrap */
         }
+
+        tr.text-orange td {
+            color: #fd7e14 !important;
+            /* Color naranja de Bootstrap */
+        }
+
+        tr.row-interino td {
+            background-color: #fff3e0 !important;
+            /* Naranja muy claro (Orange 50) */
+        }
+
+        /* --- Estilos para Submenús Flyout (a la derecha) --- */
+        
+        /* Posicionamiento del submenú al pasar el mouse solo cuando está colapsado */
+        /* --- Estilos para Submenús Flyout (a la derecha) --- Siempre activos en Desktop --- */
+        
+        @media (min-width: 992px) {
+            /* Los submenús flotan a la derecha con posición FIXED para evitar recortes por el scroll del sidebar */
+            .sidebar .nav-item.dropdown > .dropdown-menu {
+                display: none;
+                position: fixed !important;
+                left: var(--sidebar-width);
+                margin: 0;
+                border-radius: 12px;
+                min-width: 220px;
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
+                z-index: 2000; /* Por encima de todo */
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                background-color: var(--theme-dropdown) !important;
+                padding: 10px 0;
+                pointer-events: none; /* Evitar parpadeos */
+                transition: opacity 0.2s ease, transform 0.2s ease;
+                opacity: 0;
+                transform: translateX(10px);
+            }
+
+            .sidebar .nav-item.dropdown:hover > .dropdown-menu {
+                display: block;
+                opacity: 1;
+                transform: translateX(0);
+                pointer-events: auto;
+            }
+
+            /* Eliminar flechas de acordeón */
+            .sidebar .dropdown-toggle::after {
+                display: none !important;
+            }
+
+            .sidebar .dropdown-item {
+                padding: 10px 20px;
+                font-size: 0.85rem;
+                color: var(--theme-text) !important;
+            }
+            
+            .sidebar .dropdown-item:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+                color: white !important;
+            }
+        }
+
+        /* Global Button Hover Animation */
+        .btn-hover-animate {
+            transition: all 0.2s ease-in-out !important;
+        }
+        .btn-hover-animate:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
+        }
     </style>
     <style>
-        /* Forzar mayúsculas en los campos de formulario, excepto en los de tipo email */
+        /* Anti-flash: aplicar estado colapsado antes del primer render */
+        html.sidebar-is-collapsed .sidebar {
+            width: var(--sidebar-collapsed-width) !important;
+        }
+        html.sidebar-is-collapsed .sidebar .sidebar-text {
+            opacity: 0 !important;
+            max-width: 0 !important;
+        }
+        html.sidebar-is-collapsed .main-content {
+            margin-left: var(--sidebar-collapsed-width) !important;
+            width: calc(100% - var(--sidebar-collapsed-width)) !important;
+        }
+
+        /* --- Estructura Global de DataTables Premium --- */
+        .dataTables_wrapper {
+            padding: 10px 0;
+        }
+        
+        /* Buscador estilo Pill (Redondeado) */
+        .dataTables_filter {
+            margin-bottom: 1.5rem !important;
+            float: right !important;
+        }
+        
+        .dataTables_filter input {
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 50px !important;
+            padding: 0.6rem 1.5rem !important;
+            margin-left: 10px !important;
+            background-color: #f8fafc !important;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05) !important;
+            transition: all 0.3s ease !important;
+            min-width: 250px !important;
+        }
+        
+        .dataTables_filter input:focus {
+            border-color: var(--primary-color) !important;
+            outline: none !important;
+            background-color: #fff !important;
+            box-shadow: 0 0 0 3px rgba(52, 73, 94, 0.1) !important;
+            width: 320px !important;
+        }
+
+        .dataTables_length {
+            margin-bottom: 1.5rem !important;
+            float: left !important;
+        }
+
+        .dataTables_length select {
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 8px !important;
+            padding: 0.4rem 2rem 0.4rem 0.75rem !important;
+            margin: 0 5px !important;
+        }
+
+        /* Estilo de la tabla */
+        table.dataTable {
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            margin-top: 10px !important;
+            margin-bottom: 20px !important;
+        }
+
+        table.dataTable thead th {
+            background-color: #f8f9fa !important;
+            color: #34495e !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+            font-size: 0.75rem !important;
+            letter-spacing: 0.05em !important;
+            padding: 15px !important;
+            border-bottom: 2px solid #dee2e6 !important;
+        }
+
+        table.dataTable tbody td {
+            padding: 12px 15px !important;
+            vertical-align: middle !important;
+            border-bottom: 1px solid #f2f2f2 !important;
+        }
+
+        /* Paginación */
+        .dataTables_paginate {
+            margin-top: 15px !important;
+        }
+
+        .paginate_button {
+            border-radius: 6px !important;
+            margin: 0 2px !important;
+            border: 1px solid #dee2e6 !important;
+            padding: 5px 12px !important;
+            background: white !important;
+        }
+
+        .paginate_button.current {
+            background: var(--primary-color) !important;
+            color: white !important;
+            border-color: var(--primary-color) !important;
+        }
+
+        .paginate_button:hover:not(.current) {
+            background: #f8f9fa !important;
+            border-color: #ced4da !important;
+        }
+    </style>
+    <style>
+        /* Forzar mayúsculas en los campos de formulario,  excepto en los de tipo email */
         input:not([type="email"]),
         textarea {
             text-transform: uppercase;
@@ -444,6 +684,14 @@
 </head>
 
 <body>
+    <!-- Prevenir flash del sidebar al recargar -->
+    <script>
+        (function() {
+            if (localStorage.getItem('sidebar-collapsed') === 'true') {
+                document.documentElement.classList.add('sidebar-is-collapsed');
+            }
+        })();
+    </script>
 
 
     <!-- Pantalla de carga -->
@@ -462,15 +710,36 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <div id="accordionSidebar" class="col-md-2 sidebar">
+            <div id="accordionSidebar" class="col-md-2 sidebar" style="
+                {% if active_theme %}
+                    --theme-bg: {{ active_theme.color_principal }};
+                    --theme-text: {{ active_theme.color_texto }};
+                    --theme-dropdown: {{ active_theme.color_dropdown }};
+                    {% if active_theme.imagen_fondo %}
+                        {% if active_theme.usar_filtro_oscuro %}
+                            --theme-image: linear-gradient(180deg, {{ active_theme.color_principal|hex_to_rgba:0.85 }}, {{ active_theme.color_secundario|hex_to_rgba:0.85 }}), url('{{ active_theme.imagen_fondo.url }}');
+                            --theme-blend: overlay;
+                        {% else %}
+                            --theme-image: linear-gradient(180deg, {{ active_theme.color_principal|hex_to_rgba:0.3 }}, {{ active_theme.color_secundario|hex_to_rgba:0.3 }}), url('{{ active_theme.imagen_fondo.url }}');
+                            --theme-blend: overlay;
+                        {% endif %}
+                    {% else %}
+                        --theme-image: linear-gradient(180deg, {{ active_theme.color_principal }}, {{ active_theme.color_secundario }});
+                    {% endif %}
+                {% else %}
+                    --theme-bg: var(--secondary-color);
+                    --theme-text: white;
+                    --theme-dropdown: var(--primary-color);
+                {% endif %}">
                 <div class="text-center p-3" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-                    <a href="{% url 'index' %}">
-                        <img src="{% static 'gestion_escolar/img/logotipo.png' %}" alt="Logotipo" class="img-fluid"
+                    <a href="{%url 'index'%}">
+                        <img src="{%static 'gestion_escolar/img/logotipo.png'%}" alt="Logotipo" class="img-fluid"
                             style="max-height: 100px;">
                     </a>
                 </div>
-                <div class="d-flex justify-content-end align-items-center px-3">
-                    <button id="sidebarCollapse" class="d-none d-md-block">
+                <div class="d-flex justify-content-between align-items-center px-3 py-2" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                    <div class="sidebar-text small fw-bold text-uppercase opacity-75">Módulos</div>
+                    <button id="sidebarCollapse" class="d-none d-md-flex" title="Colapsar/Expandir menú" aria-label="Colapsar menú">
                         <i class="fas fa-chevron-left"></i>
                     </button>
                 </div>
@@ -479,50 +748,50 @@
 
 
                     <!-- Nav Item - Mis Pendientes -->
-                    {% if perms.gestion_escolar.acceder_pendientes %}
+                    {%if perms.gestion_escolar.acceder_pendientes%}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'pendientes_activos' %}">
+                        <a class="nav-link" href="{%url 'pendientes_activos'%}" data-tooltip="Mis Pendientes">
                             <i class="fas fa-tasks me-2"></i>
                             <span class="sidebar-text">Mis Pendientes</span>
                         </a>
                     </li>
-                    {% endif %}
+                    {%endif%}
 
                     <!-- Menú desplegable para Personal -->
-                    {% if perms.gestion_escolar.view_maestro %}
+                    {%if perms.gestion_escolar.view_maestro%}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
+                            aria-expanded="false" data-tooltip="Personal">
                             <i class="fas fa-users me-2"></i>
                             <span class="sidebar-text">Personal</span>
                         </a>
                         <ul class="dropdown-menu">
                             <li>
-                                <a class="dropdown-item" href="{% url 'lista_maestros' %}">
+                                <a class="dropdown-item" href="{%url 'lista_maestros'%}">
                                     <i class="fas fa-chalkboard-teacher me-2"></i> Todo el Personal
                                 </a>
                             </li>
-                            {% if not user|has_group:"Directores" %}
+                            {%if not user|has_group:"Directores"%}
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{% url 'lista_directores' %}">
+                                <a class="dropdown-item" href="{%url 'lista_directores'%}">
                                     <i class="fas fa-user-tie me-2"></i> Directores
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{% url 'lista_supervisores_maestros' %}">
+                                <a class="dropdown-item" href="{%url 'lista_supervisores_maestros'%}">
                                     <i class="fas fa-user-check me-2"></i> Supervisores
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{% url 'lista_psicologos' %}">
+                                <a class="dropdown-item" href="{%url 'lista_psicologos'%}">
                                     <i class="fas fa-brain me-2"></i> Psicólogos
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{% url 'lista_trabajadores_sociales' %}">
+                                <a class="dropdown-item" href="{%url 'lista_trabajadores_sociales'%}">
                                     <i class="fas fa-hands-helping me-2"></i> Trabajadores Sociales
                                 </a>
                             </li>
@@ -530,102 +799,110 @@
                                 <hr class="dropdown-divider">
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{% url 'lista_maestros_grupo' %}">
+                                <a class="dropdown-item" href="{%url 'lista_maestros_grupo'%}">
                                     <i class="fas fa-user-graduate me-2"></i> Maestros de Grupo
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{% url 'lista_docentes_apoyo' %}">
+                                <a class="dropdown-item" href="{%url 'lista_docentes_apoyo'%}">
                                     <i class="fas fa-book me-2"></i> Docentes de Apoyo
                                 </a>
                             </li>
-                            {% endif %}
+                            {%endif%}
                         </ul>
                     </li>
-                    {% endif %}
+                    {%endif%}
 
-                    {% if perms.gestion_escolar.view_escuela %}
+                    {%if perms.gestion_escolar.view_escuela%}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'lista_escuelas' %}">
+                        <a class="nav-link" href="{%url 'lista_escuelas'%}" data-tooltip="Centros de Trabajo">
                             <i class="fas fa-school me-2"></i>
                             <span class="sidebar-text">Centros de Trabajo</span>
                         </a>
                     </li>
-                    {% endif %}
-                    {% if perms.gestion_escolar.view_categoria %}
+                    {%endif%}
+                    {%if perms.gestion_escolar.view_categoria%}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'lista_categorias' %}">
+                        <a class="nav-link" href="{%url 'lista_categorias'%}" data-tooltip="Categorías">
                             <i class="fas fa-tags me-2"></i>
                             <span class="sidebar-text">Categorías</span>
                         </a>
                     </li>
-                    {% endif %}
-                    {% if perms.gestion_escolar.view_zona %}
+                    {%endif%}
+                    {%if perms.gestion_escolar.view_zona%}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'lista_zonas' %}">
+                        <a class="nav-link" href="{%url 'lista_zonas'%}" data-tooltip="Zonas">
                             <i class="fas fa-map-marked me-2"></i>
                             <span class="sidebar-text">Zonas</span>
                         </a>
                     </li>
-                    {% endif %}
+                    {%endif%}
 
-                    {% if perms.gestion_escolar.acceder_oficios %}
+                    {%if perms.gestion_escolar.acceder_oficios%}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'generar_oficios' %}">
+                        <a class="nav-link" href="{%url 'generar_oficios'%}" data-tooltip="Oficios">
                             <i class="fas fa-file-signature me-2"></i>
                             <span class="sidebar-text">Oficios</span>
                         </a>
                     </li>
-                    {% endif %}
-                    {% if perms.gestion_escolar.acceder_tramites %}
+                    {%endif%}
+                    {%if perms.gestion_escolar.acceder_tramites%}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'generar_tramites_generales' %}">
+                        <a class="nav-link" href="{%url 'generar_tramites_generales'%}" data-tooltip="Trámites">
                             <i class="fas fa-file-alt me-2"></i>
                             <span class="sidebar-text">Trámites</span>
                         </a>
                     </li>
-                    {% endif %}
-                    {% if perms.gestion_escolar.acceder_vacancias %}
+                    {%endif%}
+                    {%if perms.gestion_escolar.acceder_vacancias%}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'gestionar_lote_vacancia' %}">
+                        <a class="nav-link" href="{%url 'gestionar_lote_vacancia'%}" data-tooltip="Vacancia">
                             <i class="fas fa-file-invoice me-2"></i>
                             <span class="sidebar-text">Asignación de Vacancia</span>
                         </a>
                     </li>
-                    {% endif %}
-                    {% if perms.gestion_escolar.acceder_historial %}
+                    {%endif%}
+                    {%if perms.gestion_escolar.acceder_historial%}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'historial' %}">
+                        <a class="nav-link" href="{%url 'historial'%}" data-tooltip="Historial">
                             <i class="fas fa-history me-2"></i>
                             <span class="sidebar-text">Historial</span>
                         </a>
                     </li>
-                    {% endif %}
-                    {% if perms.gestion_escolar.view_registrocorrespondencia %}
+                    {%endif%}
+                    {%if perms.gestion_escolar.view_registrocorrespondencia%}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'registrocorrespondencia_list' %}">
+                        <a class="nav-link" href="{%url 'registrocorrespondencia_list'%}" data-tooltip="Correspondencia">
                             <i class="fas fa-archive me-2"></i>
                             <span class="sidebar-text">Registro Correspondencia</span>
                         </a>
                     </li>
-                    {% endif %}
-                    {% if perms.gestion_escolar.acceder_fup %}
+                    {%endif%}
+                    {%if perms.gestion_escolar.acceder_fup%}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'lista_fup' %}">
+                        <a class="nav-link" href="{%url 'lista_fup'%}" data-tooltip="FUPs">
                             <i class="fas fa-file-contract me-2"></i>
                             <span class="sidebar-text">Registro de FUPs</span>
                         </a>
                     </li>
-                    {% endif %}
+                    {%endif%}
 
-                    {% if perms.gestion_escolar.acceder_reportes %}
+                    {%if perms.gestion_escolar.acceder_reportes%}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'reportes_dashboard' %}">
+                        <a class="nav-link" href="{%url 'reportes_dashboard'%}" data-tooltip="Reportes">
                             <i class="fas fa-chart-bar me-2"></i>
                             <span class="sidebar-text">Reportes</span>
                         </a>
                     </li>
-                    {% endif %}
+                    {%endif%}
+                    {%if perms.gestion_escolar.acceder_prelacion%}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{%url 'lista_prelacion'%}" data-tooltip="Prelación">
+                            <i class="fas fa-list-ol me-2"></i>
+                            <span class="sidebar-text">Lista de Prelación</span>
+                        </a>
+                    </li>
+                    {%endif%}
                 </ul>
             </div>
 
@@ -634,46 +911,46 @@
                 <!-- Header -->
                 <div class="header">
                     <h4>Sistema de Control de Personal de Educación Especial</h4>
-                    {% if user.is_authenticated %}
+                    {%if user.is_authenticated%}
                     <ul class="navbar-nav d-flex flex-row align-items-center">
                         <!-- Notification Bell Dropdown -->
                         <li class="nav-item dropdown me-3">
                             <a class="nav-link" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
                                 <i class="fas fa-bell fa-fw"></i>
-                                {% if total_alerts > 0 %}
+                                {%if total_alerts > 0%}
                                 <span
                                     class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle"
-                                    style="font-size: 0.6em; padding: .25em .4em;">{{ total_alerts }}</span>
-                                {% endif %}
+                                    style="font-size: 0.6em; padding: .25em .4em;">{{total_alerts}}</span>
+                                {%endif%}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow animated--grow-in"
                                 aria-labelledby="alertsDropdown">
                                 <li>
                                     <h6 class="dropdown-header">Centro de Alertas</h6>
                                 </li>
-                                {% for alert in global_alerts %}
-                                <li><a class="dropdown-item d-flex align-items-center" href="{{ alert.url }}">
+                                {%for alert in global_alerts%}
+                                <li><a class="dropdown-item d-flex align-items-center" href="{{alert.url}}">
                                         <div class="me-3">
-                                            {% if alert.type == 'message' %}
+                                            {%if alert.type == 'message'%}
                                             <div class="icon-circle bg-primary p-2 rounded-circle"><i
                                                     class="fas fa-envelope text-white"></i></div>
-                                            {% elif alert.type == 'task' %}
+                                            {%elif alert.type == 'task'%}
                                             <div class="icon-circle bg-warning p-2 rounded-circle"><i
                                                     class="fas fa-tasks text-white"></i></div>
-                                            {% endif %}
+                                            {%endif%}
                                         </div>
                                         <div>
-                                            <div class="small text-muted">{{ alert.date|date:"d/m/Y" }}
+                                            <div class="small text-muted">{{alert.date|date:"d/m/Y"}}
                                             </div>
-                                            <span class="fw-bold">{{ alert.text }}</span>
+                                            <span class="fw-bold">{{alert.text}}</span>
                                         </div>
                                     </a></li>
-                                {% endfor %}
-                                {% if not global_alerts %}
+                                {%endfor%}
+                                {%if not global_alerts%}
                                 <li><a class="dropdown-item text-center small text-muted" href="#">No hay
                                         alertas nuevas</a></li>
-                                {% endif %}
+                                {%endif%}
                             </ul>
                         </li>
 
@@ -681,43 +958,43 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="me-2 d-none d-lg-inline">{{ user.username }}</span>
+                                <span class="me-2 d-none d-lg-inline">{{user.username}}</span>
                                 <i class="fas fa-user-circle"></i>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                {% if perms.gestion_escolar.acceder_bandeja_entrada %}
-                                <li><a class="dropdown-item" href="{% url 'correspondencia_inbox' %}">
+                                {%if perms.gestion_escolar.acceder_bandeja_entrada%}
+                                <li><a class="dropdown-item" href="{%url 'correspondencia_inbox'%}">
                                         <i class="fas fa-envelope fa-sm fa-fw me-2 text-gray-400"></i>
                                         Bandeja de Entrada
                                     </a></li>
-                                {% endif %}
-                                {% if perms.gestion_escolar.acceder_ajustes %}
-                                <li><a class="dropdown-item" href="{% url 'ajustes' %}">
+                                {%endif%}
+                                {%if perms.gestion_escolar.acceder_ajustes%}
+                                <li><a class="dropdown-item" href="{%url 'ajustes'%}">
                                         <i class="fas fa-cogs fa-sm fa-fw me-2 text-gray-400"></i>
                                         Ajustes
                                     </a></li>
-                                {% endif %} <li>
+                                {%endif%} <li>
                                     <hr class="dropdown-divider">
                                 </li>
-                                <li><a class="dropdown-item" href="{% url 'logout' %}" id="logoutButton">
+                                <li><a class="dropdown-item" href="{%url 'logout'%}" id="logoutButton">
                                         <i class="fas fa-sign-out-alt fa-sm fa-fw me-2 text-gray-400"></i>
                                         Cerrar Sesión
                                     </a></li>
                             </ul>
                         </li>
                     </ul>
-                    {% endif %}
+                    {%endif%}
                 </div>
 
                 <!-- Contenido específico de cada página -->
-                {% block content %}
+                {%block content%}
                 <!-- Ejemplo de contenido por defecto -->
                 <div class="content-card">
                     <h5>Bienvenido al Sistema de Control</h5>
                     <p>Seleccione una opción del menú para comenzar.</p>
                 </div>
-                {% endblock %}
+                {%endblock%}
             </div>
         </div>
     </div>
@@ -725,11 +1002,45 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    
+    <!-- Configuración Global de DataTables -->
+    <script>
+        window.SpanishDataTable = {
+            "sProcessing": "Procesando...",
+            "sLengthMenu": "Mostrar _MENU_ registros",
+            "sZeroRecords": "No se encontraron resultados",
+            "sEmptyTable": "Ningún dato disponible en esta tabla",
+            "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+            "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+            "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
+            "sInfoPostFix": "",
+            "sSearch": "",
+            "sUrl": "",
+            "sInfoThousands": ",",
+            "sLoadingRecords": "Cargando...",
+            "oPaginate": {
+                "sFirst": "Primero",
+                "sLast": "Último",
+                "sNext": "Siguiente",
+                "sPrevious": "Anterior"
+            },
+            "oAria": {
+                "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
+                "sSortDescending": ": Activar para ordenar la columna de manera descendente"
+            },
+            "buttons": {
+                "copy": "Copiar",
+                "colvis": "Visibilidad",
+                "print": "Imprimir",
+                "excel": "Excel"
+            }
+        };
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/i18n/es.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <script src="{% static 'gestion_escolar/js/custom_datatables.js' %}"></script>
+    <script src="{%static 'gestion_escolar/js/custom_datatables.js'%}"></script>
 
     <script>
         // Toggle sidebar en dispositivos móviles
@@ -746,18 +1057,40 @@
             this.classList.remove('active');
         });
 
+        // Función para aplicar el estado del sidebar
+        function applySidebarState(isCollapsed) {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const collapseBtn = document.getElementById('sidebarCollapse');
+
+            if (isCollapsed) {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('sidebar-collapsed');
+                if (collapseBtn) collapseBtn.setAttribute('aria-label', 'Expandir menú');
+            } else {
+                sidebar.classList.remove('collapsed');
+                mainContent.classList.remove('sidebar-collapsed');
+                if (collapseBtn) collapseBtn.setAttribute('aria-label', 'Colapsar menú');
+            }
+        }
+
+        // Inicializar estado desde localStorage (complementa el script inline anti-flash)
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarState = localStorage.getItem('sidebar-collapsed');
+            if (sidebarState === 'true') {
+                applySidebarState(true);
+            }
+            // Limpiar la clase anti-flash del html
+            document.documentElement.classList.remove('sidebar-is-collapsed');
+        });
+
         // Colapsar/expandir sidebar en desktop
         document.getElementById('sidebarCollapse').addEventListener('click', function () {
-            document.querySelector('.sidebar').classList.toggle('collapsed');
-            document.querySelector('.main-content').classList.toggle('sidebar-collapsed');
-
-            // Cambiar icono
-            const icon = this.querySelector('i');
-            if (icon.classList.contains('fa-chevron-left')) {
-                icon.classList.replace('fa-chevron-left', 'fa-chevron-right');
-            } else {
-                icon.classList.replace('fa-chevron-right', 'fa-chevron-left');
-            }
+            const sidebar = document.querySelector('.sidebar');
+            const isCollapsing = !sidebar.classList.contains('collapsed');
+            
+            applySidebarState(isCollapsing);
+            localStorage.setItem('sidebar-collapsed', isCollapsing);
         });
 
         // Cerrar sidebar al hacer clic en un enlace (en móviles)
@@ -780,15 +1113,58 @@
                 }
             });
 
-            // Activar el menú desplegable si está en una de sus opciones
+            // Activar el menú actual y sus padres
             document.querySelectorAll('.dropdown-item').forEach(item => {
                 if (item.getAttribute('href') === currentUrl) {
                     item.classList.add('active');
                     // También activar el menú principal
-                    item.closest('.dropdown-menu').previousElementSibling.classList.add('active');
+                    const parentLink = item.closest('.dropdown-menu').previousElementSibling;
+                    if (parentLink) {
+                        parentLink.classList.add('active');
+                    }
                 }
             });
         });
+
+        // Manejo de submenús flyout en desktop: posicionamiento dinámico (fixed)
+        if (window.innerWidth >= 992) {
+            const sidebar = document.querySelector('.sidebar');
+            
+            document.querySelectorAll('.sidebar .nav-item.dropdown').forEach(function (item) {
+                const link = item.querySelector('.nav-link');
+                const menu = item.querySelector('.dropdown-menu');
+
+                item.addEventListener('mouseenter', function () {
+                    if (!menu) return;
+
+                    const rect = link.getBoundingClientRect();
+                    const isCollapsed = sidebar.classList.contains('collapsed');
+                    
+                    // Posicionamiento horizontal dinámico según estado del sidebar
+                    const sidebarWidth = isCollapsed ? 70 : 250;
+                    
+                    menu.style.top = rect.top + 'px';
+                    menu.style.left = (sidebarWidth - 5) + 'px';
+                    
+                    item.classList.add('show');
+                    menu.classList.add('show');
+                });
+
+                item.addEventListener('mouseleave', function () {
+                    if (!menu) return;
+                    item.classList.remove('show');
+                    menu.classList.remove('show');
+                });
+            });
+
+            // Cerrar submenús al hacer scroll en el sidebar para evitar desalineación
+            sidebar.addEventListener('scroll', function() {
+                document.querySelectorAll('.sidebar .nav-item.dropdown.show').forEach(item => {
+                    item.classList.remove('show');
+                    item.querySelector('.dropdown-menu').classList.remove('show');
+                });
+            });
+        }
 
         // Función para mostrar pantalla de carga
         function showLoading() {
@@ -805,7 +1181,7 @@
             e.preventDefault();
             if (confirm('¿Está seguro de que desea cerrar sesión?')) {
                 showLoading();
-                window.location.href = this.href; // Redirigir a la URL de logout
+                window.location.href = this.href;
             }
         });
 
@@ -822,26 +1198,25 @@
         window.addEventListener('pageshow', function () {
             hideLoading();
         });
-
     </script>
 
 
-    {% block extra_js %}
+    {%block extra_js%}
     <script>
-        $(document).ready(function () {
-            // Check if tablaCorrespondencia exists before initializing DataTable
-            if ($('#tablaCorrespondencia').length) {
-                $('#tablaCorrespondencia').DataTable({
-                    responsive: true,
-                    order: [[0, 'desc']], // Ordenar por la primera columna (fecha) de forma descendente
-                    language: {
-                        url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                $(document).ready(function () {
+                    // Check if tablaCorrespondencia exists before initializing DataTable
+                    if ($('#tablaCorrespondencia').length) {
+                        $('#tablaCorrespondencia').DataTable({
+                            responsive: true,
+                            order: [[0, 'desc']], // Ordenar por la primera columna (fecha) de forma descendente
+                            language: {
+                                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                            }
+                        });
                     }
                 });
-            }
-        });
     </script>
-    {% endblock %}
+    {%endblock%}
 </body>
 
 </html>

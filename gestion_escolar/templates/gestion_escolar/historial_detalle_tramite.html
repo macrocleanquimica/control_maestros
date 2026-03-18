@@ -1,105 +1,279 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load historial_filters %}
+{% load auth_extras %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
-        <a href="{% url 'historial' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver al Historial
-        </a>
+<style>
+    :root {
+        --ht-primary: #6366f1;
+        --ht-border: #e2e8f0;
+        --ht-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header */
+    .header-section {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--ht-shadow);
+        border: 1px solid var(--ht-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Main Card */
+    .detail-card {
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid var(--ht-border);
+        box-shadow: var(--ht-shadow);
+        overflow: hidden;
+    }
+
+    .card-banner {
+        background: #f8fafc;
+        padding: 1.5rem 2.5rem;
+        border-bottom: 1px solid var(--ht-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-body-custom {
+        padding: 3rem;
+    }
+
+    /* Summary Grid */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .info-box label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.05em;
+    }
+
+    .info-box p {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0;
+    }
+
+    /* Data Tables in Details */
+    .details-section {
+        margin-top: 3rem;
+    }
+
+    .section-title {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #1e293b;
+        text-transform: uppercase;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid var(--ht-border);
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+
+    .data-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .data-table tr:last-child td { border-bottom: none; }
+
+    .label-cell {
+        background: #f8fafc;
+        width: 35%;
+        font-weight: 700;
+        color: #475569;
+        font-size: 0.85rem;
+    }
+
+    .value-cell {
+        color: #1e293b;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    @media print {
+        .header-section, .print-hide, .btn-print-action { display: none !important; }
+        .page-container { padding: 0; }
+        .detail-card { border: none; box-shadow: none; }
+        .card-banner { border-bottom: 2px solid #000; padding: 1rem 0; }
+        .card-body-custom { padding: 2rem 0; }
+    }
+</style>
+
+<div class="page-container">
+    <div class="header-section d-print-none">
+        <div>
+            <h1 class="h3 fw-bold mb-1"><i class="fas fa-file-contract text-primary me-2"></i> {{ titulo }}</h1>
+            <p class="text-muted small mb-0">Detalle de los datos registrados al momento de la generación del documento.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'historial' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted btn-hover-animate">
+                <i class="fas fa-arrow-left me-2"></i> Volver
+            </a>
+            <button onclick="window.print();" class="btn btn-info text-white rounded-pill px-4 fw-bold shadow-sm btn-hover-animate">
+                <i class="fas fa-print me-2"></i> Imprimir Ficha
+            </button>
+        </div>
     </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Información General del Historial</h6>
-        </div>
-        <div class="card-body">
-            <p><strong>Usuario:</strong> {{ historial_item.usuario.username|default:"N/A" }}</p>
-            <p><strong>Fecha de Creación:</strong> {{ historial_item.fecha_creacion|date:"d/m/Y H:i" }}</p>
-            <p><strong>Tipo de Documento:</strong> {{ historial_item.tipo_documento }}</p>
-            {% if historial_item.maestro %}
-                <p><strong>Maestro Involucrado:</strong> {{ historial_item.maestro }}</p>
-                <p><strong>Clave Presupuestal:</strong> {{ historial_item.maestro.clave_presupuestal }}</p>
-            {% endif %}
-            {% if historial_item.motivo %}
-                <p><strong>Motivo:</strong> {{ historial_item.motivo }}</p>
-            {% endif %}
-            {% if historial_item.observaciones %}
-                <p><strong>Observaciones:</strong> {{ historial_item.observaciones }}</p>
-            {% endif %}
+    <div class="detail-card">
+        <div class="card-banner">
+            <h5 class="mb-0 fw-bold text-dark">Información General del Registro</h5>
             {% if historial_item.ruta_archivo %}
-                <p><strong>Archivo Generado:</strong> <a href="{% url 'descargar_archivo_historial' historial_item.id %}" target="_blank">Descargar Archivo</a></p>
+            <div class="d-flex gap-2">
+                {% if user == historial_item.usuario or user.is_superuser or user|has_group:"ADMINISTRATIVO" %}
+                <a href="{% url 'corregir_tramite' historial_item.id %}" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold d-print-none text-dark btn-hover-animate">
+                    <i class="fas fa-edit me-1"></i> Corregir Datos y Regenerar
+                </a>
+                {% endif %}
+                <a href="{% url 'descargar_archivo_historial' historial_item.id %}" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold d-print-none btn-hover-animate">
+                    <i class="fas fa-download me-1"></i> Descargar Documento Original
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card-body-custom">
+            <div class="summary-grid">
+                <div class="info-box">
+                    <label>Tipo de Documento</label>
+                    <p><span class="badge bg-light text-primary border px-3">{{ historial_item.get_tipo_documento_display|default:historial_item.tipo_documento }}</span></p>
+                </div>
+                <div class="info-box">
+                    <label>Fecha y Hora de Generación</label>
+                    <p><i class="fas fa-clock text-muted me-2"></i>{{ historial_item.fecha_creacion|date:"d/m/Y H:i" }} hrs.</p>
+                </div>
+                <div class="info-box">
+                    <label>Usuario Operador</label>
+                    <p><i class="fas fa-user-shield text-muted me-2"></i>{{ historial_item.usuario.username|default:"N/A" }}</p>
+                </div>
+            </div>
+
+            {% if historial_item.maestro %}
+            <div class="details-section">
+                <h6 class="section-title"><i class="fas fa-id-badge text-primary"></i> Datos del Titular</h6>
+                <div class="summary-grid mt-4">
+                    <div class="info-box">
+                        <label>Nombre Completo</label>
+                        <p>{{ historial_item.maestro }}</p>
+                    </div>
+                    <div class="info-box">
+                        <label>Clave Presupuestal</label>
+                        <p class="font-monospace text-primary">{{ historial_item.maestro.clave_presupuestal }}</p>
+                    </div>
+                </div>
+            </div>
             {% endif %}
 
-            <hr>
-            
-            {% comment %} Definimos las claves que se mostrarán en la sección de Centro de Trabajo {% endcomment %}
-            <!-- Sección para Información del Centro de Trabajo -->
-            <h6 class="m-0 font-weight-bold text-primary">Información del Centro de Trabajo y Autoridades (al momento del trámite)</h6>
-            <div class="table-responsive mt-3 mb-4">
-                <table class="table table-bordered" width="100%" cellspacing="0">
-                    <tbody>
-                        {% for key in ct_keys_list %}
-                            {% if key in datos_tramite %}
-                            <tr>
-                                <td style="width: 30%;"><strong>{{ key|title|replace:"_ | " }}:</strong></td>
-                                <td>{{ datos_tramite|get_item:key|default:"N/A" }}</td>
-                            </tr>
-                            {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="row g-5">
+                <!-- Centro de Trabajo -->
+                <div class="col-lg-6">
+                    <div class="details-section">
+                        <h6 class="section-title"><i class="fas fa-school text-primary"></i> Centro de Trabajo / Autoridades</h6>
+                        <table class="data-table">
+                            <tbody>
+                                {% for key in ct_keys_list %}
+                                {% if key in datos_tramite %}
+                                <tr>
+                                    <td class="label-cell">{{ key|title|replace:"_ | " }}</td>
+                                    <td class="value-cell">{{ datos_tramite|get_item:key|default:"N/A" }}</td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Datos del Formulario -->
+                <div class="col-lg-6">
+                    <div class="details-section">
+                        <h6 class="section-title"><i class="fas fa-list-ul text-primary"></i> Otros Datos del Formulario</h6>
+                        <table class="data-table">
+                            <tbody>
+                                {% for key, value in datos_tramite.items %}
+                                {% if key not in ct_keys_list %}
+                                <tr>
+                                    <td class="label-cell">{{ key|title|replace:"_ | " }}</td>
+                                    <td class="value-cell">
+                                        {% if key == "detalles_vacancia" %}
+                                            <div class="small">
+                                                <strong>ID:</strong> {{ value.id_vacancia }}<br>
+                                                <strong>Clave:</strong> {{ value.clave_presupuestal_posicion }}
+                                            </div>
+                                        {% elif key == "maestro_titular" or key == "maestro_interino" %}
+                                            {% with maestro_obj=value|get_maestro_by_id %}
+                                                {{ maestro_obj|default:value }}
+                                            {% endwith %}
+                                        {% elif key == "motivo_tramite" %}
+                                            {% with motivo_obj=value|get_motivo_by_id %}
+                                                {{ motivo_obj|default:value }}
+                                            {% endwith %}
+                                        {% elif key == "plantilla" %}
+                                            {% with plantilla_obj=value|get_plantilla_by_id %}
+                                                {{ plantilla_obj|default:value }}
+                                            {% endwith %}
+                                        {% elif value is iterable and not value is string %}
+                                            {{ value|join:", " }}
+                                        {% else %}
+                                            {{ value }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
-            <!-- Sección para otros datos del formulario -->
-            <h6 class="m-0 font-weight-bold text-primary">Otros Datos del Formulario</h6>
-            <div class="table-responsive mt-3">
-                <table class="table table-bordered" width="100%" cellspacing="0">
-                    <tbody>
-                        {% for key, value in datos_tramite.items %}
-                        {% if key not in ct_keys_list %}
-                            <tr>
-                                <td><strong>{{ key|title|replace:"_ | " }}:</strong></td>
-                                <td>
-                                    {% if key == "detalles_vacancia" %}
-                                        {% with vacancia_details=value %}
-                                            <p><strong>ID Vacancia:</strong> {{ vacancia_details.id_vacancia }}</p>
-                                            <p><strong>Clave Presupuestal Posición:</strong> {{ vacancia_details.clave_presupuestal_posicion }}</p>
-                                            {% if vacancia_details.maestro_titular_info %}
-                                                <p><strong>Maestro Titular:</strong> {{ vacancia_details.maestro_titular_info.nombre_completo }} (Clave: {{ vacancia_details.maestro_titular_info.clave_presupuestal }})</p>
-                                            {% endif %}
-                                            {% if vacancia_details.maestro_interino_info %}
-                                                <p><strong>Maestro Interino:</strong> {{ vacancia_details.maestro_interino_info.nombre_completo }} (Clave: {{ vacancia_details.maestro_interino_info.clave_presupuestal }})</p>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% elif key == "maestro_titular" or key == "maestro_interino" %}
-                                        {% comment %} Asumiendo que estos son IDs de maestro, buscar el nombre {% endcomment %}
-                                        {% with maestro_obj=value|get_maestro_by_id %}
-                                            {{ maestro_obj|default:value }}
-                                        {% endwith %}
-                                    {% elif key == "motivo_tramite" %}
-                                        {% comment %} Asumiendo que es un ID de motivo, buscar la descripción {% endcomment %}
-                                        {% with motivo_obj=value|get_motivo_by_id %}
-                                            {{ motivo_obj|default:value }}
-                                        {% endwith %}
-                                    {% elif key == "plantilla" %}
-                                        {% comment %} Asumiendo que es un ID de plantilla, buscar el nombre {% endcomment %}
-                                        {% with plantilla_obj=value|get_plantilla_by_id %}
-                                            {{ plantilla_obj|default:value }}
-                                        {% endwith %}
-                                    {% elif value is iterable and not value is string %}
-                                        {{ value|join:", " }}
-                                    {% else %}
-                                        {{ value }}
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+            {% if historial_item.observaciones %}
+            <div class="details-section mt-5 p-4 bg-light rounded-4">
+                <h6 class="fw-bold mb-3 text-dark"><i class="fas fa-comment-alt text-warning me-2"></i> Observaciones del Registro</h6>
+                <p class="mb-0 text-muted" style="white-space: pre-wrap;">{{ historial_item.observaciones }}</p>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>

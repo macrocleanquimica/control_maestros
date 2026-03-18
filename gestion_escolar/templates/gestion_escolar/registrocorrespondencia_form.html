@@ -1,95 +1,208 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+<style>
+    :root {
+        --rf-primary: #6366f1;
+        --rf-bg: #f8fafc;
+        --rf-border: #e2e8f0;
+    }
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Datos del Registro</h6>
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid var(--rf-border);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .form-header {
+        background: #f8fafc;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--rf-border);
+    }
+
+    .form-body {
+        padding: 2.5rem;
+    }
+
+    .form-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.05em;
+    }
+
+    .form-control, .form-select {
+        border-radius: 0.75rem;
+        border: 1px solid var(--rf-border);
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--rf-primary);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .section-title {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 2rem 0 1.25rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    .invalid-feedback {
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    /* Select2 Custom Styling */
+    .select2-container--default .select2-selection--single {
+        border-radius: 0.75rem !important;
+        border: 1px solid var(--rf-border) !important;
+        height: 42px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px !important;
+    }
+</style>
+
+<div class="page-container">
+    <div class="form-card">
+        <div class="form-header">
+            <h4 class="mb-1 fw-bold text-dark"><i class="fas fa-edit text-primary me-2"></i> {{ titulo }}</h4>
+            <p class="text-muted small mb-0">Complete los campos para registrar la correspondencia oficial.</p>
         </div>
-        <div class="card-body">
+
+        <div class="form-body">
             <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-2 mb-3">
-                        <label for="{{ form.fecha_recibido.id_for_label }}" class="form-label">{{ form.fecha_recibido.label }}</label>
-                        <input type="date" name="{{ form.fecha_recibido.name }}" id="{{ form.fecha_recibido.id_for_label }}" class="form-control" value="{{ form.fecha_recibido.value|date:'Y-m-d' }}">
-                        {% if form.fecha_recibido.errors %}<div class="invalid-feedback d-block">{{ form.fecha_recibido.errors.as_text }}</div>{% endif %}
+
+                <div class="section-title"><i class="fas fa-calendar-alt text-primary"></i> Temporalidad y Origen</div>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <label class="form-label">{{ form.fecha_recibido.label }}</label>
+                        <input type="date" name="{{ form.fecha_recibido.name }}" class="form-control" value="{{ form.fecha_recibido.value|date:'Y-m-d' }}">
+                        {% if form.fecha_recibido.errors %}<div class="text-danger small mt-1">{{ form.fecha_recibido.errors.0 }}</div>{% endif %}
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="{{ form.fecha_oficio.id_for_label }}" class="form-label">{{ form.fecha_oficio.label }}</label>
-                        <input type="date" name="{{ form.fecha_oficio.name }}" id="{{ form.fecha_oficio.id_for_label }}" class="form-control" value="{{ form.fecha_oficio.value|date:'Y-m-d' }}">
-                        {% if form.fecha_oficio.errors %}<div class="invalid-feedback d-block">{{ form.fecha_oficio.errors.as_text }}</div>{% endif %}
+                    <div class="col-md-4">
+                        <label class="form-label">{{ form.fecha_oficio.label }}</label>
+                        <input type="date" name="{{ form.fecha_oficio.name }}" class="form-control" value="{{ form.fecha_oficio.value|date:'Y-m-d' }}">
+                        {% if form.fecha_oficio.errors %}<div class="text-danger small mt-1">{{ form.fecha_oficio.errors.0 }}</div>{% endif %}
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.folio_documento.id_for_label }}" class="form-label">{{ form.folio_documento.label }}</label>
+                    <div class="col-md-4">
+                        <label class="form-label">{{ form.folio_documento.label }}</label>
                         {{ form.folio_documento }}
-                        {% if form.folio_documento.errors %}<div class="invalid-feedback d-block">{{ form.folio_documento.errors.as_text }}</div>{% endif %}
+                        {% if form.folio_documento.errors %}<div class="text-danger small mt-1">{{ form.folio_documento.errors.0 }}</div>{% endif %}
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.remitente.id_for_label }}" class="form-label">{{ form.remitente.label }}</label>
-                        {{ form.remitente }}
-                        {% if form.remitente.errors %}<div class="invalid-feedback d-block">{{ form.remitente.errors.as_text }}</div>{% endif %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12 col-md-6 mb-3">
-                        <label for="{{ form.quien_recibio.id_for_label }}" class="form-label">{{ form.quien_recibio.label }}</label>
-                        {{ form.quien_recibio }}
-                        {% if form.quien_recibio.errors %}<div class="invalid-feedback d-block">{{ form.quien_recibio.errors.as_text }}</div>{% endif %}
-                    </div>
-                    <div class="col-12 col-md-6 mb-3">
-                        <label for="{{ form.tipo_documento.id_for_label }}" class="form-label">{{ form.tipo_documento.label }}</label>
-                        {{ form.tipo_documento }}
-                        {% if form.tipo_documento.errors %}<div class="invalid-feedback d-block">{{ form.tipo_documento.errors.as_text }}</div>{% endif %}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-2 mb-3">
-                        <label for="{{ form.area.id_for_label }}" class="form-label">{{ form.area.label }}</label>
-                        {{ form.area }}
-                        {% if form.area.errors %}<div class="invalid-feedback d-block">{{ form.area.errors.as_text }}</div>{% endif %}
-                    </div>
-                </div>
-                <div class="row"> <!-- New row for maestro field -->
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ form.maestro.id_for_label }}" class="form-label">{{ form.maestro.label }}</label>
-                        {{ form.maestro }}
-                        {% if form.maestro.errors %}<div class="invalid-feedback d-block">{{ form.maestro.errors.as_text }}</div>{% endif %}
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label for="{{ form.contenido.id_for_label }}" class="form-label">{{ form.contenido.label }}</label>
-                    {{ form.contenido }}
-                    {% if form.contenido.errors %}<div class="invalid-feedback d-block">{{ form.contenido.errors.as_text }}</div>{% endif %}
-                </div>
-                <div class="mb-3">
-                    <label for="{{ form.observaciones.id_for_label }}" class="form-label">{{ form.observaciones.label }}</label>
-                    {{ form.observaciones }}
-                    {% if form.observaciones.errors %}<div class="invalid-feedback d-block">{{ form.observaciones.errors.as_text }}</div>{% endif %}
-                </div>
-                <div class="mb-3">
-                    <label for="{{ form.archivo_adjunto.id_for_label }}" class="form-label">{{ form.archivo_adjunto.label }}</label>
-                    {{ form.archivo_adjunto }}
-                    {% if form.instance.archivo_adjunto %}
-                        <p class="mt-2">
-                            Archivo actual: <a href="{{ form.instance.archivo_adjunto.url }}" target="_blank">{{ form.instance.archivo_adjunto.name|cut:"correspondencia/" }}</a>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="clear_archivo_adjunto" id="clear_archivo_adjunto" style="border: 1px solid red;">
-                                <label class="form-check-label" for="clear_archivo_adjunto">
-                                    Eliminar archivo actual
-                                </label>
-                            </div>
-                        </p>
-                    {% endif %}
-                    {% if form.archivo_adjunto.errors %}<div class="invalid-feedback d-block">{{ form.archivo_adjunto.errors.as_text }}</div>{% endif %}
                 </div>
 
-                <button type="submit" class="btn btn-success">Guardar</button>
-                <a href="{% url 'registrocorrespondencia_list' %}" class="btn btn-secondary">Cancelar</a>
+                <div class="row g-4 mt-1">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.remitente.label }}</label>
+                        {{ form.remitente }}
+                        {% if form.remitente.errors %}<div class="text-danger small mt-1">{{ form.remitente.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.quien_recibio.label }}</label>
+                        {{ form.quien_recibio }}
+                        {% if form.quien_recibio.errors %}<div class="text-danger small mt-1">{{ form.quien_recibio.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="section-title"><i class="fas fa-archive text-primary"></i> Clasificación y Destino</div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.tipo_documento.label }}</label>
+                        {{ form.tipo_documento }}
+                        {% if form.tipo_documento.errors %}<div class="text-danger small mt-1">{{ form.tipo_documento.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.area.label }}</label>
+                        {{ form.area }}
+                        {% if form.area.errors %}<div class="text-danger small mt-1">{{ form.area.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="row g-4 mt-1">
+                    <div class="col-12">
+                        <label class="form-label">{{ form.maestro.label }}</label>
+                        {{ form.maestro }}
+                        <div class="form-text small text-muted">Opcional: Vincule este registro a un docente específico.</div>
+                        {% if form.maestro.errors %}<div class="text-danger small mt-1">{{ form.maestro.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="section-title"><i class="fas fa-align-left text-primary"></i> Contenido y Adjuntos</div>
+                <div class="row g-4">
+                    <div class="col-12">
+                        <label class="form-label">{{ form.contenido.label }}</label>
+                        {{ form.contenido }}
+                        {% if form.contenido.errors %}<div class="text-danger small mt-1">{{ form.contenido.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ form.observaciones.label }}</label>
+                        {{ form.observaciones }}
+                        {% if form.observaciones.errors %}<div class="text-danger small mt-1">{{ form.observaciones.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ form.archivo_adjunto.label }}</label>
+                        <div class="input-group">
+                            {{ form.archivo_adjunto }}
+                        </div>
+                        
+                        {% if form.instance.archivo_adjunto %}
+                            <div class="mt-3 p-3 bg-light rounded-3 d-flex align-items-center justify-content-between">
+                                <span class="small text-muted"><i class="fas fa-paperclip me-2"></i>{{ form.instance.archivo_adjunto.name|cut:"correspondencia/" }}</span>
+                                <div class="form-check border-start ps-4">
+                                    <input class="form-check-input" type="checkbox" name="clear_archivo_adjunto" id="clear_archivo_adjunto">
+                                    <label class="form-check-label small text-danger fw-bold" for="clear_archivo_adjunto">
+                                        Eliminar archivo
+                                    </label>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if form.archivo_adjunto.errors %}<div class="text-danger small mt-1">{{ form.archivo_adjunto.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="mt-5 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm btn-hover-animate">
+                        <i class="fas fa-save me-2"></i> Guardar Registro
+                    </button>
+                    <a href="{% url 'registrocorrespondencia_list' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted btn-hover-animate">
+                        Cancelar
+                    </a>
+                </div>
             </form>
         </div>
     </div>
@@ -99,19 +212,23 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+    // Aplicar clases Bootstrap a campos inyectados por Django
+    $('input[type="text"], input[type="email"], select, textarea').addClass('form-control');
+    $('select').addClass('form-select');
+
     // Inicializar Select2 para el campo de maestro
     $('#id_maestro').select2({
         placeholder: "Busque un maestro por nombre, apellidos o CURP",
         minimumInputLength: 3,
         allowClear: true,
-        width: '100%', // Add this line
+        width: '100%',
         ajax: {
             url: "{% url 'buscar_maestros_ajax' %}",
             dataType: 'json',
             delay: 250,
             data: function (params) {
                 return {
-                    term: params.term // término de búsqueda
+                    term: params.term
                 };
             },
             processResults: function (data) {
@@ -122,6 +239,9 @@ $(document).ready(function() {
             cache: true
         }
     });
+
+    // Ajustar Select2 para que use el estilo premium
+    $('.select2-selection').css('border-radius', '0.75rem');
 });
 </script>
 {% endblock %}

@@ -1,0 +1,152 @@
+ M control_maestros/__pycache__/settings.cpython-313.pyc
+ M control_maestros/settings.py
+ M gestion_escolar/admin.py
+ M gestion_escolar/forms.py
+ D gestion_escolar/management/commands/__pycache__/import_prelacion_csv.cpython-313.pyc
+ M gestion_escolar/models.py
+ M gestion_escolar/static/gestion_escolar/js/custom_datatables.js
+ M gestion_escolar/templates/gestion_escolar/ajustes/ajustes.html
+ M gestion_escolar/templates/gestion_escolar/ajustes/asignar_director.html
+ M gestion_escolar/templates/gestion_escolar/ajustes/cambiar_password.html
+ M gestion_escolar/templates/gestion_escolar/ajustes/editar_perfil.html
+ M gestion_escolar/templates/gestion_escolar/ajustes/role_form.html
+ M gestion_escolar/templates/gestion_escolar/ajustes/role_list.html
+ M gestion_escolar/templates/gestion_escolar/ajustes/role_members.html
+ M gestion_escolar/templates/gestion_escolar/ajustes/tema_form.html
+ M gestion_escolar/templates/gestion_escolar/ajustes/tema_list.html
+ M gestion_escolar/templates/gestion_escolar/base.html
+ M gestion_escolar/templates/gestion_escolar/base_auth.html
+ M gestion_escolar/templates/gestion_escolar/correspondencia_detail.html
+ M gestion_escolar/templates/gestion_escolar/correspondencia_form.html
+ M gestion_escolar/templates/gestion_escolar/correspondencia_inbox.html
+ M gestion_escolar/templates/gestion_escolar/detalle_escuela.html
+ M gestion_escolar/templates/gestion_escolar/detalle_fup.html
+ M gestion_escolar/templates/gestion_escolar/detalle_maestro.html
+ M gestion_escolar/templates/gestion_escolar/detalle_zona.html
+ M gestion_escolar/templates/gestion_escolar/eliminar_fup.html
+ M gestion_escolar/templates/gestion_escolar/form_escuela.html
+ M gestion_escolar/templates/gestion_escolar/form_fup.html
+ M gestion_escolar/templates/gestion_escolar/form_maestro.html
+ M gestion_escolar/templates/gestion_escolar/form_zona.html
+ M gestion_escolar/templates/gestion_escolar/generar_tramite.html
+ M gestion_escolar/templates/gestion_escolar/gestionar_lote_vacancia.html
+ M gestion_escolar/templates/gestion_escolar/historial.html
+ M gestion_escolar/templates/gestion_escolar/historial_detalle_lote.html
+ M gestion_escolar/templates/gestion_escolar/historial_detalle_tramite.html
+ M gestion_escolar/templates/gestion_escolar/index.html
+ M gestion_escolar/templates/gestion_escolar/kardex_detail.html
+ M gestion_escolar/templates/gestion_escolar/kardex_list.html
+ M gestion_escolar/templates/gestion_escolar/lista_categorias.html
+ M gestion_escolar/templates/gestion_escolar/lista_escuelas.html
+ M gestion_escolar/templates/gestion_escolar/lista_fup.html
+ M gestion_escolar/templates/gestion_escolar/lista_maestros.html
+ M gestion_escolar/templates/gestion_escolar/lista_por_funcion.html
+ M gestion_escolar/templates/gestion_escolar/lista_zonas.html
+ M gestion_escolar/templates/gestion_escolar/login.html
+ M gestion_escolar/templates/gestion_escolar/pendiente_form.html
+ M gestion_escolar/templates/gestion_escolar/pendiente_list.html
+ M gestion_escolar/templates/gestion_escolar/registrocorrespondencia_confirm_delete.html
+ M gestion_escolar/templates/gestion_escolar/registrocorrespondencia_detail.html
+ M gestion_escolar/templates/gestion_escolar/registrocorrespondencia_form.html
+ M gestion_escolar/templates/gestion_escolar/registrocorrespondencia_list.html
+ M gestion_escolar/templates/gestion_escolar/reporte_distribucion_funcion.html
+ M gestion_escolar/templates/gestion_escolar/reporte_fuera_adscripcion.html
+ M gestion_escolar/templates/gestion_escolar/reportes_dashboard.html
+ M gestion_escolar/templates/gestion_escolar/signup.html
+ M gestion_escolar/templates/gestion_escolar/usuarios/user_form.html
+ M gestion_escolar/templates/gestion_escolar/usuarios/user_list.html
+ M gestion_escolar/templates/tramites/Plantillas/Excel/FORMATOVACANCIAUSICAMM.xlsx
+ M gestion_escolar/templates/tramites/Plantillas/Word/ALTAINICIAL.docx
+ M gestion_escolar/templates/tramites/Plantillas/Word/CONSTANCIAS.docx
+ M gestion_escolar/templates/tramites/Plantillas/Word/FILIACION.docx
+ M gestion_escolar/templates/tramites/Plantillas/Word/FILIACIONDESUBICADO.docx
+ M gestion_escolar/templates/tramites/Plantillas/Word/JUSTIFICACIONDEPERFIL.docx
+ M gestion_escolar/templates/tramites/Plantillas/Word/REINCORPORACION.docx
+ M gestion_escolar/templates/tramites/Plantillas/Word/REINGRESO.docx
+ M gestion_escolar/templates/tramites/Plantillas/Word/REINGRESODESUBICADO.docx
+ M gestion_escolar/templates/tramites/Plantillas/Word/REINGRESOSINPRELACION.docx
+ M gestion_escolar/templates/tramites/Plantillas/Word/SOLICITUDASIGNACION.docx
+ M gestion_escolar/templatetags/color_filters.py
+ M gestion_escolar/urls.py
+ D gestion_escolar/views.py
+ M gestion_escolar/views/__init__.py
+ M gestion_escolar/views/ajax.py
+ M gestion_escolar/views/entidades.py
+ M gestion_escolar/views/fup.py
+ M gestion_escolar/views/helpers.py
+ M gestion_escolar/views/kardex.py
+ M gestion_escolar/views/personal.py
+ M gestion_escolar/views/reportes.py
+ M gestion_escolar/views/roles.py
+ M gestion_escolar/views/tramites.py
+ M gestion_escolar/views/usuarios.py
+ M gestion_escolar/views/vacancias.py
+ M staticfiles/gestion_escolar/js/custom_datatables.js
+ M tramites/Plantillas/Excel/FORMATOVACANCIAUSICAMM.xlsx
+?? .agent/
+?? .git_status.txt
+?? .git_status_output.txt
+?? check_especialidad.json
+?? check_especialidad.py
+?? check_fua_consistency.py
+?? check_funciones.py
+?? check_funciones_final.py
+?? check_maestro_space_a.json
+?? check_maestro_space_a.py
+?? check_typo_matro.py
+?? check_typo_matro_file.py
+?? debug_historial.py
+?? design-system/
+?? fix_encoding.py
+?? funciones_output.txt
+?? gestion_escolar/management/commands/normalize_maestro_names.py
+?? gestion_escolar/migrations/0044_moduloprelacion.py
+?? gestion_escolar/migrations/0045_delete_moduloprelacion.py
+?? gestion_escolar/migrations/0046_moduloprelacion.py
+?? gestion_escolar/migrations/0047_crear_plantilla_constancia_cambio.py
+?? gestion_escolar/migrations/0048_update_plantilla_constancia_cambio_path.py
+?? gestion_escolar/migrations/0049_vacancia_plantilla_doc.py
+?? gestion_escolar/migrations/0050_alter_vacancia_plantilla_doc.py
+?? gestion_escolar/migrations/0051_alter_vacancia_plantilla_doc.py
+?? gestion_escolar/migrations/0052_modulokardex.py
+?? gestion_escolar/migrations/0053_agregar_maestro_principal.py
+?? gestion_escolar/migrations/0054_maestro_incentivo.py
+?? gestion_escolar/migrations/0055_incentivo_remove_maestro_incentivo_and_more.py
+?? gestion_escolar/static/gestion_escolar/img/Themes/14febrero.jpg
+?? gestion_escolar/static/gestion_escolar/img/Themes/natalicio-benito-juarez.jpg
+?? gestion_escolar/static/gestion_escolar/img/Themes/primavera.jpg
+?? gestion_escolar/templates/gestion_escolar/importar_prelacion.html
+?? gestion_escolar/templates/gestion_escolar/lista_lotes_vacancia.html
+?? gestion_escolar/templates/gestion_escolar/lista_prelacion.html
+?? gestion_escolar/templates/gestion_escolar/reporteador_personalizado.html
+?? gestion_escolar/templates/gestion_escolar/reportes/
+?? gestion_escolar/templates/tramites/Plantillas/Word/CONSTANCIAHORIZONTAL.docx
+?? gestion_escolar/templates/tramites/Plantillas/Word/PRESENTACIONLABORAL.docx
+?? gestion_escolar/templates/tramites/Plantillas/Word/SOLICITUDASIGNACION36.docx
+?? gestion_escolar/templates/tramites/Plantillas/Word/constanciacambio.docx
+?? gestion_escolar/templates/tramites/Plantillas/Word/~$nstanciacambio.docx
+?? gestion_escolar/views/helpers.py.bak
+?? gestion_escolar/views/prelacion.py
+?? git_status_clean.txt
+?? lanzar_gemini.bat
+?? package-lock.json
+?? package.json
+?? seed_incentivos.py
+?? staticfiles/colorfield/
+?? staticfiles/gestion_escolar/css/print.css
+?? staticfiles/gestion_escolar/datatables/
+?? staticfiles/gestion_escolar/img/Themes/14febrero.jpg
+?? staticfiles/gestion_escolar/img/Themes/grinch.jpg
+?? staticfiles/gestion_escolar/img/Themes/revolucion.jpeg
+?? status.txt
+?? tramites/Plantillas/Word/PRESENTACIONLABORAL.docx
+?? typo_matro.json
+?? update_docente_especialista.py
+?? update_funciones.py
+?? update_funciones_dml.py
+?? update_funciones_v2.py
+?? update_funciones_v3.py
+?? update_funciones_v4.py
+?? update_grupo_especialidad_spacing.py
+?? update_typo_final.py
+?? update_typo_matro.py

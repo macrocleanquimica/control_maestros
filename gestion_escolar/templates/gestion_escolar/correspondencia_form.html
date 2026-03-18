@@ -1,32 +1,183 @@
 {% extends "gestion_escolar/base.html" %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header">
-            <h2>{{ titulo }}</h2>
+<style>
+    .compose-container {
+        max-width: 800px;
+        margin: 0 auto;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        padding: 2.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .header-icon {
+        width: 56px;
+        height: 56px;
+        background: white;
+        color: #0ea5e9;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-header h2 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .form-body {
+        padding: 2.5rem;
+    }
+
+    .form-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0;
+        padding: 0.75rem 1.25rem;
+        background-color: #f8fafc;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background-color: white;
+        border-color: #0ea5e9;
+        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        outline: none;
+    }
+
+    /* Select2 Modern Overrides */
+    .select2-container--default .select2-selection--single {
+        height: 48px !important;
+        border-radius: 0.75rem !important;
+        border: 1px solid #e2e8f0 !important;
+        background-color: #f8fafc !important;
+        display: flex;
+        align-items: center;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 48px !important;
+    }
+
+    .btn-send {
+        background: #0ea5e9;
+        color: white;
+        border: none;
+        border-radius: 0.75rem;
+        padding: 0.85rem 2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all 0.2s;
+    }
+
+    .btn-send:hover {
+        background: #0284c7;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+    }
+
+    .btn-cancel {
+        background: white;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        padding: 0.85rem 1.5rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel:hover {
+        background: #f8fafc;
+        color: #1e293b;
+    }
+</style>
+
+<div class="compose-container py-4">
+    <div class="form-card">
+        <div class="form-header">
+            <div class="header-icon">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <div>
+                <h2>{{ titulo }}</h2>
+                <p class="text-muted mb-0 small mt-1">Envía mensajes directos a otros coordinadores del sistema.</p>
+            </div>
         </div>
-        <div class="card-body">
-            <form method="post">
+
+        <div class="form-body">
+            <form method="post" class="needs-validation">
                 {% csrf_token %}
                 
-                <div class="form-group">
-                    <label for="{{ form.destinatario.id_for_label }}">{{ form.destinatario.label }}</label>
+                <div class="mb-4">
+                    <label for="{{ form.destinatario.id_for_label }}" class="form-label">Destinatario</label>
                     {{ form.destinatario }}
+                    {% if form.destinatario.errors %}
+                        <div class="text-danger smaller mt-1">{{ form.destinatario.errors|striptags }}</div>
+                    {% endif %}
                 </div>
 
-                <div class="form-group mt-3">
-                    <label for="{{ form.asunto.id_for_label }}">{{ form.asunto.label }}</label>
-                    {{ form.asunto }}
+                <div class="mb-4">
+                    <label for="{{ form.asunto.id_for_label }}" class="form-label">Asunto del Mensaje</label>
+                    <input type="text" name="asunto" id="id_asunto" class="form-control w-100" placeholder="¿De qué trata este mensaje?" value="{{ form.asunto.value|default:'' }}" required>
+                    {% if form.asunto.errors %}
+                        <div class="text-danger smaller mt-1">{{ form.asunto.errors|striptags }}</div>
+                    {% endif %}
                 </div>
                 
-                <div class="form-group mt-3">
-                    <label for="{{ form.cuerpo.id_for_label }}">{{ form.cuerpo.label }}</label>
-                    {{ form.cuerpo }}
+                <div class="mb-5">
+                    <label for="{{ form.cuerpo.id_for_label }}" class="form-label">Mensaje</label>
+                    <textarea name="cuerpo" id="id_cuerpo" rows="8" class="form-control w-100" placeholder="Escribe tu mensaje aquí..." required>{{ form.cuerpo.value|default:'' }}</textarea>
+                    {% if form.cuerpo.errors %}
+                        <div class="text-danger smaller mt-1">{{ form.cuerpo.errors|striptags }}</div>
+                    {% endif %}
                 </div>
 
-                <button type="submit" class="btn btn-primary mt-3">Enviar Mensaje</button>
-                <a href="{% url 'correspondencia_inbox' %}" class="btn btn-secondary mt-3">Cancelar</a>
+                <div class="d-flex justify-content-end gap-3 pt-4 border-top">
+                    <a href="{% url 'correspondencia_inbox' %}" class="btn-cancel">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn-send">
+                        <i class="fas fa-paper-plane"></i> Enviar Mensaje
+                    </button>
+                </div>
             </form>
         </div>
     </div>
@@ -36,10 +187,15 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    $('.select2').select2({
-        placeholder: "Seleccione un destinatario",
-        allowClear: true
+    $('#id_destinatario').select2({
+        placeholder: "Busca y selecciona un destinatario...",
+        allowClear: true,
+        width: '100%'
     });
+
+    // Añadir clases a los inputs si no las tienen
+    $('#id_asunto').addClass('form-control');
+    $('#id_cuerpo').addClass('form-control');
 });
 </script>
 {% endblock %}

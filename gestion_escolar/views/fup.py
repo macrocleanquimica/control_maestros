@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponse
-from ..models import FUP, Maestro
+from ..models import FUP, Maestro, Escuela, Zona
 from ..forms import FUPForm
 import openpyxl
 from openpyxl.styles import Font, Alignment
@@ -61,16 +61,16 @@ def fup_datatable_ajax(request):
         
         pdf_button = ''
         if fup.archivo:
-            pdf_button = f'<a href="{fup.archivo.url}" class="btn btn-sm btn-outline-secondary" target="_blank"><i class="fas fa-file-pdf"></i></a>'
+            pdf_button = f'<a href="{fup.archivo.url}" class="btn btn-light border btn-action-custom text-danger" target="_blank" title="Ver PDF"><i class="fas fa-file-pdf"></i></a>'
 
         actions = '<div class="btn-group" role="group">'
-        actions += f'<a href="{reverse('detalle_fup', args=[fup.pk])}" class="btn btn-sm btn-outline-info"><i class="fas fa-eye"></i></a>'
+        actions += f'<a href="{reverse("detalle_fup", args=[fup.pk])}" class="btn btn-light border btn-action-custom text-info" title="Detalle"><i class="fas fa-eye"></i></a>'
         
         if request.user.has_perm('gestion_escolar.change_fup'):
-            actions += f'<a href="{reverse('editar_fup', args=[fup.pk])}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>'
+            actions += f'<a href="{reverse("editar_fup", args=[fup.pk])}" class="btn btn-light border btn-action-custom text-primary" title="Editar"><i class="fas fa-edit"></i></a>'
 
         if request.user.has_perm('gestion_escolar.delete_fup'):
-            actions += f'<a href="{reverse('eliminar_fup', args=[fup.pk])}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>'
+            actions += f'<a href="{reverse("eliminar_fup", args=[fup.pk])}" class="btn btn-light border btn-action-custom text-danger" title="Eliminar"><i class="fas fa-trash"></i></a>'
         
         actions += '</div>'
         
@@ -135,7 +135,19 @@ def eliminar_fup(request, pk):
 @login_required
 def detalle_fup(request, pk):
     fup = get_object_or_404(FUP, pk=pk)
-    return render(request, 'gestion_escolar/detalle_fup.html', {'fup': fup})
+    
+    zona_techo_financiero = None
+    if fup.techo_financiero:
+        try:
+            escuela = Escuela.objects.get(id_escuela=fup.techo_financiero)
+            zona_techo_financiero = escuela.zona_esc.numero
+        except Escuela.DoesNotExist:
+            pass
+            
+    return render(request, 'gestion_escolar/detalle_fup.html', {
+        'fup': fup, 
+        'zona_techo_financiero': zona_techo_financiero
+    })
 
 @login_required
 def get_maestro_data_fup(request):
@@ -185,9 +197,17 @@ def exportar_fup_excel(request):
     ws = wb.active
     ws.title = "Reporte FUPs"
 
+    # Pre-cargar mapa de zonas escolares: {CCT (id_escuela): numero_zona}
+    zona_map = {
+        e.id_escuela: e.zona_esc.numero 
+        for e in Escuela.objects.select_related('zona_esc').all() 
+        if e.zona_esc
+    }
+
+
     headers = [
         "Folio", "Fecha", "Nombre Completo", "RFC", "Clave Presupuestal", 
-        "Techo Financiero", "Efectos", "Sostenimiento", "Observaciones"
+        "Techo Financiero", "Zona Escolar", "Efectos", "Sostenimiento", "Observaciones"
     ]
     ws.append(headers)
     
@@ -204,6 +224,7 @@ def exportar_fup_excel(request):
             fup.rfc,
             fup.clave_presupuestal,
             fup.techo_financiero,
+            zona_map.get(fup.techo_financiero, ''), # Zona Escolar
             fup.efectos,
             fup.sostenimiento,
             fup.observaciones,
@@ -217,9 +238,10 @@ def exportar_fup_excel(request):
     ws.column_dimensions['D'].width = 18
     ws.column_dimensions['E'].width = 30
     ws.column_dimensions['F'].width = 20
-    ws.column_dimensions['G'].width = 30
-    ws.column_dimensions['H'].width = 15
-    ws.column_dimensions['I'].width = 50
+    ws.column_dimensions['G'].width = 15 # Zona Escolar
+    ws.column_dimensions['H'].width = 30 # Efectos
+    ws.column_dimensions['I'].width = 15 # Sostenimiento
+    ws.column_dimensions['J'].width = 50 # Observaciones
 
     # Generar nombre de archivo con fecha actual
     from datetime import datetime
@@ -229,6 +251,120 @@ def exportar_fup_excel(request):
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    wb.save(response)
+    return response
+
+@login_required
+def reporte_fups_opciones(request):
+    """Vista para mostrar el formulario de selección de Zona y Fechas para reporte de FUPs."""
+    zonas = Zona.objects.all().order_by('numero')
+    
+    context = {
+        'titulo': 'Reporte de FUPs por Zona',
+        'zonas': zonas,
+    }
+    return render(request, 'gestion_escolar/reportes/reporte_fups_opciones.html', context)
+
+
+@login_required
+def exportar_fups_zona_excel(request):
+    """Genera el reporte Excel de FUPs filtrado por Zona y opcionalmente por rango de fechas."""
+    zona_id = request.GET.get('zona')
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+
+    if not zona_id:
+        messages.error(request, 'Debe seleccionar una Zona Escolar.')
+        return redirect('reporte_fups_opciones')
+
+    try:
+        zona = Zona.objects.get(id=zona_id)
+    except (ValueError, Zona.DoesNotExist):
+        messages.error(request, 'Zona inválida.')
+        return redirect('reporte_fups_opciones')
+
+    # Obtener todas las claves CCT de las escuelas que pertenecen a la zona seleccionada
+    ccts_zona = Escuela.objects.filter(zona_esc=zona).values_list('id_escuela', flat=True)
+
+    # Filtrar FUPs donde su techo_financiero sea alguna de las escuelas de esa zona
+    fups = FUP.objects.filter(techo_financiero__in=ccts_zona)
+    
+    # Aplicar filtros de fecha si existen
+    if fecha_inicio:
+        fups = fups.filter(fecha__gte=fecha_inicio)
+    if fecha_fin:
+        fups = fups.filter(fecha__lte=fecha_fin)
+        
+    fups = fups.order_by('fecha', 'id')
+
+    # Configuración del documento Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"FUPs Zona {zona.numero}"
+
+    # Título principal del documento
+    titulo_principal = f"REPORTE DE FUPS - ZONA {zona.numero}"
+    if fecha_inicio and fecha_fin:
+        titulo_principal = f"DEL {fecha_inicio} AL {fecha_fin} ZONA {zona.numero}"
+    elif fecha_inicio:
+        titulo_principal = f"A PARTIR DE {fecha_inicio} ZONA {zona.numero}"
+    elif fecha_fin:
+        titulo_principal = f"HASTA EL {fecha_fin} ZONA {zona.numero}"
+    else:
+        titulo_principal = f"TODOS LOS REGISTROS ZONA {zona.numero}"
+
+    ws.merge_cells('A1:F1')
+    celda_titulo = ws['A1']
+    celda_titulo.value = titulo_principal
+    celda_titulo.font = Font(bold=True, size=14)
+    celda_titulo.alignment = Alignment(horizontal='center', vertical='center')
+    
+    # Fila vacía para separación
+    ws.append([])
+    
+    # Encabezados de tabla
+    headers = [
+        "Consecutivo", "Nombre", "Folio", "Techo financiero", 
+        "Efectos del movimiento", "Observaciones"
+    ]
+    ws.append(headers)
+    
+    # Estilo para los encabezados (fila 3 ahora)
+    for cell in ws[3]:
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    # Rellenar los datos
+    consecutivo = 1
+    for fup in fups:
+        row = [
+            consecutivo,
+            fup.nombre_completo,
+            fup.folio,
+            fup.techo_financiero,
+            fup.efectos,
+            fup.observaciones
+        ]
+        ws.append(row)
+        consecutivo += 1
+
+    # Ajustar ancho de columnas
+    ws.column_dimensions['A'].width = 12  # Consecutivo
+    ws.column_dimensions['B'].width = 45  # Nombre
+    ws.column_dimensions['C'].width = 15  # Folio
+    ws.column_dimensions['D'].width = 20  # Techo financiero
+    ws.column_dimensions['E'].width = 30  # Efectos
+    ws.column_dimensions['F'].width = 40  # Observaciones
+
+    # Preparar la respuesta HTTP
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    from datetime import datetime
+    fecha_hoy = datetime.now().strftime('%Y%m%d%H%M')
+    filename = f'reporte_fups_zona_{zona.numero}_{fecha_hoy}.xlsx'
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     wb.save(response)

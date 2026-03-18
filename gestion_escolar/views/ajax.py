@@ -55,6 +55,8 @@ def get_motivos_tramite_ajax(request):
                 ids = [39]
             elif opcion == "OFICIO DE REINCORPORACION":
                 ids = [1, 2, 4, 15, 21, 22, 24]
+            elif opcion == "PRESENTACION LABORAL":
+                ids = [1, 2, 3, 4, 5, 6, 7, 21, 22, 24]
             else:
                 ids = []
 
@@ -82,8 +84,14 @@ def buscar_maestros_ajax(request):
     # Normalizamos el término de búsqueda (mayúsculas y sin acentos)
     search_unaccented = unidecode(search_term.upper())
 
-    # Buscamos en el campo pre-calculado y normalizado
-    query = Q(nombre_completo_unaccented__icontains=search_unaccented)
+    # Buscamos en el campo pre-calculado y normalizado (nombre)
+    query_nombre = Q(nombre_completo_unaccented__icontains=search_unaccented)
+    
+    # También buscamos por clave presupuestal
+    query_clave = Q(clave_presupuestal__icontains=search_term.upper())
+    
+    # Combinamos ambas búsquedas con OR
+    query = query_nombre | query_clave
     
     maestros = Maestro.objects.filter(query).order_by('nombres', 'a_paterno', 'a_materno')[:20]
     
@@ -91,9 +99,16 @@ def buscar_maestros_ajax(request):
     for maestro in maestros:
         # Formato de nombre: Nombres Apellido Paterno Apellido Materno
         full_name = f"{maestro.nombres or ''} {maestro.a_paterno or ''} {maestro.a_materno or ''}".strip()
+        
+        # Agregar la clave presupuestal al texto mostrado
+        if maestro.clave_presupuestal:
+            display_text = f"{full_name} - Clave: {maestro.clave_presupuestal}"
+        else:
+            display_text = full_name
+            
         results.append({
             "id": maestro.id_maestro,
-            "text": full_name
+            "text": display_text
         })
     
     return JsonResponse({'results': results})
@@ -105,13 +120,16 @@ def get_maestro_data_ajax(request):
     data = {}
     if maestro_id:
         try:
-            maestro = Maestro.objects.get(id_maestro=maestro_id)
+            maestro = Maestro.objects.prefetch_related('incentivos').get(id_maestro=maestro_id)
+            incentivos_str = ", ".join([i.codigo for i in maestro.incentivos.all()])
             data = {
+                'nombre_completo': f"{maestro.nombres or ''} {maestro.a_paterno or ''} {maestro.a_materno or ''}".strip(),
                 'curp': maestro.curp or '',
                 'rfc': maestro.rfc or '',
                 'clave_presupuestal': maestro.clave_presupuestal or '',
                 'categoria': maestro.categog.descripcion if maestro.categog else '',
                 'funcion': maestro.funcion or '',
+                'incentivos': incentivos_str,
             }
         except Maestro.DoesNotExist:
             data = {'error': 'Maestro no encontrado'}

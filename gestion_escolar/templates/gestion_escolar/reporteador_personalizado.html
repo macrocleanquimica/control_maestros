@@ -1,0 +1,232 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Reporteador Personalizado | Control de Maestros{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --rp-primary: #6366f1;
+        --rp-success: #10b981;
+        --rp-bg: #f8fafc;
+        --rp-card-bg: #ffffff;
+        --rp-border: #e2e8f0;
+        --rp-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        background: var(--rp-bg);
+        min-height: 100vh;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header-section {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--rp-shadow);
+        border: 1px solid var(--rp-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .category-card {
+        background: var(--rp-card-bg);
+        border-radius: 1.5rem;
+        border: 1px solid var(--rp-border);
+        box-shadow: var(--rp-shadow);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .category-header {
+        padding: 1.25rem 2rem;
+        background: #f1f5f9;
+        border-bottom: 1px solid var(--rp-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .category-title {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #334155;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .category-body {
+        padding: 2rem;
+    }
+
+    .field-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.25rem;
+    }
+
+    /* Switch Style Customization */
+    .form-check-input:checked {
+        background-color: var(--rp-primary);
+        border-color: var(--rp-primary);
+    }
+
+    .field-item {
+        background: #f8fafc;
+        padding: 0.75rem 1rem;
+        border-radius: 1rem;
+        border: 1px solid #f1f5f9;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+    }
+
+    .field-item:hover {
+        background: #f1f5f9;
+        border-color: var(--rp-primary);
+        transform: translateX(5px);
+    }
+
+    .field-label {
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.9rem;
+        cursor: pointer;
+        margin-bottom: 0;
+        margin-left: 10px;
+        flex-grow: 1;
+    }
+
+    .footer-actions {
+        position: sticky;
+        bottom: 2rem;
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: 0 -10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--rp-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+    }
+
+    .btn-export {
+        background: var(--rp-success);
+        color: white;
+        border: none;
+        padding: 0.75rem 2.5rem;
+        border-radius: 2rem;
+        font-weight: 800;
+        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+        transition: all 0.3s;
+    }
+
+    .btn-export:hover {
+        background: #059669;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.5);
+        color: white;
+    }
+</style>
+
+<div class="page-container">
+    <form action="{% url 'exportar_datos_dinamicos_excel' %}" method="POST">
+        {% csrf_token %}
+        
+        <!-- Header -->
+        <div class="header-section">
+            <div class="header-title">
+                <h1 class="mb-0"><i class="fas fa-file-invoice text-indigo me-2"></i> Reporteador Dinámico</h1>
+                <p class="text-muted small mb-0">Seleccione los campos que desea incluir en su reporte personalizado de Excel.</p>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'reportes_dashboard' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted small btn-hover-animate">
+                    <i class="fas fa-arrow-left me-2"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        <!-- Campos de Maestro -->
+        <div class="category-card">
+            <div class="category-header">
+                <h3 class="category-title"><i class="fas fa-user-tie text-primary"></i> Datos del Personal</h3>
+                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 select-all btn-hover-animate" data-target="maestro">Seleccionar Todo</button>
+            </div>
+            <div class="category-body">
+                <div class="field-grid" id="grid-maestro">
+                    {% for val, label in campos_maestro %}
+                    <div class="field-item">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="campos" value="{{ val }}" id="f_{{ val }}">
+                            <label class="field-label" for="f_{{ val }}">{{ label }}</label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Campos de Escuela -->
+        <div class="category-card">
+            <div class="category-header">
+                <h3 class="category-title"><i class="fas fa-school text-success"></i> Datos del Centro de Trabajo</h3>
+                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 select-all btn-hover-animate" data-target="escuela">Seleccionar Todo</button>
+            </div>
+            <div class="category-body">
+                <div class="field-grid" id="grid-escuela">
+                    {% for val, label in campos_escuela %}
+                    <div class="field-item">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="campos" value="{{ val }}" id="f_{{ val }}">
+                            <label class="field-label" for="f_{{ val }}">{{ label }}</label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Float Action Bar -->
+        <div class="footer-actions">
+            <div>
+                <span class="text-muted fw-bold small"><i class="fas fa-info-circle me-1"></i> Seleccione las columnas y haga clic en el botón -></span>
+            </div>
+            <button type="submit" class="btn btn-export">
+                <i class="fas fa-download me-2"></i> GENERAR REPORTE EXCEL
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.querySelectorAll('.select-all').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const target = this.getAttribute('data-target');
+        const grid = document.getElementById('grid-' + target);
+        const checkboxes = grid.querySelectorAll('input[type="checkbox"]');
+        const allChecked = Array.from(checkboxes).every(c => c.checked);
+        
+        checkboxes.forEach(c => c.checked = !allChecked);
+        this.textContent = allChecked ? 'Seleccionar Todo' : 'Deseleccionar Todo';
+    });
+});
+</script>
+{% endblock %}

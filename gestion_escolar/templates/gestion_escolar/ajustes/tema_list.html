@@ -1,50 +1,154 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">{{ titulo }}</h1>
-        <a href="{% url 'tema_create' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Crear Nuevo Tema
-        </a>
+<div class="container-fluid py-4">
+    <!-- Premium Header -->
+    <div class="premium-card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="header-info">
+                    <h2 class="fw-extrabold text-dark mb-1">
+                        <i class="fas fa-palette text-primary me-2"></i>{{ titulo }}
+                    </h2>
+                    <p class="text-muted mb-0">Gestiona la apariencia visual y periodos de vigencia del sistema.</p>
+                </div>
+                <div class="header-actions">
+                    <a href="{% url 'tema_create' %}" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 rounded-3 shadow-sm transition-all hover-lift btn-hover-animate">
+                        <i class="fas fa-plus"></i>
+                        <span>Crear Nuevo Tema</span>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-body">
+    <!-- Alert Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-premium fade show shadow-sm mb-4" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Temas Table Card -->
+    <div class="card premium-card shadow-sm border-0 overflow-hidden">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                    <thead>
+                <table class="table table-hover align-middle mb-0" id="themesTable">
+                    <thead class="bg-light border-bottom">
                         <tr>
-                            <th>Nombre</th>
-                            <th>Estado</th>
-                            <th>Fecha de Inicio</th>
-                            <th>Fecha de Fin</th>
-                            <th>Acciones</th>
+                            <th class="ps-4 py-3 text-uppercase fs-xs fw-bold text-muted letter-spacing-wider">Nombre del Tema</th>
+                            <th class="py-3 text-uppercase fs-xs fw-bold text-muted letter-spacing-wider">Estado</th>
+                            <th class="py-3 text-uppercase fs-xs fw-bold text-muted letter-spacing-wider text-center">Vigencia</th>
+                            <th class="pe-4 py-3 text-uppercase fs-xs fw-bold text-muted letter-spacing-wider text-center">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="border-top-0">
                         {% for tema in temas %}
                         <tr>
-                            <td>{{ tema.nombre }}</td>
-                            <td>
+                            <td class="ps-4 py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-theme me-3" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">
+                                        <i class="fas fa-paint-brush"></i>
+                                    </div>
+                                    <span class="fw-bold text-dark">{{ tema.nombre }}</span>
+                                </div>
+                            </td>
+                            <td class="py-3">
                                 {% if tema.activo %}
-                                    <span class="badge bg-success">Activo</span>
+                                    <span class="badge badge-soft-success rounded-pill px-3">
+                                        <i class="fas fa-check-circle me-1"></i>Activo
+                                    </span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Inactivo</span>
+                                    <span class="badge badge-soft-secondary rounded-pill px-3 text-muted">
+                                        <i class="fas fa-clock me-1"></i>Inactivo
+                                    </span>
                                 {% endif %}
                             </td>
-                            <td>{{ tema.fecha_inicio|date:"d/m/Y" }}</td>
-                            <td>{{ tema.fecha_fin|date:"d/m/Y" }}</td>
-                            <td>
-                                <a href="{% url 'tema_update' tema.pk %}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                                <a href="{% url 'tema_delete' tema.pk %}" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></a>
+                            <td class="py-3 text-center">
+                                <div class="d-flex flex-column align-items-center">
+                                    <div class="small fw-semibold text-muted mb-1">
+                                        <i class="far fa-calendar-alt me-1"></i>{{ tema.fecha_inicio|date:"d M Y" }}
+                                    </div>
+                                    <div class="small text-muted opacity-75">
+                                        <i class="fas fa-arrow-right fs-xs px-2"></i>
+                                        {{ tema.fecha_fin|date:"d M Y" }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="pe-4 py-3">
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <a href="{% url 'tema_update' tema.pk %}" class="btn btn-action-custom btn-light border shadow-xs" title="Editar">
+                                        <i class="fas fa-edit text-primary"></i>
+                                    </a>
+                                    <a href="{% url 'tema_delete' tema.pk %}" class="btn btn-action-custom btn-light border shadow-xs" title="Eliminar">
+                                        <i class="fas fa-trash text-danger"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+            {% if not temas %}
+            <div class="text-center py-5">
+                <i class="fas fa-palette fa-4x text-light mb-3"></i>
+                <p class="text-muted fw-bold">No se han definido temas de personalización aún.</p>
+                <a href="{% url 'tema_create' %}" class="btn btn-primary btn-sm rounded-pill px-4 btn-hover-animate">Crear el primero</a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+
+<style>
+    .avatar-theme {
+        transition: transform 0.3s ease;
+    }
+    tr:hover .avatar-theme {
+        transform: scale(1.1) rotate(5deg);
+    }
+    .badge-soft-success {
+        background-color: #ecfdf5;
+        color: #059669;
+        border: 1px solid #d1fae5;
+    }
+    .badge-soft-secondary {
+        background-color: #f8fafc;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+    .fs-xs { font-size: 0.7rem; }
+    .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .letter-spacing-wider { letter-spacing: 0.05em; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        if ($('#themesTable tbody tr').length > 0) {
+            $('#themesTable').DataTable({
+                "language": {
+                    ...window.SpanishDataTable,
+                    "search": "_INPUT_",
+                    "searchPlaceholder": "Filtrar temas..."
+                },
+                "order": [[1, "desc"]],
+                "pageLength": 10,
+                "columnDefs": [
+                    { "orderable": false, "targets": 3 }
+                ],
+                "dom": '<"d-flex justify-content-between align-items-center p-3 border-bottom"<"d-flex align-items-center"l><"d-flex align-items-center"f>>rt<"d-flex justify-content-between align-items-center p-3 border-top"ip>'
+            });
+        }
+    });
+</script>
 {% endblock %}

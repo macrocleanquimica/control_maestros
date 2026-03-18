@@ -1,50 +1,242 @@
 {% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Formatos Únicos de Personal (FUP) | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div
-        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Formatos Únicos de Personal (FUP)</h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <div class="btn-group me-2">
-                <a href="{% url 'crear_fup' %}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus"></i> Captura de FUP
-                </a>
-            </div>
-            <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-success" id="export-excel-fup-btn">
-                    <i class="fas fa-file-excel"></i> Exportar a Excel
-                </button>
-            </div>
+<style>
+    :root {
+        --fup-primary: #6366f1;
+        --fup-success: #10b981;
+        --fup-border: #e2e8f0;
+        --fup-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header */
+    .header-section {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--fup-shadow);
+        border: 1px solid var(--fup-border);
+        margin-bottom: 2.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Table Card */
+    .table-container-card {
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid var(--fup-border);
+        box-shadow: var(--fup-shadow);
+        padding: 2rem;
+    }
+
+    .table thead th {
+        background: #f8fafc;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748b;
+        padding: 1rem;
+        border-bottom: 2px solid var(--fup-border);
+    }
+
+    .table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+
+    /* Stats Row (Optional but recommended) */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid var(--fup-border);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+
+
+    .btn-create-fup {
+        background-color: var(--fup-primary);
+        color: white;
+        border-radius: 2rem;
+        padding: 0.5rem 1.5rem;
+        font-weight: 700;
+        transition: all 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-create-fup:hover {
+        background-color: #4f46e5;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.5);
+    }
+    
+    .btn-reporte {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 1.5rem;
+        transition: all 0.2s;
+    }
+
+    .btn-reporte:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2) !important;
+    }
+</style>
+
+<div class="page-container">
+    <!-- Header -->
+    <div class="header-section">
+        <div class="header-title">
+            <h1 class="mb-1"><i class="fas fa-id-card text-primary me-2"></i> Formatos Únicos de Personal</h1>
+            <p class="text-muted small mb-0">Gestión y control de los formatos FUP emitidos para el personal docente.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap justify-content-end align-items-center">
+            <a href="{% url 'crear_fup' %}" class="btn btn-create-fup btn-hover-animate">
+                <i class="fas fa-plus me-2"></i> Nueva Captura
+            </a>
+            <a href="{% url 'reporte_fups_opciones' %}" class="btn btn-primary btn-reporte text-white border-0 rounded-pill fw-bold shadow-sm btn-hover-animate">
+                <i class="fas fa-filter me-2"></i> Reporte por Zona
+            </a>
+            <button id="export-excel-fup-premium" class="btn btn-success btn-reporte text-white border-0 rounded-pill fw-bold shadow-sm btn-hover-animate">
+                <i class="fas fa-file-excel me-2"></i> Exportar a Excel
+            </button>
         </div>
     </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Listado de FUPs</h6>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover" id="tablaFUPs" style="width:100%;" data-ajax-url="{% url 'fup_datatable_ajax' %}">
-                    <thead>
-                        <tr>
-                            <th>Folio</th>
-                            <th>Fecha</th>
-                            <th>Maestro</th>
-                            <th>RFC</th>
-                            <th>Clave Presupuestal</th>
-                            <th>Techo Financiero</th>
-                            <th>Efectos</th>
-                            <th>PDF</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Los datos se cargarán via AJAX -->
-                    </tbody>
-                </table>
-            </div>
+    <!-- Table -->
+    <div class="table-container-card">
+        <div class="table-responsive">
+            <table class="table table-hover w-100" id="tablaFUPs" data-ajax-url="{% url 'fup_datatable_ajax' %}">
+                <thead>
+                    <tr>
+                        <th>Folio</th>
+                        <th>Fecha</th>
+                        <th>Maestro Beneficiario</th>
+                        <th>Clave Presupuestal</th>
+                        <th>Techo Financiero</th>
+                        <th>Efectos</th>
+                        <th class="text-center">PDF</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    var table = $('#tablaFUPs').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: $('#tablaFUPs').data('ajax-url'),
+            type: 'GET'
+        },
+        columns: [
+            { 
+                data: 0,
+                render: function(data, type, row) {
+                    return `<span class="fw-bold text-dark">#${data}</span>`;
+                }
+            },
+            { data: 1 },
+            { 
+                data: 2,
+                render: function(data, type, row) {
+                    return `<div class="fw-bold text-dark">${data}</div><div class="small text-muted">${row[3]}</div>`;
+                }
+            },
+            { 
+                data: 4,
+                render: function(data, type, row) {
+                    return `<span class="font-monospace bg-light px-2 py-1 rounded border small">${data}</span>`;
+                }
+            },
+            { 
+                data: 5,
+                render: function(data, type, row) {
+                    return `<span class="text-primary fw-bold">${data}</span>`;
+                }
+            },
+            { data: 6 },
+            { 
+                data: 7, 
+                orderable: false, 
+                searchable: false,
+                className: 'text-center'
+            },
+            { 
+                data: 8, 
+                orderable: false, 
+                searchable: false,
+                className: 'text-center'
+            }
+        ],
+        language: {
+            ...window.SpanishDataTable,
+            search: "_INPUT_",
+            searchPlaceholder: "Buscar por folio, nombre, rfc o clave..."
+        },
+        dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>'
+    });
+
+    $('#export-excel-fup-premium').on('click', function() {
+        var filtro = table.search();
+        var url = "{% url 'exportar_fup_excel' %}?filtro=" + encodeURIComponent(filtro);
+        window.location.href = url;
+    });
+});
+</script>
 {% endblock %}

@@ -1,0 +1,229 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Lista de Prelación | Control de Maestros{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --pr-primary: #6366f1;
+        --pr-success: #10b981;
+        --pr-warning: #f59e0b;
+        --pr-border: #e2e8f0;
+        --pr-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header & Stats Section */
+    .premium-header {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 2rem;
+        box-shadow: var(--pr-shadow);
+        border: 1px solid var(--pr-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .header-info h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-card-mini {
+        background: #f8fafc;
+        border-radius: 1rem;
+        padding: 0.75rem 1.25rem;
+        border: 1px solid var(--pr-border);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-icon-mini {
+        width: 40px;
+        height: 40px;
+        background: white;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--pr-primary);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    /* Table Styling */
+    .table-container-card {
+        background: white;
+        border-radius: 1.25rem;
+        box-shadow: var(--pr-shadow);
+        border: 1px solid var(--pr-border);
+        overflow: hidden;
+        padding: 1.5rem;
+    }
+
+    #tablaPrelacion thead th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        padding: 1.25rem 1rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    #tablaPrelacion tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        color: #334155;
+        font-weight: 500;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .pos-number {
+        font-weight: 800;
+        color: var(--pr-primary);
+        font-size: 1.1rem;
+    }
+
+
+    .dataTables_wrapper .dataTables_length select {
+        border-radius: 0.5rem !important;
+        padding: 0.4rem 2rem 0.4rem 0.75rem !important;
+        border: 1px solid var(--pr-border) !important;
+    }
+</style>
+
+<div class="page-container">
+    <!-- Header -->
+    <div class="premium-header">
+        <div class="header-info">
+            <h1><i class="fas fa-list-ol text-primary me-2"></i> Lista de Prelación</h1>
+            <p class="text-muted mb-0">Ordenamiento oficial de candidatos para asignación de plazas.</p>
+        </div>
+        
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="stat-card-mini">
+                <div class="stat-icon-mini"><i class="fas fa-users-viewfinder"></i></div>
+                <div>
+                    <span class="d-block small text-muted fw-bold">Total Aspirantes</span>
+                    <span class="h6 fw-bold mb-0" id="stat-total-prelacion">---</span>
+                </div>
+            </div>
+
+            {% if perms.gestion_escolar.acceder_prelacion %}
+            <a href="{% url 'importar_prelacion_excel' %}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm btn-hover-animate">
+                <i class="fas fa-file-upload me-2"></i> Importar Lista Anual
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} fa-lg"></i>
+            <span class="fw-bold">{{ message }}</span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Table Container -->
+    <div class="table-container-card">
+        <div class="table-responsive">
+            <table id="tablaPrelacion" class="table table-hover w-100" data-ajax-url="{% url 'lista_prelacion_ajax' %}">
+                <thead>
+                    <tr>
+                        <th class="text-center"># Posición</th>
+                        <th>Folio de Proceso</th>
+                        <th>CURP</th>
+                        <th>Nombre del Candidato</th>
+                        <th>Tipo de Valoración</th>
+                        <th class="text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- AJAX Load -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        var table = $('#tablaPrelacion').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: $('#tablaPrelacion').data('ajax-url'),
+                type: 'GET',
+                dataSrc: function(json) {
+                    $('#stat-total-prelacion').text(json.recordsTotal);
+                    return json.data;
+                }
+            },
+            columns: [
+                { 
+                    data: 0, 
+                    name: 'pos_orden',
+                    className: 'text-center',
+                    render: function(data) {
+                        return '<span class="pos-number">' + data + '</span>';
+                    }
+                },
+                { data: 1, name: 'folio', className: 'font-monospace' },
+                { data: 2, name: 'curp', className: 'font-monospace small' },
+                { data: 3, name: 'nombre', orderable: false },
+                { data: 4, name: 'tipo_val', className: 'small' },
+                { data: 5, name: 'estado', orderable: false, className: 'text-center' }
+            ],
+            order: [[0, 'asc']],
+            language: {
+                ...window.SpanishDataTable,
+                search: "_INPUT_",
+                searchPlaceholder: "Buscar aspirante por nombre, folio o curp...",
+                processing: `
+                    <div class="d-flex justify-content-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>`
+            },
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            dom: "<'row mb-4'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6 d-flex justify-content-md-end'f>>" +
+                 "<'row'<'col-sm-12'tr>>" +
+                 "<'row mt-4'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+            drawCallback: function () {
+                $('.dataTables_paginate .paginate_button').addClass('rounded-pill');
+            }
+        });
+
+        // Aplicar estilos a la caja de búsqueda
+        $('.dataTables_filter input').removeClass('form-control-sm').addClass('shadow-sm');
+    });
+</script>
+{% endblock %}

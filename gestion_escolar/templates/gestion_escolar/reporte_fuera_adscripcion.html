@@ -1,57 +1,170 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
-{% block title %}Reporte de Personal Desubicado{% endblock %}
+{% block title %}Reporte de Personal Desubicado | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="h3 mb-2 text-gray-800">Reporte de Personal Desubicado</h1>
-    <p class="mb-4">Este reporte lista al personal cuyo Centro de Trabajo de pago (Techo Financiero) no coincide con el Centro de Trabajo donde están físicamente asignados.</p>
+<style>
+    :root {
+        --rf-primary: #6366f1;
+        --rf-success: #10b981;
+        --rf-border: #e2e8f0;
+        --rf-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">Resultados</h6>
-            <div>
-                <button id="export-fuera-adscripcion-btn" class="btn btn-sm btn-success shadow-sm">
-                    <i class="fas fa-file-excel fa-sm text-white-50"></i> Exportar a Excel
-                </button>
-                <button onclick="window.print();" class="btn btn-sm btn-secondary shadow-sm">
-                    <i class="fas fa-print fa-sm text-white-50"></i> Imprimir
-                </button>
-            </div>
+    .page-container {
+        padding: 2rem;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header Section */
+    .header-section {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 1.5rem 2rem;
+        box-shadow: var(--rf-shadow);
+        border: 1px solid var(--rf-border);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Table Container */
+    .table-container-card {
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid var(--rf-border);
+        box-shadow: var(--rf-shadow);
+        overflow: hidden;
+    }
+
+    .table thead th {
+        background-color: #f8fafc;
+        color: #475569;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.025em;
+        border-bottom: 2px solid var(--rf-border);
+        padding: 1rem;
+    }
+
+    .table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        font-size: 0.9rem;
+        color: #1e293b;
+    }
+
+    /* Status Badges */
+    .badge-status {
+        padding: 0.35rem 0.75rem;
+        border-radius: 2rem;
+        font-weight: 700;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+    }
+
+    .status-activo { background: #ecfdf5; color: #059669; }
+    .status-warning { background: #fffbeb; color: #d97706; }
+
+    /* Code styling */
+    .code-tag {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.4rem;
+        font-weight: 600;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Action Buttons */
+    .btn-action-premium {
+        border-radius: 0.75rem;
+        padding: 0.5rem 1.25rem;
+        font-weight: 700;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+</style>
+
+<div class="page-container">
+    <!-- Header -->
+    <div class="header-section">
+        <div class="header-title">
+            <h1 class="mb-1"><i class="fas fa-user-slash text-primary me-2"></i> Reporte de Personal Desubicado</h1>
+            <p class="text-muted small mb-0">Personal cuyo CT de adscripción física difiere de su CT de pago (Techo Financiero).</p>
         </div>
-        <div class="card-body">
+        <div class="d-flex gap-2">
+            <button id="export-fuera-adscripcion-premium" class="btn btn-success text-white border-0 rounded-pill px-4 fw-bold shadow-sm btn-hover-animate">
+                <i class="fas fa-file-excel me-2"></i> Exportar a Excel
+            </button>
+            <button onclick="window.print();" class="btn btn-light border btn-action-premium">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="table-container-card">
+        <div class="p-4 border-bottom bg-light">
+            <h6 class="mb-0 fw-bold text-dark">Resultados del Análisis de Adscripción</h6>
+        </div>
+        
+        <div class="p-4">
             <div class="table-responsive">
-                <table class="table table-striped table-hover" id="tablaReporteFueraAdscripcion" width="100%" cellspacing="0">
+                <table class="table table-hover w-100" id="tablaPersonalPremium">
                     <thead>
                         <tr>
                             <th>Nombre Completo</th>
                             <th>Clave Presupuestal</th>
-                            <th>C.C.T. Físico</th>
-                            <th>C.C.T. de Pago (Techo)</th>
+                            <th>CCT Físico</th>
+                            <th>CCT de Pago (Techo)</th>
                             <th>Zona Escolar</th>
-                            <th>Zona Económica</th>
-                            <th>Status</th>
+                            <th class="text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for maestro in personal_fuera_adscripcion %}
                         <tr>
-                            <td>{{ maestro.a_paterno }} {{ maestro.a_materno }} {{ maestro.nombres }}</td>
-                            <td>{{ maestro.clave_presupuestal }}</td>
-                            <td>{{ maestro.id_escuela.id_escuela }}</td>
-                            <td>{{ maestro.techo_f }}</td>
-                            <td>{{ maestro.id_escuela.zona_esc.numero }}</td>
-                            <td>{{ maestro.id_escuela.zona_economica }}</td>
                             <td>
-                                <span class="badge bg-{% if maestro.status == 'ACTIVO' or maestro.status == 'ACTIVA' %}success{% else %}warning{% endif %}">
+                                <div class="fw-bold">{{ maestro.a_paterno }} {{ maestro.a_paterno }}</div>
+                                <div class="small text-muted">{{ maestro.nombres }}</div>
+                            </td>
+                            <td><span class="code-tag">{{ maestro.clave_presupuestal }}</span></td>
+                            <td><span class="fw-bold text-primary">{{ maestro.id_escuela.id_escuela }}</span></td>
+                            <td><span class="fw-bold text-danger">{{ maestro.techo_f }}</span></td>
+                            <td class="text-center">{{ maestro.id_escuela.zona_esc.numero | default:"-" }}</td>
+                            <td class="text-center">
+                                <span class="badge-status {% if 'ACTIVO' in maestro.status|upper %}status-activo{% else %}status-warning{% endif %}">
                                     {{ maestro.get_status_display }}
                                 </span>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center">No se encontró personal fuera de adscripción.</td>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-check-circle fa-2x mb-3 text-success"></i><br>
+                                    No se encontró personal fuera de adscripción en este momento.
+                                </div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -65,25 +178,22 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    // 1. Inicializar la tabla como DataTable
-    var table = $('#tablaReporteFueraAdscripcion').DataTable({
+    var table = $('#tablaPersonalPremium').DataTable({
         language: {
-            url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            ...window.SpanishDataTable,
+            search: "_INPUT_",
+            searchPlaceholder: "Filtrar por nombre, CCT o clave..."
         },
-        "columnDefs": [
-            { "type": "html-accent-neutral", "targets": "_all" }
-        ]
+        pageLength: 25,
+        dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>',
+        drawCallback: function() {
+            $('.dataTables_paginate > .pagination').addClass('pagination-sm');
+        }
     });
 
-    // 2. Manejar el clic del botón de exportación
-    $('#export-fuera-adscripcion-btn').on('click', function() {
-        // Obtener el valor actual del campo de búsqueda de la tabla
+    $('#export-fuera-adscripcion-premium').on('click', function() {
         var filtro = table.search();
-
-        // Construir la URL para la exportación, incluyendo el filtro
         var url = "{% url 'export_personal_fuera_adscripcion_excel' %}?filtro=" + encodeURIComponent(filtro);
-
-        // Redirigir para iniciar la descarga (esto no dispara el loader global)
         window.location.href = url;
     });
 });

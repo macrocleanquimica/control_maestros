@@ -35,7 +35,7 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 @admin.register(Maestro)
 class MaestroAdmin(admin.ModelAdmin):
-    list_display = ('a_paterno', 'a_materno', 'nombres', 'rfc', 'curp')
+    list_display = ('a_paterno', 'a_materno', 'nombres', 'rfc', 'curp', 'maestro_principal')
     search_fields = ('a_paterno', 'a_materno', 'nombres', 'rfc', 'curp')
 
 @admin.register(Director)

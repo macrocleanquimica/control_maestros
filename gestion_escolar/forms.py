@@ -96,7 +96,7 @@ class VacanciaForm(UppercaseFormMixin, forms.ModelForm):
     class Meta:
         model = Vacancia
         fields = [
-            'maestro_titular', 'maestro_interino', 'apreciacion', 'tipo_vacante', 'tipo_movimiento_original',
+            'maestro_titular', 'maestro_interino', 'apreciacion', 'tipo_vacante', 'plantilla_doc', 'tipo_movimiento_original',
             'fecha_inicio', 'fecha_final', 'observaciones', 'pseudoplaza'
         ]
         widgets = {
@@ -244,7 +244,7 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
 
     class Meta:
         model = Maestro
-        exclude = ['id_maestro', 'fecha_registro', 'fecha_actualizacion', 'clave_presupuestal']
+        exclude = ['id_maestro', 'fecha_registro', 'fecha_actualizacion', 'clave_presupuestal', 'incentivo']
         widgets = {
             'domicilio_part': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'observaciones': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
@@ -265,6 +265,7 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
             'codigo_postal': forms.TextInput(attrs={'class': 'form-control'}),
             'telefono': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'incentivos': forms.SelectMultiple(attrs={'class': 'form-control select2', 'multiple': 'multiple'}),
             'dep': forms.TextInput(attrs={
                 'class': 'form-control',
                 'pattern': r'^\d{2}$',
@@ -291,7 +292,7 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
             }),
             'num_plaza': forms.TextInput(attrs={
                 'class': 'form-control',
-                'pattern': '^\d{6}$',
+                'pattern': r'^\d{6}$',
                 'title': '6 dígitos (ej: 200314)',
                 'placeholder': '000000'
             }),
@@ -300,6 +301,9 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
+        self.fields['maestro_principal'].queryset = Maestro.objects.all().order_by('a_paterno', 'a_materno', 'nombres')
+        self.fields['maestro_principal'].widget.attrs.update({'class': 'form-control select2'})
+        
         self.fields['sexo'].widget.attrs.update({'class': 'form-control'})
         self.fields['est_civil'].widget.attrs.update({'class': 'form-control'})
         self.fields['nivel_estudio'].widget.attrs.update({'class': 'form-control'})
@@ -335,6 +339,16 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
         return cleaned_data
 
 class TramiteForm(UppercaseFormMixin, forms.Form):
+    archivo_plantilla_especifico = forms.ChoiceField(
+        choices=[
+            ('', '--- Seleccione una variante de plantilla ---'),
+            ('SOLICITUDASIGNACION.docx', 'SOLICITUD DE ASIGNACION (Art. 3)'),
+            ('SOLICITUDASIGNACION36.docx', 'SOLICITUD DE ASIGNACION (Art. 36)'),
+        ],
+        label="Variante de Plantilla (.docx)",
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
     def __init__(self, *args, **kwargs):
         form_type = kwargs.pop('form_type', None)
         super().__init__(*args, **kwargs)
@@ -342,13 +356,13 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
         if form_type == 'oficios':
             self.fields['plantilla'].queryset = PlantillaTramite.objects.filter(
                 tipo_documento='OFICIO'
-            ).order_by('nombre')
+            ).exclude(nombre__icontains="36").order_by('nombre')
         elif form_type == 'tramites':
             self.fields['plantilla'].queryset = PlantillaTramite.objects.filter(
                 tipo_documento='TRAMITE'
-            ).order_by('nombre')
+            ).exclude(nombre__icontains="36").order_by('nombre')
         else:
-            self.fields['plantilla'].queryset = PlantillaTramite.objects.all().order_by('nombre')
+            self.fields['plantilla'].queryset = PlantillaTramite.objects.all().exclude(nombre__icontains="36").order_by('nombre')
 
     plantilla = forms.ModelChoiceField(
         queryset=PlantillaTramite.objects.all().order_by('nombre'),
@@ -358,6 +372,7 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
     motivo_tramite = forms.ModelChoiceField(
         queryset=MotivoTramite.objects.all().order_by('motivo_tramite'),
         label="Motivo del Movimiento",
+        required=False, # Added this line
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     maestro_titular = forms.ModelChoiceField(
@@ -371,6 +386,8 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
         required=False,
         widget=forms.Select(attrs={'class': 'form-control select2'})
     )
+    nombre_titular_display = forms.CharField(label="Nombre Completo Titular", required=False,
+                                            widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
     curp_titular_display = forms.CharField(label="CURP Titular", required=False,
                                            widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
     rfc_titular_display = forms.CharField(label="RFC Titular", required=False,
@@ -381,6 +398,8 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
                                                 widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
     funcion_titular_display = forms.CharField(label="Función Titular", required=False,
                                               widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
+    nombre_interino_display = forms.CharField(label="Nombre Completo Interino", required=False,
+                                             widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
     curp_interino_display = forms.CharField(label="CURP Interino", required=False,
                                             widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
     rfc_interino_display = forms.CharField(label="RFC Interino", required=False,
@@ -396,10 +415,10 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
     tipo_val_display = forms.CharField(label="Tipo de Valoración", required=False,
                                        widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
     folio = forms.CharField(max_length=50, label="Folio de Oficio (Manual)", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Capture el folio del control de oficios'}))
-    fecha_efecto1 = forms.DateField(label="Fecha inicial Titular", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
-    fecha_efecto2 = forms.DateField(label="Fecha Final Titular", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
-    fecha_efecto3 = forms.DateField(label="Fecha inicial Interino", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
-    fecha_efecto4 = forms.DateField(label="Fecha Final Interino", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
+    fecha_efecto1 = forms.DateField(label="Fecha inicial Titular", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'))
+    fecha_efecto2 = forms.DateField(label="Fecha Final Titular", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'))
+    fecha_efecto3 = forms.DateField(label="Fecha inicial Interino", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'))
+    fecha_efecto4 = forms.DateField(label="Fecha Final Interino", required=False, widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'))
     tipo_movimiento_interino = forms.CharField(max_length=100, label="Tipo de Movimiento Interino", required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
     observaciones = forms.CharField(label="Observaciones", required=False, widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}))
     quincena_inicial = forms.CharField(
@@ -408,7 +427,7 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control', 
-            'pattern': '^\d{6}',
+            'pattern': r'^\d{6}',
             'title': 'Formato: YYYYQQ (ej: 202501)'
         })
     )
@@ -418,9 +437,43 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control', 
-            'pattern': '^\d{6}$',
+            'pattern': r'^\d{6}$',
             'title': 'Formato: YYYYQQ (ej: 202524)'
         })
+    )
+    # Campos para "Constancia de Cambio"
+    fecha_al_corte = forms.DateField(
+        label="Fecha al Corte",
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d')
+    )
+    fecha_del_calculo = forms.DateField(
+        label="Fecha del Cálculo",
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d')
+    )
+    antiguedad_funcion = forms.CharField(
+        max_length=100,
+        label="Antigüedad en la Función",
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    antiguedad_categoria = forms.CharField(
+        max_length=100,
+        label="Antigüedad en la Categoría",
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    fecha_adscripcion = forms.DateField(
+        label="Fecha de Adscripción",
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d')
+    )
+    incentivos = forms.CharField(
+        max_length=255,
+        label="Incentivos",
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
     )
 
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
