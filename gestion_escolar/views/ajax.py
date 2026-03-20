@@ -42,7 +42,7 @@ def get_motivos_tramite_ajax(request):
             opcion = plantilla.nombre.strip().upper()
 
             if opcion == "REINGRESO" or opcion == "FILIACION" or opcion == "SOLICITUD DE ASIGNACION" or opcion == "REINGRESO SIN PRELACION" or opcion == "JUSTIFICACION DE PERFIL" or opcion == "REPORTE DE VACANCIA":
-                ids = [1, 2, 3, 4, 5, 6, 7, 21, 22, 24, 38]
+                ids = [1, 2, 3, 4, 5, 6, 7, 21, 22, 24, 38, 40]
             elif opcion == "CONSTANCIAS":
                 ids = [20, 23, 29, 30, 31, 32, 33, 34, 35, 36, 37]
             elif opcion == "CAMBIO DEL CENTRO DE TRABAJO":
@@ -54,9 +54,9 @@ def get_motivos_tramite_ajax(request):
             elif opcion == "ALTA INICIAL":
                 ids = [39]
             elif opcion == "OFICIO DE REINCORPORACION":
-                ids = [1, 2, 4, 15, 21, 22, 24]
+                ids = [1, 2, 4, 15, 21, 22, 24, 40]
             elif opcion == "PRESENTACION LABORAL":
-                ids = [1, 2, 3, 4, 5, 6, 7, 21, 22, 24]
+                ids = [1, 2, 3, 4, 5, 6, 7, 21, 22, 24, 40]
             else:
                 ids = []
 

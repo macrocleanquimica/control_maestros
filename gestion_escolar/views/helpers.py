@@ -291,7 +291,7 @@ def generate_word_document(form_data, plantilla_tramite, user):
         presupuestal_interino = presupuestal_titular
         if motivo_tramite_obj and presupuestal_titular and len(presupuestal_titular) >= 2:
             motivo_text = motivo_tramite_obj.motivo_tramite.upper().strip()
-            if motivo_text == "BECA COMISIÓN" or motivo_text == "PRORROGA DE BECA COMISION":
+            if motivo_text == "BECA COMISIÓN" or motivo_text == "PRORROGA DE BECA COMISION" or motivo_text == "PRÓRROGA DE BECA COMISIÓN":
                 presupuestal_interino = "48" + presupuestal_titular[2:]
             elif motivo_text == "LIC. DE GRAVIDEZ":
                 presupuestal_interino = "14" + presupuestal_titular[2:]
