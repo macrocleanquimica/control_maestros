@@ -5,14 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --hl-primary: #6366f1;
-        --hl-border: #e2e8f0;
-        --hl-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
     .page-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
     }
 
@@ -21,26 +15,22 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header */
+    /* Encabezado simple */
     .header-section {
-        background: white;
-        border-radius: 1.25rem;
-        padding: 1.5rem 2rem;
-        box-shadow: var(--hl-shadow);
-        border: 1px solid var(--hl-border);
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
-    /* Info Badge Area */
+    /* Resumen en panel único */
     .lote-header-card {
-        background: white;
-        border-radius: 1.25rem;
-        border: 1px solid var(--hl-border);
-        box-shadow: var(--hl-shadow);
-        margin-bottom: 2rem;
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
+        margin-bottom: 1.5rem;
         overflow: hidden;
     }
 
@@ -48,52 +38,59 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 1.5rem;
-        padding: 2rem;
-        background: #f8fafc;
+        padding: 1.5rem;
     }
 
     .stat-item label {
         display: block;
         font-size: 0.7rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #64748b;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
         margin-bottom: 0.5rem;
     }
 
     .stat-item span {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #1e293b;
+        font-size: 1.05rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text, #1d1d1f);
+        font-variant-numeric: tabular-nums;
     }
 
-    /* Table */
+    /* Tabla en panel */
     .table-card {
-        background: white;
-        border-radius: 1.25rem;
-        border: 1px solid var(--hl-border);
-        box-shadow: var(--hl-shadow);
-        padding: 2rem;
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
+        padding: 1.5rem;
     }
 
     .table thead th {
-        background: #f8fafc;
-        font-size: 0.7rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #475569;
-        padding: 1rem;
-        border-bottom: 2px solid var(--hl-border);
+        background: var(--surface, #fff);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--text-2, #6e6e73);
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+
+    .table tbody td {
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+
+    .table tbody tr:last-child td {
+        border-bottom: none;
     }
 </style>
 
 <div class="page-container">
     <div class="header-section">
         <div>
-            <h1 class="h3 fw-bold mb-1 text-dark"><i class="fas fa-layer-group text-primary me-2"></i> {{ titulo }}</h1>
-            <p class="text-muted small mb-0">Detalle de las vacancias procesadas en este lote de reporte.</p>
+            <h1 class="apple-title">Lote <span class="apple-num">#{{ lote.id }}</span></h1>
+            <p class="apple-subtitle mb-0">{{ titulo }}</p>
         </div>
-        <a href="{% url 'historial' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted btn-hover-animate">
+        <a href="{% url 'historial' %}" class="apple-btn-ghost">
             <i class="fas fa-arrow-left me-2"></i> Volver
         </a>
     </div>
@@ -101,35 +98,29 @@
     <div class="lote-header-card">
         <div class="lote-stats">
             <div class="stat-item">
-                <label>ID del Lote</label>
-                <span>#{{ lote.id }}</span>
+                <label>Generado por</label>
+                <span>{{ lote.usuario_generador.username }}</span>
             </div>
             <div class="stat-item">
-                <label>Usuario Generador</label>
-                <span><i class="fas fa-user-circle me-1 text-primary"></i> {{ lote.usuario_generador.username }}</span>
-            </div>
-            <div class="stat-item">
-                <label>Fecha de Creación</label>
-                <span>{{ lote.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                <label>Fecha</label>
+                <span class="apple-num">{{ lote.fecha_creacion|date:"d/m/Y H:i" }}</span>
             </div>
             <div class="stat-item">
                 <label>Estado</label>
-                <span class="badge rounded-pill {% if lote.estado == 'GENERADO' %}bg-success{% elif lote.estado == 'CANCELADO' %}bg-danger{% else %}bg-primary{% endif %} px-3">
-                    {{ lote.get_estado_display }}
-                </span>
+                <span class="apple-tag">{{ lote.get_estado_display }}</span>
             </div>
         </div>
         {% if lote.archivo_generado %}
-        <div class="p-3 bg-white border-top text-center">
-            <a href="{{ lote.archivo_generado.url }}" target="_blank" class="btn btn-success text-white border-0 rounded-pill px-5 fw-bold shadow-sm btn-hover-animate">
-                <i class="fas fa-file-excel me-2"></i> Exportar a Excel
+        <div class="p-3 text-center" style="border-top: 1px solid var(--hairline, rgba(0,0,0,0.07));">
+            <a href="{{ lote.archivo_generado.url }}" target="_blank" class="apple-btn">
+                <i class="fas fa-file-excel me-2"></i> Descargar Excel
             </a>
         </div>
         {% endif %}
     </div>
 
     <div class="table-card">
-        <h5 class="fw-bold mb-4 text-dark border-bottom pb-3">Lista de Vacancias Vinculadas</h5>
+        <h5 class="fw-bold mb-3" style="letter-spacing: -0.01em;">Vacancias del lote</h5>
         <div class="table-responsive">
             <table class="table table-hover align-middle" id="loteTable">
                 <thead>
@@ -149,8 +140,8 @@
                             <div class="fw-bold">{{ vacancia.maestro_titular.nombres }} {{ vacancia.maestro_titular.a_paterno }}</div>
                             <div class="text-muted small">Interino: {{ vacancia.nombre_interino|default:"N/A" }}</div>
                         </td>
-                        <td><span class="font-monospace bg-light px-2 rounded">{{ vacancia.clave_presupuestal }}</span></td>
-                        <td><span class="badge bg-light text-dark border">{{ vacancia.tipo_vacante }}</span></td>
+                        <td><span class="font-monospace apple-num">{{ vacancia.clave_presupuestal }}</span></td>
+                        <td><span class="apple-tag">{{ vacancia.tipo_vacante }}</span></td>
                         <td><small>{{ vacancia.tipo_movimiento_original }}</small></td>
                         <td>
                             <div class="small fw-bold">{{ vacancia.fecha_inicio|date:"d/m/y" }}</div>
