@@ -1,6 +1,5 @@
 {% extends 'gestion_escolar/base.html' %}
-{% load static %}
-{% load crispy_forms_tags %}
+{% load static %} {% load crispy_forms_tags %}
 
 {% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
@@ -131,39 +130,39 @@
                                         <td class="ps-4">
                                             <span class="fw-bold text-dark d-flex align-items-center gap-2">
                                                 {% if item.type == 'crud' %}
-                                                    <i class="fas fa-cube text-muted fs-xs opacity-50"></i>
+                                                <i class="fas fa-cube text-muted fs-xs opacity-50"></i>
                                                 {% else %}
-                                                    <i class="fas fa-cog text-primary fs-xs opacity-75"></i>
+                                                <i class="fas fa-cog text-primary fs-xs opacity-75"></i>
                                                 {% endif %}
-                                                {{ item.model_name|capfirst }}
+                                                {{ item.model_name|capfac }}
                                             </span>
                                         </td>
                                         
                                         {% if item.type == 'crud' %}
                                             <td class="text-center">
                                                 {% if item.view %}
-                                                    <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.view.id }}" {% if item.view in form.permissions.initial %}checked{% endif %}>
+                                                <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.view.id }}" {% if item.view in form.permissions.initial %}checked{% endif %}>
                                                 {% endif %}
                                             </td>
                                             <td class="text-center">
                                                 {% if item.add %}
-                                                    <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.add.id }}" {% if item.add in form.permissions.initial %}checked{% endif %}>
+                                                <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.add.id }}" {% if item.add in form.permissions.initial %}checked{% endif %}>
                                                 {% endif %}
                                             </td>
                                             <td class="text-center">
                                                 {% if item.change %}
-                                                    <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.change.id }}" {% if item.change in form.permissions.initial %}checked{% endif %}>
+                                                <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.change.id }}" {% if item.change in form.permissions.initial %}checked{% endif %}>
                                                 {% endif %}
                                             </td>
                                             <td class="text-center">
                                                 {% if item.delete %}
-                                                    <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.delete.id }}" {% if item.delete in form.permissions.initial %}checked{% endif %}>
+                                                <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.delete.id }}" {% if item.delete in form.permissions.initial %}checked{% endif %}>
                                                 {% endif %}
                                             </td>
                                         {% elif item.type == 'custom' %}
                                             <td class="text-center">
                                                 {% if item.permission %}
-                                                    <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.permission.id }}" {% if item.permission in form.permissions.initial %}checked{% endif %}>
+                                                <input class="form-check-input shadow-xs" type="checkbox" name="permissions" value="{{ item.permission.id }}" {% if item.permission in form.permissions.initial %}checked{% endif %}>
                                                 {% endif %}
                                             </td>
                                             <td colspan="3" class="bg-light bg-opacity-25">
@@ -191,12 +190,10 @@
                 <!-- Action Buttons -->
                 <div class="d-flex flex-column flex-md-row gap-3 pt-4 mt-4" style="border-top: 1px solid var(--hairline, rgba(0,0,0,0.07));">
                     <button type="submit" class="apple-btn justify-content-center">
-                        <i class="fas fa-save me-2"></i>
-                        <span>Guardar</span>
+                        <i class="fas fa-save me-2"></i> <span>Guardar</span>
                     </button>
                     <a href="{% url 'role_list' %}" class="apple-btn-ghost justify-content-center">
-                        <i class="fas fa-times me-2"></i>
-                        <span>Cancelar</span>
+                        <i class="fas fa-times me-2"></i> <span>Cancelar</span>
                     </a>
                 </div>
             </div>
@@ -223,7 +220,6 @@
         margin-bottom: 0.5rem;
     }
 </style>
-{% endblock %}
 
 {% block extra_js %}
 <script>
@@ -235,7 +231,7 @@ $(document).ready(function() {
         setTimeout(() => $(this).removeClass('bg-success bg-opacity-10'), 300);
     });
     
-    $('#uncheck-all').click(function() {
+    $('#uncheck-all').click(function) {
         $('input[name="permissions"]').prop('checked', false);
         $(this).addClass('bg-danger bg-opacity-10');
         setTimeout(() => $(this).removeClass('bg-danger bg-opacity-10'), 300);
