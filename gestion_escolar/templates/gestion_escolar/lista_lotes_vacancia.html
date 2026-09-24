@@ -5,22 +5,17 @@
 
 {% block content %}
 <div class="page-container p-4">
-    <!-- Header Premium -->
-    <div class="premium-header mb-4">
-        <div class="row align-items-center g-3">
-            <div class="col-md-auto">
-                <div class="header-icon-container bg-soft-primary text-primary">
-                    <i class="fas fa-boxes-stacked"></i>
-                </div>
-            </div>
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="row align-items-end g-3">
             <div class="col-md">
-                <h1 class="header-title">{{ titulo }}</h1>
-                <p class="header-subtitle mb-0">Gestión de periodos y exportaciones coordinadas de vacantes.</p>
+                <h1 class="apple-title">{{ titulo }}</h1>
+                <p class="apple-subtitle mb-0">Periodos y exportaciones de vacantes.</p>
             </div>
             <div class="col-md-auto d-flex gap-2">
-                <a href="{% url 'gestionar_lote_vacancia' %}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm btn-hover-animate">
-                    <i class="fas fa-plus"></i>
-                    <span>Crear Nuevo Lote</span>
+                <a href="{% url 'gestionar_lote_vacancia' %}" class="apple-btn">
+                    <i class="fas fa-plus me-2"></i>
+                    <span>Nuevo Lote</span>
                 </a>
             </div>
         </div>
@@ -40,7 +35,7 @@
     {% endif %}
 
     <!-- Tarjeta Principal con Tabla -->
-    <div class="card premium-card border-0 shadow-sm">
+    <div class="card apple-panel border-0">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0" id="dataTableLotes">
@@ -58,7 +53,7 @@
                         {% for lote in lotes %}
                         <tr>
                             <td class="ps-4">
-                                <span class="badge bg-light text-dark border font-monospace px-3">#{{ lote.id }}</span>
+                                <span class="apple-tag apple-num">#{{ lote.id }}</span>
                             </td>
                             <td>
                                 <div class="fw-bold text-dark">{{ lote.fecha_creacion|date:"d/m/Y" }}</div>
@@ -66,27 +61,27 @@
                             </td>
                             <td>
                                 {% if lote.estado == 'EN_PROCESO' %}
-                                    <span class="badge-soft bg-soft-warning text-warning">
-                                        <i class="fas fa-spinner fa-spin me-1"></i> En Proceso
+                                    <span class="apple-tag">
+                                        En Proceso
                                     </span>
                                 {% elif lote.estado == 'GENERADO' %}
-                                    <span class="badge-soft bg-soft-success text-success">
-                                        <i class="fas fa-check-circle me-1"></i> Generado
+                                    <span class="apple-tag">
+                                        Generado
                                     </span>
                                 {% elif lote.estado == 'PROCESANDO' %}
-                                    <span class="badge-soft bg-soft-info text-info">
-                                        <i class="fas fa-cog fa-spin me-1"></i> Procesando
+                                    <span class="apple-tag">
+                                        Procesando
                                     </span>
                                 {% elif lote.estado == 'CANCELADO' %}
-                                    <span class="badge-soft bg-soft-danger text-danger">
-                                        <i class="fas fa-times-circle me-1"></i> Cancelado
+                                    <span class="apple-tag">
+                                        Cancelado
                                     </span>
                                 {% else %}
-                                    <span class="badge-soft bg-soft-secondary text-secondary">{{ lote.estado }}</span>
+                                    <span class="apple-tag">{{ lote.estado }}</span>
                                 {% endif %}
                             </td>
                             <td class="text-center">
-                                <span class="fw-bold text-primary">{{ lote.vacancias.count }}</span>
+                                <span class="fw-bold apple-num">{{ lote.vacancias.count }}</span>
                             </td>
                             <td>
                                 {% if lote.archivo_generado %}
@@ -138,63 +133,22 @@
 </div>
 
 <style>
-    /* Estilos Locales Consistentes */
-    .premium-header {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 1rem;
-        border: 1px solid #eef2f6;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    }
-    
-    .header-icon-container {
-        width: 48px;
-        height: 48px;
-        border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-    }
-    
-    .bg-soft-primary { background: #e0f2fe; color: #0369a1; }
-    .header-title { font-size: 1.25rem; font-weight: 800; color: #1e293b; margin: 0; }
-    .header-subtitle { font-size: 0.85rem; color: #64748b; }
-    
-    .premium-card { border-radius: 1rem; overflow: hidden; }
+    /* Panel único */
+    .apple-panel { overflow: hidden; }
     .table thead th {
-        background: #f8fafc;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.025em;
-        color: #64748b;
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid #eef2f6;
-    }
-    
-    /* Badges Soft */
-    .badge-soft {
-        padding: 0.35rem 0.75rem;
-        border-radius: 2rem;
-        font-size: 0.75rem;
+        background: var(--surface, #fff);
+        font-size: 0.72rem;
         font-weight: 600;
-        display: inline-flex;
-        align-items: center;
+        letter-spacing: 0.04em;
+        color: var(--text-2, #6e6e73);
+        padding: 0.9rem 1.5rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
-    .bg-soft-warning { background: #fef3c7; color: #92400e; }
-    .bg-soft-success { background: #dcfce7; color: #15803d; }
-    .bg-soft-info { background: #e0f2fe; color: #0369a1; }
-    .bg-soft-danger { background: #fee2e2; color: #991b1b; }
-    .bg-soft-secondary { background: #f1f5f9; color: #475569; }
-
-    /* Alert Premium */
-    .alert-premium {
-        border-radius: 1rem;
-        border: none;
-        padding: 1rem 1.5rem;
-        display: flex;
-        align-items: center;
+    .table tbody td {
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+    .table tbody tr:last-child td {
+        border-bottom: none;
     }
 </style>
 {% endblock %}
@@ -291,23 +245,23 @@ function exportarEO(loteId) {
 </script>
 
 <style>
-    .tiny-text { font-size: 0.6rem; font-weight: 800; vertical-align: middle; }
+    .tiny-text { font-size: 0.6rem; font-weight: 700; vertical-align: middle; }
     .btn-action-custom {
         width: 38px;
         height: 38px;
-        border-radius: 0.75rem;
+        border-radius: 12px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border: none;
-        transition: all 0.2s;
+        border: 1px solid rgba(0,0,0,0.08);
+        background: var(--surface, #fff);
+        color: var(--text-2, #6e6e73);
         text-decoration: none;
-        color: white;
     }
-    .btn-info { background: #0ea5e9; }
-    .btn-primary { background: #6366f1; }
-    .btn-secondary { background: #64748b; }
-    .btn-danger { background: #ef4444; }
-    .btn-action-custom:hover { transform: translateY(-2px); filter: brightness(1.1); color: white; }
+    .btn-action-custom:hover {
+        background: rgba(0,0,0,0.05);
+        color: var(--text, #1d1d1f);
+    }
+    td.text-end .btn-action-custom { margin-left: 4px; }
 </style>
 {% endblock extra_js %}
