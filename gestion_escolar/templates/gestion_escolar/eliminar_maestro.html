@@ -5,18 +5,16 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-6 mx-auto">
-            <div class="card">
-                <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0">Eliminar Maestro</h4>
-                </div>
-                <div class="card-body">
-                    <p>¿Estás seguro de que deseas eliminar al maestro <strong>{{ maestro.a_paterno }} {{ maestro.a_materno }} {{ maestro.nombres }}</strong> (ID: {{ maestro.id_maestro }})?</p>
-                    <p class="text-danger">Esta acción no se puede deshacer.</p>
-                    
+            <div class="card apple-panel border-0">
+                <div class="card-body p-4">
+                    <h4 class="mb-3" style="font-weight: 700; letter-spacing: -0.01em;">Eliminar Maestro</h4>
+                    <p>¿Eliminar al maestro <strong>{{ maestro.a_paterno }} {{ maestro.a_materno }} {{ maestro.nombres }}</strong> (ID: {{ maestro.id_maestro }})?</p>
+                    <p style="color: var(--heat, #ff6b00);">Esta acción no se puede deshacer.</p>
+
                     <form method="post">
                         {% csrf_token %}
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'lista_maestros' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            <a href="{% url 'lista_maestros' %}" class="apple-btn-ghost">Cancelar</a>
                             <button type="submit" class="btn btn-danger">Eliminar</button>
                         </div>
                     </form>

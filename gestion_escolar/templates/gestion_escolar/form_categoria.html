@@ -7,11 +7,9 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{{ titulo }}</h4>
-                </div>
-                <div class="card-body">
+            <div class="card apple-panel border-0">
+                <div class="card-body p-4">
+                    <h4 class="apple-title mb-3" style="font-size: clamp(19px, 2.6vw, 24px);">{{ titulo }}</h4>
                     {% if messages %}
                         {% for message in messages %}
                             <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
@@ -20,10 +18,10 @@
                             </div>
                         {% endfor %}
                     {% endif %}
-                    
+
                     <form method="post">
                         {% csrf_token %}
-                        
+
                         <div class="mb-3">
                             <label for="{{ form.id_categoria.id_for_label }}" class="form-label">ID Categoría:</label>
                             {{ form.id_categoria }}
@@ -31,7 +29,7 @@
                                 <div class="text-danger">{{ form.id_categoria.errors }}</div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción:</label>
                             {{ form.descripcion }}
@@ -39,10 +37,10 @@
                                 <div class="text-danger">{{ form.descripcion.errors }}</div>
                             {% endif %}
                         </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'lista_categorias' %}" class="btn btn-secondary me-md-2">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">Guardar</button>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'lista_categorias' %}" class="apple-btn-ghost">Cancelar</a>
+                            <button type="submit" class="apple-btn">Guardar</button>
                         </div>
                     </form>
                 </div>
