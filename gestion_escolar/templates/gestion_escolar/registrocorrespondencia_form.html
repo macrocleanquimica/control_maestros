@@ -5,14 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --rf-primary: #6366f1;
-        --rf-bg: #f8fafc;
-        --rf-border: #e2e8f0;
-    }
-
     .page-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
     }
 
@@ -22,57 +16,51 @@
     }
 
     .form-card {
-        background: white;
-        border-radius: 1.25rem;
-        border: 1px solid var(--rf-border);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
         max-width: 900px;
         margin: 0 auto;
     }
 
     .form-header {
-        background: #f8fafc;
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid var(--rf-border);
+        padding: 1.5rem clamp(17px, 3vw, 2rem);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .form-body {
-        padding: 2.5rem;
+        padding: clamp(17px, 3vw, 2rem);
     }
 
     .form-label {
         font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: #64748b;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
         margin-bottom: 0.5rem;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.025em;
     }
 
     .form-control, .form-select {
-        border-radius: 0.75rem;
-        border: 1px solid var(--rf-border);
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.08);
         padding: 0.6rem 1rem;
         font-size: 0.95rem;
-        transition: all 0.2s;
     }
 
     .form-control:focus, .form-select:focus {
-        border-color: var(--rf-primary);
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        border-color: var(--accent, #0071e3);
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
     }
 
     .section-title {
         font-size: 0.9rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin: 2rem 0 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text, #1d1d1f);
+        margin: 1.75rem 0 1.25rem;
         padding-bottom: 0.5rem;
-        border-bottom: 2px solid #f1f5f9;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .section-title:first-child { margin-top: 0; }
@@ -82,10 +70,10 @@
         font-weight: 500;
     }
 
-    /* Select2 Custom Styling */
+    /* Select2 */
     .select2-container--default .select2-selection--single {
-        border-radius: 0.75rem !important;
-        border: 1px solid var(--rf-border) !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(0,0,0,0.08) !important;
         height: 42px !important;
         display: flex !important;
         align-items: center !important;
@@ -99,15 +87,15 @@
 <div class="page-container">
     <div class="form-card">
         <div class="form-header">
-            <h4 class="mb-1 fw-bold text-dark"><i class="fas fa-edit text-primary me-2"></i> {{ titulo }}</h4>
-            <p class="text-muted small mb-0">Complete los campos para registrar la correspondencia oficial.</p>
+            <h4 class="apple-title mb-0" style="font-size: clamp(19px, 2.6vw, 24px);">{{ titulo }}</h4>
+            <p class="apple-subtitle mb-0">Datos del oficio recibido.</p>
         </div>
 
         <div class="form-body">
             <form method="post" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
 
-                <div class="section-title"><i class="fas fa-calendar-alt text-primary"></i> Temporalidad y Origen</div>
+                <div class="section-title">Fechas y folio</div>
                 <div class="row g-4">
                     <div class="col-md-4">
                         <label class="form-label">{{ form.fecha_recibido.label }}</label>
@@ -139,7 +127,7 @@
                     </div>
                 </div>
 
-                <div class="section-title"><i class="fas fa-archive text-primary"></i> Clasificación y Destino</div>
+                <div class="section-title">Clasificación</div>
                 <div class="row g-4">
                     <div class="col-md-6">
                         <label class="form-label">{{ form.tipo_documento.label }}</label>
@@ -162,7 +150,7 @@
                     </div>
                 </div>
 
-                <div class="section-title"><i class="fas fa-align-left text-primary"></i> Contenido y Adjuntos</div>
+                <div class="section-title">Contenido</div>
                 <div class="row g-4">
                     <div class="col-12">
                         <label class="form-label">{{ form.contenido.label }}</label>
@@ -195,11 +183,11 @@
                     </div>
                 </div>
 
-                <div class="mt-5 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm btn-hover-animate">
-                        <i class="fas fa-save me-2"></i> Guardar Registro
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="apple-btn">
+                        <i class="fas fa-save me-2"></i> Guardar
                     </button>
-                    <a href="{% url 'registrocorrespondencia_list' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted btn-hover-animate">
+                    <a href="{% url 'registrocorrespondencia_list' %}" class="apple-btn-ghost">
                         Cancelar
                     </a>
                 </div>
@@ -240,8 +228,8 @@ $(document).ready(function() {
         }
     });
 
-    // Ajustar Select2 para que use el estilo premium
-    $('.select2-selection').css('border-radius', '0.75rem');
+    // Ajustar Select2 al estilo del formulario
+    $('.select2-selection').css('border-radius', '12px');
 });
 </script>
 {% endblock %}
