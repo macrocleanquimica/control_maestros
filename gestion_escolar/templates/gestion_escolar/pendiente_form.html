@@ -5,14 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --pe-primary: #6366f1;
-        --pe-border: #e2e8f0;
-        --pe-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
     .page-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
         max-width: 700px;
         margin: 0 auto;
@@ -24,21 +18,19 @@
     }
 
     .form-card {
-        background: white;
-        border-radius: 1.5rem;
-        border: 1px solid var(--pe-border);
-        box-shadow: var(--pe-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
     }
 
     .form-header {
-        background: #f8fafc;
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid var(--pe-border);
+        padding: 1.5rem clamp(17px, 3vw, 2rem);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .form-body {
-        padding: 2rem;
+        padding: clamp(17px, 3vw, 2rem);
     }
 
     .form-group-premium {
@@ -47,62 +39,58 @@
 
     .form-label-premium {
         font-size: 0.75rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #64748b;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
         margin-bottom: 0.5rem;
         display: block;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.025em;
     }
 
     .form-control-premium {
-        border-radius: 0.75rem;
-        border: 1px solid var(--pe-border);
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.08);
         padding: 0.75rem 1rem;
-        transition: all 0.2s;
-        background: #f8fafc;
+        background: var(--surface, #fff);
     }
 
     .form-control-premium:focus {
         background: white;
-        border-color: var(--pe-primary);
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        border-color: var(--accent, #0071e3);
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
         outline: none;
     }
 
     .btn-save {
-        background: var(--pe-primary);
+        background: var(--accent, #0071e3);
         color: white;
-        border-radius: 2rem;
-        padding: 0.8rem 2.5rem;
-        font-weight: 700;
+        border-radius: var(--r-pill, 999px);
+        padding: 0 2.5rem;
+        min-height: 48px;
+        font-weight: 600;
         border: none;
-        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
-        transition: all 0.2s;
     }
 
     .btn-save:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.5);
+        opacity: 0.92;
+        color: white;
     }
 
     .btn-cancel {
-        color: #64748b;
-        font-weight: 700;
+        color: var(--text-2, #6e6e73);
+        font-weight: 600;
         text-decoration: none;
-        transition: color 0.2s;
     }
 
     .btn-cancel:hover {
-        color: #1e293b;
+        color: var(--text, #1d1d1f);
     }
 </style>
 
 <div class="page-container">
     <div class="form-card">
         <div class="form-header">
-            <h4 class="mb-0 fw-bold text-dark"><i class="fas fa-plus-circle text-primary me-2"></i> {{ titulo }}</h4>
-            <p class="text-muted small mb-0">Define una nueva tarea para tu seguimiento personal.</p>
+            <h4 class="apple-title mb-0" style="font-size: clamp(19px, 2.6vw, 24px);">{{ titulo }}</h4>
+            <p class="apple-subtitle mb-0">Datos de la tarea.</p>
         </div>
 
         <div class="form-body">
@@ -137,12 +125,12 @@
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center justify-content-between mt-5 pt-3 border-top">
+                <div class="d-flex align-items-center justify-content-between mt-4 pt-3" style="border-top: 1px solid var(--hairline, rgba(0,0,0,0.07));">
                     <a href="{% url 'pendientes_activos' %}" class="btn-cancel small">
-                        <i class="fas fa-times me-1"></i> Cancelar y Volver
+                        Cancelar
                     </a>
                     <button type="submit" class="btn-save">
-                        <i class="fas fa-save me-2"></i> Guardar Tarea
+                        Guardar
                     </button>
                 </div>
             </form>
@@ -150,10 +138,9 @@
     </div>
 
     <!-- Tips -->
-    <div class="mt-4 p-4 rounded-4 bg-light border border-dashed text-center">
-        <p class="text-muted small mb-0">
-            <i class="fas fa-lightbulb text-warning me-2"></i> 
-            <strong>Tip:</strong> Puedes programar tareas para fechas futuras y aparecerán en tu lista del día correspondiente.
+    <div class="mt-4 p-4 text-center" style="border: 1px solid var(--hairline, rgba(0,0,0,0.07)); border-radius: 14px;">
+        <p class="small mb-0" style="color: var(--text-2, #6e6e73);">
+            Las tareas futuras aparecen en tu lista el día que tocan.
         </p>
     </div>
 </div>
