@@ -5,22 +5,18 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <!-- Premium Header -->
-    <div class="premium-card shadow-sm border-0 mb-4">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="header-info">
-                    <h2 class="fw-extrabold text-dark mb-1">
-                        <i class="fas fa-palette text-primary me-2"></i>{{ titulo }}
-                    </h2>
-                    <p class="text-muted mb-0">Gestiona la apariencia visual y periodos de vigencia del sistema.</p>
-                </div>
-                <div class="header-actions">
-                    <a href="{% url 'tema_create' %}" class="btn btn-primary d-flex align-items-center gap-2 px-4 py-2 rounded-3 shadow-sm transition-all hover-lift btn-hover-animate">
-                        <i class="fas fa-plus"></i>
-                        <span>Crear Nuevo Tema</span>
-                    </a>
-                </div>
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
+            <div class="header-info">
+                <h2 class="apple-title">{{ titulo }}</h2>
+                <p class="apple-subtitle mb-0">Apariencia y vigencia del sistema.</p>
+            </div>
+            <div class="header-actions">
+                <a href="{% url 'tema_create' %}" class="apple-btn">
+                    <i class="fas fa-plus me-2"></i>
+                    <span>Nuevo Tema</span>
+                </a>
             </div>
         </div>
     </div>
@@ -37,16 +33,16 @@
     {% endif %}
 
     <!-- Temas Table Card -->
-    <div class="card premium-card shadow-sm border-0 overflow-hidden">
+    <div class="card apple-panel border-0 overflow-hidden">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0" id="themesTable">
-                    <thead class="bg-light border-bottom">
+                    <thead>
                         <tr>
-                            <th class="ps-4 py-3 text-uppercase fs-xs fw-bold text-muted letter-spacing-wider">Nombre del Tema</th>
-                            <th class="py-3 text-uppercase fs-xs fw-bold text-muted letter-spacing-wider">Estado</th>
-                            <th class="py-3 text-uppercase fs-xs fw-bold text-muted letter-spacing-wider text-center">Vigencia</th>
-                            <th class="pe-4 py-3 text-uppercase fs-xs fw-bold text-muted letter-spacing-wider text-center">Acciones</th>
+                            <th class="ps-4 py-3">Nombre</th>
+                            <th class="py-3">Estado</th>
+                            <th class="py-3 text-center">Vigencia</th>
+                            <th class="pe-4 py-3 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="border-top-0">
@@ -54,20 +50,18 @@
                         <tr>
                             <td class="ps-4 py-3">
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar-theme me-3" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">
-                                        <i class="fas fa-paint-brush"></i>
-                                    </div>
-                                    <span class="fw-bold text-dark">{{ tema.nombre }}</span>
+                                    <div class="me-3" style="background: {{ tema.color_principal }}; width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;" title="Color del tema"></div>
+                                    <span class="fw-bold">{{ tema.nombre }}</span>
                                 </div>
                             </td>
                             <td class="py-3">
                                 {% if tema.activo %}
-                                    <span class="badge badge-soft-success rounded-pill px-3">
-                                        <i class="fas fa-check-circle me-1"></i>Activo
+                                    <span class="apple-tag">
+                                        Activo
                                     </span>
                                 {% else %}
-                                    <span class="badge badge-soft-secondary rounded-pill px-3 text-muted">
-                                        <i class="fas fa-clock me-1"></i>Inactivo
+                                    <span class="apple-tag">
+                                        Inactivo
                                     </span>
                                 {% endif %}
                             </td>
@@ -84,11 +78,11 @@
                             </td>
                             <td class="pe-4 py-3">
                                 <div class="d-flex gap-2 justify-content-center">
-                                    <a href="{% url 'tema_update' tema.pk %}" class="btn btn-action-custom btn-light border shadow-xs" title="Editar">
-                                        <i class="fas fa-edit text-primary"></i>
+                                    <a href="{% url 'tema_update' tema.pk %}" class="apple-btn-ghost" style="min-height: 34px; padding: 0 12px; font-size: 13px;" title="Editar">
+                                        <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{% url 'tema_delete' tema.pk %}" class="btn btn-action-custom btn-light border shadow-xs" title="Eliminar">
-                                        <i class="fas fa-trash text-danger"></i>
+                                    <a href="{% url 'tema_delete' tema.pk %}" class="apple-btn-ghost" style="min-height: 34px; padding: 0 12px; font-size: 13px;" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
                             </td>
@@ -99,9 +93,8 @@
             </div>
             {% if not temas %}
             <div class="text-center py-5">
-                <i class="fas fa-palette fa-4x text-light mb-3"></i>
-                <p class="text-muted fw-bold">No se han definido temas de personalización aún.</p>
-                <a href="{% url 'tema_create' %}" class="btn btn-primary btn-sm rounded-pill px-4 btn-hover-animate">Crear el primero</a>
+                <p class="fw-bold" style="color: var(--text-2, #6e6e73);">Sin temas todavía.</p>
+                <a href="{% url 'tema_create' %}" class="apple-btn mt-2">Crear el primero</a>
             </div>
             {% endif %}
         </div>
@@ -109,25 +102,20 @@
 </div>
 
 <style>
-    .avatar-theme {
-        transition: transform 0.3s ease;
+    thead th {
+        background: var(--surface, #fff);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--text-2, #6e6e73);
     }
-    tr:hover .avatar-theme {
-        transform: scale(1.1) rotate(5deg);
+    tbody td {
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
-    .badge-soft-success {
-        background-color: #ecfdf5;
-        color: #059669;
-        border: 1px solid #d1fae5;
-    }
-    .badge-soft-secondary {
-        background-color: #f8fafc;
-        color: #64748b;
-        border: 1px solid #e2e8f0;
+    tbody tr:last-child td {
+        border-bottom: none;
     }
     .fs-xs { font-size: 0.7rem; }
-    .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .letter-spacing-wider { letter-spacing: 0.05em; }
 </style>
 {% endblock %}
 

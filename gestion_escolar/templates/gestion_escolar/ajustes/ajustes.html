@@ -5,17 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --ah-primary: #2563eb;
-        --ah-secondary: #64748b;
-        --ah-bg: #f8fafc;
-        --ah-card-bg: #ffffff;
-        --ah-border: #e2e8f0;
-        --ah-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-
     .hub-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.5s ease-out;
     }
 
@@ -25,22 +16,21 @@
     }
 
     .hub-header {
-        margin-bottom: 2.5rem;
+        margin-bottom: 1.5rem;
     }
 
     .hub-title {
-        font-weight: 800;
-        color: #1e293b;
-        letter-spacing: -0.025em;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text, #1d1d1f);
     }
 
     .hub-section-title {
-        font-size: 0.9rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--ah-secondary);
-        letter-spacing: 0.05em;
-        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
+        letter-spacing: 0.025em;
+        margin-bottom: 1rem;
         display: flex;
         align-items: center;
         gap: 0.75rem;
@@ -50,81 +40,60 @@
         content: "";
         flex-grow: 1;
         height: 1px;
-        background: var(--ah-border);
+        background: var(--hairline, rgba(0,0,0,0.07));
     }
 
     /* Hub Cards */
     .hub-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 3rem;
+        gap: 14px;
+        margin-bottom: 2rem;
     }
 
     .hub-card {
-        background: var(--ah-card-bg);
-        border: 1px solid var(--ah-border);
-        border-radius: 1.25rem;
+        background: var(--surface, #fff);
+        border-radius: var(--r-card, 18px);
         padding: 1.5rem;
         text-decoration: none;
         color: inherit;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
+        transition: transform .2s, box-shadow .2s;
     }
 
     .hub-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        border-color: var(--ah-primary);
-    }
-
-    .hub-card::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 0;
-        background: var(--ah-primary);
-        transition: height 0.3s ease;
-    }
-
-    .hub-card:hover::before {
-        height: 100%;
+        transform: translateY(-3px);
+        box-shadow: var(--sh-lift, 0 12px 32px rgba(0,0,0,0.1));
+        color: inherit;
     }
 
     .hub-icon-wrapper {
-        width: 56px;
-        height: 56px;
-        border-radius: 1rem;
-        background: #f1f5f9;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: rgba(0,0,0,0.05);
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 1.25rem;
-        font-size: 1.5rem;
-        color: var(--ah-primary);
-        transition: all 0.3s ease;
-    }
-
-    .hub-card:hover .hub-icon-wrapper {
-        background: var(--ah-primary);
-        color: white;
+        margin-bottom: 1rem;
+        font-size: 1.25rem;
+        color: var(--text-2, #6e6e73);
     }
 
     .hub-card-title {
-        font-weight: 700;
-        font-size: 1.125rem;
+        font-weight: 600;
+        font-size: 1.05rem;
+        letter-spacing: -0.01em;
         margin-bottom: 0.5rem;
-        color: #0f172a;
+        color: var(--text, #1d1d1f);
     }
 
     .hub-card-desc {
-        color: #64748b;
+        color: var(--text-2, #6e6e73);
         font-size: 0.875rem;
         line-height: 1.5;
     }
@@ -134,33 +103,25 @@
         right: 1.5rem;
         top: 1.5rem;
         opacity: 0;
-        transform: translateX(-10px);
-        transition: all 0.3s ease;
-        color: var(--ah-primary);
+        color: var(--text-3, #86868b);
     }
 
     .hub-card:hover .hub-arrow {
         opacity: 1;
-        transform: translateX(0);
     }
-
-    /* Category Badges */
-    .cat-personal { color: #f59e0b; }
-    .cat-system { color: #2563eb; }
-    .cat-security { color: #ef4444; }
 
 </style>
 
 <div class="hub-container">
     <!-- Header -->
     <div class="hub-header">
-        <h1 class="hub-title h2 mb-2"><i class="fas fa-cog text-primary me-2"></i> {{ titulo|default:"Ajustes Generales" }}</h1>
-        <p class="text-muted">Centro de control para la configuración de su cuenta y la administración del sistema.</p>
+        <h1 class="hub-title apple-title">{{ titulo|default:"Ajustes" }}</h1>
+        <p class="apple-subtitle">Tu cuenta y administración del sistema.</p>
     </div>
 
     <!-- Sección: Mi Cuenta -->
     <div class="hub-section">
-        <h2 class="hub-section-title"><i class="fas fa-user-circle cat-personal"></i> Ajustes de la Cuenta</h2>
+        <h2 class="hub-section-title">Mi cuenta</h2>
         <div class="hub-grid">
             <a href="{% url 'editar_perfil' %}" class="hub-card">
                 <i class="fas fa-arrow-right hub-arrow"></i>
@@ -173,7 +134,7 @@
 
             <a href="{% url 'cambiar_password' %}" class="hub-card">
                 <i class="fas fa-arrow-right hub-arrow"></i>
-                <div class="hub-icon-wrapper" style="color: #ef4444;">
+                <div class="hub-icon-wrapper">
                     <i class="fas fa-key"></i>
                 </div>
                 <h3 class="hub-card-title">Cambiar Contraseña</h3>
@@ -185,7 +146,7 @@
     <!-- Sección: Gestión del Sistema (Superusuatio) -->
     {% if user.is_superuser %}
     <div class="hub-section mt-4">
-        <h2 class="hub-section-title"><i class="fas fa-server cat-system"></i> Gestión del Sistema</h2>
+        <h2 class="hub-section-title">Sistema</h2>
         <div class="hub-grid">
             <a href="{% url 'user_list' %}" class="hub-card">
                 <i class="fas fa-arrow-right hub-arrow"></i>
@@ -198,7 +159,7 @@
 
             <a href="{% url 'role_list' %}" class="hub-card">
                 <i class="fas fa-arrow-right hub-arrow"></i>
-                <div class="hub-icon-wrapper" style="color: #10b981;">
+                <div class="hub-icon-wrapper">
                     <i class="fas fa-user-shield"></i>
                 </div>
                 <h3 class="hub-card-title">Roles y Permisos</h3>
@@ -207,7 +168,7 @@
 
             <a href="{% url 'asignar_director' %}" class="hub-card">
                 <i class="fas fa-arrow-right hub-arrow"></i>
-                <div class="hub-icon-wrapper" style="color: #6366f1;">
+                <div class="hub-icon-wrapper">
                     <i class="fas fa-user-tie"></i>
                 </div>
                 <h3 class="hub-card-title">Asignar Director</h3>
@@ -217,7 +178,7 @@
             {% if perms.gestion_escolar.view_tema %}
             <a href="{% url 'tema_list' %}" class="hub-card">
                 <i class="fas fa-arrow-right hub-arrow"></i>
-                <div class="hub-icon-wrapper" style="color: #ec4899;">
+                <div class="hub-icon-wrapper">
                     <i class="fas fa-palette"></i>
                 </div>
                 <h3 class="hub-card-title">Gestión de Temas</h3>

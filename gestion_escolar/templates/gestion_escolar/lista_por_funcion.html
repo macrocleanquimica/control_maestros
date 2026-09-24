@@ -5,13 +5,6 @@
 
 {% block content %}
 <style>
-    :root {
-        --lf-primary: #2563eb;
-        --lf-success: #10b981;
-        --lf-border: #e2e8f0;
-        --lf-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-
     .page-container {
         padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
@@ -22,72 +15,58 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header Styling */
+    /* Encabezado simple */
     .header-section {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        background: white;
-        padding: 1.25rem 1.5rem;
-        border-radius: 1rem;
-        border: 1px solid var(--lf-border);
-        box-shadow: var(--lf-shadow);
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
     }
 
-    .header-title h1 {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin-bottom: 0.25rem;
-    }
-
-    /* Table Card */
+    /* Tabla en panel único */
     .table-container-card {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid var(--lf-border);
-        box-shadow: var(--lf-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
     }
 
     thead th {
-        background: #f8fafc !important;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        color: #64748b;
-        border-bottom: 2px solid var(--lf-border) !important;
-        padding: 1rem !important;
+        background: var(--surface, #fff) !important;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--text-2, #6e6e73);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important;
+        padding: 0.9rem 1rem !important;
     }
 
-    /* Custom UI Elements */
+    tbody td {
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Avatar neutro */
     .avatar-circle {
         width: 36px;
         height: 36px;
-        background-color: #f1f5f9;
+        background: rgba(0,0,0,0.05);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 700;
-        color: var(--lf-primary);
-        font-size: 0.85rem;
-        border: 2px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-
-    .badge-soft {
-        font-size: 0.75rem;
-        padding: 0.35rem 0.75rem;
-        border-radius: 2rem;
         font-weight: 600;
+        color: var(--text-2, #6e6e73);
+        font-size: 0.85rem;
+        flex-shrink: 0;
     }
-    
-    .badge-soft-success { background: #ecfdf5; color: #059669; }
 
-    /* Homogenized Action Buttons */
+    /* Botones de acción sin saltos */
     .btn-action-custom {
         width: 32px;
         height: 32px;
@@ -96,12 +75,7 @@
         align-items: center;
         justify-content: center;
         border-radius: 0.5rem;
-        transition: all 0.2s;
-    }
-
-    .btn-action-custom:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: background 0.2s;
     }
 
     .empty-state {
@@ -115,15 +89,15 @@
     <!-- Header Section -->
     <div class="header-section">
         <div class="header-title">
-            <h1 class="mb-0"><i class="fas fa-users-cog text-primary me-2"></i> {{ titulo }}</h1>
-            <p class="text-muted small mb-0">Listado especializado de personal con función de {{ funcion_display|lower }}.</p>
+            <h1 class="apple-title mb-0">{{ titulo }}</h1>
+            <p class="apple-subtitle mb-0">Personal con función de {{ funcion_display|lower }}.</p>
         </div>
-        <div class="header-actions d-flex gap-2">
-            <button id="exportarExcelBtn" class="btn btn-success text-white border-0 rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
-                <i class="fas fa-file-excel me-2"></i>Exportar a Excel
+        <div class="header-actions d-flex gap-2 flex-wrap">
+            <button id="exportarExcelBtn" class="apple-btn-ghost">
+                <i class="fas fa-file-excel me-2"></i>Exportar
             </button>
-            <a href="{% url 'agregar_maestro' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
-                <i class="fas fa-plus-circle me-1"></i> Agregar {{ funcion_display }}
+            <a href="{% url 'agregar_maestro' %}" class="apple-btn">
+                <i class="fas fa-plus me-2"></i> Agregar
             </a>
         </div>
     </div>
@@ -166,7 +140,7 @@
                                     <span class="fw-bold text-dark">{{ trabajador.a_paterno }} {{ trabajador.a_materno }} {{ trabajador.nombres }}</span>
                                 </div>
                             </td>
-                            <td><span class="fw-bold text-primary">{{ trabajador.id_escuela.id_escuela|default:"N/A" }}</span></td>
+                            <td><span class="fw-bold apple-num">{{ trabajador.id_escuela.id_escuela|default:"N/A" }}</span></td>
                             <td><span class="small text-muted">{{ trabajador.clave_presupuestal|default:"-" }}</span></td>
                             <td class="text-center">
                                 <div class="d-flex gap-1 justify-content-center">
@@ -192,13 +166,10 @@
             </div>
             {% else %}
             <div class="empty-state">
-                <div class="bg-light rounded-circle d-inline-flex p-4 mb-3">
-                    <i class="fas fa-users fa-3x text-muted"></i>
-                </div>
-                <h5 class="text-secondary fw-bold">No hay {{ funcion_display|lower }}s registrados</h5>
-                <p class="text-muted small">Comienza agregando el primer registro para esta función.</p>
-                <a href="{% url 'agregar_maestro' %}" class="btn btn-outline-primary btn-sm rounded-pill px-4 btn-hover-animate">
-                    <i class="fas fa-plus me-1"></i> Agregar Ahora
+                <h5 class="fw-bold" style="color: var(--text-2, #6e6e73);">Sin registros</h5>
+                <p class="small" style="color: var(--text-3, #86868b);">Agregue el primero para esta función.</p>
+                <a href="{% url 'agregar_maestro' %}" class="apple-btn mt-2">
+                    <i class="fas fa-plus me-1"></i> Agregar
                 </a>
             </div>
             {% endif %}
