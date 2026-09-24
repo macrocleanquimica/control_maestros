@@ -1,9 +1,10 @@
 from django.contrib import admin
 from .models import (
-    Tema, Zona, Escuela, Categoria, Maestro, Director, MotivoTramite, 
+    Tema, Zona, Escuela, Categoria, Maestro, MotivoTramite, 
     PlantillaTramite, Prelacion, TipoApreciacion, LoteReporteVacancia, 
     Vacancia, Historial, DocumentoExpediente, Correspondencia, 
-    RegistroCorrespondencia, Notificacion, Pendiente, KardexMovimiento
+    RegistroCorrespondencia, Notificacion, Pendiente, KardexMovimiento,
+    EscuelaRegular, Interinato
 )
 
 @admin.register(Tema)
@@ -20,8 +21,8 @@ class TemaAdmin(admin.ModelAdmin):
 
 @admin.register(Zona)
 class ZonaAdmin(admin.ModelAdmin):
-    list_display = ('numero', 'supervisor')
-    search_fields = ('numero',)
+    list_display = ('numero', 'etiqueta', 'supervisor')
+    search_fields = ('numero', 'nombre',)
 
 @admin.register(Escuela)
 class EscuelaAdmin(admin.ModelAdmin):
@@ -37,11 +38,6 @@ class CategoriaAdmin(admin.ModelAdmin):
 class MaestroAdmin(admin.ModelAdmin):
     list_display = ('a_paterno', 'a_materno', 'nombres', 'rfc', 'curp', 'maestro_principal')
     search_fields = ('a_paterno', 'a_materno', 'nombres', 'rfc', 'curp')
-
-@admin.register(Director)
-class DirectorAdmin(admin.ModelAdmin):
-    list_display = ('maestro', 'escuela', 'fecha_inicio', 'fecha_fin')
-    search_fields = ('maestro__nombres', 'escuela__nombre_ct')
 
 @admin.register(MotivoTramite)
 class MotivoTramiteAdmin(admin.ModelAdmin):
@@ -107,3 +103,16 @@ class PendienteAdmin(admin.ModelAdmin):
 class KardexMovimientoAdmin(admin.ModelAdmin):
     list_display = ('maestro', 'fecha', 'descripcion')
     search_fields = ('maestro__nombres',)
+
+@admin.register(EscuelaRegular)
+class EscuelaRegularAdmin(admin.ModelAdmin):
+    list_display = ('nombre_escuela', 'cct', 'nivel', 'subsistema', 'municipio', 'turno')
+    search_fields = ('nombre_escuela', 'cct__id_escuela', 'municipio')
+    list_filter = ('nivel', 'subsistema', 'municipio')
+
+@admin.register(Interinato)
+class InterinatoAdmin(admin.ModelAdmin):
+    list_display = ('maestro_interino', 'clave_presupuestal', 'maestro_titular', 'fecha_inicio', 'fecha_final', 'tipo', 'estatus')
+    search_fields = ('maestro_interino__nombres', 'maestro_interino__a_paterno', 'maestro_interino__a_materno', 'clave_presupuestal')
+    list_filter = ('estatus', 'tipo', 'motivo')
+    date_hierarchy = 'fecha_inicio'

@@ -7,6 +7,11 @@ from unidecode import unidecode
 
 class Zona(models.Model):
     numero = models.IntegerField(unique=True, verbose_name="Número de Zona")
+    nombre = models.CharField(
+        max_length=120, blank=True,
+        verbose_name="Nombre de la zona (opcional)",
+        help_text="Si se llena, se muestra en lugar de 'Zona N'. Ej. 'Departamento de Educación Especial', 'Zona 1 Laguna'.",
+    )
     supervisor = models.ForeignKey(
         'Maestro',
         on_delete=models.SET_NULL,
@@ -23,8 +28,12 @@ class Zona(models.Model):
         verbose_name_plural = "Zonas"
         ordering = ['numero']
     
+    @property
+    def etiqueta(self):
+        return self.nombre.strip() if self.nombre and self.nombre.strip() else f"Zona {self.numero}"
+    
     def __str__(self):
-        return f"Zona {self.numero}"
+        return self.etiqueta
 
 class Escuela(models.Model):
     TURNOS = [
@@ -124,6 +133,60 @@ class Escuela(models.Model):
                 'id_escuela': 'Formato de CCT inválido. Debe ser: 2 dígitos + 3 letras + 4 dígitos + 1 letra (ej: 10DML0013Q)'
             })
 
+class EscuelaRegular(models.Model):
+    NIVELES = [
+        ('INICIAL', 'Inicial'),
+        ('PREESCOLAR', 'Preescolar'),
+        ('PRIMARIA', 'Primaria'),
+        ('SECUNDARIA', 'Secundaria'),
+        ('TELESECUNDARIA', 'Telesecundaria'),
+    ]
+
+    SUBSISTEMAS = [
+        ('FEDERAL', 'Federal'),
+        ('ESTATAL', 'Estatal'),
+        ('FED', 'Fed'),
+        ('EST', 'Est'),
+    ]
+
+    TURNOS = [
+        ('MATUTINO', 'Matutino'),
+        ('M', 'Matutino'),
+        ('VESPERTINO', 'Vespertino'),
+        ('V', 'Vespertino'),
+        ('MATUTINO Y VESPERTINO', 'Matutino y Vespertino'),
+    ]
+
+    cct = models.ForeignKey(
+        'Escuela',
+        on_delete=models.CASCADE,
+        related_name='escuelas_regulares',
+        verbose_name="CCT (Centro de Trabajo)",
+        help_text="Centro de Trabajo FUA que atiende estas escuelas regulares"
+    )
+    nombre_escuela = models.CharField(max_length=200, verbose_name="Nombre de la Escuela")
+    nivel = models.CharField(max_length=20, choices=NIVELES, verbose_name="Nivel")
+    subsistema = models.CharField(max_length=20, choices=SUBSISTEMAS, verbose_name="Subsistema")
+    calle_num = models.CharField(max_length=250, verbose_name="Calle y Número", blank=True)
+    colonia = models.CharField(max_length=150, verbose_name="Colonia", blank=True)
+    cp = models.CharField(max_length=10, verbose_name="Código Postal", blank=True)
+    localidad = models.CharField(max_length=150, verbose_name="Localidad", blank=True)
+    municipio = models.CharField(max_length=150, verbose_name="Municipio", blank=True)
+    turno = models.CharField(max_length=30, choices=TURNOS, verbose_name="Turno", blank=True)
+    supervisor = models.CharField(max_length=200, verbose_name="Supervisor", blank=True)
+    director = models.CharField(max_length=200, verbose_name="Director de la Escuela", blank=True)
+    maestro_apoyo = models.CharField(max_length=200, verbose_name="Maestro de Apoyo", blank=True)
+    segundo_maestro_apoyo = models.CharField(max_length=200, verbose_name="Segundo Maestro de Apoyo", blank=True)
+
+    class Meta:
+        verbose_name = "Escuela Regular"
+        verbose_name_plural = "Escuelas Regulares"
+        ordering = ['nivel', 'nombre_escuela']
+
+    def __str__(self):
+        return f"{self.nombre_escuela} ({self.nivel})"
+
+
 class Incentivo(models.Model):
     codigo = models.CharField(max_length=10, unique=True, verbose_name="Código")
     descripcion = models.CharField(max_length=100, verbose_name="Descripción", blank=True, null=True)
@@ -139,6 +202,7 @@ class Incentivo(models.Model):
 class Categoria(models.Model):
     id_categoria = models.CharField(max_length=50, primary_key=True, verbose_name="ID Categoría")
     descripcion = models.CharField(max_length=255, verbose_name="Descripción")
+    horas = models.CharField(max_length=10, verbose_name="Horas", blank=True, null=True)
 
     class Meta:
         verbose_name = "Categoría"
@@ -181,12 +245,8 @@ class Maestro(models.Model):
     
     STATUS_OPCIONES = [
         ('ACTIVO', 'Activo'),
-        ('ACTIVA', 'Activa'),
-        ('BAJA', 'Baja'),
-        ('LICENCIA', 'Licencia'),
-        ('JUBILADO', 'Jubilado'),
         ('INACTIVO', 'Inactivo'),
-        ('', 'No especificado'),
+        ('LICENCIA', 'Licencia'),
     ]
     
     FUNCION_OPCIONES = [
@@ -197,10 +257,14 @@ class Maestro(models.Model):
         ('AUXILIAR DE GRUPO', 'AUXILIAR DE GRUPO'),
         ('BIBLIOTECARIO', 'BIBLIOTECARIO'),
         ('DIRECTOR(A)', 'DIRECTOR(A)'),
+        ('INTENDENTE', 'INTENDENTE'),
         ('MAESTRO(A) AULA HOSPITALARIA', 'MAESTRO(A) AULA HOSPITALARIA'),
         ('MAESTRO(A) DE COMUNICACIÓN', 'MAESTRO(A) DE COMUNICACIÓN'),
+        ('MAESTRO(A) DE EDUCACIÓN ARTÍSTICA', 'MAESTRO(A) DE EDUCACIÓN ARTÍSTICA'),
         ('MAESTRO(A) DE EDUCACIÓN FÍSICA', 'MAESTRO(A) DE EDUCACIÓN FÍSICA'),
         ('MAESTRO(A) ESPECIALISTA DOCENTE DE APOYO', 'MAESTRO(A) ESPECIALISTA DOCENTE DE APOYO'),
+        ('MAESTRO(A) DE GRUPO', 'MAESTRO(A) DE GRUPO'),
+        ('MAESTRO(A) DE GRUPO CON ESPECIALIDAD', 'MAESTRO(A) DE GRUPO CON ESPECIALIDAD'),
         ('MAESTRO(A) DE GRUPO ESPECIALISTA', 'MAESTRO(A) DE GRUPO ESPECIALISTA'),
         ('MAESTRO(A) MÚSICA', 'MAESTRO(A) MÚSICA'),
         ('MAESTRO(A) DE TALLER', 'MAESTRO(A) DE TALLER'),
@@ -216,6 +280,7 @@ class Maestro(models.Model):
         ('TRABAJADOR(A) SOCIAL', 'TRABAJADOR(A) SOCIAL'),
         ('VELADOR', 'VELADOR'),
         ('VIGILANTE', 'VIGILANTE'),
+        ('OTRO', 'OTRO'),
     ]
 
     # Datos personales
@@ -283,49 +348,66 @@ class Maestro(models.Model):
 
     class Meta:
         verbose_name = "Personal"
-        verbose_name_plural = "Todo el personal"  # Cambia el nombre del menú lateral
+        verbose_name_plural = "Todo el personal"
         ordering = ['a_paterno', 'a_materno', 'nombres']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['clave_presupuestal', 'curp', 'rfc', 'id_escuela',
+                        'a_paterno', 'a_materno', 'nombres'],
+                name='unique_maestro_completo',
+                violation_error_message='Ya existe un maestro con esa misma clave presupuestal, CURP, RFC, escuela y nombre.'
+            )
+        ]
     
     def __str__(self):
         return f"{self.a_paterno} {self.a_materno} {self.nombres}"
     
     def generar_clave_presupuestal(self):
         """Genera la clave presupuestal concatenando los campos en el orden correcto"""
-        # Asegurar que todos los campos tengan valores por defecto si están vacíos
-        dep = self.dep or "00"
-        unid = self.unid or "00"
-        sub_unid = self.sub_unid or "00"
+        dep = self.dep or ""
+        unid = self.unid or ""
+        sub_unid = self.sub_unid or ""
         categog = self.categog.id_categoria if self.categog else ""
-        hrs = self.hrs or "00.0"
-        num_plaza = self.num_plaza or "000000"
+        hrs = self.hrs or ""
+        num_plaza = self.num_plaza or ""
+        
+        if not any([dep, unid, sub_unid, categog, hrs, num_plaza]):
+            return None
         
         return f"{dep}{unid}{sub_unid}{categog}{hrs}{num_plaza}"
 
     def generar_id_maestro(self):
-        """Genera un ID autoincremental de 5 dígitos"""
-        # Obtener todos los IDs existentes que sean numéricos
-        ids_numericos = []
-        for maestro in Maestro.objects.all():
-            try:
-                ids_numericos.append(int(maestro.id_maestro))
-            except (ValueError, TypeError):
-                continue  # Saltar IDs no numéricos
-        
-        if ids_numericos:
-            # Encontrar el máximo ID numérico y aumentar en 1
-            nuevo_numero = max(ids_numericos) + 1
-        else:
-            # Si no hay maestros con IDs numéricos, comenzar desde 1
-            nuevo_numero = 1
-        
-        # Formatear a 5 dígitos con ceros a la izquierda
+        """Genera un ID autoincremental de 5 dígitos usando MAX en BD.
+
+        Evita instanciar los 1595+ registros y reduce el riesgo de
+        duplicados bajo concurrencia (el save() reintenta si hay colisión).
+        """
+        from django.db.models import Max
+        ultimo = Maestro.objects.aggregate(m=Max('id_maestro'))['m']
+        try:
+            nuevo_numero = int(ultimo) + 1 if ultimo is not None else 1
+        except (ValueError, TypeError):
+            # Respaldo: si hubiera IDs no numéricos, buscar el máximo numérico
+            # solo con valores, sin instanciar modelos completos.
+            max_num = 0
+            for val in Maestro.objects.values_list('id_maestro', flat=True):
+                try:
+                    max_num = max(max_num, int(val))
+                except (ValueError, TypeError):
+                    continue
+            nuevo_numero = max_num + 1 if max_num else 1
         return f"{nuevo_numero:05d}"
     
     def save(self, *args, **kwargs):
-        # Generar ID automáticamente si no existe o está vacío
+        from django.db import IntegrityError, transaction
+        for campo in ['a_paterno', 'a_materno', 'nombres', 'curp', 'rfc']:
+            valor = getattr(self, campo, None)
+            if valor:
+                setattr(self, campo, valor.strip())
+
         if not self.id_maestro or self.id_maestro.strip() == '':
             self.id_maestro = self.generar_id_maestro()
-        
+
         # Generar la clave presupuestal antes de guardar
         self.clave_presupuestal = self.generar_clave_presupuestal()
 
@@ -345,7 +427,17 @@ class Maestro(models.Model):
         ]
         self.nombre_completo_normalized = ' '.join(filter(None, parts))
 
-        super().save(*args, **kwargs)
+        # Reintentar con un ID nuevo si dos altas concurrentes chocan en la PK.
+        for intento in range(3):
+            try:
+                with transaction.atomic():
+                    super().save(*args, **kwargs)
+                break
+            except IntegrityError:
+                if self._state.adding and intento < 2:
+                    self.id_maestro = self.generar_id_maestro()
+                    continue
+                raise
     
     def clean(self):
         """Valida y genera la clave presupuestal"""
@@ -372,22 +464,6 @@ class Maestro(models.Model):
         self.clave_presupuestal = self.generar_clave_presupuestal()
         
         super().clean()
-
-class Director(models.Model):
-    maestro = models.OneToOneField(Maestro, on_delete=models.CASCADE, verbose_name="Maestro")
-    escuela = models.OneToOneField(Escuela, on_delete=models.CASCADE, verbose_name="Escuela")
-    fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
-    fecha_fin = models.DateField(verbose_name="Fecha de Fin", null=True, blank=True)
-    acuerdo = models.CharField(max_length=100, verbose_name="Acuerdo de Nombramiento", blank=True)
-    observaciones = models.TextField(verbose_name="Observaciones", blank=True)
-    
-    class Meta:
-        verbose_name = "Director"
-        verbose_name_plural = "Directores"
-        ordering = ['escuela', 'fecha_inicio']
-    
-    def __str__(self):
-        return f"Director: {self.maestro} - Escuela: {self.escuela}"
 
 class MotivoTramite(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -431,6 +507,7 @@ class Prelacion(models.Model):
     curp = models.CharField(max_length=18, verbose_name="CURP del Aspirante")
     nombre = models.CharField(max_length=255, verbose_name="Nombre del Aspirante")
     tipo_val = models.CharField(max_length=255, verbose_name="Tipo de Valoración")
+    telefonos = models.CharField(max_length=500, blank=True, default='', verbose_name="Teléfonos")
 
     class Meta:
         verbose_name = "Registro de Prelación"
@@ -455,6 +532,8 @@ class LoteReporteVacancia(models.Model):
     ESTADOS = [
         ('EN_PROCESO', 'En Proceso'),
         ('GENERADO', 'Generado'),
+        ('PROCESANDO', 'Procesando'),
+        ('CANCELADO', 'Cancelado'),
     ]
     usuario_generador = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Usuario Generador")
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
@@ -879,3 +958,122 @@ class ModuloPrelacion(models.Model):
         managed = False
         verbose_name_plural = "Acceso al Módulo de Prelación"
         permissions = (("acceder_prelacion", "Puede acceder al módulo de Prelación"),)
+
+
+class Interinato(models.Model):
+    """Historial de interinatos cubiertos por un maestro interino.
+
+    Cada vez que un maestro cubre la plaza de un titular (por licencia,
+    incapacidad, beca, vacante definitiva, etc.) se registra en esta tabla.
+    Así un maestro puede tener un solo registro personal y su historial
+    completo de interinatos aquí.
+    """
+
+    MOTIVO_CHOICES = [
+        ('LICENCIA POR ASUNTOS PARTICULARES', 'LICENCIA POR ASUNTOS PARTICULARES'),
+        ('LICENCIA POR PASAR A OTRO EMPLEO', 'LICENCIA POR PASAR A OTRO EMPLEO'),
+        ('LICENCIA POR COMISION SINDICAL O ELECCION POPULAR', 'LICENCIA POR COMISION SINDICAL O ELECCION POPULAR'),
+        ('LICENCIA POR GRAVIDEZ', 'LICENCIA POR GRAVIDEZ'),
+        ('LICENCIA POR INCAPACIDAD MEDICA', 'LICENCIA POR INCAPACIDAD MEDICA'),
+        ('LICENCIA POR BECA', 'LICENCIA POR BECA'),
+        ('LICENCIA PREPENSIONARIA', 'LICENCIA PREPENSIONARIA'),
+        ('LICENCIA SIN GOCE DE SUELDO', 'LICENCIA SIN GOCE DE SUELDO'),
+        ('VACANTE DEFINITIVA', 'VACANTE DEFINITIVA'),
+        ('NO ESPECIFICADO', 'NO ESPECIFICADO'),
+    ]
+
+    TIPO_CHOICES = [
+        ('INTERINO', 'Interino'),
+        ('DESUBICADO', 'Desubicado'),
+        ('REINGRESO', 'Reingreso'),
+        ('FILIACION', 'Filiación'),
+    ]
+
+    ESTADO_CHOICES = [
+        ('ACTIVO', 'Activo'),
+        ('CONCLUIDO', 'Concluido'),
+        ('CANCELADO', 'Cancelado'),
+    ]
+
+    maestro_interino = models.ForeignKey(
+        Maestro,
+        on_delete=models.CASCADE,
+        related_name='interinatos_cubiertos',
+        verbose_name="Maestro Interino"
+    )
+    maestro_titular = models.ForeignKey(
+        Maestro,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='interinatos_titular',
+        verbose_name="Maestro Titular Sustituido"
+    )
+    clave_presupuestal = models.CharField(
+        max_length=50,
+        verbose_name="Clave Presupuestal Cubierta",
+        blank=True,
+        null=True
+    )
+    escuela = models.ForeignKey(
+        Escuela,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Centro de Trabajo"
+    )
+    techo_financiero = models.CharField(
+        max_length=50,
+        verbose_name="Techo Financiero",
+        blank=True,
+        null=True
+    )
+    fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
+    fecha_final = models.DateField(
+        verbose_name="Fecha Final",
+        null=True,
+        blank=True,
+        help_text="Dejar vacío si el interinato continúa vigente."
+    )
+    motivo = models.CharField(
+        max_length=100,
+        choices=MOTIVO_CHOICES,
+        verbose_name="Motivo",
+        blank=True,
+        null=True
+    )
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPO_CHOICES,
+        default='INTERINO',
+        verbose_name="Tipo de Asignación"
+    )
+    estatus = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='ACTIVO',
+        verbose_name="Estatus"
+    )
+    observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+    vacancia = models.ForeignKey(
+        Vacancia,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='interinatos',
+        verbose_name="Vacancia Relacionada"
+    )
+    fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
+    fecha_actualizacion = models.DateTimeField(auto_now=True, verbose_name="Última Actualización")
+
+    class Meta:
+        verbose_name = "Interinato"
+        verbose_name_plural = "Historial de Interinatos"
+        ordering = ['-fecha_inicio', '-id']
+        indexes = [
+            models.Index(fields=['maestro_interino']),
+            models.Index(fields=['estatus']),
+        ]
+
+    def __str__(self):
+        return f"Interinato de {self.maestro_interino} en {self.clave_presupuestal or 'S/N'} ({self.get_estatus_display()})"
