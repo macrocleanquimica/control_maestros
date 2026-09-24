@@ -808,6 +808,16 @@
                                     <i class="fas fa-book me-2"></i> Docentes de Apoyo
                                 </a>
                             </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'lista_por_funcion' 'NO_ESPECIFICADO' %}">
+                                    <i class="fas fa-question me-2"></i> Sin Función Específica
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'reporte_personas_vs_plazas' %}">
+                                    <i class="fas fa-users me-2"></i> Personas vs Plazas
+                                </a>
+                            </li>
                             {%endif%}
                         </ul>
                     </li>
@@ -888,11 +898,29 @@
                     {%endif%}
 
                     {%if perms.gestion_escolar.acceder_reportes%}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{%url 'reportes_dashboard'%}" data-tooltip="Reportes">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false" data-tooltip="Reportes">
                             <i class="fas fa-chart-bar me-2"></i>
                             <span class="sidebar-text">Reportes</span>
                         </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{%url 'reportes_dashboard'%}">
+                                    <i class="fas fa-tachometer-alt me-2"></i> Reportes Generales
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{%url 'reporte_vacancias_fecha'%}">
+                                    <i class="fas fa-file-invoice me-2"></i> Reporte de Vacancia
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{%url 'reporte_personal_fuera_adscripcion'%}">
+                                    <i class="fas fa-user-slash me-2"></i> Personal Desubicado
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     {%endif%}
                     {%if perms.gestion_escolar.acceder_prelacion%}
@@ -1198,6 +1226,17 @@
         window.addEventListener('pageshow', function () {
             hideLoading();
         });
+
+        // Foco automático en la caja de búsqueda de cualquier select2 al abrirlo
+        // (ahorra un clic en Maestro Titular/Interino, trámites, FUP, correspondencia, etc.)
+        if (window.jQuery) {
+            jQuery(document).on('select2:open', function () {
+                setTimeout(function () {
+                    var campo = document.querySelector('.select2-container--open .select2-search__field');
+                    if (campo) campo.focus();
+                }, 0);
+            });
+        }
     </script>
 
 

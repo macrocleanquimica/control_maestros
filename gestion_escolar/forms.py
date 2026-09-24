@@ -163,9 +163,9 @@ class VacanciaForm(UppercaseFormMixin, forms.ModelForm):
         if apreciacion_desc == "ADMISIÓN.EDUCACIÓN BÁSICA.DOCENTE.EDUCACIÓN ESPECIAL.PSICOLOGÍA EDUCATIVA":
             funcion = (maestro.funcion or '').upper().replace('Ó', 'O')
             es_psicologo = 'PSICOLOG' in funcion
-            if not es_psicologo and categoria not in ["E0689", "P04803"]:
+            if not es_psicologo and categoria not in ["E0689", "E0671", "P04803"]:
                 raise forms.ValidationError(
-                    f"Para la apreciación '{apreciacion_desc}', la categoría del maestro ({categoria}) debe ser 'E0689' o 'P04803'."
+                    f"Para la apreciación '{apreciacion_desc}', la categoría del maestro ({categoria}) debe ser 'E0689', 'E0671' o 'P04803'."
                 )
 
         validation_rules = {
