@@ -5,19 +5,6 @@
 
 {% block content %}
 <style>
-    :root {
-        --db-primary: #2563eb;
-        --db-success: #10b981;
-        --db-warning: #f59e0b;
-        --db-info: #06b6d4;
-        --db-bg: #f8fafc;
-        --db-card-bg: #ffffff;
-        --db-border: #e2e8f0;
-        --db-text-main: #1e293b;
-        --db-text-muted: #64748b;
-        --db-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-
     .dashboard-wrapper {
         padding: 1.5rem;
         animation: fadeIn 0.6s ease-out;
@@ -28,82 +15,76 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* KPI Cards */
+    /* KPI: panel blanco, sin saltos ni bordes de color */
     .kpi-card {
-        background: var(--db-card-bg);
-        border: 1px solid var(--db-border);
-        border-radius: 1.25rem;
+        background: var(--surface, #fff);
+        border-radius: var(--r-card, 18px);
         padding: 1.5rem;
         display: flex;
         align-items: center;
         gap: 1.25rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: var(--db-shadow);
+        transition: background 0.2s ease;
+        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
         height: 100%;
         position: relative;
         overflow: hidden;
     }
 
-    .kpi-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        border-color: var(--db-primary);
-    }
-
     a.kpi-card-link:hover .kpi-card {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        border-color: var(--db-primary);
+        background: var(--hover, #fbfbfd);
     }
 
     .kpi-icon-container {
-        width: 60px;
-        height: 60px;
-        border-radius: 1rem;
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         flex-shrink: 0;
+        background: rgba(0,0,0,0.05);
+        color: var(--text-2, #6e6e73);
     }
 
-    .bg-soft-primary { background: #eff6ff; color: #1d4ed8; }
-    .bg-soft-success { background: #ecfdf5; color: #059669; }
-    .bg-soft-info { background: #f0f9ff; color: #0369a1; }
-    .bg-soft-warning { background: #fffbeb; color: #d97706; }
+    .bg-soft-primary, .bg-soft-success, .bg-soft-info, .bg-soft-warning {
+        background: rgba(0,0,0,0.05) !important;
+        color: var(--text-2, #6e6e73) !important;
+    }
 
     .kpi-value {
         font-size: 1.75rem;
-        font-weight: 800;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
         line-height: 1.2;
-        color: var(--db-text-main);
+        color: var(--text, #1d1d1f);
     }
 
     .kpi-label {
         font-size: 0.8rem;
         font-weight: 600;
-        color: var(--db-text-muted);
-        text-transform: uppercase;
+        color: var(--text-2, #6e6e73);
         letter-spacing: 0.025em;
     }
 
     /* Section Headers */
     .section-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--db-text-main);
+        font-size: 1.05rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text, #1d1d1f);
         margin-bottom: 1.5rem;
         display: flex;
         align-items: center;
         gap: 0.75rem;
     }
 
-    /* Widgets / Activity Feeds */
+    /* Widgets: panel único */
     .widget-card {
-        background: white;
-        border-radius: 1.25rem;
-        border: 1px solid var(--db-border);
-        box-shadow: var(--db-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-card, 18px);
+        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
         height: 100%;
         display: flex;
         flex-direction: column;
@@ -112,8 +93,7 @@
 
     .widget-header {
         padding: 1.25rem;
-        border-bottom: 1px solid var(--db-border);
-        background: #fdfdfd;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -126,10 +106,9 @@
 
     .feed-item {
         padding: 0.75rem 0;
-        border-bottom: 1px solid #f1f5f9;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
         display: flex;
         gap: 1rem;
-        transition: background 0.2s;
     }
 
     .feed-item:last-child {
@@ -139,12 +118,14 @@
     .feed-icon {
         width: 40px;
         height: 40px;
-        border-radius: 0.75rem;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
         font-size: 1rem;
+        background: rgba(0,0,0,0.05);
+        color: var(--text-2, #6e6e73);
     }
 
     .feed-content {
@@ -156,7 +137,7 @@
         font-weight: 600;
         font-size: 0.9rem;
         margin-bottom: 0.15rem;
-        color: var(--db-text-main);
+        color: var(--text, #1d1d1f);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -164,13 +145,14 @@
 
     .feed-subtitle {
         font-size: 0.75rem;
-        color: var(--db-text-muted);
+        color: var(--text-2, #6e6e73);
     }
 
     .feed-date {
         font-size: 0.7rem;
-        color: #94a3b8;
+        color: var(--text-3, #86868b);
         font-weight: 500;
+        font-variant-numeric: tabular-nums;
     }
 
     /* Action buttons in lists */
@@ -192,10 +174,10 @@
     /* Calendario Escolar */
     .calendar-carousel {
         position: relative;
-        border-radius: 0.75rem;
+        border-radius: 14px;
         overflow: hidden;
-        border: 2px solid #e2e8f0;
-        background: #f8fafc;
+        border: 1px solid var(--hairline, rgba(0,0,0,0.07));
+        background: rgba(0,0,0,0.03);
     }
 
     .calendar-carousel-track {
@@ -239,7 +221,7 @@
         width: 34px;
         height: 34px;
         border-radius: 50%;
-        background: rgba(30, 64, 175, 0.9);
+        background: rgba(29,29,31,0.85);
         color: white;
         font-size: 0.85rem;
         display: flex;
@@ -263,7 +245,7 @@
         border: none;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.95);
-        color: #1e40af;
+        color: var(--text, #1d1d1f);
         font-size: 1rem;
         display: flex;
         align-items: center;
@@ -271,13 +253,11 @@
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
         cursor: pointer;
         z-index: 2;
-        transition: all 0.2s ease;
+        transition: opacity 0.2s ease;
         opacity: 0.85;
     }
 
     .calendar-nav:hover {
-        background: #1e40af;
-        color: white;
         opacity: 1;
     }
 
@@ -296,14 +276,13 @@
         height: 8px;
         border-radius: 50%;
         border: none;
-        background: #cbd5e1;
+        background: rgba(0,0,0,0.15);
         cursor: pointer;
         padding: 0;
-        transition: all 0.2s ease;
     }
 
     .calendar-dot.active {
-        background: #1e40af;
+        background: var(--text, #1d1d1f);
         width: 22px;
         border-radius: 2rem;
     }
@@ -337,11 +316,11 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-end mb-4">
         <div>
-            <h1 class="h3 fw-bold mb-1">¡Bienvenido al Sistema!</h1>
-            <p class="text-muted small mb-0">Resumen y actividades pendientes para hoy.</p>
+            <h1 class="apple-title">Bienvenido</h1>
+            <p class="apple-subtitle mb-0">Resumen y pendientes de hoy.</p>
         </div>
         <div class="text-end">
-            <span class="badge bg-light text-dark border p-2 small">
+            <span class="apple-tag apple-num">
                 <i class="far fa-calendar-alt me-1"></i> {% now "j \d\e F, Y" %}
             </span>
         </div>
@@ -410,8 +389,8 @@
         <div class="col-lg-6">
             <div class="widget-card h-100">
                 <div class="widget-header">
-                    <h5 class="mb-0 fw-bold"><i class="fas fa-calendar-alt text-primary me-2"></i> Calendario Escolar 2026-2027</h5>
-                    <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="font-size:0.7rem;">CICLO ESCOLAR</span>
+                    <h5 class="mb-0 fw-bold">Calendario Escolar 2026-2027</h5>
+                    <span class="apple-tag" style="font-size:0.7rem;">CICLO ESCOLAR</span>
                 </div>
                 <div class="widget-body">
                     <div class="calendar-carousel" id="calendarCarousel">
@@ -451,7 +430,7 @@
                         </div>
                     </div>
                     <div class="text-center mt-3">
-                        <a href="https://educacionbasica.sep.gob.mx/publica-sep-calendario-escolar-2026-2027-para-educacion-basica-y-normal/" target="_blank" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold">
+                        <a href="https://educacionbasica.sep.gob.mx/publica-sep-calendario-escolar-2026-2027-para-educacion-basica-y-normal/" target="_blank" class="apple-btn-ghost">
                             <i class="fas fa-external-link-alt me-1"></i> Publicación oficial SEP
                         </a>
                     </div>
@@ -466,7 +445,7 @@
                 <div class="col-md-6">
                     <div class="widget-card">
                         <div class="widget-header">
-                            <h6 class="mb-0 fw-bold"><i class="fas fa-tasks text-warning me-2"></i> Pendientes</h6>
+                            <h6 class="mb-0 fw-bold">Pendientes</h6>
                             <a href="{% url 'pendientes_activos' %}" class="small text-decoration-none">Ver todo</a>
                         </div>
                         <div class="widget-body p-0">
@@ -496,7 +475,7 @@
                 <div class="col-md-6">
                     <div class="widget-card">
                         <div class="widget-header">
-                            <h6 class="mb-0 fw-bold"><i class="fas fa-user-plus text-success me-2"></i> Recientes</h6>
+                            <h6 class="mb-0 fw-bold">Recientes</h6>
                         </div>
                         <div class="widget-body p-0">
                             <div class="px-3">
@@ -525,7 +504,7 @@
                 <div class="col-12 mt-4">
                     <div class="widget-card">
                         <div class="widget-header">
-                            <h6 class="mb-0 fw-bold"><i class="fas fa-envelope-open-text text-info me-2"></i> Correspondencia Reciente</h6>
+                            <h6 class="mb-0 fw-bold">Correspondencia Reciente</h6>
                         </div>
                         <div class="widget-body p-0">
                             <div class="px-3">
