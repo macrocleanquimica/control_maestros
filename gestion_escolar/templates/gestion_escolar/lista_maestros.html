@@ -5,15 +5,6 @@
 
 {% block content %}
 <style>
-    :root {
-        --ml-primary: #2563eb;
-        --ml-success: #10b981;
-        --ml-danger: #ef4444;
-        --ml-warning: #f59e0b;
-        --ml-border: #e2e8f0;
-        --ml-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-
     .page-container {
         padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
@@ -24,81 +15,91 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header Styling */
+    /* Encabezado: título con tracking negativo, subtítulo gris */
     .header-section {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        background: white;
-        padding: 1.25rem 1.5rem;
-        border-radius: 1rem;
-        border: 1px solid var(--ml-border);
-        box-shadow: var(--ml-shadow);
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
     }
 
-    .header-title h1 {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin-bottom: 0.25rem;
-    }
-
-    /* Table Card */
+    /* Tabla en panel único con líneas finas */
     .table-container-card {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid var(--ml-border);
-        box-shadow: var(--ml-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
     }
 
-    .table-header-custom {
-        padding: 1.5rem;
-        border-bottom: 1px solid var(--ml-border);
-        background: #fdfdfd;
-    }
-
-
     thead th {
-        background: #f8fafc !important;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        color: #64748b;
-        border-bottom: 2px solid var(--ml-border) !important;
-        padding: 1rem !important;
+        background: var(--surface, #fff) !important;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--text-2, #6e6e73);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important;
+        padding: 0.9rem 1rem !important;
     }
 
-    /* Custom UI Elements in Table */
+    tbody td {
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important;
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none !important;
+    }
+
+    tbody tr:hover td {
+        background: var(--hover, #fbfbfd);
+    }
+
+    /* Avatar neutro (mismo nombre de clase: el JS no cambia) */
     .avatar-circle {
         width: 38px;
         height: 38px;
-        background-color: #f1f5f9;
+        background-color: rgba(0,0,0,0.05);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 700;
-        color: var(--ml-primary);
-        font-size: 0.9rem;
-        border: 2px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        font-weight: 600;
+        color: var(--text, #1d1d1f);
+        font-size: 0.85rem;
+        flex-shrink: 0;
     }
 
-    .badge-soft {
-        font-size: 0.7rem;
-        padding: 0.35rem 0.75rem;
+    /* Etiquetas grises con punto (mismos nombres: el JS no cambia) */
+    .badge-soft-success,
+    .badge-soft-danger {
+        font-size: 0.72rem;
+        padding: 0.3rem 0.7rem;
         border-radius: 2rem;
-        font-weight: 700;
-        text-transform: uppercase;
+        font-weight: 600;
+        background: rgba(0,0,0,0.05);
+        display: inline-flex;
+        align-items: center;
     }
 
-    .badge-soft-success { background-color: #ecfdf5; color: #059669; }
-    .badge-soft-warning { background-color: #fffbeb; color: #d97706; }
-    .badge-soft-danger { background-color: #fef2f2; color: #dc2626; }
-    .badge-soft-info { background-color: #f0f9ff; color: #0284c7; }
+    .badge-soft-success { color: var(--text, #1d1d1f); }
+    .badge-soft-danger { color: var(--text-2, #6e6e73); }
+
+    .badge-soft-success::before,
+    .badge-soft-danger::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+    }
+
+    .badge-soft-success::before { background: var(--live, #30d158); }
+    .badge-soft-danger::before { background: var(--text-4, #aeaeb2); }
+
+    .badge-soft-warning { background: rgba(0,0,0,0.05); color: var(--text-2, #6e6e73); }
+    .badge-soft-info { background: rgba(0,113,227,0.08); color: var(--accent-link, #0066cc); }
 
     .indicator-pill {
         display: inline-flex;
@@ -107,20 +108,20 @@
         font-size: 11px;
         padding: 2px 8px;
         border-radius: 12px;
-        background: #f1f5f9;
-        color: #475569;
-        border: 1px solid #e2e8f0;
+        background: rgba(0,0,0,0.05);
+        color: var(--text-2, #6e6e73);
         font-weight: 500;
     }
 
-    /* Homogenized Action Buttons */
-    .btn-action-custom {
-        transition: all 0.2s;
+    .indicator-pill.text-danger,
+    .indicator-pill.text-info,
+    .indicator-pill.text-primary {
+        color: var(--text-2, #6e6e73) !important;
     }
-    
-    .btn-action-custom:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+    /* Botones de acción: sin saltos que muevan la tabla */
+    .btn-action-custom {
+        transition: background 0.2s;
     }
 
 </style>
@@ -129,22 +130,22 @@
     <!-- Header Section -->
     <div class="header-section">
         <div class="header-title">
-            <h1 class="mb-0"><i class="fas fa-chalkboard-teacher text-primary me-2"></i> Gestión de Personal</h1>
-            <p class="text-muted small mb-0">Administre la base de datos de maestros y personal administrativo del sistema.</p>
+            <h1 class="apple-title mb-0">Personal</h1>
+            <p class="apple-subtitle mb-0">Maestros y personal administrativo del sistema.</p>
         </div>
         <div class="header-actions d-flex gap-2 align-items-center">
             <div class="form-check form-switch me-2 text-muted" style="white-space: nowrap;">
                 <input class="form-check-input" type="checkbox" role="switch" id="toggle-agrupar" checked>
                 <label class="form-check-label small fw-bold" for="toggle-agrupar" title="Mostrar una fila por persona; sus otras plazas se agrupan como badge.
 Desactívelo para ver todas las plazas por separado.">
-                    <i class="fas fa-user-friends me-1 text-primary"></i> Agrupar por persona
+                    Agrupar por persona
                 </label>
             </div>
-            <button id="export-excel-btn" class="btn btn-success text-white border-0 rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
-                <i class="fas fa-file-excel me-2"></i>Exportar a Excel
+            <button id="export-excel-btn" class="apple-btn-ghost">
+                <i class="fas fa-file-excel me-2"></i>Exportar
             </button>
-            <a href="{% url 'agregar_maestro' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
-                <i class="fas fa-plus-circle me-1"></i> Agregar Maestro
+            <a href="{% url 'agregar_maestro' %}" class="apple-btn">
+                <i class="fas fa-plus me-2"></i>Agregar
             </a>
         </div>
     </div>
@@ -240,7 +241,7 @@ Desactívelo para ver todas las plazas por separado.">
                         `;
                     }
                 },
-                { data: 2, className: 'fw-bold text-primary' },
+                { data: 2, className: 'fw-bold' },
                 { data: 3, className: 'small text-muted font-monospace' },
                 { data: 4, className: 'fw-bold text-dark' },
                 { 
