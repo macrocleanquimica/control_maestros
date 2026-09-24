@@ -5,22 +5,17 @@
 
 {% block content %}
 <div class="page-container p-4">
-    <!-- Header Premium -->
+    <!-- Header -->
     <div class="premium-header mb-4">
-        <div class="row align-items-center g-3">
-            <div class="col-md-auto">
-                <div class="header-icon-container bg-soft-info text-info">
-                    <i class="fas fa-file-invoice"></i>
-                </div>
-            </div>
+        <div class="row align-items-end g-3">
             <div class="col-md">
                 <h1 class="header-title">{{ titulo }}</h1>
-                <p class="header-subtitle mb-0">Gestión de vacantes para el Lote <span class="badge bg-light text-dark border ms-1 font-monospace">#{{ lote.id }}</span></p>
+                <p class="header-subtitle mb-0">Lote <span class="apple-num">#{{ lote.id }}</span></p>
             </div>
             <div class="col-md-auto">
-                <a href="{% url 'lista_lotes_vacancia' %}" class="btn btn-light rounded-pill border d-flex align-items-center gap-2 shadow-sm btn-hover-animate">
-                    <i class="fas fa-history"></i>
-                    <span>Ver Histórico</span>
+                <a href="{% url 'lista_lotes_vacancia' %}" class="apple-btn-ghost">
+                    <i class="fas fa-history me-2"></i>
+                    <span>Histórico</span>
                 </a>
             </div>
         </div>
@@ -41,9 +36,8 @@
         <!-- Columna Formulario (Izquierda) -->
         <div class="col-xl-4">
             <div class="card premium-card shadow-sm border-0 mb-4 sticky-top" style="top: 1rem; z-index: 10;">
-                <div class="card-header bg-white py-3 border-bottom">
+                <div class="card-header py-3">
                     <h6 class="m-0 fw-bold d-flex align-items-center gap-2">
-                        <i class="fas fa-plus-circle text-primary"></i>
                         Nueva Vacancia
                     </h6>
                 </div>
@@ -102,8 +96,8 @@
                             </label>
                         </div>
 
-                        <button type="submit" class="btn btn-primary rounded-pill w-100 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 btn-hover-animate">
-                            <i class="fas fa-plus"></i>
+                        <button type="submit" class="apple-btn w-100 justify-content-center">
+                            <i class="fas fa-plus me-2"></i>
                             Agregar al Lote
                         </button>
                     </form>
@@ -120,20 +114,19 @@
                     <div class="row align-items-center">
                         <div class="col-md">
                             <h5 class="fw-bold d-flex align-items-center gap-2 mb-2">
-                                <i class="fas fa-bolt text-success"></i>
-                                Lote Listo para Procesar
+                                <span class="apple-num">{{ vacancias_en_lote.count }}</span> en este lote
                             </h5>
-                            <p class="mb-0 text-muted smaller pe-md-4">
-                                El lote tiene <strong>{{ vacancias_en_lote.count }}</strong> vacancia(s). Al exportar se generará el Excel consolidado, los oficios Word y se sincronizará con Google Sheets.
+                            <p class="mb-0 smaller" style="color: var(--text-2, #6e6e73);">
+                                Al exportar se genera el Excel, los oficios Word y se sincroniza con Google Sheets.
                             </p>
                         </div>
                         <div class="col-md-auto mt-3 mt-md-0 d-flex gap-2">
-                            <button type="button" class="btn btn-success rounded-pill px-4 shadow-sm fw-bold d-flex align-items-center gap-2 btn-hover-animate" onclick="confirmExport({{ lote.id }}, 'normal')">
-                                <i class="fas fa-file-excel"></i>
+                            <button type="button" class="apple-btn" onclick="confirmExport({{ lote.id }}, 'normal')">
+                                <i class="fas fa-file-excel me-2"></i>
                                 Excel USICAMM
                             </button>
-                            <button type="button" class="btn btn-outline-success rounded-pill px-4 shadow-sm fw-bold d-flex align-items-center gap-2 btn-hover-animate" onclick="confirmExport({{ lote.id }}, 'eo')">
-                                <i class="fas fa-file-contract"></i>
+                            <button type="button" class="apple-btn-ghost" onclick="confirmExport({{ lote.id }}, 'eo')">
+                                <i class="fas fa-file-contract me-2"></i>
                                 Formato EO
                             </button>
                         </div>
@@ -144,11 +137,10 @@
 
             <!-- Tabla de Vacancias -->
             <div class="card premium-card border-0 shadow-sm">
-                <div class="card-header bg-white py-3 border-bottom">
+                <div class="card-header py-3">
                     <h6 class="m-0 fw-bold d-flex align-items-center gap-2">
-                        <i class="fas fa-list-ul text-primary"></i>
                         Registros en este Lote
-                        <span class="badge bg-soft-primary text-primary ms-2">{{ vacancias_en_lote.count }}</span>
+                        <span class="apple-tag apple-num ms-2">{{ vacancias_en_lote.count }}</span>
                     </h6>
                 </div>
                 <div class="card-body p-0">
@@ -241,34 +233,37 @@
 </div>
 
 <style>
-    /* Estilos Adicionales Específicos */
-    .premium-header { background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid #eef2f6; }
-    .header-icon-container { width: 52px; height: 52px; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-    .bg-soft-info { background: #e0f2fe; color: #0369a1; }
-    .header-title { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin: 0; }
-    .header-subtitle { font-size: 0.9rem; color: #64748b; }
-    
-    .premium-card { border-radius: 1rem; border: 1px solid #eef2f6; }
-    .alert-success-premium { background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%); border: 1px solid rgba(21, 128, 61, 0.1) !important; color: #14532d; }
-    
+    /* Encabezado simple: título + subtítulo, sin tarjeta */
+    .premium-header { background: transparent; padding: 0.25rem 0 0; border: none; }
+    .header-title { font-size: clamp(22px, 3.4vw, 30px); font-weight: 700; letter-spacing: -0.02em; color: var(--text, #1d1d1f); margin: 0; }
+    .header-subtitle { font-size: 0.9rem; color: var(--text-2, #6e6e73); }
+    .header-icon-container { display: none; }
+
+    /* Panel único en vez de tarjetas separadas */
+    .premium-card { background: var(--surface, #fff); border-radius: var(--r-panel, 22px); box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05)); border: none !important; }
+    .premium-card .card-header { background: var(--surface, #fff) !important; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important; border-radius: var(--r-panel, 22px) var(--r-panel, 22px) 0 0 !important; }
+    .alert-success-premium { background: var(--surface, #fff) !important; border: none !important; color: var(--text, #1d1d1f); }
+
     /* Select2 Premium Integration */
     .select2-container--default .select2-selection--single {
         height: 44px !important;
-        border-radius: 0.75rem !important;
-        border: 1px solid #e2e8f0 !important;
-        background-color: #f8fafc !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(0,0,0,0.08) !important;
+        background-color: var(--surface, #fff) !important;
         display: flex;
         align-items: center;
     }
     .select2-container--default .select2-selection--single .select2-selection__arrow { height: 44px !important; }
-    .select2-dropdown { border-radius: 0.75rem !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important; }
+    .select2-dropdown { border-radius: 12px !important; border: 1px solid rgba(0,0,0,0.08) !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important; }
 
-    .form-control, .form-select { border-radius: 0.75rem; border: 1px solid #e2e8f0; padding: 0.65rem 0.75rem; background-color: #f8fafc; font-size: 0.9rem; transition: all 0.2s; }
-    .form-control:focus { background-color: white; border-color: #0ea5e9; box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1); }
+    .form-control, .form-select { border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); padding: 0.65rem 0.75rem; background-color: var(--surface, #fff); font-size: 0.9rem; transition: border-color 0.2s; }
+    .form-control:focus { background-color: white; border-color: var(--accent, #0071e3); box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12); }
 
-    .bg-soft-primary { background: #e0f2fe; color: #0369a1; }
-    
-    .table thead th { background: #f8fafc; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b; padding: 1rem 1.5rem; border-color: #f1f5f9; }
+    .bg-soft-primary { background: rgba(0,0,0,0.05); color: var(--text-2, #6e6e73); }
+
+    .table thead th { background: var(--surface, #fff); font-size: 0.72rem; font-weight: 600; color: var(--text-2, #6e6e73); padding: 1rem 1.5rem; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)); }
+    .table tbody td { border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)); }
+    .table tbody tr:last-child td { border-bottom: none; }
 </style>
 {% endblock %}
 
