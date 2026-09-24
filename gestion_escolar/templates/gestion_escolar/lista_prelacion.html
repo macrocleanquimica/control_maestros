@@ -5,16 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --pr-primary: #6366f1;
-        --pr-success: #10b981;
-        --pr-warning: #f59e0b;
-        --pr-border: #e2e8f0;
-        --pr-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
     .page-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
     }
 
@@ -23,90 +15,71 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header & Stats Section */
+    /* Encabezado simple */
     .premium-header {
-        background: white;
-        border-radius: 1.25rem;
-        padding: 2rem;
-        box-shadow: var(--pr-shadow);
-        border: 1px solid var(--pr-border);
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-end;
         flex-wrap: wrap;
-        gap: 1.5rem;
-    }
-
-    .header-info h1 {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin-bottom: 0.25rem;
+        gap: 1rem;
     }
 
     .stat-card-mini {
-        background: #f8fafc;
+        background: rgba(0,0,0,0.03);
         border-radius: 1rem;
         padding: 0.75rem 1.25rem;
-        border: 1px solid var(--pr-border);
         display: flex;
         align-items: center;
         gap: 1rem;
     }
 
     .stat-icon-mini {
-        width: 40px;
-        height: 40px;
-        background: white;
-        border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--pr-primary);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        display: none;
     }
 
-    /* Table Styling */
+    /* Tabla en panel único */
     .table-container-card {
-        background: white;
-        border-radius: 1.25rem;
-        box-shadow: var(--pr-shadow);
-        border: 1px solid var(--pr-border);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
         padding: 1.5rem;
     }
 
     #tablaPrelacion thead th {
-        background: #f8fafc;
-        color: #64748b;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.05em;
-        padding: 1.25rem 1rem;
-        border-bottom: 2px solid #f1f5f9;
+        background: var(--surface, #fff);
+        color: var(--text-2, #6e6e73);
+        font-weight: 600;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     #tablaPrelacion tbody td {
-        padding: 1rem;
+        padding: 0.9rem 1rem;
         vertical-align: middle;
-        color: #334155;
-        font-weight: 500;
-        border-bottom: 1px solid #f1f5f9;
+        color: var(--text, #1d1d1f);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+
+    #tablaPrelacion tbody tr:last-child td {
+        border-bottom: none;
     }
 
     .pos-number {
-        font-weight: 800;
-        color: var(--pr-primary);
-        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text, #1d1d1f);
+        font-size: 1.05rem;
+        font-variant-numeric: tabular-nums;
     }
 
 
     .dataTables_wrapper .dataTables_length select {
         border-radius: 0.5rem !important;
         padding: 0.4rem 2rem 0.4rem 0.75rem !important;
-        border: 1px solid var(--pr-border) !important;
+        border: 1px solid rgba(0,0,0,0.08) !important;
     }
 </style>
 
@@ -114,25 +87,17 @@
     <!-- Header -->
     <div class="premium-header">
         <div class="header-info">
-            <h1><i class="fas fa-list-ol text-primary me-2"></i> Lista de Prelación</h1>
-            <p class="text-muted mb-0">Ordenamiento oficial de candidatos para asignación de plazas.</p>
+            <h1 class="apple-title">Prelación</h1>
+            <p class="apple-subtitle mb-0">Orden de candidatos para asignación. Total: <span class="fw-bold apple-num" id="stat-total-prelacion">---</span></p>
         </div>
-        
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-            <div class="stat-card-mini">
-                <div class="stat-icon-mini"><i class="fas fa-users-viewfinder"></i></div>
-                <div>
-                    <span class="d-block small text-muted fw-bold">Total Aspirantes</span>
-                    <span class="h6 fw-bold mb-0" id="stat-total-prelacion">---</span>
-                </div>
-            </div>
 
+        <div class="d-flex align-items-center gap-2 flex-wrap">
             {% if perms.gestion_escolar.acceder_prelacion %}
-            <a href="{% url 'descargar_prelacion_excel' %}" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm btn-hover-animate">
-                <i class="fas fa-file-excel me-2"></i> Descargar Excel
+            <a href="{% url 'descargar_prelacion_excel' %}" class="apple-btn-ghost">
+                <i class="fas fa-file-excel me-2"></i> Descargar
             </a>
-            <a href="{% url 'importar_prelacion_excel' %}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm btn-hover-animate">
-                <i class="fas fa-file-upload me-2"></i> Importar Lista Anual
+            <a href="{% url 'importar_prelacion_excel' %}" class="apple-btn">
+                <i class="fas fa-file-upload me-2"></i> Importar
             </a>
             {% endif %}
         </div>
