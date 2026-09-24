@@ -5,15 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --fup-primary: #6366f1;
-        --fup-success: #10b981;
-        --fup-border: #e2e8f0;
-        --fup-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
     .page-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
     }
 
@@ -22,112 +15,69 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header */
+    /* Encabezado simple */
     .header-section {
-        background: white;
-        border-radius: 1.25rem;
-        padding: 1.5rem 2rem;
-        box-shadow: var(--fup-shadow);
-        border: 1px solid var(--fup-border);
-        margin-bottom: 2.5rem;
+        margin-bottom: 1.5rem;
         display: flex;
         justify-content: space-between;
-        align-items: center;
-    }
-
-    .header-title h1 {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin-bottom: 0.25rem;
-    }
-
-    /* Table Card */
-    .table-container-card {
-        background: white;
-        border-radius: 1.25rem;
-        border: 1px solid var(--fup-border);
-        box-shadow: var(--fup-shadow);
-        padding: 2rem;
-    }
-
-    .table thead th {
-        background: #f8fafc;
-        font-size: 0.7rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #64748b;
-        padding: 1rem;
-        border-bottom: 2px solid var(--fup-border);
-    }
-
-    .table tbody td {
-        padding: 1rem;
-        vertical-align: middle;
-        font-size: 0.9rem;
-    }
-
-    /* Stats Row (Optional but recommended) */
-    .stats-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .stat-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 1rem;
-        border: 1px solid var(--fup-border);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        display: flex;
-        align-items: center;
+        align-items: flex-end;
+        flex-wrap: wrap;
         gap: 1rem;
     }
 
-    .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
+    /* Tabla en panel único */
+    .table-container-card {
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
+        padding: 1.5rem;
+        overflow: hidden;
     }
 
+    .table thead th {
+        background: var(--surface, #fff);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--text-2, #6e6e73);
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+
+    .table tbody td {
+        padding: 0.9rem 1rem;
+        vertical-align: middle;
+        font-size: 0.9rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
 
     .btn-create-fup {
-        background-color: var(--fup-primary);
+        background-color: var(--accent, #0071e3);
         color: white;
-        border-radius: 2rem;
+        border-radius: var(--r-pill, 999px);
         padding: 0.5rem 1.5rem;
-        font-weight: 700;
-        transition: all 0.2s;
-        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        font-weight: 600;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        min-height: 44px;
+        text-decoration: none;
     }
 
     .btn-create-fup:hover {
-        background-color: #4f46e5;
+        opacity: 0.92;
         color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.5);
     }
-    
+
     .btn-reporte {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         padding: 0.5rem 1.5rem;
-        transition: all 0.2s;
-    }
-
-    .btn-reporte:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2) !important;
     }
 </style>
 
@@ -135,18 +85,18 @@
     <!-- Header -->
     <div class="header-section">
         <div class="header-title">
-            <h1 class="mb-1"><i class="fas fa-id-card text-primary me-2"></i> Formatos Únicos de Personal</h1>
-            <p class="text-muted small mb-0">Gestión y control de los formatos FUP emitidos para el personal docente.</p>
+            <h1 class="apple-title mb-1">FUP</h1>
+            <p class="apple-subtitle mb-0">Formatos únicos emitidos al personal.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap justify-content-end align-items-center">
-            <a href="{% url 'crear_fup' %}" class="btn btn-create-fup btn-hover-animate">
+            <a href="{% url 'crear_fup' %}" class="btn-create-fup">
                 <i class="fas fa-plus me-2"></i> Nueva Captura
             </a>
-            <a href="{% url 'reporte_fups_opciones' %}" class="btn btn-primary btn-reporte text-white border-0 rounded-pill fw-bold shadow-sm btn-hover-animate">
-                <i class="fas fa-filter me-2"></i> Reporte por Zona
+            <a href="{% url 'reporte_fups_opciones' %}" class="apple-btn-ghost">
+                <i class="fas fa-filter me-2"></i> Por Zona
             </a>
-            <button id="export-excel-fup-premium" class="btn btn-success btn-reporte text-white border-0 rounded-pill fw-bold shadow-sm btn-hover-animate">
-                <i class="fas fa-file-excel me-2"></i> Exportar a Excel
+            <button id="export-excel-fup-premium" class="apple-btn-ghost">
+                <i class="fas fa-file-excel me-2"></i> Exportar
             </button>
         </div>
     </div>
@@ -201,13 +151,13 @@ $(document).ready(function() {
             { 
                 data: 4,
                 render: function(data, type, row) {
-                    return `<span class="font-monospace bg-light px-2 py-1 rounded border small">${data}</span>`;
+                    return `<span class="font-monospace apple-tag">${data}</span>`;
                 }
             },
             { 
                 data: 5,
                 render: function(data, type, row) {
-                    return `<span class="text-primary fw-bold">${data}</span>`;
+                    return `<span class="fw-bold">${data}</span>`;
                 }
             },
             { data: 6 },

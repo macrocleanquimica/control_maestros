@@ -6,16 +6,6 @@
 
 {% block content %}
 <style>
-    :root {
-        --hi-primary: #4f46e5;
-        --hi-success: #10b981;
-        --hi-info: #0ea5e9;
-        --hi-warning: #f59e0b;
-        --hi-danger: #ef4444;
-        --hi-border: #e2e8f0;
-        --hi-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-
     .page-container {
         padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
@@ -26,52 +16,41 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header Section */
+    /* Encabezado simple */
     .header-section {
-        background: white;
-        border-radius: 1rem;
-        padding: 1.5rem 2rem;
-        box-shadow: var(--hi-shadow);
-        border: 1px solid var(--hi-border);
-        margin-bottom: 2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        margin-bottom: 1.5rem;
     }
 
-    .header-title h1 {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin-bottom: 0.25rem;
-    }
-
-    /* Table Card */
+    /* Tabla en panel único */
     .table-container-card {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid var(--hi-border);
-        box-shadow: var(--hi-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
     }
 
     .table thead th {
-        background-color: #f8fafc;
-        color: #475569;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 0.7rem;
-        border-bottom: 2px solid var(--hi-border);
-        padding: 1rem;
+        background: var(--surface, #fff);
+        color: var(--text-2, #6e6e73);
+        font-weight: 600;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+        padding: 0.9rem 1rem;
     }
 
     .table tbody td {
-        padding: 1rem;
+        padding: 0.9rem 1rem;
         vertical-align: middle;
         font-size: 0.85rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
-    /* Badges */
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Etiquetas neutras (mismos nombres) */
     .badge-soft {
         font-size: 0.7rem;
         padding: 0.3rem 0.6rem;
@@ -80,26 +59,19 @@
         display: inline-flex;
         align-items: center;
         gap: 0.3rem;
+        background: rgba(0,0,0,0.05);
+        color: var(--text-2, #6e6e73);
     }
 
-    .badge-soft-primary { background: #eff6ff; color: #1d4ed8; }
-    .badge-soft-success { background: #ecfdf5; color: #059669; }
-    .badge-soft-info { background: #f0f9ff; color: #0369a1; }
-    .badge-soft-warning { background: #fffbeb; color: #d97706; }
-    .badge-soft-secondary { background: #f1f5f9; color: #475569; }
-
-    /* Observaciones Styles */
+    /* Observaciones editables */
     .observacion-cell {
         min-width: 200px;
         position: relative;
     }
 
     .observacion-display {
-        background: #f8fafc;
-        border: 1px solid transparent;
         border-radius: 0.5rem;
         padding: 0.5rem;
-        transition: all 0.2s;
         cursor: pointer;
         display: flex;
         justify-content: space-between;
@@ -107,15 +79,13 @@
     }
 
     .observacion-display:hover {
-        background: white;
-        border-color: var(--hi-border);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background: var(--hover, #fbfbfd);
     }
 
     .btn-edit-observacion {
         opacity: 0;
         transition: opacity 0.2s;
-        color: var(--hi-primary);
+        color: var(--text-2, #6e6e73);
         padding: 0;
     }
 
@@ -123,17 +93,18 @@
         opacity: 1;
     }
 
-    /* Folio/Clave styling */
+    /* Claves */
     .text-code {
-        font-family: monospace;
-        background: #f1f5f9;
+        font-family: var(--mono, monospace);
+        background: rgba(0,0,0,0.05);
         padding: 0.2rem 0.4rem;
         border-radius: 0.3rem;
         font-weight: 600;
-        color: #334155;
+        color: var(--text, #1d1d1f);
+        font-variant-numeric: tabular-nums;
     }
 
-    /* Homogenized Action Buttons */
+    /* Botones de acción sin saltos */
     .btn-action-custom {
         width: 32px;
         height: 32px;
@@ -142,15 +113,13 @@
         align-items: center;
         justify-content: center;
         border-radius: 0.5rem;
-        transition: all 0.2s;
+        transition: background 0.2s;
         background: white;
-        border: 1px solid #e2e8f0;
+        border: 1px solid rgba(0,0,0,0.08);
     }
 
     .btn-action-custom:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        background: #f8fafc;
+        background: var(--hover, #fbfbfd);
     }
 </style>
 
@@ -158,8 +127,8 @@
     <!-- Header -->
     <div class="header-section">
         <div class="header-title">
-            <h1 class="mb-1"><i class="fas fa-history text-primary me-2"></i> {{ titulo }}</h1>
-            <p class="text-muted small mb-0">Seguimiento de todos los documentos y reportes generados en el sistema.</p>
+            <h1 class="apple-title mb-1">{{ titulo }}</h1>
+            <p class="apple-subtitle mb-0">Documentos y reportes generados en el sistema.</p>
         </div>
     </div>
 
