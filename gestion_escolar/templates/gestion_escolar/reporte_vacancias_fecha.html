@@ -7,22 +7,22 @@
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow-sm border-0 rounded-4">
+            <div class="card apple-panel border-0">
                 <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
                         <div>
-                            <h2 class="fw-bold mb-1"><i class="fas fa-file-invoice text-primary me-2"></i>{{ titulo }}</h2>
-                            <p class="text-muted mb-0">Consulte el historial de vacancias reportadas con filtros personalizados.</p>
+                            <h2 class="apple-title">{{ titulo }}</h2>
+                            <p class="apple-subtitle mb-0">Vacancias reportadas con filtros.</p>
                         </div>
                         <div>
-                            <a href="{% url 'reportes_dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4 me-2">
-                                <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                            <a href="{% url 'reportes_dashboard' %}" class="apple-btn-ghost">
+                                <i class="fas fa-arrow-left me-2"></i>Reportes
                             </a>
                         </div>
                     </div>
 
                     <!-- Filtros -->
-                    <div class="bg-light p-4 rounded-4 mb-4">
+                    <div class="p-4 mb-4" style="border: 1px solid var(--hairline, rgba(0,0,0,0.07)); border-radius: 14px;">
                         <form method="GET" action="{% url 'reporte_vacancias_fecha' %}" id="filterForm">
                             <div class="row g-3">
                                 <div class="col-md-4">
@@ -49,15 +49,15 @@
                                         <input type="date" name="f_reporte_hasta" class="form-control" value="{{ filtros.f_reporte_hasta }}">
                                     </div>
                                 </div>
-                                <div class="col-12 d-flex justify-content-end mt-4">
-                                    <button type="submit" class="btn btn-primary rounded-pill px-4 me-2">
-                                        <i class="fas fa-filter me-2"></i>Aplicar Filtros
+                                <div class="col-12 d-flex justify-content-end flex-wrap gap-2 mt-4">
+                                    <button type="submit" class="apple-btn">
+                                        <i class="fas fa-filter me-2"></i>Aplicar
                                     </button>
-                                    <a href="{% url 'reporte_vacancias_fecha' %}" class="btn btn-outline-secondary rounded-pill px-4 me-2">
+                                    <a href="{% url 'reporte_vacancias_fecha' %}" class="apple-btn-ghost">
                                         <i class="fas fa-undo me-2"></i>Limpiar
                                     </a>
-                                    <button type="button" onclick="exportExcel()" class="btn btn-success rounded-pill px-4">
-                                        <i class="fas fa-file-excel me-2"></i>Exportar a Excel
+                                    <button type="button" onclick="exportExcel()" class="apple-btn-ghost">
+                                        <i class="fas fa-file-excel me-2"></i>Excel
                                     </button>
                                 </div>
                             </div>
@@ -85,7 +85,7 @@
                             <tbody>
                                 {% for v in vacancias %}
                                 <tr>
-                                    <td><span class="badge bg-light text-dark border fw-bold">{{ v.clave_presupuestal|default:"N/A" }}</span></td>
+                                    <td><span class="apple-tag apple-num">{{ v.clave_presupuestal|default:"N/A" }}</span></td>
                                     <td data-order="{{ v.lote.fecha_creacion|date:'YmdHis' }}">{{ v.lote.fecha_creacion|date:"d/m/Y" }}</td>
                                     <td data-order="{{ v.fecha_inicio|date:'Ymd' }}">{{ v.fecha_inicio|date:"d/m/Y" }}</td>
                                     <td>
@@ -108,7 +108,7 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <span class="badge {% if v.tipo_vacante == 'DEFINITIVA' %}bg-primary{% else %}bg-info text-dark{% endif %}">
+                                        <span class="apple-tag">
                                             {{ v.get_tipo_vacante_display }}
                                         </span>
                                     </td>
@@ -119,10 +119,10 @@
                                     </td>
                                     <td>
                                         {% if v.tramite_vinculado %}
-                                            <div class="badge bg-success mb-1">{{ v.tramite_vinculado.tipo_documento }}</div>
-                                            <div class="small text-muted">{{ v.tramite_vinculado.fecha_creacion|date:"d/m/Y H:i" }}</div>
+                                            <div class="apple-tag mb-1">{{ v.tramite_vinculado.tipo_documento }}</div>
+                                            <div class="small apple-num" style="color: var(--text-3, #86868b);">{{ v.tramite_vinculado.fecha_creacion|date:"d/m/Y H:i" }}</div>
                                         {% else %}
-                                            <span class="badge bg-secondary">NO REALIZADO</span>
+                                            <span class="apple-tag">No realizado</span>
                                         {% endif %}
                                     </td>
                                     <td class="small">
@@ -161,13 +161,18 @@
 
 <style>
     .table thead th {
-        font-size: 0.75rem;
-        background-color: #f8fafc !important;
-        border-bottom: 2px solid #e2e8f0 !important;
-    }
-    .badge {
+        font-size: 0.72rem;
         font-weight: 600;
-        letter-spacing: 0.02em;
+        letter-spacing: 0.04em;
+        color: var(--text-2, #6e6e73);
+        background: var(--surface, #fff);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+    .table tbody td {
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+    .table tbody tr:last-child td {
+        border-bottom: none;
     }
 </style>
 {% endblock %}

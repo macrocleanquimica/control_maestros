@@ -15,30 +15,28 @@
         }
         .page-container { padding: 1.5rem; }
         .header-section {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 1.5rem; background: white; padding: 1.25rem 1.5rem;
-            border-radius: 1rem; border: 1px solid var(--rp-border); box-shadow: var(--rp-shadow);
+            display: flex; justify-content: space-between; align-items: flex-end;
+            flex-wrap: wrap; gap: 1rem;
+            margin-bottom: 1.5rem;
         }
-        .header-title h1 { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 0.25rem; }
         .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-        .kpi-card { background: white; border: 1px solid var(--rp-border); border-radius: 1rem; padding: 1.25rem; box-shadow: var(--rp-shadow); }
-        .kpi-card .value { font-size: 2rem; font-weight: 800; color: var(--rp-primary); }
-        .kpi-card .label { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-        .table-container-card { background: white; border-radius: 1rem; border: 1px solid var(--rp-border); box-shadow: var(--rp-shadow); overflow: hidden; }
+        .kpi-card { background: var(--surface, #fff); border-radius: var(--r-card, 18px); padding: 1.25rem; box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05)); }
+        .kpi-card .value { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text, #1d1d1f); font-variant-numeric: tabular-nums; }
+        .kpi-card .label { font-size: 0.8rem; color: var(--text-2, #6e6e73); }
+        .table-container-card { background: var(--surface, #fff); border-radius: var(--r-panel, 22px); box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05)); overflow: hidden; }
         .table-scroll { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
-        thead th { background: #f8fafc !important; text-transform: uppercase; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; color: #64748b; padding: 0.85rem 1rem; border-bottom: 1px solid var(--rp-border); text-align: left; }
-        tbody td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; color: #1e293b; }
-        tbody tr:hover { background: #f8fafc; }
-        .badge-status { padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
-        .badge-activo { background: #dcfce7; color: #15803d; }
-        .badge-inactivo { background: #fed7aa; color: #c2410c; }
+        thead th { background: var(--surface, #fff); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; color: var(--text-2, #6e6e73); padding: 0.85rem 1rem; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)); text-align: left; }
+        tbody td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)); font-size: 0.875rem; color: var(--text, #1d1d1f); }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: var(--hover, #fbfbfd); }
+        .badge-status { padding: 0.25rem 0.6rem; border-radius: 2rem; font-size: 0.72rem; font-weight: 600; background: rgba(0,0,0,0.05); color: var(--text-2, #6e6e73); }
     </style>
 
     <div class="header-section">
         <div class="header-title">
-            <h1>{{ titulo }}</h1>
-            <p class="text-muted small mb-0">Maestros con varias plazas contados como una sola persona por CURP.</p>
+            <h1 class="apple-title">{{ titulo }}</h1>
+            <p class="apple-subtitle mb-0">Personas con varias plazas (una por CURP).</p>
         </div>
     </div>
 
@@ -80,7 +78,7 @@
                             <td>{{ p.n_activas }}</td>
                             <td>
                                 {% for pl in p.plazas %}
-                                    <span class="badge-status {% if pl.status == 'ACTIVO' or pl.status == 'ACTIVA' %}badge-activo{% else %}badge-inactivo{% endif %}">
+                                    <span class="badge-status">
                                         {{ pl.clave_presupuestal|default:'-' }} · {{ pl.funcion|default:'Sin función' }}
                                         {% if pl.id_escuela %}· {{ pl.id_escuela.id_escuela }}{% endif %}
                                     </span>
