@@ -29,3 +29,25 @@ google_sheets_credentials.json
 
 # Backups
 backups/
+backups_manuales/
+db.sqlite3.respaldo_*
+respaldo_*.json
+respaldo_pre_*.json
+
+# Scripts locales con credenciales
+lanzar_gemini.bat
+backup.bat
+
+# Basura local / depuración (no versionar)
+*.bak
+helpers.py.bak
+_check_*.py
+scratch/
+scripts_historicos/
+archivos_importacion/
+documentos_para_analizar/
+staticfiles/
+
+# Temporales de Office
+~$*.docx
+~$*.xlsx
