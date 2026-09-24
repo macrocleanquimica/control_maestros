@@ -146,7 +146,7 @@
                             <th>Dato Clave</th>
                             <th>Motivo</th>
                             <th>Observaciones</th>
-                            <th>Acciones</th>
+                            <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -210,7 +210,7 @@
                                 </div>
                             </td>
                             <td>
-                                <div class="d-flex gap-1 justify-content-start">
+                                <div class="d-flex gap-1 justify-content-end">
                                     {% if item.tipo_documento == "Reporte de Vacancia" and item.lote_reporte or item.tipo_documento == "Asignación de Vacancia" and item.lote_reporte %}
                                         <a href="{% url 'historial_detalle_lote' item.id %}" class="btn btn-action-custom" title="Ver Detalles">
                                             <i class="fas fa-eye text-info"></i>
