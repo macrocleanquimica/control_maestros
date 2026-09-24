@@ -17,76 +17,61 @@
     }
 
     .form-card {
-        background: white;
-        border-radius: 1.5rem;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
     }
 
     .form-header {
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        padding: 2.5rem;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
+        padding: 2rem 2.5rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .header-icon {
-        width: 56px;
-        height: 56px;
-        background: white;
-        color: #0ea5e9;
-        border-radius: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        display: none;
     }
 
     .form-header h2 {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e293b;
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text, #1d1d1f);
         margin: 0;
     }
 
     .form-body {
-        padding: 2.5rem;
+        padding: 2rem clamp(17px, 3vw, 2.5rem);
     }
 
     .form-label {
         font-size: 0.75rem;
-        font-weight: 700;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
+        letter-spacing: 0.025em;
         margin-bottom: 0.5rem;
     }
 
     .form-control, .form-select {
-        border-radius: 0.75rem;
-        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.08);
         padding: 0.75rem 1.25rem;
-        background-color: #f8fafc;
-        transition: all 0.2s;
+        background-color: var(--surface, #fff);
     }
 
     .form-control:focus, .form-select:focus {
         background-color: white;
-        border-color: #0ea5e9;
-        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        border-color: var(--accent, #0071e3);
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
         outline: none;
     }
 
-    /* Select2 Modern Overrides */
+    /* Select2 */
     .select2-container--default .select2-selection--single {
         height: 48px !important;
-        border-radius: 0.75rem !important;
-        border: 1px solid #e2e8f0 !important;
-        background-color: #f8fafc !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(0,0,0,0.08) !important;
+        background-color: var(--surface, #fff) !important;
         display: flex;
         align-items: center;
     }
@@ -95,50 +80,48 @@
     }
 
     .btn-send {
-        background: #0ea5e9;
+        background: var(--accent, #0071e3);
         color: white;
         border: none;
-        border-radius: 0.75rem;
-        padding: 0.85rem 2rem;
-        font-weight: 700;
-        display: flex;
+        border-radius: var(--r-pill, 999px);
+        padding: 0 2rem;
+        min-height: 48px;
+        font-weight: 600;
+        display: inline-flex;
         align-items: center;
         gap: 0.75rem;
-        transition: all 0.2s;
     }
 
     .btn-send:hover {
-        background: #0284c7;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+        opacity: 0.92;
+        color: white;
     }
 
     .btn-cancel {
-        background: white;
-        color: #64748b;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.75rem;
-        padding: 0.85rem 1.5rem;
-        font-weight: 700;
+        background: transparent;
+        color: var(--text-2, #6e6e73);
+        border: none;
+        border-radius: var(--r-pill, 999px);
+        padding: 0 1.5rem;
+        min-height: 48px;
+        font-weight: 600;
         text-decoration: none;
-        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
     }
 
     .btn-cancel:hover {
-        background: #f8fafc;
-        color: #1e293b;
+        background: rgba(0,0,0,0.05);
+        color: var(--text, #1d1d1f);
     }
 </style>
 
 <div class="compose-container py-4">
     <div class="form-card">
         <div class="form-header">
-            <div class="header-icon">
-                <i class="fas fa-paper-plane"></i>
-            </div>
             <div>
                 <h2>{{ titulo }}</h2>
-                <p class="text-muted mb-0 small mt-1">Envía mensajes directos a otros coordinadores del sistema.</p>
+                <p class="apple-subtitle mb-0">Mensaje directo a otro usuario.</p>
             </div>
         </div>
 
