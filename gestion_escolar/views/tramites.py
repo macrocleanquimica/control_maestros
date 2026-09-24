@@ -15,7 +15,8 @@ from ..models import PlantillaTramite, Historial, MotivoTramite
 from .helpers import (
     generate_word_document, get_full_name, get_school_info, 
     get_director_info, get_supervisor_info, serialize_form_data,
-    calculate_time_difference # Added this import
+    calculate_time_difference, resolver_ruta_plantilla, # Added this import
+    PLANTILLAS_WORD_DIR,
 )
 
 # Vistas para Trámites
@@ -129,13 +130,46 @@ def generar_oficios(request):
                     antiguedad = calculate_time_difference(fecha_al_corte, fecha_del_calculo)
                     data_for_document['antiguedad_funcion'] = antiguedad
                     data_for_document['antiguedad_categoria'] = antiguedad
+
+            # Lógica para "SOLICITUD BECA COMISION"
+            if plantilla_tramite.nombre.upper().strip() == 'SOLICITUD BECA COMISION':
+                fecha_al_corte = data_for_document.get('fecha_al_corte')
+                fecha_del_calculo = data_for_document.get('fecha_del_calculo')
+
+                if fecha_al_corte and fecha_del_calculo:
+                    antiguedad = calculate_time_difference(fecha_al_corte, fecha_del_calculo)
+                    data_for_document['antiguedad_funcion'] = antiguedad
             
+            # Lógica para "PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION"
+            if plantilla_tramite.nombre.upper().strip() == 'PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION':
+                tipo_cambio = form.cleaned_data.get('tipo_cambio')
+                maestro_sustituido_obj = form.cleaned_data.get('maestro_sustituido')
+                escuela_destino_obj = form.cleaned_data.get('escuela_destino')
+                if tipo_cambio and tipo_cambio.upper() == 'SUSTITUCION' and maestro_sustituido_obj:
+                    escuela_destino_final = maestro_sustituido_obj.id_escuela
+                    techo_f_destino = escuela_destino_final.id_escuela if escuela_destino_final else None
+                    data_for_document['sustituida_nombre'] = get_full_name(maestro_sustituido_obj)
+                elif tipo_cambio and tipo_cambio.upper() == 'INCREMENTO' and escuela_destino_obj:
+                    escuela_destino_final = escuela_destino_obj
+                    techo_f_destino = escuela_destino_final.id_escuela
+                    data_for_document['sustituida_nombre'] = ''
+                else:
+                    escuela_destino_final = None
+                    techo_f_destino = None
+
+                data_for_document['_dest_escuela'] = escuela_destino_final
+                if escuela_destino_final and maestro_titular_obj:
+                    maestro_titular_obj.id_escuela = escuela_destino_final
+                    maestro_titular_obj.techo_f = techo_f_destino
+                    maestro_titular_obj.save()
+
             # Sobrescribir el archivo de la plantilla si se seleccionó uno específico
             archivo_especifico = form.cleaned_data.get('archivo_plantilla_especifico')
             if archivo_especifico:
-                # Construir la ruta al archivo específico dentro de la carpeta de plantillas
-                # Asumimos que están en la misma carpeta que el archivo original de la plantilla
-                base_dir = os.path.dirname(plantilla_tramite.ruta_archivo)
+                # Construir la ruta al archivo específico dentro de la carpeta canónica
+                # (antes asumía la carpeta del registro, que podía ser la raíz legacy o un C:\ absoluto).
+                resuelta = resolver_ruta_plantilla(plantilla_tramite.ruta_archivo)
+                base_dir = os.path.dirname(resuelta) if resuelta else PLANTILLAS_WORD_DIR
                 plantilla_tramite.ruta_archivo = os.path.join(base_dir, archivo_especifico)
             
             success, message = generate_word_document(data_for_document, plantilla_tramite, request.user)
@@ -162,12 +196,18 @@ def generar_oficios(request):
                     datos_para_historial['supervisor'] = supervisor_info.get('nombre', '')
                     datos_para_historial['director'] = director_info.get('nombre', '')
 
+                    historial_motivo = form.cleaned_data.get('motivo_tramite')
+                    historial_motivo_text = historial_motivo.motivo_tramite if historial_motivo else ''
+                    if plantilla_tramite.nombre.upper().strip() == 'PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION':
+                        historial_motivo_text = ''
+
                     Historial.objects.create(
                         usuario=request.user,
                         tipo_documento=f"Oficio - {plantilla_tramite.nombre}",
                         maestro=maestro_titular_obj,
                         ruta_archivo=message,
-                        motivo=form.cleaned_data.get('motivo_tramite').motivo_tramite if form.cleaned_data.get('motivo_tramite') else '',
+                        motivo=historial_motivo_text,
+                        observaciones=data_for_document.get('observaciones', ''),
                         maestro_secundario_nombre=get_full_name(form.cleaned_data.get('maestro_interino')),
                         datos_tramite=serialize_form_data(datos_para_historial)
                     )
@@ -347,7 +387,8 @@ def corregir_tramite(request, item_id):
             # Sobrescribir el archivo de la plantilla si se seleccionó uno específico
             archivo_especifico = form.cleaned_data.get('archivo_plantilla_especifico')
             if archivo_especifico:
-                base_dir = os.path.dirname(plantilla_tramite.ruta_archivo)
+                resuelta = resolver_ruta_plantilla(plantilla_tramite.ruta_archivo)
+                base_dir = os.path.dirname(resuelta) if resuelta else PLANTILLAS_WORD_DIR
                 plantilla_tramite.ruta_archivo = os.path.join(base_dir, archivo_especifico)
 
             # Generar el nuevo documento
@@ -394,10 +435,9 @@ def corregir_tramite(request, item_id):
                 except Exception as e:
                     messages.warning(request, f"Advertencia: El documento se generó pero hubo un error al actualizar el historial: {e}")
 
-                with open(message, 'rb') as doc_file:
-                    response = HttpResponse(doc_file.read(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-                    response['Content-Disposition'] = f'attachment; filename="{os.path.basename(message)}"'
-                    return response
+                respuesta = redirect('historial_detalle_tramite', historial_id=item_id)
+                respuesta['Location'] += '?descargar=1'
+                return respuesta
             else:
                 messages.error(request, f'Error al regenerar el documento: {message}')
         else:

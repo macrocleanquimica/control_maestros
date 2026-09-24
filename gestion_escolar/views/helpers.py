@@ -11,6 +11,46 @@ from google.oauth2 import service_account
 # para evitar dependencias circulares, pero por ahora los importamos.
 from ..models import Maestro, Escuela
 
+# Carpeta canónica única de plantillas: todo el sistema debe jalar de aquí.
+# Word: gestion_escolar/templates/tramites/Plantillas/Word
+# Excel: gestion_escolar/templates/tramites/Plantillas/Excel
+PLANTILLAS_WORD_DIR = os.path.join(
+    settings.BASE_DIR, 'gestion_escolar', 'templates', 'tramites', 'Plantillas', 'Word')
+PLANTILLAS_EXCEL_DIR = os.path.join(
+    settings.BASE_DIR, 'gestion_escolar', 'templates', 'tramites', 'Plantillas', 'Excel')
+# Respaldo temporal: antigua carpeta raíz (no agregar plantillas nuevas aquí).
+PLANTILLAS_WORD_DIR_LEGACY = os.path.join(
+    settings.BASE_DIR, 'tramites', 'Plantillas', 'Word')
+PLANTILLAS_EXCEL_DIR_LEGACY = os.path.join(
+    settings.BASE_DIR, 'tramites', 'Plantillas', 'Excel')
+
+
+def resolver_ruta_plantilla(ruta):
+    """Resuelve la ruta de una plantilla a un archivo existente.
+
+    Acepta rutas absolutas viejas (C:\\...) o relativas y siempre prefiere
+    la carpeta canónica. Si el archivo ya no está donde dice el registro,
+    lo busca por nombre en Word/Excel canónicos y luego en los legacy.
+    Devuelve la ruta absoluta o None si no existe.
+    """
+    if not ruta:
+        return None
+    ruta_str = str(ruta)
+    # 1) Tal cual (absoluta existente o relativa existente desde BASE_DIR)
+    if os.path.isabs(ruta_str) and os.path.exists(ruta_str):
+        return ruta_str
+    candidato = ruta_str if os.path.isabs(ruta_str) else os.path.join(str(settings.BASE_DIR), ruta_str)
+    if os.path.exists(candidato):
+        return candidato
+    # 2) Por nombre en carpetas canónicas y luego legacy
+    nombre = os.path.basename(ruta_str)
+    for carpeta in (PLANTILLAS_WORD_DIR, PLANTILLAS_EXCEL_DIR,
+                    PLANTILLAS_WORD_DIR_LEGACY, PLANTILLAS_EXCEL_DIR_LEGACY):
+        intento = os.path.join(carpeta, nombre)
+        if os.path.exists(intento):
+            return intento
+    return None
+
 # Helper function to get full name
 def get_full_name(maestro):
     if not maestro: return ""
@@ -331,7 +371,9 @@ def generate_word_document(form_data, plantilla_tramite, user):
         maestro_interino = form_data.get('maestro_interino')
 
         template_name_upper = plantilla_tramite.nombre.upper().strip()
-        template_path = plantilla_tramite.ruta_archivo # Usar la ruta absoluta directamente
+        template_path = resolver_ruta_plantilla(plantilla_tramite.ruta_archivo)
+        if not template_path:
+            return False, f"No se encontró la plantilla '{plantilla_tramite.nombre}' en la carpeta canónica. Ruta registrada: {plantilla_tramite.ruta_archivo}"
         is_desubicado = False
         if maestro_titular and maestro_titular.techo_f and maestro_titular.id_escuela:
             if maestro_titular.techo_f.strip().upper() != maestro_titular.id_escuela.id_escuela.strip().upper():
