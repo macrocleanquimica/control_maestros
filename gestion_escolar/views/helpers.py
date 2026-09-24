@@ -308,9 +308,18 @@ def send_to_google_sheet(row_data):
                 cleaned_data.append(item.strftime('%Y-%m-%d'))
             else:
                 cleaned_data.append(str(item))
-        worksheet.append_row(cleaned_data)
-        # print(f"DEBUG GS: ✅ Fila agregada: {cleaned_data}") # Comentado para producción
-        return True, "Datos enviados correctamente a Google Sheets"
+        # Escribir en la primera fila realmente vacía empezando en columna A.
+        # (El append_row automático de Google adivinaba mal la posición con
+        # huecos en la hoja y cada envío caía más a la derecha.)
+        filas = worksheet.get_all_values()
+        ultima_con_datos = 0
+        for i, fila in enumerate(filas, start=1):
+            if any((c or '').strip() for c in fila):
+                ultima_con_datos = i
+        siguiente = max(ultima_con_datos + 1, 2)
+        worksheet.update(values=[cleaned_data], range_name=f'A{siguiente}')
+        # print(f"DEBUG GS: ✅ Fila agregada en A{siguiente}") # Comentado para producción
+        return True, f"Datos enviados correctamente a Google Sheets (fila {siguiente})"
     except gspread.exceptions.SpreadsheetNotFound:
         error_msg = "Google Sheet no encontrado. Verifica el GOOGLE_SHEET_ID."
         # print(f"DEBUG GS: ❌ {error_msg}") # Comentado para producción
