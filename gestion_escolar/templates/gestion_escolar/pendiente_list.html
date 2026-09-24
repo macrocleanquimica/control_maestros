@@ -5,15 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --pe-primary: #6366f1;
-        --pe-success: #10b981;
-        --pe-border: #e2e8f0;
-        --pe-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
     .page-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
         max-width: 900px;
         margin: 0 auto;
@@ -24,115 +17,105 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header Section */
+    /* Encabezado simple */
     .premium-header {
-        background: white;
-        border-radius: 1.25rem;
-        padding: 1.5rem 2rem;
-        box-shadow: var(--pe-shadow);
-        border: 1px solid var(--pe-border);
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-end;
         flex-wrap: wrap;
-        gap: 1.5rem;
+        gap: 1rem;
     }
 
-    .header-info h1 {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin-bottom: 0.25rem;
+    /* Lista única con líneas finas */
+    .task-list-container {
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
+        overflow: hidden;
     }
 
-    /* Task Card */
     .task-card {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid var(--pe-border);
-        padding: 1.25rem 1.5rem;
-        margin-bottom: 1rem;
+        padding: 1.1rem 1.5rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        transition: all 0.2s;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        gap: 1rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+
+    .task-card:last-child {
+        border-bottom: none;
     }
 
     .task-card:hover {
-        transform: translateX(5px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        border-color: var(--pe-primary);
+        background: var(--hover, #fbfbfd);
     }
 
     .task-card.completed {
-        opacity: 0.7;
-        background: #f8fafc;
-        border-style: dashed;
+        opacity: 0.65;
     }
 
     .task-card.completed .task-title {
         text-decoration: line-through;
-        color: #94a3b8;
+        color: var(--text-2, #6e6e73);
     }
 
     .task-title {
-        font-weight: 700;
-        color: #1e293b;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text, #1d1d1f);
         margin-bottom: 0.25rem;
-        font-size: 1.05rem;
+        font-size: 1rem;
     }
 
     .task-desc {
-        color: #64748b;
+        color: var(--text-2, #6e6e73);
         font-size: 0.9rem;
         margin-bottom: 0.5rem;
-        line-height: 1.4;
+        line-height: 1.5;
     }
 
     .task-meta {
         font-size: 0.75rem;
-        font-weight: 700;
-        color: #94a3b8;
+        font-weight: 500;
+        color: var(--text-3, #86868b);
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        font-variant-numeric: tabular-nums;
     }
 
-    /* Checkbox/Button Styling */
+    /* Botón completar */
     .btn-complete {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        border: 2px solid #e2e8f0;
+        border: 1px solid rgba(0,0,0,0.15);
         background: white;
         color: transparent;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s;
         cursor: pointer;
+        flex-shrink: 0;
     }
 
     .btn-complete:hover {
-        border-color: var(--pe-success);
-        color: var(--pe-success);
-        background: #f0fdf4;
+        border-color: var(--text, #1d1d1f);
+        color: var(--text, #1d1d1f);
     }
 
     .badge-completed {
-        background: #f0fdf4;
-        color: #16a34a;
+        background: rgba(0,0,0,0.05);
+        color: var(--text-2, #6e6e73);
         padding: 0.5rem 1rem;
         border-radius: 2rem;
-        font-weight: 800;
+        font-weight: 600;
         font-size: 0.7rem;
-        text-transform: uppercase;
-        border: 1px solid #dcfce7;
     }
 
-    /* Navigation Tabs */
+    /* Pestañas segmentadas */
     .nav-tabs-premium {
         border-bottom: none;
         margin-bottom: 1.5rem;
@@ -140,25 +123,23 @@
     }
 
     .nav-tabs-premium .nav-link {
-        border: 1px solid var(--pe-border);
+        border: 1px solid transparent;
         border-radius: 2rem;
         padding: 0.6rem 1.2rem;
-        color: #64748b;
-        font-weight: 700;
-        background: white;
-        transition: all 0.2s;
+        color: var(--text-2, #6e6e73);
+        font-weight: 600;
+        background: transparent;
     }
 
     .nav-tabs-premium .nav-link:hover {
-        background: #f8fafc;
-        color: #1e293b;
+        background: rgba(0,0,0,0.05);
+        color: var(--text, #1d1d1f);
     }
 
     .nav-tabs-premium .nav-link.active {
-        background: var(--pe-primary);
+        background: var(--text, #1d1d1f);
         color: white;
-        border-color: var(--pe-primary);
-        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        border-color: var(--text, #1d1d1f);
     }
 </style>
 
@@ -166,11 +147,11 @@
     <!-- Header -->
     <div class="premium-header">
         <div class="header-info">
-            <h1><i class="fas fa-tasks text-primary me-2"></i> Mis Tareas</h1>
-            <p class="text-muted small mb-0">Organiza tus actividades pendientes de gestión escolar.</p>
+            <h1 class="apple-title" style="font-size: clamp(20px, 3vw, 26px);">Pendientes</h1>
+            <p class="apple-subtitle mb-0">Tus actividades por hacer.</p>
         </div>
-        <a href="{% url 'pendientes_crear' %}" class="btn btn-primary rounded-pill px-4 fw-bold shadow btn-hover-animate">
-            <i class="fas fa-plus me-2"></i> Nuevo Pendiente
+        <a href="{% url 'pendientes_crear' %}" class="apple-btn">
+            <i class="fas fa-plus me-2"></i> Nuevo
         </a>
     </div>
 
@@ -248,8 +229,8 @@
                 </div>
                 <h5 class="fw-bold text-muted">No tienes tareas para mostrar</h5>
                 <p class="text-muted small">¡Excelente! Estás al día con tus pendientes.</p>
-                <a href="{% url 'pendientes_crear' %}" class="btn btn-primary rounded-pill px-4 mt-2 btn-hover-animate">
-                    Crear primera tarea
+                <a href="{% url 'pendientes_crear' %}" class="apple-btn mt-2">
+                    Crear tarea
                 </a>
             </div>
         {% endif %}
