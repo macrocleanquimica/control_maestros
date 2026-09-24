@@ -5,15 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --ff-primary: #6366f1;
-        --ff-secondary: #64748b;
-        --ff-border: #e2e8f0;
-        --ff-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
     .page-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
         max-width: 1000px;
         margin: 0 auto;
@@ -25,60 +18,55 @@
     }
 
     .form-card {
-        background: white;
-        border-radius: 1.5rem;
-        border: 1px solid var(--ff-border);
-        box-shadow: var(--ff-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
     }
 
     .form-header {
-        background: #f8fafc;
-        padding: 1.5rem 2.5rem;
-        border-bottom: 1px solid var(--ff-border);
+        padding: 1.5rem clamp(17px, 3vw, 2.5rem);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .form-body {
-        padding: 2.5rem;
+        padding: clamp(17px, 3vw, 2.5rem);
     }
 
-    /* Floating Labels Styling */
     .form-group-premium {
         position: relative;
         margin-bottom: 1.5rem;
     }
 
     .form-control-premium {
-        border-radius: 0.75rem;
-        border: 1px solid var(--ff-border);
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.08);
         padding: 0.75rem 1rem;
         height: auto;
-        transition: all 0.2s;
-        background: #f8fafc;
+        background: var(--surface, #fff);
     }
 
     .form-control-premium:focus {
         background: white;
-        border-color: var(--ff-primary);
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        border-color: var(--accent, #0071e3);
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
     }
 
     .form-label-premium {
         font-size: 0.75rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #64748b;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
         margin-bottom: 0.5rem;
         display: block;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.025em;
     }
 
-    /* Maestro Info Panel */
+    /* Panel de referencia del maestro */
     #maestro-info {
-        background: #f0f9ff;
-        border: 1px dashed #7dd3fc;
-        border-radius: 1rem;
-        padding: 1.5rem;
+        background: rgba(0,0,0,0.03);
+        border: 1px solid var(--hairline, rgba(0,0,0,0.07));
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
         margin: 1.5rem 0;
         display: none;
         animation: slideDown 0.3s ease-out;
@@ -91,27 +79,28 @@
 
     .info-tag {
         font-size: 0.75rem;
-        background: white;
+        background: var(--surface, #fff);
         padding: 0.4rem 0.8rem;
-        border-radius: 0.5rem;
-        border: 1px solid #e0f2fe;
-        color: #0369a1;
-        font-weight: 700;
+        border-radius: 2rem;
+        border: 1px solid var(--hairline, rgba(0,0,0,0.07));
+        color: var(--text-2, #6e6e73);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
     }
 
-    /* Select2 Skinning */
+    /* Select2 */
     .select2-container--default .select2-selection--single {
-        border: 1px solid var(--ff-border) !important;
-        border-radius: 0.75rem !important;
+        border: 1px solid rgba(0,0,0,0.08) !important;
+        border-radius: 12px !important;
         height: 48px !important;
-        background: #f8fafc !important;
+        background: var(--surface, #fff) !important;
     }
 
     .select2-container--default .select2-selection--single .select2-selection__rendered {
         line-height: 46px !important;
         padding-left: 1rem !important;
-        font-weight: 600;
-        color: #1e293b;
+        font-weight: 500;
+        color: var(--text, #1d1d1f);
     }
 
     .select2-container--default .select2-selection--single .select2-selection__arrow {
@@ -122,8 +111,8 @@
 <div class="page-container">
     <div class="form-card">
         <div class="form-header">
-            <h4 class="mb-0 fw-bold text-dark"><i class="fas fa-edit text-primary me-2"></i> {{ titulo }}</h4>
-            <p class="text-muted small mb-0">Complete la información del formato FUP para el registro en sistema.</p>
+            <h4 class="apple-title mb-0" style="font-size: clamp(19px, 2.6vw, 24px);">{{ titulo }}</h4>
+            <p class="apple-subtitle mb-0">Complete la información del formato.</p>
         </div>
 
         <div class="form-body">
@@ -167,8 +156,8 @@
                 <!-- Maestro Info Panel -->
                 <div id="maestro-info">
                     <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-info-circle text-info me-2"></i> Datos de Referencia</h6>
-                        <span class="small text-muted fw-bold">Actualizado desde base de datos</span>
+                        <h6 class="mb-0 fw-bold">Datos de referencia</h6>
+                        <span class="small" style="color: var(--text-3, #86868b);">Desde base de datos</span>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
                         <div class="info-tag">RFC: <span id="display-rfc" class="font-monospace">---</span></div>
@@ -211,8 +200,8 @@
                 </div>
 
                 <!-- Archivo -->
-                <div class="bg-light p-4 rounded-4 border mt-4 mb-5">
-                    <label class="form-label-premium"><i class="fas fa-file-upload me-2"></i> Expediente Digital (PDF)</label>
+                <div class="p-4 rounded-4 mt-4 mb-5" style="border: 1px solid var(--hairline, rgba(0,0,0,0.07));">
+                    <label class="form-label-premium">Expediente digital (PDF)</label>
                     <div class="mt-2">
                         {{ form.archivo }}
                     </div>
@@ -220,12 +209,12 @@
                 </div>
 
                 <!-- Buttons -->
-                <div class="d-flex justify-content-end gap-3 border-top pt-4">
-                    <a href="{% url 'lista_fup' %}" class="btn btn-light border rounded-pill px-5 fw-bold text-muted btn-hover-animate">
+                <div class="d-flex justify-content-end gap-3 pt-4" style="border-top: 1px solid var(--hairline, rgba(0,0,0,0.07));">
+                    <a href="{% url 'lista_fup' %}" class="apple-btn-ghost">
                         Cancelar
                     </a>
-                    <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow btn-hover-animate">
-                        Guardar Registro
+                    <button type="submit" class="apple-btn">
+                        Guardar
                     </button>
                 </div>
             </form>
