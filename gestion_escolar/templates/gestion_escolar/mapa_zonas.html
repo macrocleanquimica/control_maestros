@@ -1,0 +1,341 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<style>
+    .pz-header-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        border: 1px solid #eef2f6;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .pz-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    .pz-stat {
+        background: white;
+        border: 1px solid #eef2f6;
+        border-radius: 1rem;
+        padding: 1rem 1.25rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    }
+    .pz-stat label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+    .pz-stat span {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+    #mapaZonas {
+        height: 68vh;
+        min-height: 480px;
+        border-radius: 1rem;
+        border: 1px solid #eef2f6;
+        z-index: 1;
+    }
+    .zona-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: 2rem;
+        background: #f8fafc;
+        border: 1px solid #eef2f6;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #334155;
+    }
+    .zona-chip .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .mapa-etiqueta {
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid #cbd5e1;
+        border-radius: 0.4rem;
+        padding: 0.1rem 0.45rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #334155;
+        white-space: nowrap;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    .leaflet-container { font-family: inherit; }
+    .leaflet-popup-content h6 { margin-bottom: 0.25rem; font-weight: 800; color: #1e293b; }
+    .leaflet-popup-content p { margin-bottom: 0.2rem; font-size: 0.8rem; color: #475569; }
+</style>
+
+<div class="page-container p-4">
+    <div class="pz-header-card mb-3 d-flex align-items-center gap-3 flex-wrap">
+        <div class="pz-icon bg-soft-primary" style="background:#e0f2fe;color:#0369a1;">
+            <i class="fas fa-map-marked-alt"></i>
+        </div>
+        <div class="me-auto">
+            <h1 class="h4 fw-bold mb-0 text-dark">{{ titulo }}</h1>
+            <p class="text-muted small mb-0">Centros de Trabajo del estado de Durango ubicados por municipio y coloreados según su zona escolar.</p>
+        </div>
+        <a href="{% url 'mapa_zonas_pdf' %}" id="btnDescargarPDF" class="btn btn-danger d-inline-flex align-items-center gap-2 shadow-sm">
+            <i class="fas fa-file-pdf"></i>
+            <span>Descargar PDF</span>
+        </a>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="pz-stat">
+                <label>Centros de Trabajo</label>
+                <span>{{ total_ct }}</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pz-stat">
+                <label>Municipios</label>
+                <span>{{ municipios|length }}</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pz-stat">
+                <label>Zonas</label>
+                <span>{{ zonas|length }}</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pz-stat">
+                <label>Sin ubicación</label>
+                <span class="{% if total_sin_ubicacion %}text-danger{% endif %}">{{ total_sin_ubicacion }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="pz-header-card mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-muted">Filtrar por Zona</label>
+                <select id="filtroZona" class="form-select">
+                    <option value="">Todas las zonas</option>
+                    {% for z in zonas %}
+                        <option value="{{ z.numero }}">{{ z.etiqueta }} ({{ z.cantidad }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small fw-bold text-muted">Filtrar por Municipio</label>
+                <select id="filtroMunicipio" class="form-select">
+                    <option value="">Todos los municipios</option>
+                    {% for m in municipios %}
+                        <option value="{{ m.nombre }}">{{ m.nombre }} ({{ m.cantidad }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button id="btnLimpiar" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-undo me-1"></i> Limpiar filtros
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="pz-header-card mb-3 p-2">
+        <div id="mapaZonas"></div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="pz-header-card">
+                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-palette me-2 text-primary"></i>Leyenda de Zonas</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for z in zonas %}
+                        <span class="zona-chip">
+                            <span class="dot" style="background: {{ z.color }};"></span>
+                            {{ z.etiqueta }}
+                            <span class="badge bg-light text-dark border">{{ z.cantidad }}</span>
+                        </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="pz-header-card">
+                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-building me-2 text-primary"></i>C.T. por Municipio</h6>
+                <div class="table-responsive" style="max-height: 240px;">
+                    <table class="table table-sm table-hover mb-0 align-middle">
+                        <thead>
+                            <tr><th class="small text-muted">Municipio</th><th class="text-end small text-muted">C.T.</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for m in municipios %}
+                                <tr>
+                                    <td>{{ m.nombre }}</td>
+                                    <td class="text-end fw-bold text-primary">{{ m.cantidad }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if sin_ubicacion %}
+    <div class="alert alert-warning mt-3 mb-0">
+        <h6 class="fw-bold mb-2"><i class="fas fa-exclamation-triangle me-2"></i>C.T. sin ubicación ({{ total_sin_ubicacion }})</h6>
+        <p class="small text-muted mb-2">Estos centros no aparecen en el mapa porque su municipio no pudo ser reconocido. Revisa el campo <strong>Región</strong> de cada uno:</p>
+        <ul class="mb-0 small columns-2">
+            {% for s in sin_ubicacion %}
+                <li><a href="{{ s.url }}">{{ s.cct }}</a> - {{ s.nombre }} <span class="text-muted">({{ s.region_original }})</span></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+const geojsonMunicipios = {{ geojson|safe }};
+const centroidesMunicipios = {{ centroides|safe }};
+const puntosCT = {{ puntos|safe }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const mapa = L.map('mapaZonas', { zoomControl: true }).setView([24.7, -104.7], 7);
+
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri &mdash; Powered by Esri'
+    }).addTo(mapa);
+
+    L.geoJSON(geojsonMunicipios, {
+        style: {
+            color: '#94a3b8',
+            weight: 1,
+            fillColor: '#f1f5f9',
+            fillOpacity: 0.35
+        },
+        onEachFeature: function(feat, layer) {
+            layer.bindTooltip(feat.properties.nom_agem, { sticky: true });
+        }
+    }).addTo(mapa);
+
+    const capaEtiquetas = L.layerGroup().addTo(mapa);
+    const iconoEtiqueta = function(nombre) {
+        return L.divIcon({
+            className: '',
+            html: '<div class="mapa-etiqueta">' + nombre + '</div>',
+            iconSize: null
+        });
+    };
+    centroidesMunicipios.forEach(function(c) {
+        L.marker([c.lat, c.lng], { icon: iconoEtiqueta(c.municipio), interactive: false })
+            .addTo(capaEtiquetas);
+    });
+
+    function sincronizarEtiquetas() {
+        if (mapa.getZoom() >= 8) {
+            capaEtiquetas.addTo(mapa);
+        } else {
+            mapa.removeLayer(capaEtiquetas);
+        }
+    }
+    mapa.on('zoomend', sincronizarEtiquetas);
+    sincronizarEtiquetas();
+
+    const capaPuntos = L.markerClusterGroup({
+        maxClusterRadius: 30,
+        disableClusteringAtZoom: 14,
+        spiderfyOnMaxZoom: true,
+        spiderfyDistanceMultiplier: 1.8,
+    }).addTo(mapa);
+
+    function crearMarcador(p) {
+        const icono = L.circleMarker([p.lat, p.lng], {
+            radius: 8,
+            color: '#ffffff',
+            weight: 1.5,
+            fillColor: p.color,
+            fillOpacity: 0.95
+        });
+        const html = `
+            <div style="min-width:200px;">
+                <h6>${p.nombre}</h6>
+                <p><strong>C.T.:</strong> ${p.cct}</p>
+                <p><strong>Zona:</strong> ${p.zona_etiqueta}</p>
+                <p><strong>Municipio:</strong> ${p.municipio}</p>
+                <a href="${p.url}" class="btn btn-primary btn-sm w-100 mt-1">Ver detalle</a>
+            </div>`;
+        icono.bindPopup(html);
+        return icono;
+    }
+
+    puntosCT.forEach(p => crearMarcador(p).addTo(capaPuntos));
+
+    function aplicarFiltros() {
+        const zona = document.getElementById('filtroZona').value;
+        const municipio = document.getElementById('filtroMunicipio').value;
+        capaPuntos.clearLayers();
+        puntosCT.forEach(p => {
+            const coincideZona = zona === '' || String(p.zona) === String(zona);
+            const coincideMunicipio = municipio === '' || p.municipio === municipio;
+            if (coincideZona && coincideMunicipio) {
+                crearMarcador(p).addTo(capaPuntos);
+            }
+        });
+    }
+
+    document.getElementById('filtroZona').addEventListener('change', aplicarFiltros);
+    document.getElementById('filtroMunicipio').addEventListener('change', aplicarFiltros);
+    document.getElementById('btnLimpiar').addEventListener('click', function() {
+        document.getElementById('filtroZona').value = '';
+        document.getElementById('filtroMunicipio').value = '';
+        aplicarFiltros();
+    });
+
+    document.getElementById('btnDescargarPDF').addEventListener('click', async function(e) {
+        e.preventDefault();
+        const boton = this;
+        const textoOriginal = boton.innerHTML;
+        boton.disabled = true;
+        boton.classList.add('disabled');
+        boton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Generando PDF...';
+        try {
+            const response = await fetch(boton.getAttribute('href'));
+            if (!response.ok) throw new Error('Error del servidor (' + response.status + ')');
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const enlace = document.createElement('a');
+            enlace.href = url;
+            enlace.download = 'mapa_zonas_durango.pdf';
+            document.body.appendChild(enlace);
+            enlace.click();
+            enlace.remove();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('No se pudo descargar el PDF: ' + err.message);
+        } finally {
+            boton.disabled = false;
+            boton.classList.remove('disabled');
+            boton.innerHTML = textoOriginal;
+        }
+    });
+});
+</script>
+{% endblock %}

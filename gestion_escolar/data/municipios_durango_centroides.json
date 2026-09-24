@@ -1,0 +1,236 @@
+[
+ {
+  "municipio": "Canatlán",
+  "lng": -104.935886,
+  "lat": 24.511116,
+  "cve_agem": "001"
+ },
+ {
+  "municipio": "Canelas",
+  "lng": -106.451108,
+  "lat": 25.072722,
+  "cve_agem": "002"
+ },
+ {
+  "municipio": "Coneto de Comonfort",
+  "lng": -104.783742,
+  "lat": 25.033976,
+  "cve_agem": "003"
+ },
+ {
+  "municipio": "Cuencamé",
+  "lng": -103.700287,
+  "lat": 24.694806,
+  "cve_agem": "004"
+ },
+ {
+  "municipio": "Durango",
+  "lng": -104.843701,
+  "lat": 23.970483,
+  "cve_agem": "005"
+ },
+ {
+  "municipio": "El Oro",
+  "lng": -105.215851,
+  "lat": 25.549024,
+  "cve_agem": "018"
+ },
+ {
+  "municipio": "General Simón Bolívar",
+  "lng": -103.212079,
+  "lat": 24.761513,
+  "cve_agem": "006"
+ },
+ {
+  "municipio": "Guadalupe Victoria",
+  "lng": -104.073278,
+  "lat": 24.412674,
+  "cve_agem": "008"
+ },
+ {
+  "municipio": "Guanaceví",
+  "lng": -106.067224,
+  "lat": 25.996316,
+  "cve_agem": "009"
+ },
+ {
+  "municipio": "Gómez Palacio",
+  "lng": -103.490632,
+  "lat": 25.727977,
+  "cve_agem": "007"
+ },
+ {
+  "municipio": "Hidalgo",
+  "lng": -104.817084,
+  "lat": 26.090338,
+  "cve_agem": "010"
+ },
+ {
+  "municipio": "Indé",
+  "lng": -104.995537,
+  "lat": 25.726226,
+  "cve_agem": "011"
+ },
+ {
+  "municipio": "Lerdo",
+  "lng": -103.685834,
+  "lat": 25.477645,
+  "cve_agem": "012"
+ },
+ {
+  "municipio": "Mapimí",
+  "lng": -104.131328,
+  "lat": 26.145999,
+  "cve_agem": "013"
+ },
+ {
+  "municipio": "Mezquital",
+  "lng": -104.550688,
+  "lat": 23.002114,
+  "cve_agem": "014"
+ },
+ {
+  "municipio": "Nazas",
+  "lng": -104.077686,
+  "lat": 25.247098,
+  "cve_agem": "015"
+ },
+ {
+  "municipio": "Nombre de Dios",
+  "lng": -104.211115,
+  "lat": 23.81386,
+  "cve_agem": "016"
+ },
+ {
+  "municipio": "Nuevo Ideal",
+  "lng": -105.038031,
+  "lat": 24.846695,
+  "cve_agem": "039"
+ },
+ {
+  "municipio": "Ocampo",
+  "lng": -105.676693,
+  "lat": 26.481873,
+  "cve_agem": "017"
+ },
+ {
+  "municipio": "Otáez",
+  "lng": -105.936429,
+  "lat": 24.701449,
+  "cve_agem": "019"
+ },
+ {
+  "municipio": "Peñón Blanco",
+  "lng": -104.082325,
+  "lat": 24.785987,
+  "cve_agem": "021"
+ },
+ {
+  "municipio": "Poanas",
+  "lng": -104.021948,
+  "lat": 24.003555,
+  "cve_agem": "022"
+ },
+ {
+  "municipio": "Pueblo Nuevo",
+  "lng": -105.315594,
+  "lat": 23.412743,
+  "cve_agem": "023"
+ },
+ {
+  "municipio": "Pánuco de Coronado",
+  "lng": -104.354042,
+  "lat": 24.494858,
+  "cve_agem": "020"
+ },
+ {
+  "municipio": "Rodeo",
+  "lng": -104.561624,
+  "lat": 25.195304,
+  "cve_agem": "024"
+ },
+ {
+  "municipio": "San Bernardo",
+  "lng": -105.672447,
+  "lat": 26.184115,
+  "cve_agem": "025"
+ },
+ {
+  "municipio": "San Dimas",
+  "lng": -105.742451,
+  "lat": 24.230372,
+  "cve_agem": "026"
+ },
+ {
+  "municipio": "San Juan de Guadalupe",
+  "lng": -102.718036,
+  "lat": 24.647526,
+  "cve_agem": "027"
+ },
+ {
+  "municipio": "San Juan del Río",
+  "lng": -104.470401,
+  "lat": 24.807353,
+  "cve_agem": "028"
+ },
+ {
+  "municipio": "San Luis del Cordero",
+  "lng": -104.306486,
+  "lat": 25.376102,
+  "cve_agem": "029"
+ },
+ {
+  "municipio": "San Pedro del Gallo",
+  "lng": -104.398245,
+  "lat": 25.621899,
+  "cve_agem": "030"
+ },
+ {
+  "municipio": "Santa Clara",
+  "lng": -103.413778,
+  "lat": 24.49776,
+  "cve_agem": "031"
+ },
+ {
+  "municipio": "Santiago Papasquiaro",
+  "lng": -105.690422,
+  "lat": 24.984157,
+  "cve_agem": "032"
+ },
+ {
+  "municipio": "Súchil",
+  "lng": -104.149631,
+  "lat": 23.436883,
+  "cve_agem": "033"
+ },
+ {
+  "municipio": "Tamazula",
+  "lng": -106.711994,
+  "lat": 24.946757,
+  "cve_agem": "034"
+ },
+ {
+  "municipio": "Tepehuanes",
+  "lng": -106.061625,
+  "lat": 25.450244,
+  "cve_agem": "035"
+ },
+ {
+  "municipio": "Tlahualilo",
+  "lng": -103.625484,
+  "lat": 26.344964,
+  "cve_agem": "036"
+ },
+ {
+  "municipio": "Topia",
+  "lng": -106.589744,
+  "lat": 25.256763,
+  "cve_agem": "037"
+ },
+ {
+  "municipio": "Vicente Guerrero",
+  "lng": -103.951054,
+  "lat": 23.73334,
+  "cve_agem": "038"
+ }
+]
