@@ -5,16 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --im-primary: #6366f1;
-        --im-danger: #ef4444;
-        --im-warning: #f59e0b;
-        --im-border: #e2e8f0;
-        --im-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
     .page-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
         max-width: 900px;
         margin: 0 auto;
@@ -26,33 +18,33 @@
     }
 
     .import-card {
-        background: white;
-        border-radius: 1.5rem;
-        border: 1px solid var(--im-border);
-        box-shadow: var(--im-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
     }
 
     .import-header {
-        background: #fffbeb;
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid #fef3c7;
+        padding: 1.5rem clamp(17px, 3vw, 2rem);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
     .body-section {
-        padding: 2.5rem;
+        padding: clamp(17px, 3vw, 2rem);
     }
 
-    /* Warning box */
+    /* Aviso serio: se conserva un tono cálido porque es irreversible */
     .danger-zone {
-        background: #fef2f2;
-        border: 1px solid #fee2e2;
-        border-radius: 1rem;
-        padding: 1.5rem;
-        margin-bottom: 2.5rem;
+        background: rgba(255,107,0,0.07);
+        border: 1px solid rgba(255,107,0,0.25);
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 2rem;
     }
 
     /* Instructions */
@@ -62,88 +54,83 @@
     }
 
     .instruction-list li {
-        color: #475569;
+        color: var(--text-body, #424245);
         margin-bottom: 0.75rem;
         font-weight: 500;
         position: relative;
     }
 
     .instruction-list li code {
-        background: #f1f5f9;
-        color: var(--im-primary);
+        background: rgba(0,0,0,0.05);
+        color: var(--text, #1d1d1f);
         padding: 0.1rem 0.4rem;
         border-radius: 0.3rem;
-        font-weight: 700;
+        font-weight: 600;
     }
 
     /* Format table */
     .format-preview {
-        background: #f8fafc;
-        border-radius: 1rem;
+        background: rgba(0,0,0,0.03);
+        border-radius: 14px;
         padding: 1.25rem;
-        border: 1px solid var(--im-border);
-        margin-bottom: 2.5rem;
+        border: 1px solid var(--hairline, rgba(0,0,0,0.07));
+        margin-bottom: 2rem;
     }
 
     .format-preview th {
         font-size: 0.7rem;
-        text-transform: uppercase;
-        color: #64748b;
-        letter-spacing: 0.05em;
-        background: white !important;
+        color: var(--text-2, #6e6e73);
+        letter-spacing: 0.04em;
+        background: var(--surface, #fff) !important;
     }
 
     /* Custom File Input */
     .file-drop-area {
-        border: 2px dashed #cbd5e1;
-        border-radius: 1rem;
+        border: 1px dashed rgba(0,0,0,0.2);
+        border-radius: 14px;
         padding: 2.5rem;
         text-align: center;
-        transition: all 0.2s;
         cursor: pointer;
-        background: #f8fafc;
+        background: rgba(0,0,0,0.02);
         margin-bottom: 2rem;
     }
 
     .file-drop-area:hover {
-        border-color: var(--im-primary);
-        background: #f5f3ff;
+        border-color: var(--accent, #0071e3);
     }
 
     .file-drop-area i {
-        font-size: 3rem;
-        color: #94a3b8;
+        font-size: 2.5rem;
+        color: var(--text-3, #86868b);
         margin-bottom: 1rem;
     }
 
     .file-drop-area.has-file {
-        border-color: var(--im-primary);
-        background: #f5f3ff;
+        border-color: var(--accent, #0071e3);
     }
 
-    .file-drop-area.has-file i { color: var(--im-primary); }
+    .file-drop-area.has-file i { color: var(--accent, #0071e3); }
 
     /* Buttons */
     .btn-import-confirm {
-        background: var(--im-primary);
+        background: var(--accent, #0071e3);
         color: white;
-        border-radius: 2rem;
-        padding: 0.8rem 2.5rem;
-        font-weight: 700;
+        border-radius: var(--r-pill, 999px);
+        padding: 0 2.5rem;
+        min-height: 48px;
+        font-weight: 600;
         border: none;
-        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
-        transition: all 0.2s;
     }
 
     .btn-import-confirm:disabled {
-        background: #cbd5e1;
-        box-shadow: none;
+        background: rgba(0,0,0,0.12);
+        color: rgba(0,0,0,0.35);
         cursor: not-allowed;
     }
 
     .btn-import-confirm:not(:disabled):hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.5);
+        opacity: 0.92;
+        color: white;
     }
 </style>
 
@@ -151,10 +138,10 @@
     <div class="import-card">
         <div class="import-header">
             <div>
-                <h4 class="mb-0 fw-bold text-dark"><i class="fas fa-file-import text-warning me-2"></i> Asistente de Importación</h4>
-                <p class="text-muted small mb-0">Sincronización de lista anual de prelación.</p>
+                <h4 class="apple-title mb-0" style="font-size: clamp(19px, 2.6vw, 24px);">Importar prelación</h4>
+                <p class="apple-subtitle mb-0">Reemplaza la lista anual con un Excel.</p>
             </div>
-            <a href="{% url 'lista_prelacion' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted small btn-hover-animate">
+            <a href="{% url 'lista_prelacion' %}" class="apple-btn-ghost">
                 <i class="fas fa-arrow-left me-2"></i> Volver
             </a>
         </div>
@@ -163,21 +150,18 @@
             <!-- Alert Section -->
             <div class="danger-zone">
                 <div class="d-flex align-items-start gap-3">
-                    <div class="bg-white p-3 rounded-circle shadow-sm" style="color: var(--im-danger);">
-                        <i class="fas fa-exclamation-triangle fa-2x"></i>
-                    </div>
                     <div>
-                        <h6 class="fw-bold text-danger mb-1">Acción Destructiva Irreversible</h6>
-                        <p class="mb-0 text-muted small">
-                            Al importar un nuevo archivo, el sistema <span class="fw-bold text-dark">eliminará permanentemente todos los registros actuales</span> de la lista de prelación para reemplazarlos por los nuevos datos.
+                        <h6 class="fw-bold mb-1">Esto borra la lista actual</h6>
+                        <p class="mb-0 small" style="color: var(--text-2, #6e6e73);">
+                            Al importar, el sistema <strong>elimina todos los registros actuales</strong> de prelación y los reemplaza.
                         </p>
                     </div>
                 </div>
             </div>
 
             <!-- Instructions -->
-            <h6 class="text-uppercase fw-bold text-dark mb-3" style="font-size: 0.8rem; letter-spacing: 0.1em;">
-                <i class="fas fa-info-circle text-primary me-2"></i> Especificaciones del Archivo
+            <h6 class="fw-bold mb-3" style="font-size: 0.85rem;">
+                Formato del archivo
             </h6>
             <ul class="instruction-list small">
                 <li>Formatos aceptados: <code>.xlsx</code> o <code>.xls</code> únicamente.</li>
@@ -220,21 +204,21 @@
                 
                 <div class="file-drop-area" id="dropArea">
                     <i class="fas fa-cloud-upload-alt"></i>
-                    <h5 class="fw-bold text-dark mb-1">Cargar Archivo Excel</h5>
-                    <p class="text-muted small mb-0" id="fileName">Arrastre su archivo aquí o haga clic para buscar en su equipo</p>
+                    <h5 class="fw-bold mb-1">Archivo Excel</h5>
+                    <p class="small mb-0" style="color: var(--text-2, #6e6e73);" id="fileName">Arrastre aquí o haga clic para buscar</p>
                     <input type="file" name="archivo_excel" id="id_archivo_excel" accept=".xlsx,.xls" hidden required>
                 </div>
 
-                <div class="form-check bg-light p-3 rounded-4 border mb-4">
+                <div class="form-check p-3 rounded-4 mt-4 mb-4" style="border: 1px solid var(--hairline, rgba(0,0,0,0.07));">
                     <input class="form-check-input ms-0" type="checkbox" id="confirmar" required>
-                    <label class="form-check-label ms-2 text-dark small fw-bold" for="confirmar">
-                        Entiendo que esta acción es definitiva y reemplazará toda la base de datos de prelación.
+                    <label class="form-check-label ms-2 small fw-bold" for="confirmar">
+                        Entiendo que esto reemplaza toda la lista de prelación.
                     </label>
                 </div>
 
-                <div class="d-flex justify-content-end gap-3 mt-5">
+                <div class="d-flex justify-content-end gap-3 mt-4">
                     <button type="submit" class="btn-import-confirm" id="btnImportar" disabled>
-                        <i class="fas fa-check-circle me-2"></i> Confirmar e Importar Ahora
+                        <i class="fas fa-check-circle me-2"></i> Importar
                     </button>
                 </div>
             </form>
