@@ -6,58 +6,45 @@
 
 {% block extra_css %}
 <style>
-    .fw-extrabold { font-weight: 800; }
-    .fs-xs { font-size: 0.7rem; }
-    .letter-spacing-wider { letter-spacing: 0.05em; }
-    .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .hover-lift:hover { transform: translateY(-2px); }
-    .transition-all { transition: all 0.3s ease; }
-    
     /* Table Enhancements */
     .table-permissions thead th {
-        background-color: #f8fafc;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.05em;
-        color: #64748b;
-        padding: 1rem 0.75rem;
+        background: var(--surface, #fff);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--text-2, #6e6e73);
+        padding: 0.9rem 0.75rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
     .table-permissions tbody td {
         vertical-align: middle;
         padding: 0.85rem 0.75rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
-    .table-permissions tr:hover {
-        background-color: #f1f5f9;
-        transition: background-color 0.2s;
+    .table-permissions tbody tr:last-child td {
+        border-bottom: none;
     }
-    
+    .table-permissions tr:hover td {
+        background: var(--hover, #fbfbfd);
+    }
+
     /* Section Headers */
     .section-title {
-        border-bottom: 2px solid #f1f5f9;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
         padding-bottom: 0.75rem;
         margin-bottom: 1.5rem;
     }
-    
+
     /* Checkbox Styles */
     .form-check-input {
         width: 1.5rem;
         height: 1.5rem;
         cursor: pointer;
-        border-color: #cbd5e1;
-    }
-    .form-check-input:checked {
-        background-color: #3b82f6;
-        border-color: #3b82f6;
-    }
-    
-    /* Custom Card for Roles */
-    .role-name-card {
-        background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
     }
 
-    .bg-gradient-soft-blue {
-        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        border: 1px solid #bfdbfe !important;
+    /* Custom Card for Roles */
+    .role-name-card {
+        background: var(--surface, #fff);
     }
 </style>
 {% endblock %}
@@ -75,12 +62,9 @@
                 </ol>
             </nav>
             <div class="d-flex align-items-center gap-3">
-                <div class="bg-primary bg-opacity-10 p-3 rounded-4">
-                    <i class="fas fa-shield-alt text-primary fs-3"></i>
-                </div>
                 <div>
-                    <h2 class="fw-extrabold text-dark mb-0">{{ titulo }}</h2>
-                    <p class="text-muted mb-0">Define el nombre del rol y selecciona los permisos específicos para cada módulo del sistema.</p>
+                    <h2 class="fw-extrabold mb-0" style="letter-spacing: -0.02em;">{{ titulo }}</h2>
+                    <p class="mb-0" style="color: var(--text-2, #6e6e73);">Nombre del rol y permisos por módulo.</p>
                 </div>
             </div>
         </div>
@@ -103,11 +87,10 @@
         <div class="row g-4 justify-content-center">
             <div class="col-xl-9">
                 <!-- Role Name Card -->
-                <div class="card premium-card shadow-sm border-0 mb-4 role-name-card">
+                <div class="card apple-panel border-0 mb-4 role-name-card">
                     <div class="card-body p-4">
-                        <div class="section-title d-flex align-items-center gap-2">
-                            <i class="fas fa-tag text-primary opacity-75"></i>
-                            <h5 class="fw-bold mb-0">Identificación del Rol</h5>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <h5 class="fw-bold mb-0">Nombre del rol</h5>
                         </div>
                         <div class="mb-0">
                             {{ form.name|as_crispy_field }}
@@ -116,18 +99,17 @@
                 </div>
 
                 <!-- Permissions Matrix Card -->
-                <div class="card premium-card shadow-sm border-0 overflow-hidden">
-                    <div class="card-header bg-white py-4 px-4 border-bottom d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div class="card apple-panel border-0 overflow-hidden">
+                    <div class="card-header py-4 px-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3" style="background: var(--surface, #fff); border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));">
                         <div class="d-flex align-items-center gap-2">
-                            <i class="fas fa-th-list text-primary opacity-75"></i>
-                            <h5 class="fw-bold mb-0">Matriz de Permisos</h5>
+                            <h5 class="fw-bold mb-0">Permisos</h5>
                         </div>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-light btn-sm fw-bold border shadow-xs px-3" id="check-all">
-                                <i class="fas fa-check-double me-1 text-success"></i> Marcar Todo
+                            <button type="button" class="apple-btn-ghost px-3" style="min-height: 38px; font-size: 13px;" id="check-all">
+                                Marcar todo
                             </button>
-                            <button type="button" class="btn btn-light btn-sm fw-bold border shadow-xs px-3" id="uncheck-all">
-                                <i class="fas fa-times me-1 text-danger"></i> Desmarcar Todo
+                            <button type="button" class="apple-btn-ghost px-3" style="min-height: 38px; font-size: 13px;" id="uncheck-all">
+                                Desmarcar
                             </button>
                         </div>
                     </div>
@@ -196,25 +178,24 @@
                     </div>
                 </div>
 
-                <!-- Footer Summary / Info -->
-                <div class="card border-0 rounded-4 bg-gradient-soft-blue shadow-xs mt-4">
-                    <div class="card-body p-4 d-flex gap-3 align-items-start text-dark">
-                        <i class="fas fa-info-circle text-primary fs-4 mt-1"></i>
+                <!-- Nota -->
+                <div class="card border-0 rounded-4 mt-4">
+                    <div class="card-body p-4 d-flex gap-3 align-items-start">
                         <div>
-                            <h6 class="fw-bold mb-1 fs-xs text-uppercase letter-spacing-wider">Nota sobre Permisos</h6>
-                            <p class="mb-0 small opacity-85">Los permisos marcados se aplicarán de forma inmediata a todos los usuarios vinculados a este rol. Asegúrate de revisar la matriz antes de guardar para evitar otorgar privilegios excesivos o restringir el trabajo necesario.</p>
+                            <h6 class="fw-bold mb-1 fs-xs text-uppercase letter-spacing-wider">Nota</h6>
+                            <p class="mb-0 small" style="color: var(--text-2, #6e6e73);">Los permisos se aplican de inmediato a los usuarios del rol. Revise antes de guardar.</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="d-flex flex-column flex-md-row gap-3 pt-5 mt-4 border-top">
-                    <button type="submit" class="btn btn-primary btn-lg px-5 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm transition-all hover-lift btn-hover-animate">
-                        <i class="fas fa-save"></i>
-                        <span>Guardar Rol y Permisos</span>
+                <div class="d-flex flex-column flex-md-row gap-3 pt-4 mt-4" style="border-top: 1px solid var(--hairline, rgba(0,0,0,0.07));">
+                    <button type="submit" class="apple-btn justify-content-center">
+                        <i class="fas fa-save me-2"></i>
+                        <span>Guardar</span>
                     </button>
-                    <a href="{% url 'role_list' %}" class="btn btn-light btn-lg px-4 rounded-3 fw-bold border text-muted hover-bg-light transition-all d-flex align-items-center justify-content-center gap-2 btn-hover-animate">
-                        <i class="fas fa-times"></i>
+                    <a href="{% url 'role_list' %}" class="apple-btn-ghost justify-content-center">
+                        <i class="fas fa-times me-2"></i>
                         <span>Cancelar</span>
                     </a>
                 </div>
@@ -226,19 +207,18 @@
 <style>
     /* Crispy Form Customizations */
     .form-control {
-        border-radius: 0.75rem !important;
-        border: 1px solid #e2e8f0;
+        border-radius: 12px !important;
+        border: 1px solid rgba(0,0,0,0.08);
         background-color: #fff;
         padding: 0.75rem 1rem;
-        transition: all 0.2s;
     }
     .form-control:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        border-color: var(--accent, #0071e3);
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
     }
     .form-label {
         font-weight: 600;
-        color: #4b5563;
+        color: var(--text-2, #6e6e73);
         font-size: 0.85rem;
         margin-bottom: 0.5rem;
     }
