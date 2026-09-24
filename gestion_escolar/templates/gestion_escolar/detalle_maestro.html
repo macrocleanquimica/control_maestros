@@ -134,6 +134,19 @@
         color: #1e293b;
     }
 
+    .clave-grande {
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+    }
+
+    .info-item.clave-item {
+        grid-column: 1 / -1;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 0.5rem;
+    }
+
     /* Alerts */
     .alert-premium {
         border-radius: 1rem;
@@ -259,9 +272,9 @@
                 <h5>Identificación y Base Presupuestal</h5>
             </div>
             <div class="info-grid">
-                <div class="info-item">
+                <div class="info-item clave-item">
                     <span class="info-label">Clave Presupuestal</span>
-                    <span class="info-value font-monospace text-primary fw-bold">{{ maestro.clave_presupuestal }}</span>
+                    <span class="info-value font-monospace text-primary fw-bold clave-grande">{{ maestro.clave_presupuestal }}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">CURP</span>
@@ -278,10 +291,6 @@
                 <div class="info-item">
                     <span class="info-label">Estado Civil</span>
                     <span class="info-value">{{ maestro.get_est_civil_display }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Fecha de Nacimiento</span>
-                    <span class="info-value">{{ maestro.fecha_nacimiento|date:"d/m/Y" }}</span>
                 </div>
             </div>
         </div>
@@ -374,7 +383,7 @@
                 </div>
                 <div class="info-item">
                     <span class="info-label">Zona Escolar</span>
-                    <span class="info-value">Zona {{ maestro.id_escuela.zona_esc.numero|default:"N/A" }}</span>
+                    <span class="info-value">{{ maestro.id_escuela.zona_esc.etiqueta|default:"N/A" }}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Categoría</span>
@@ -473,6 +482,128 @@
         </div>
 
 
+    </div>
+
+    <!-- HISTORIAL DE INTERINATOS -->
+    <div class="profile-card">
+        <div class="profile-section">
+            <div class="section-header">
+                <div class="section-icon bg-info bg-opacity-10 text-info"><i class="fas fa-user-clock"></i></div>
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <h5 class="mb-0">Historial de Interinatos Cubiertos</h5>
+                    {% if interinatos_cubiertos %}
+                    <span class="badge bg-info rounded-pill">{{ interinatos_cubiertos.count }} registrado{{ interinatos_cubiertos.count|pluralize:"s" }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="p-0 pt-1">
+                {% if interinatos_cubiertos %}
+                <div class="table-responsive rounded-4 border bg-white overflow-hidden shadow-sm">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4 py-2 border-0">Clave Cubierta</th>
+                                <th class="py-2 border-0">Maestro Titular</th>
+                                <th class="py-2 border-0">C.C.T.</th>
+                                <th class="py-2 border-0">Período</th>
+                                <th class="py-2 border-0">Motivo</th>
+                                <th class="py-2 border-0">Tipo</th>
+                                <th class="text-end pe-4 py-2 border-0">Estatus</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inter in interinatos_cubiertos %}
+                            <tr>
+                                <td class="ps-4"><span class="font-monospace text-primary fw-bold">{{ inter.clave_presupuestal|default:"S/N" }}</span></td>
+                                <td>
+                                    {% if inter.maestro_titular %}
+                                    <a href="{% url 'detalle_maestro' inter.maestro_titular.id_maestro %}" class="text-decoration-none">{{ inter.maestro_titular.nombres }} {{ inter.maestro_titular.a_paterno }} {{ inter.maestro_titular.a_materno }}</a>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">{{ inter.escuela.id_escuela|default:"—" }}<br><span class="text-truncate d-inline-block" style="max-width: 180px;">{{ inter.escuela.nombre_ct|default:"" }}</span></td>
+                                <td>
+                                    <span class="fw-semibold">{{ inter.fecha_inicio|date:"d/m/Y" }}</span>
+                                    {% if inter.fecha_final %}
+                                    → <span class="fw-semibold">{{ inter.fecha_final|date:"d/m/Y" }}</span>
+                                    {% else %}
+                                    <span class="badge bg-soft-warning text-warning ms-1">Vigente</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small">{{ inter.get_motivo_display|default:"—" }}</td>
+                                <td><span class="badge bg-soft-info text-info rounded-pill px-3">{{ inter.get_tipo_display }}</span></td>
+                                <td class="text-end pe-4">
+                                    {% if inter.estatus == 'ACTIVO' %}
+                                    <span class="badge bg-soft-success text-success rounded-pill px-3">Activo</span>
+                                    {% elif inter.estatus == 'CONCLUIDO' %}
+                                    <span class="badge bg-soft-secondary text-secondary rounded-pill px-3">Concluido</span>
+                                    {% else %}
+                                    <span class="badge bg-soft-warning text-warning rounded-pill px-3">Cancelado</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 bg-white rounded-4 border border-dashed">
+                    <p class="text-muted mb-0 small">Este personal no tiene interinatos registrados hasta el momento.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if interinatos_como_titular %}
+            <hr class="my-4">
+            <div class="section-header">
+                <div class="section-icon bg-warning bg-opacity-10 text-warning"><i class="fas fa-user-slash"></i></div>
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <h5 class="mb-0">Interinatos que Cubren sus Plazas (Titular)</h5>
+                    <span class="badge bg-warning rounded-pill">{{ interinatos_como_titular.count }} registrado{{ interinatos_como_titular.count|pluralize:"s" }}</span>
+                </div>
+            </div>
+            <div class="p-0 pt-1">
+                <div class="table-responsive rounded-4 border bg-white overflow-hidden shadow-sm">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4 py-2 border-0">Clave Cubierta</th>
+                                <th class="py-2 border-0">Interino que la Cubre</th>
+                                <th class="py-2 border-0">Período</th>
+                                <th class="py-2 border-0">Motivo</th>
+                                <th class="text-end pe-4 py-2 border-0">Estatus</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inter in interinatos_como_titular %}
+                            <tr>
+                                <td class="ps-4"><span class="font-monospace text-primary fw-bold">{{ inter.clave_presupuestal|default:"S/N" }}</span></td>
+                                <td>
+                                    <a href="{% url 'detalle_maestro' inter.maestro_interino.id_maestro %}" class="text-decoration-none">{{ inter.maestro_interino.nombres }} {{ inter.maestro_interino.a_paterno }} {{ inter.maestro_interino.a_materno }}</a>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold">{{ inter.fecha_inicio|date:"d/m/Y" }}</span>
+                                    {% if inter.fecha_final %}→ <span class="fw-semibold">{{ inter.fecha_final|date:"d/m/Y" }}</span>{% endif %}
+                                </td>
+                                <td class="small">{{ inter.get_motivo_display|default:"—" }}</td>
+                                <td class="text-end pe-4">
+                                    {% if inter.estatus == 'ACTIVO' %}
+                                    <span class="badge bg-soft-success text-success rounded-pill px-3">Activo</span>
+                                    {% elif inter.estatus == 'CONCLUIDO' %}
+                                    <span class="badge bg-soft-secondary text-secondary rounded-pill px-3">Concluido</span>
+                                    {% else %}
+                                    <span class="badge bg-soft-warning text-warning rounded-pill px-3">Cancelado</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
 
     <!-- DIGITAL EXPEDIENT (Keep separate logic-wise but could be part of the card too if desired) -->

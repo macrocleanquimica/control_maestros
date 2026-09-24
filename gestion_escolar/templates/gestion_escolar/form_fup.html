@@ -295,6 +295,39 @@
         if (maestroIdInicial) {
             cargarDatosMaestro(maestroIdInicial);
         }
+
+        // Validación de folio duplicado en tiempo real
+        var folioTimeout;
+        var folioActual = $('#id_folio').val();
+        $('#id_folio').on('input', function () {
+            clearTimeout(folioTimeout);
+            var folio = $(this).val().trim();
+            if (!folio || folio === folioActual) {
+                $(this).removeClass('is-invalid');
+                $(this).next('.folio-error').remove();
+                return;
+            }
+            folioTimeout = setTimeout(function () {
+                $.ajax({
+                    url: '{% url "validar_folio_fup" %}',
+                    data: {
+                        folio: folio,
+                        fup_id: '{{ form.instance.pk|default:"" }}'
+                    },
+                    dataType: 'json',
+                    success: function (data) {
+                        var input = $('#id_folio');
+                        input.next('.folio-error').remove();
+                        if (!data.valido) {
+                            input.addClass('is-invalid');
+                            input.after('<div class="folio-error invalid-feedback">' + data.mensaje + '</div>');
+                        } else {
+                            input.removeClass('is-invalid');
+                        }
+                    }
+                });
+            }, 400);
+        });
     });
 </script>
 {% endblock %}

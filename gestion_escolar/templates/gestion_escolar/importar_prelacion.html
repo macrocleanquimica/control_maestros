@@ -181,7 +181,7 @@
             </h6>
             <ul class="instruction-list small">
                 <li>Formatos aceptados: <code>.xlsx</code> o <code>.xls</code> únicamente.</li>
-                <li>Columnas obligatorias (en la primera fila): <code>pos_orden</code>, <code>folio</code>, <code>curp</code>, <code>nombre</code>, <code>tipo_val</code>.</li>
+                <li>Columnas obligatorias (en la primera fila): <code>pos_orden</code>, <code>folio</code>, <code>curp</code>, <code>nombre</code>, <code>tipo_val</code>, <code>telefonos</code>.</li>
                 <li>No incluya filas vacías ni formatos complejos; mantenga los datos limpios y planos.</li>
             </ul>
 
@@ -197,6 +197,7 @@
                                 <th>curp</th>
                                 <th>nombre</th>
                                 <th>tipo_val</th>
+                                <th>telefonos</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -206,6 +207,7 @@
                                 <td class="font-monospace">ABCD123...</td>
                                 <td class="fw-bold">GARCÍA PÉREZ JUAN</td>
                                 <td>BÁSICA</td>
+                                <td>618-123-4567</td>
                             </tr>
                         </tbody>
                     </table>
@@ -265,11 +267,44 @@
         // Drag & Drop visual feedback
         dropArea.on('dragover', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             $(this).addClass('bg-light border-primary');
         });
 
-        dropArea.on('dragleave', function() {
+        dropArea.on('dragenter', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).addClass('bg-light border-primary');
+        });
+
+        dropArea.on('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             $(this).removeClass('bg-light border-primary');
+        });
+
+        // Manejar el soltar del archivo
+        dropArea.on('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            $(this).removeClass('bg-light border-primary');
+
+            const files = e.originalEvent.dataTransfer.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                // Asignar el archivo al input (usamos DataTransfer para compatibilidad)
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                fileInput[0].files = dt.files;
+                // Disparar el evento change para actualizar la vista
+                fileInput.trigger('change');
+            }
+        });
+
+        // Prevenir que el navegador abra/descargue el archivo si se suelta fuera del area
+        $(document).on('dragover drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
         });
 
         // Habilitar botón solo cuando se confirma check

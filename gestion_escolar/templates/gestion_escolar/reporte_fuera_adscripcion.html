@@ -150,7 +150,7 @@
                             <td><span class="code-tag">{{ maestro.clave_presupuestal }}</span></td>
                             <td><span class="fw-bold text-primary">{{ maestro.id_escuela.id_escuela }}</span></td>
                             <td><span class="fw-bold text-danger">{{ maestro.techo_f }}</span></td>
-                            <td class="text-center">{{ maestro.id_escuela.zona_esc.numero | default:"-" }}</td>
+                            <td class="text-center">{{ maestro.id_escuela.zona_esc.etiqueta | default:"-" }}</td>
                             <td class="text-center">
                                 <span class="badge-status {% if 'ACTIVO' in maestro.status|upper %}status-activo{% else %}status-warning{% endif %}">
                                     {{ maestro.get_status_display }}

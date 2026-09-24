@@ -124,19 +124,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for zona in zonas %}
+                        {% for item in zonas %}
+                        {% with zona=item.zona sup=item.supervisor %}
                         <tr>
                             <td>
-                                <div class="zona-number-badge">{{ zona.numero }}</div>
+                                <div class="zona-number-badge">{{ zona.etiqueta }}</div>
                             </td>
                             <td>
-                                {% if zona.supervisor %}
+                                {% if sup %}
                                     <div class="d-flex align-items-center">
                                         <div class="avatar-sm bg-light rounded-circle p-2 me-2 text-center d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem;">
-                                            {{ zona.supervisor.nombres|slice:":1"|upper }}
+                                            {{ item.nombre_supervisor|slice:":1"|upper }}
                                         </div>
                                         <div class="fw-bold text-dark">
-                                            {{ zona.supervisor.nombres }} {{ zona.supervisor.a_paterno }}
+                                            {{ item.nombre_supervisor }}
                                         </div>
                                     </div>
                                 {% else %}
@@ -144,15 +145,15 @@
                                 {% endif %}
                             </td>
                             <td class="text-muted">
-                                {% if zona.supervisor %}
-                                    <i class="fas fa-phone-alt me-1 opacity-50"></i> {{ zona.supervisor.telefono|default:"-" }}
+                                {% if sup %}
+                                    <i class="fas fa-phone-alt me-1 opacity-50"></i> {{ sup.telefono|default:"-" }}
                                 {% else %}
                                     -
                                 {% endif %}
                             </td>
                             <td class="text-muted">
-                                {% if zona.supervisor %}
-                                    <i class="fas fa-envelope me-1 opacity-50"></i> {{ zona.supervisor.email|default:"-" }}
+                                {% if sup %}
+                                    <i class="fas fa-envelope me-1 opacity-50"></i> {{ sup.email|default:"-" }}
                                 {% else %}
                                     -
                                 {% endif %}
@@ -171,6 +172,7 @@
                                 </div>
                             </td>
                         </tr>
+                        {% endwith %}
                         {% empty %}
                         <tr>
                             <td colspan="5" class="text-center py-5 text-muted">

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse
 from django.db.models import Q
 from django.urls import reverse
 import pandas as pd
@@ -32,7 +32,7 @@ def lista_prelacion_ajax(request):
     order_column_index = int(request.GET.get('order[0][column]', 0))
     order_dir = request.GET.get('order[0][dir]', 'asc')
     column_names = ['pos_orden', 'folio', 'curp', 'nombre', 'tipo_val']
-    order_column = column_names[order_column_index]
+    order_column = column_names[order_column_index] if order_column_index < len(column_names) else 'pos_orden'
     if order_dir == 'desc':
         order_column = f'-{order_column}'
 
@@ -47,7 +47,8 @@ def lista_prelacion_ajax(request):
             Q(curp__icontains=search_value) |
             Q(folio__icontains=search_value) |
             Q(pos_orden__icontains=search_value) |
-            Q(tipo_val__icontains=search_value)
+            Q(tipo_val__icontains=search_value) |
+            Q(telefonos__icontains=search_value)
         )
 
     records_filtered = queryset.count()
@@ -75,7 +76,8 @@ def lista_prelacion_ajax(request):
             registro.curp,
             nombre_html,
             registro.tipo_val,
-            estado_html
+            estado_html,
+            registro.telefonos or ''
         ])
 
     response = {
@@ -106,9 +108,35 @@ def importar_prelacion_excel(request):
         try:
             # Leer el archivo Excel
             df = pd.read_excel(BytesIO(archivo.read()))
-            
+
+            # Normalizar nombres de columnas: ignorar mayúsculas/minúsculas y espacios
+            columna_normalizada = {}
+            for col in df.columns:
+                if isinstance(col, str):
+                    clave = col.strip().lower()
+                else:
+                    clave = str(col).strip().lower()
+                columna_normalizada[clave] = col
+
+            mapeo = {
+                'pos_orden': 'pos_orden',
+                'folio': 'folio',
+                'curp': 'curp',
+                'nombre': 'nombre',
+                'tipo_val': 'tipo_val',
+                'telefonos': 'telefonos',
+            }
+            # Renombrar columnas encontradas (por nombre exacto o ignorando mayúsculas)
+            renombrar = {}
+            for clave_esperada in mapeo:
+                if clave_esperada in df.columns:
+                    renombrar[clave_esperada] = clave_esperada
+                elif clave_esperada in columna_normalizada:
+                    renombrar[columna_normalizada[clave_esperada]] = clave_esperada
+            df = df.rename(columns=renombrar)
+
             # Validar columnas requeridas
-            columnas_requeridas = ['pos_orden', 'folio', 'curp', 'nombre', 'tipo_val']
+            columnas_requeridas = ['pos_orden', 'folio', 'curp', 'nombre', 'tipo_val', 'telefonos']
             columnas_faltantes = [col for col in columnas_requeridas if col not in df.columns]
             
             if columnas_faltantes:
@@ -134,7 +162,8 @@ def importar_prelacion_excel(request):
                         folio=str(row['folio']),
                         curp=str(row['curp']),
                         nombre=str(row['nombre']),
-                        tipo_val=str(row['tipo_val'])
+                        tipo_val=str(row['tipo_val']),
+                        telefonos=str(row['telefonos']) if pd.notna(row['telefonos']) else ''
                     )
                     registros_importados += 1
                 except Exception as e:
@@ -164,3 +193,37 @@ def importar_prelacion_excel(request):
     return render(request, 'gestion_escolar/importar_prelacion.html', {
         'titulo': 'Importar Lista de Prelación'
     })
+
+
+@login_required
+@permission_required('gestion_escolar.acceder_prelacion', raise_exception=True)
+def descargar_prelacion_excel(request):
+    """Descarga la lista actual de prelación en formato Excel"""
+    registros = Prelacion.objects.all().order_by('pos_orden')
+
+    data = []
+    for r in registros:
+        data.append({
+            'pos_orden': r.pos_orden,
+            'folio': r.folio,
+            'curp': r.curp,
+            'nombre': r.nombre,
+            'tipo_val': r.tipo_val,
+            'telefonos': r.telefonos or '',
+        })
+
+    df = pd.DataFrame(data)
+
+    # Generar archivo Excel en memoria
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Prelacion')
+    buffer.seek(0)
+
+    response = FileResponse(
+        buffer,
+        as_attachment=True,
+        filename='lista_prelacion.xlsx',
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    return response

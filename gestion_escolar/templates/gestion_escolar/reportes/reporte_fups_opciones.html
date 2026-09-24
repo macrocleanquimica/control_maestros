@@ -30,7 +30,7 @@
                             <select name="zona" id="zona" class="form-select form-select-lg rounded-3 shadow-none border-secondary-subtle" required>
                                 <option value="" selected disabled>-- Seleccione una Zona --</option>
                                 {% for zona in zonas %}
-                                    <option value="{{ zona.id }}">Zona {{ zona.numero }}</option>
+                                    <option value="{{ zona.id }}">{{ zona.etiqueta }}</option>
                                 {% endfor %}
                             </select>
                         </div>

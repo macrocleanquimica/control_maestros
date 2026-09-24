@@ -126,6 +126,7 @@
                         <tr>
                             <th style="width: 200px;">Clave / ID</th>
                             <th>Descripción de la Categoría</th>
+                            <th class="text-center" style="width: 100px;">Horas</th>
                             <th class="text-center" style="width: 150px;">Acciones</th>
                         </tr>
                     </thead>
@@ -134,6 +135,7 @@
                         <tr>
                             <td><span class="category-id">{{ categoria.id_categoria }}</span></td>
                             <td><span class="fw-bold text-dark">{{ categoria.descripcion }}</span></td>
+                            <td class="text-center"><span class="fw-semibold">{{ categoria.horas|default:"—" }}</span></td>
                             <td class="text-center">
                                 <div class="d-flex gap-1 justify-content-center">
                                     <a href="{% url 'editar_categoria' categoria.id_categoria %}" class="btn btn-sm btn-light border btn-action-custom" title="Editar">
@@ -147,7 +149,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="3" class="text-center py-5 text-muted">
+                            <td colspan="4" class="text-center py-5 text-muted">
                                 <i class="fas fa-folder-open fa-3x mb-3 opacity-25"></i>
                                 <p class="mb-0">No se encontraron categorías registradas.</p>
                             </td>

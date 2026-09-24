@@ -133,6 +133,24 @@ def eliminar_fup(request, pk):
     return render(request, 'gestion_escolar/eliminar_fup.html', {'fup': fup})
 
 @login_required
+def validar_folio_fup(request):
+    folio = request.GET.get('folio', '').strip()
+    fup_id = request.GET.get('fup_id')
+    if not folio:
+        return JsonResponse({'valido': True})
+    qs = FUP.objects.filter(folio=folio)
+    if fup_id:
+        qs = qs.exclude(pk=fup_id)
+    existe = qs.exists()
+    if existe:
+        fup_existente = qs.first()
+        return JsonResponse({
+            'valido': False,
+            'mensaje': f'El folio {folio} ya fue registrado en un FUP del {fup_existente.fecha} para {fup_existente.nombre_completo}.'
+        })
+    return JsonResponse({'valido': True})
+
+@login_required
 def detalle_fup(request, pk):
     fup = get_object_or_404(FUP, pk=pk)
     
@@ -140,7 +158,7 @@ def detalle_fup(request, pk):
     if fup.techo_financiero:
         try:
             escuela = Escuela.objects.get(id_escuela=fup.techo_financiero)
-            zona_techo_financiero = escuela.zona_esc.numero
+            zona_techo_financiero = escuela.zona_esc.etiqueta if escuela.zona_esc else None
         except Escuela.DoesNotExist:
             pass
             
@@ -302,18 +320,18 @@ def exportar_fups_zona_excel(request):
     # Configuración del documento Excel
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = f"FUPs Zona {zona.numero}"
+    ws.title = f"FUPs {zona.etiqueta[:24]}"
 
     # Título principal del documento
-    titulo_principal = f"REPORTE DE FUPS - ZONA {zona.numero}"
+    titulo_principal = f"REPORTE DE FUPS - {zona.etiqueta.upper()}"
     if fecha_inicio and fecha_fin:
-        titulo_principal = f"DEL {fecha_inicio} AL {fecha_fin} ZONA {zona.numero}"
+        titulo_principal = f"DEL {fecha_inicio} AL {fecha_fin} - {zona.etiqueta.upper()}"
     elif fecha_inicio:
-        titulo_principal = f"A PARTIR DE {fecha_inicio} ZONA {zona.numero}"
+        titulo_principal = f"A PARTIR DE {fecha_inicio} - {zona.etiqueta.upper()}"
     elif fecha_fin:
-        titulo_principal = f"HASTA EL {fecha_fin} ZONA {zona.numero}"
+        titulo_principal = f"HASTA EL {fecha_fin} - {zona.etiqueta.upper()}"
     else:
-        titulo_principal = f"TODOS LOS REGISTROS ZONA {zona.numero}"
+        titulo_principal = f"TODOS LOS REGISTROS - {zona.etiqueta.upper()}"
 
     ws.merge_cells('A1:F1')
     celda_titulo = ws['A1']

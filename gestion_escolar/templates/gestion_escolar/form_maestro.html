@@ -243,7 +243,12 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Techo Financiero</label>
-                        {{ form.techo_f }}
+                        <div class="input-group">
+                            {{ form.techo_f }}
+                            <button class="btn btn-outline-info" type="button" id="btn-sync-techo" title="Copiar mismo que el CCT">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="col-md-2">
@@ -486,10 +491,42 @@
 {% block extra_js %}
 <script>
     $(document).ready(function() {
+        // Inicializar Select2 estándar
         $('.select2').select2({
             width: '100%',
             placeholder: "Seleccione una opción",
             allowClear: true
+        });
+
+        // Inicializar Select2 estándar para Escuelas (catálogo completo ya cargado)
+        $('.select2-escuelas').select2({
+            width: '100%',
+            placeholder: "Seleccione o busque por nombre o CCT...",
+            allowClear: true,
+            language: "es"
+        });
+
+        // Botón de sincronización
+        $('#btn-sync-techo').on('click', function() {
+            var selectedText = $('#id_id_escuela option:selected').text();
+            
+            if (selectedText && selectedText.includes('(')) {
+                // Extraer el CCT que está entre paréntesis, por ejemplo: "Escuela X (10DML0001L)"
+                var cct = selectedText.match(/\(([^)]+)\)/)[1];
+                
+                if (cct) {
+                    // Seleccionar el CCT en el campo de techo financiero
+                    $('#id_techo_f').val(cct).trigger('change');
+                    
+                    // Efecto visual de copiado
+                    $(this).addClass('btn-info text-white').removeClass('btn-outline-info');
+                    setTimeout(() => {
+                        $(this).removeClass('btn-info text-white').addClass('btn-outline-info');
+                    }, 500);
+                }
+            } else {
+                alert("Primero selecciona una escuela en el campo 'Centro de Trabajo'");
+            }
         });
     });
 </script>

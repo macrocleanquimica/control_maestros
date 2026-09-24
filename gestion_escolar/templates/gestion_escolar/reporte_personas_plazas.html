@@ -1,0 +1,101 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <style>
+        :root {
+            --rp-primary: #2563eb;
+            --rp-success: #10b981;
+            --rp-warning: #f59e0b;
+            --rp-border: #e2e8f0;
+            --rp-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .page-container { padding: 1.5rem; }
+        .header-section {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.5rem; background: white; padding: 1.25rem 1.5rem;
+            border-radius: 1rem; border: 1px solid var(--rp-border); box-shadow: var(--rp-shadow);
+        }
+        .header-title h1 { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 0.25rem; }
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .kpi-card { background: white; border: 1px solid var(--rp-border); border-radius: 1rem; padding: 1.25rem; box-shadow: var(--rp-shadow); }
+        .kpi-card .value { font-size: 2rem; font-weight: 800; color: var(--rp-primary); }
+        .kpi-card .label { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+        .table-container-card { background: white; border-radius: 1rem; border: 1px solid var(--rp-border); box-shadow: var(--rp-shadow); overflow: hidden; }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { background: #f8fafc !important; text-transform: uppercase; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; color: #64748b; padding: 0.85rem 1rem; border-bottom: 1px solid var(--rp-border); text-align: left; }
+        tbody td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; color: #1e293b; }
+        tbody tr:hover { background: #f8fafc; }
+        .badge-status { padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+        .badge-activo { background: #dcfce7; color: #15803d; }
+        .badge-inactivo { background: #fed7aa; color: #c2410c; }
+    </style>
+
+    <div class="header-section">
+        <div class="header-title">
+            <h1>{{ titulo }}</h1>
+            <p class="text-muted small mb-0">Maestros con varias plazas contados como una sola persona por CURP.</p>
+        </div>
+    </div>
+
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="value">{{ total.personas }}</div>
+            <div class="label">Personas Únicas</div>
+        </div>
+        <div class="kpi-card">
+            <div class="value">{{ total.plazas }}</div>
+            <div class="label">Plazas (Registros)</div>
+        </div>
+        <div class="kpi-card" style="color: var(--rp-warning);">
+            <div class="value">{{ multiplas }}</div>
+            <div class="label">Personas con Plazas Múltiples</div>
+        </div>
+    </div>
+
+    <div class="table-container-card">
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Persona</th>
+                        <th>Plazas</th>
+                        <th>Activas</th>
+                        <th>Detalle de Plazas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in personas %}
+                        {% if p.n_plazas > 1 %}
+                        <tr>
+                            <td>
+                                <strong>{{ p.raiz.a_paterno }} {{ p.raiz.a_materno }}, {{ p.raiz.nombres }}</strong>
+                                <div class="text-muted small">{{ p.raiz.curp|default:"Sin CURP" }}</div>
+                            </td>
+                            <td>{{ p.n_plazas }}</td>
+                            <td>{{ p.n_activas }}</td>
+                            <td>
+                                {% for pl in p.plazas %}
+                                    <span class="badge-status {% if pl.status == 'ACTIVO' or pl.status == 'ACTIVA' %}badge-activo{% else %}badge-inactivo{% endif %}">
+                                        {{ pl.clave_presupuestal|default:'-' }} · {{ pl.funcion|default:'Sin función' }}
+                                        {% if pl.id_escuela %}· {{ pl.id_escuela.id_escuela }}{% endif %}
+                                    </span>
+                                    {% if not forloop.last %}<br>{% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                    {% if not personas %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">No hay personas registradas.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -301,6 +301,16 @@
                         {{ form.funcion_titular_display }}
                     </div>
 
+                    <!-- Campos específicos para Recategorización -->
+                    <div class="col-md-6" data-field-name="form_academica_titular">
+                        <label class="form-label">{{ form.form_academica_titular_display.label }}</label>
+                        {{ form.form_academica_titular_display }}
+                    </div>
+                    <div class="col-md-6" data-field-name="ze_techo_f">
+                        <label class="form-label">{{ form.ze_techo_f_display.label }}</label>
+                        {{ form.ze_techo_f_display }}
+                    </div>
+
                     <!-- Fechas Titular -->
                     <div class="col-md-6" data-field-name="fecha_efecto1">
                         <label for="{{ form.fecha_efecto1.id_for_label }}" class="form-label">Fecha Inicial Titular</label>
@@ -387,6 +397,38 @@
                 </div>
             </div>
 
+            <!-- SECCIÓN PARA CAMBIO DE ADSCRIPCIÓN -->
+            <div class="section-container" id="cambio-adscripcion-section">
+                <div class="section-title">
+                    <div class="section-icon"><i class="fas fa-exchange-alt"></i></div>
+                    <h4>Datos del Cambio de Adscripción</h4>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-6" data-field-name="tipo_cambio">
+                        <label for="id_tipo_cambio" class="form-label">Tipo de Cambio</label>
+                        <select name="tipo_cambio" id="id_tipo_cambio" class="form-control">
+                            <option value="">--- Seleccione ---</option>
+                            <option value="sustitucion">Sustitución</option>
+                            <option value="incremento">Incremento</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6" data-field-name="maestro_sustituido">
+                        <label for="id_maestro_sustituido" class="form-label">Maestro Sustituido:</label>
+                        <select name="maestro_sustituido" id="id_maestro_sustituido" class="form-control" style="width: 100%;"></select>
+                    </div>
+                    <div class="col-md-12" data-field-name="maestro_sustituido">
+                        <label class="form-label">Centro de Trabajo del Sustituido</label>
+                        <textarea id="id_ct_sustituido_display" class="form-control" readonly rows="2" style="width: 100%; resize: none;"></textarea>
+                    </div>
+
+                    <div class="col-md-6" data-field-name="escuela_destino">
+                        <label for="id_escuela_destino" class="form-label">Centro de Trabajo Destino:</label>
+                        <select name="escuela_destino" id="id_escuela_destino" class="form-control" style="width: 100%;"></select>
+                    </div>
+                </div>
+            </div>
+
             <!-- SECCIÓN 4: OTROS DATOS -->
             <div class="section-container" id="otros-datos-section">
                 <div class="section-title">
@@ -412,29 +454,38 @@
                         {{ form.observaciones }}
                     </div>
 
-                    <div class="col-md-6" data-field-name="fecha_al_corte">
+                    <div class="col-md-3" data-field-name="fecha_al_corte">
                         <label class="form-label">{{ form.fecha_al_corte.label }}</label>
                         {{ form.fecha_al_corte }}
                     </div>
-                    <div class="col-md-6" data-field-name="fecha_del_calculo">
+                    <div class="col-md-3" data-field-name="fecha_del_calculo">
                         <label class="form-label">{{ form.fecha_del_calculo.label }}</label>
                         {{ form.fecha_del_calculo }}
                     </div>
 
-                    <div class="col-md-6" data-field-name="antiguedad_funcion">
+                    <div class="col-md-3" data-field-name="antiguedad_funcion">
                         <label class="form-label">{{ form.antiguedad_funcion.label }}</label>
                         {{ form.antiguedad_funcion }}
                     </div>
-                    <div class="col-md-6" data-field-name="antiguedad_categoria">
+                    <div class="col-md-3" data-field-name="antiguedad_categoria">
                         <label class="form-label">{{ form.antiguedad_categoria.label }}</label>
                         {{ form.antiguedad_categoria }}
                     </div>
 
-                    <div class="col-md-6" data-field-name="fecha_adscripcion">
+                    <div class="col-md-3" data-field-name="fecha_del_calculo_servicio">
+                        <label class="form-label">{{ form.fecha_del_calculo_servicio.label }}</label>
+                        {{ form.fecha_del_calculo_servicio }}
+                    </div>
+                    <div class="col-md-3" data-field-name="antiguedad_servicio">
+                        <label class="form-label">{{ form.antiguedad_servicio.label }}</label>
+                        {{ form.antiguedad_servicio }}
+                    </div>
+
+                    <div class="col-md-3" data-field-name="fecha_adscripcion">
                         <label class="form-label">{{ form.fecha_adscripcion.label }}</label>
                         {{ form.fecha_adscripcion }}
                     </div>
-                    <div class="col-md-12" data-field-name="incentivos">
+                    <div class="col-md-3" data-field-name="incentivos">
                         <label class="form-label">{{ form.incentivos.label }}</label>
                         {{ form.incentivos }}
                     </div>
@@ -508,12 +559,50 @@
             });
         }
 
+        function setupEscuelaSelect2(selector, placeholder) {
+            $(selector).select2({
+                placeholder: placeholder,
+                allowClear: true,
+                width: '100%',
+                ajax: {
+                    url: "{% url 'buscar_escuelas_ajax' %}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            term: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 2,
+                language: {
+                    inputTooShort: function () {
+                        return 'Ingresa nombre o clave del centro de trabajo';
+                    },
+                    noResults: function () {
+                        return 'No se encontraron resultados';
+                    },
+                    searching: function () {
+                        return 'Buscando...';
+                    }
+                }
+            });
+        }
+
         setupMaestroSelect2('#id_maestro_titular', 'Busca y selecciona un maestro titular');
         setupMaestroSelect2('#id_maestro_interino', 'Busca y selecciona un maestro interino');
+        setupMaestroSelect2('#id_maestro_sustituido', 'Busca y selecciona un maestro sustituido');
+        setupEscuelaSelect2('#id_escuela_destino', 'Busca y selecciona un centro de trabajo');
 
         // --- LÓGICA DE VISIBILIDAD DE CONTROLES ---
-        const allManagedFields = ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones', 'quincena_inicial', 'quincena_final', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'antiguedad_categoria', 'fecha_adscripcion', 'incentivos', 'archivo_plantilla_especifico'];
-        const allSections = ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section', '#accion-final-section'];
+        const allManagedFields = ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones', 'quincena_inicial', 'quincena_final', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'antiguedad_categoria', 'fecha_adscripcion', 'incentivos', 'archivo_plantilla_especifico', 'form_academica_titular', 'ze_techo_f', 'tipo_cambio', 'maestro_sustituido', 'escuela_destino', 'fecha_del_calculo_servicio', 'antiguedad_servicio'];
+        const allSections = ['#datos-titular-section', '#datos-interino-section', '#cambio-adscripcion-section', '#otros-datos-section', '#accion-final-section'];
 
         const visibleFieldsConfig = {
             "REINGRESO": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
@@ -526,11 +615,17 @@
             "CAMBIO DEL CENTRO DE TRABAJO": { fields: ['maestro_titular'], sections: ['#datos-titular-section'] },
             "CUADRO CAMBIOS CON FOLIO": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
             "PROPUESTA DE MOVIMIENTO": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-            "ALTA INICIAL": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+            "ALTA INICIAL (09)": { fields: ['maestro_titular', 'no_prel_display', 'folio_prel_display', 'tipo_val_display', 'fecha_efecto1', 'fecha_efecto2', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#otros-datos-section'] },
             "REPORTE DE VACANCIA": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
             "CONSTANCIA DE CAMBIO": { fields: ['maestro_titular', 'motivo_tramite', 'folio', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'antiguedad_categoria', 'fecha_adscripcion', 'incentivos'], sections: ['#datos-titular-section', '#otros-datos-section'] },
             "CONSTANCIA DE HORIZONTAL": { fields: ['maestro_titular', 'motivo_tramite', 'folio', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'incentivos'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+            "CONSTANCIA DE RECATEGORIZACIÓN": { fields: ['maestro_titular', 'motivo_tramite', 'folio', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'incentivos', 'form_academica_titular', 'ze_techo_f'], sections: ['#datos-titular-section', '#otros-datos-section'] },
             "PRESENTACION LABORAL": { fields: ['maestro_titular', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+            "PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION": { fields: ['maestro_titular', 'tipo_cambio', 'maestro_sustituido', 'escuela_destino', 'fecha_efecto1', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#cambio-adscripcion-section', '#otros-datos-section'] },
+            "CAPTURA DE GRAVIDEZ": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2'], sections: ['#datos-titular-section'] },
+            "CAMBIO DE EFECTOS": { fields: ['maestro_titular', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
+            "LIBERACION DE SUPERVISORES": { fields: ['maestro_titular', 'folio', 'fecha_efecto1', 'observaciones'], sections: ['#datos-titular-section', '#otros-datos-section'] },
+            "SOLICITUD BECA COMISION": { fields: ['maestro_titular', 'folio', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion'], sections: ['#datos-titular-section', '#otros-datos-section'] },
         };
 
         function updateFormVisibility() {
@@ -544,6 +639,24 @@
                 config.fields.forEach(fieldName => { $(`[data-field-name="${fieldName}"]`).show(); });
                 config.sections.forEach(sectionId => { $(sectionId).show(); });
                 $('#accion-final-section').show();
+            }
+            updateCambioAdscripcion();
+        }
+
+        function updateCambioAdscripcion() {
+            var tipoCambio = $('#id_tipo_cambio').val();
+            var selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
+            if (selectedPlantillaText !== 'PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION') return;
+
+            if (tipoCambio === 'sustitucion') {
+                $('[data-field-name="maestro_sustituido"]').show();
+                $('[data-field-name="escuela_destino"]').hide();
+            } else if (tipoCambio === 'incremento') {
+                $('[data-field-name="maestro_sustituido"]').hide();
+                $('[data-field-name="escuela_destino"]').show();
+            } else {
+                $('[data-field-name="maestro_sustituido"]').hide();
+                $('[data-field-name="escuela_destino"]').hide();
             }
         }
 
@@ -579,13 +692,42 @@
             $('#id_tipo_movimiento_interino').val(resultadoAlta);
         }
 
-        function cargarPrelacionAutomatica(curpInterino) {
-            if (!curpInterino) { $('#id_no_prel_display, #id_folio_prel_display, #id_tipo_val_display').val(''); return; }
-            $.get('{% url "get_prelacion_data_ajax" %}', { curp_interino: curpInterino }, function (data) {
-                $('#id_no_prel_display').val(data.encontrado ? data.numero_prelacion : '');
-                $('#id_folio_prel_display').val(data.encontrado ? data.folio_prelacion : '');
-                $('#id_tipo_val_display').val(data.encontrado ? data.tipo_val : '');
-            }).fail(function () { console.error('Error al cargar datos de prelación'); $('#id_no_prel_display, #id_folio_prel_display, #id_tipo_val_display').val(''); });
+        function cargarPrelacionAutomatica(curp, rfc, nombre) {
+            if (!curp && !rfc && !nombre) { 
+                $('#id_no_prel_display, #id_folio_prel_display, #id_tipo_val_display').val(''); 
+                return; 
+            }
+            console.log('Buscando prelación para:', nombre || curp || rfc);
+            $.get('{% url "get_prelacion_data_ajax" %}', { curp: curp, rfc: rfc, nombre: nombre }, function (data) {
+                if (data.encontrado) {
+                    $('#id_no_prel_display').val(data.numero_prelacion);
+                    $('#id_folio_prel_display').val(data.folio_prelacion);
+                    $('#id_tipo_val_display').val(data.encontrado ? data.tipo_val : '');
+                    console.log('Prelación encontrada por ' + (data.nombre_prelacion ? 'nombre' : 'CURP/RFC') + ':', data.folio_prelacion);
+                } else {
+                    console.log('No se encontró prelación para el identificador/nombre proporcionado.');
+                }
+            }).fail(function () { 
+                console.error('Error al cargar datos de prelación'); 
+            });
+        }
+
+        function calcDiff(date1, date2) {
+            if (date1 > date2) { [date1, date2] = [date2, date1]; }
+            let years = date2.getFullYear() - date1.getFullYear();
+            let months = date2.getMonth() - date1.getMonth();
+            let days = date2.getDate() - date1.getDate();
+            if (days < 0) {
+                months--;
+                const lastDayOfPrevMonth = new Date(date2.getFullYear(), date2.getMonth(), 0).getDate();
+                days = lastDayOfPrevMonth - date1.getDate() + date2.getDate();
+            }
+            if (months < 0) { years--; months += 12; }
+            let result = [];
+            if (years > 0) result.push(`${years} año${years > 1 ? 's' : ''}`);
+            if (months > 0) result.push(`${months} mes${months > 1 ? 'es' : ''}`);
+            if (days > 0) result.push(`${days} día${days > 1 ? 's' : ''}`);
+            return result.length > 0 ? result.join(' ') : '0 días';
         }
 
         function calculateAntiguedad() {
@@ -593,47 +735,30 @@
             const fechaDelCalculoStr = $('#id_fecha_del_calculo').val();
             const selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
             const isCambio = selectedPlantillaText === 'CONSTANCIA DE CAMBIO';
-            const isHorizontal = selectedPlantillaText === 'CONSTANCIA DE HORIZONTAL';
+            const isHorizontal = selectedPlantillaText === 'CONSTANCIA DE HORIZONTAL' || selectedPlantillaText === 'CONSTANCIA DE RECATEGORIZACIÓN';
+            const isBeca = selectedPlantillaText === 'SOLICITUD BECA COMISION';
 
             if ((isCambio || isHorizontal) && fechaAlCorteStr && fechaDelCalculoStr) {
                 const fechaAlCorte = new Date(fechaAlCorteStr + 'T00:00:00');
                 const fechaDelCalculo = new Date(fechaDelCalculoStr + 'T00:00:00');
-
                 if (isNaN(fechaAlCorte.getTime()) || isNaN(fechaDelCalculo.getTime())) {
                     $('#id_antiguedad_funcion').val('');
                     $('#id_antiguedad_categoria').val('');
                     return;
                 }
-
-                let date1 = fechaAlCorte;
-                let date2 = fechaDelCalculo;
-
-                if (date1 > date2) { [date1, date2] = [date2, date1]; }
-
-                let years = date2.getFullYear() - date1.getFullYear();
-                let months = date2.getMonth() - date1.getMonth();
-                let days = date2.getDate() - date1.getDate();
-
-                if (days < 0) {
-                    months--;
-                    const lastDayOfPrevMonth = new Date(date2.getFullYear(), date2.getMonth(), 0).getDate();
-                    days = lastDayOfPrevMonth - date1.getDate() + date2.getDate();
-                }
-
-                if (months < 0) { years--; months += 12; }
-
-                let result = [];
-                if (years > 0) result.push(`${years} año${years > 1 ? 's' : ''}`);
-                if (months > 0) result.push(`${months} mes${months > 1 ? 'es' : ''}`);
-                if (days > 0) result.push(`${days} día${days > 1 ? 's' : ''}`);
-
-                const antiguedadStr = result.length > 0 ? result.join(' ') : '0 días';
+                const antiguedadStr = calcDiff(fechaAlCorte, fechaDelCalculo);
                 $('#id_antiguedad_funcion').val(antiguedadStr);
                 if (isCambio) {
                     $('#id_antiguedad_categoria').val(antiguedadStr);
                 }
+            } else if (isBeca && fechaAlCorteStr && fechaDelCalculoStr) {
+                const fechaAlCorte = new Date(fechaAlCorteStr + 'T00:00:00');
+                const fechaDelCalculo = new Date(fechaDelCalculoStr + 'T00:00:00');
+                if (!isNaN(fechaAlCorte.getTime()) && !isNaN(fechaDelCalculo.getTime())) {
+                    $('#id_antiguedad_funcion').val(calcDiff(fechaAlCorte, fechaDelCalculo));
+                }
             } else {
-                $('#id_antiguedad_funcion').val('');
+                if (!isBeca) $('#id_antiguedad_funcion').val('');
                 if (isCambio) $('#id_antiguedad_categoria').val('');
             }
         }
@@ -643,7 +768,10 @@
             const labelCorte = $('label[for="id_fecha_al_corte"]');
             const labelFuncion = $('label[for="id_fecha_del_calculo"]');
 
-            if (selectedPlantillaText === 'CONSTANCIA DE HORIZONTAL') {
+            if (selectedPlantillaText === 'CONSTANCIA DE HORIZONTAL' || selectedPlantillaText === 'CONSTANCIA DE RECATEGORIZACIÓN') {
+                labelCorte.text('Fecha de Corte');
+                labelFuncion.text('Fecha en su Función');
+            } else if (selectedPlantillaText === 'SOLICITUD BECA COMISION') {
                 labelCorte.text('Fecha de Corte');
                 labelFuncion.text('Fecha en su Función');
             } else {
@@ -652,28 +780,44 @@
             }
         }
 
+        // Plantillas que NO tienen motivo de movimiento
+        const plantillasSinMotivo = ['CAPTURA DE GRAVIDEZ', 'CAMBIO DE EFECTOS', 'CONSTANCIA DE HORIZONTAL', 'PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION', 'LIBERACION DE SUPERVISORES', 'SOLICITUD BECA COMISION'];
+
         $('#id_plantilla').on('change', function () {
             var plantillaId = $(this).val();
             var motivoTramiteSelect = $('#id_motivo_tramite');
             var selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
 
-            if (plantillaId) {
+            if (plantillaId && !plantillasSinMotivo.includes(selectedPlantillaText)) {
                 motivoTramiteWrapper.show();
                 if (!window.isInitialLoad || !{{ is_edit|lower|default:"false" }}) {
                     motivoTramiteSelect.empty().append(new Option('', '', true, true)).trigger('change');
                 }
             } else {
+                motivoTramiteSelect.empty().append(new Option('', '', true, true)).trigger('change');
                 motivoTramiteWrapper.hide();
             }
 
             updateFormVisibility();
             updateLabels();
+            updateCambioAdscripcion();
 
             if (plantillaId) {
                 $.ajax({
                     url: '{% url "get_motivos_tramite_ajax" %}', data: { 'plantilla_id': plantillaId }, dataType: 'json',
                     success: function (data) {
                         $.each(data, function (key, value) { motivoTramiteSelect.append(new Option(value.text, value.id)); });
+                        
+                        // Selección automática para Recategorización
+                        if (selectedPlantillaText === 'CONSTANCIA DE RECATEGORIZACIÓN') {
+                            motivoTramiteSelect.val('17');
+                        }
+                        
+                        // Selección automática BECA COMISIÓN (ID 1)
+                        if (selectedPlantillaText === 'SOLICITUD BECA COMISION') {
+                            motivoTramiteSelect.val('1');
+                        }
+                        
                         motivoTramiteSelect.trigger('change');
                     }
                 });
@@ -694,11 +838,19 @@
                         $('#id_clave_presupuestal_titular_display').val(data.clave_presupuestal);
                         $('#id_categoria_titular_display').val(data.categoria);
                         $('#id_funcion_titular_display').val(data.funcion);
+                        $('#id_form_academica_titular_display').val(data.form_academica);
+                        $('#id_ze_techo_f_display').val(data.ze_techo_f);
                         
                         // Automatizar incentivos
                         if (data.incentivos !== undefined) {
                             console.log('Autocompletando incentivos: ' + data.incentivos);
                             $('#id_incentivos').val(data.incentivos);
+                        }
+
+                        // Cargar prelación para el titular (SOLO en ALTA INICIAL)
+                        const selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
+                        if (selectedPlantillaText === 'ALTA INICIAL (09)') {
+                            cargarPrelacionAutomatica(data.curp, data.rfc, data.nombre_completo);
                         }
                         
                         var interinoId = $('#id_maestro_interino').val();
@@ -720,7 +872,13 @@
                         }
                         $('#id_clave_presupuestal_interino_display').val(calculated_presupuestal_interino);
                         $('#id_funcion_interino_display').val($('#id_funcion_titular_display').val());
-                        cargarPrelacionAutomatica(data.curp);
+                        
+                        // Cargar prelación para el interino (EXCEPTO en ALTA INICIAL)
+                        // En ALTA INICIAL la prelación es del TITULAR
+                        const selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
+                        if (selectedPlantillaText !== 'ALTA INICIAL (09)') {
+                            cargarPrelacionAutomatica(data.curp, data.rfc, data.nombre_completo);
+                        }
                     }
                 },
                 error: function () { console.error('Error AJAX'); limpiarCamposMaestro(prefix); }
@@ -732,11 +890,17 @@
                 console.log('Omitiendo limpiar campos durante carga inicial en edición');
                 return; 
             }
+            const selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
             if (prefix === 'titular') {
-                $('#id_nombre_titular_display, #id_curp_titular_display, #id_rfc_titular_display, #id_clave_presupuestal_titular_display, #id_categoria_titular_display, #id_funcion_titular_display, #id_clave_presupuestal_interino_display, #id_funcion_interino_display, #id_incentivos').val('');
+                $('#id_nombre_titular_display, #id_curp_titular_display, #id_rfc_titular_display, #id_clave_presupuestal_titular_display, #id_categoria_titular_display, #id_funcion_titular_display, #id_form_academica_titular_display, #id_ze_techo_f_display, #id_clave_presupuestal_interino_display, #id_funcion_interino_display, #id_incentivos').val('');
+                if (selectedPlantillaText === 'ALTA INICIAL (09)') {
+                    cargarPrelacionAutomatica('', '', '');
+                }
             } else if (prefix === 'interino') {
                 $('#id_nombre_interino_display, #id_curp_interino_display, #id_rfc_interino_display, #id_clave_presupuestal_interino_display, #id_funcion_interino_display').val('');
-                cargarPrelacionAutomatica('');
+                if (selectedPlantillaText !== 'ALTA INICIAL (09)') {
+                    cargarPrelacionAutomatica('', '', '');
+                }
             }
         }
 
@@ -749,7 +913,7 @@
             setTimeout(() => {
                 if ($('.alert-danger').length === 0) {
                     $(this)[0].reset();
-                    $('#id_plantilla, #id_motivo_tramite, #id_maestro_titular, #id_maestro_interino, #id_archivo_plantilla_especifico').val(null).trigger('change');
+                    $('#id_plantilla, #id_motivo_tramite, #id_maestro_titular, #id_maestro_interino, #id_archivo_plantilla_especifico, #id_maestro_sustituido, #id_escuela_destino').val(null).trigger('change');
                 }
             }, 1000);
         });
@@ -757,6 +921,26 @@
         // Event listeners
         $('#id_maestro_titular').on('change', function () { getMaestroData($(this).val(), 'titular'); });
         $('#id_maestro_interino').on('change', function () { getMaestroData($(this).val(), 'interino'); });
+        $('#id_tipo_cambio').on('change', updateCambioAdscripcion);
+        $('#id_maestro_sustituido').on('change', function () {
+            var maestroId = $(this).val();
+            if (maestroId) {
+                $.ajax({
+                    url: '{% url "get_maestro_data" %}', data: { 'maestro_id': maestroId }, dataType: 'json',
+                    success: function (data) {
+                        var ctInfo = '';
+                        if (data.escuela_cct && data.escuela_nombre) {
+                            ctInfo = data.escuela_nombre + ' (' + data.escuela_cct + ')';
+                        } else if (data.escuela_cct) {
+                            ctInfo = data.escuela_cct;
+                        }
+                        $('#id_ct_sustituido_display').val(ctInfo);
+                    }
+                });
+            } else {
+                $('#id_ct_sustituido_display').val('');
+            }
+        });
         $('#id_motivo_tramite').on('change', function () {
             var interinoId = $('#id_maestro_interino').val();
             if (interinoId) { getMaestroData(interinoId, 'interino'); }
@@ -770,8 +954,9 @@
         
         {% if is_edit %}
         console.log('Modo edición: Respetando datos pre-cargados del servidor');
-        // Mostrar el wrapper de motivo si ya hay un motivo seleccionado
-        if ($('#id_motivo_tramite').val()) {
+        var selectedPlantillaTextEdit = $('#id_plantilla option:selected').text().trim().toUpperCase();
+        // Solo mostrar el wrapper de motivo si la plantilla NO está en plantillasSinMotivo
+        if ($('#id_motivo_tramite').val() && !plantillasSinMotivo.includes(selectedPlantillaTextEdit)) {
             motivoTramiteWrapper.show();
         }
         // Cargar la lista completa de motivos disponibles para la plantilla actual
@@ -795,6 +980,10 @@
                         // Si no quedó seleccionado, restaurar
                         if (currentMotivo && !$('#id_motivo_tramite').val()) {
                             $('#id_motivo_tramite').append(currentOption).val(currentMotivo);
+                        }
+                        // Selección automática BECA COMISIÓN en modo edición
+                        if (selectedPlantillaTextEdit === 'SOLICITUD BECA COMISION') {
+                            $('#id_motivo_tramite').val('1');
                         }
                         $('#id_motivo_tramite').trigger('change.select2');
                     }

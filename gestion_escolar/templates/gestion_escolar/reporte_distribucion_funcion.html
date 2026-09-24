@@ -126,7 +126,7 @@
                             <option value="">Todas las Zonas</option>
                             {% for zona in zonas %}
                                 <option value="{{ zona.pk }}" {% if zona.pk == selected_zona %}selected{% endif %}>
-                                    Zona {{ zona.numero }}
+                                    {{ zona.etiqueta }}
                                 </option>
                             {% endfor %}
                         </select>

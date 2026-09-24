@@ -158,6 +158,34 @@
     .bg-soft-info { background: #e0f2fe; color: #0369a1; }
     .bg-soft-success { background: #dcfce7; color: #15803d; }
 
+    /* Directorio table */
+    .directorio-table thead th {
+        font-size: 0.65rem;
+        white-space: nowrap;
+    }
+    .directorio-table tbody td {
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
+    /* Scroll horizontal para el directorio */
+    .table-responsive-directorio {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid var(--pe-border);
+    }
+    .table-responsive-directorio .table {
+        min-width: 1400px;
+        margin-bottom: 0;
+    }
+    .directorio-table thead th {
+        position: sticky;
+        top: 0;
+        background: #f8fafc;
+        z-index: 1;
+    }
+
     @media print {
         .premium-header, .btn, footer, .d-flex.justify-content-between {
             display: none !important;
@@ -174,9 +202,15 @@
     <div class="premium-header">
         <div class="header-info">
             <h1><i class="fas fa-school text-info me-2"></i> {{ escuela.nombre_ct }}</h1>
-            <p class="text-muted small mb-0"><i class="fas fa-barcode me-1"></i> CCT: <span class="fw-bold">{{ escuela.id_escuela }}</span> | <i class="fas fa-map-marker-alt ms-2 me-1"></i> Zona {{ escuela.zona_esc.numero }}</p>
+            <p class="text-muted small mb-0"><i class="fas fa-barcode me-1"></i> CCT: <span class="fw-bold">{{ escuela.id_escuela }}</span> | <i class="fas fa-map-marker-alt ms-2 me-1"></i> {{ escuela.zona_esc.etiqueta }}</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
+            {% if es_fua %}
+            <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold text-dark small btn-hover-animate" onclick="toggleDirectorio()" id="btn-directorio">
+                <i class="fas fa-building me-2"></i> Directorio de Escuelas
+                <span class="badge bg-dark ms-2">{{ escuelas_regulares|length }}</span>
+            </button>
+            {% endif %}
             <button onclick="window.print();" class="btn btn-info rounded-pill px-4 fw-bold text-white small btn-hover-animate">
                 <i class="fas fa-print me-2"></i> Imprimir Ficha
             </button>
@@ -210,7 +244,7 @@
                 </div>
                 <div class="info-item">
                     <span class="info-label">Zona Escolar</span>
-                    <span class="info-value">Zona {{ escuela.zona_esc.numero }}</span>
+                    <span class="info-value">{{ escuela.zona_esc.etiqueta }}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Supervisor Asignado</span>
@@ -232,7 +266,15 @@
                 </div>
                 <div class="info-item">
                     <span class="info-label">Turno</span>
-                    <span class="info-value"><span class="badge bg-soft-info text-info rounded-pill px-3">{{ escuela.get_turno_display }}</span></span>
+                    <span class="info-value">
+                        {% if escuela.turno == 'MATUTINO' %}
+                            <span class="badge bg-primary rounded-pill px-4 py-2" style="font-size:0.95rem; letter-spacing:0.3px;">{{ escuela.get_turno_display }}</span>
+                        {% elif escuela.turno == 'VESPERTINO' %}
+                            <span class="badge bg-danger rounded-pill px-4 py-2" style="font-size:0.95rem; letter-spacing:0.3px;">{{ escuela.get_turno_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary rounded-pill px-4 py-2" style="font-size:0.95rem; letter-spacing:0.3px;">{{ escuela.get_turno_display }}</span>
+                        {% endif %}
+                    </span>
                 </div>
             </div>
         </div>
@@ -353,6 +395,80 @@
             {% endif %}
         </div>
         {% endif %}
+
+        <!-- Section 5: Directorio de Escuelas Regulares (solo CCTs FUA) -->
+        {% if es_fua %}
+        <div class="card-section" id="directorio-section" style="display: none;">
+            <div class="section-header">
+                <div class="section-icon bg-warning text-dark"><i class="fas fa-building"></i></div>
+                <h5>Directorio de Escuelas Regulares ({{ escuelas_regulares|length }})</h5>
+            </div>
+
+            {% if escuelas_regulares %}
+            <div class="table-responsive-directorio">
+                <table class="table table-hover align-middle mb-0 directorio-table">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Nombre de la Escuela</th>
+                            <th>Nivel</th>
+                            <th>Subsistema</th>
+                            <th>Calle y Núm.</th>
+                            <th>Colonia</th>
+                            <th>CP</th>
+                            <th>Localidad</th>
+                            <th>Municipio</th>
+                            <th>Turno</th>
+                            <th>Supervisor</th>
+                            <th>Director</th>
+                            <th>Maestro Apoyo</th>
+                            <th>2do Maestro Apoyo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for esc in escuelas_regulares %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-dark">{{ esc.nombre_escuela }}</td>
+                            <td><span class="badge bg-soft-info text-info rounded-pill px-2">{{ esc.nivel }}</span></td>
+                            <td><span class="badge bg-soft-success text-success rounded-pill px-2">{{ esc.subsistema }}</span></td>
+                            <td class="small">{{ esc.calle_num|default:"---" }}</td>
+                            <td class="small">{{ esc.colonia|default:"---" }}</td>
+                            <td class="small font-monospace">{{ esc.cp|default:"---" }}</td>
+                            <td class="small">{{ esc.localidad|default:"---" }}</td>
+                            <td class="small">{{ esc.municipio|default:"---" }}</td>
+                            <td><span class="badge bg-secondary rounded-pill px-2">{{ esc.turno|default:"---" }}</span></td>
+                            <td class="small">{{ esc.supervisor|default:"---" }}</td>
+                            <td class="small fw-bold">{{ esc.director|default:"---" }}</td>
+                            <td class="small">{{ esc.maestro_apoyo|default:"---" }}</td>
+                            <td class="small">{{ esc.segundo_maestro_apoyo|default:"---" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 bg-white rounded-4 border border-dashed">
+                <i class="fas fa-building fa-3x text-muted opacity-25 mb-3"></i>
+                <p class="text-muted fw-bold mb-0">No se ha registrado el directorio de escuelas regulares para este CCT.</p>
+                <p class="text-muted small">Use el comando de importación para cargar los datos desde el CSV.</p>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<script>
+function toggleDirectorio() {
+    const section = document.getElementById('directorio-section');
+    const btn = document.getElementById('btn-directorio');
+    if (section.style.display === 'none' || section.style.display === '') {
+        section.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-building me-2"></i> Ocultar Directorio <span class="badge bg-dark ms-2">{{ escuelas_regulares|length }}</span>';
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        section.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-building me-2"></i> Directorio de Escuelas <span class="badge bg-dark ms-2">{{ escuelas_regulares|length }}</span>';
+    }
+}
+</script>
 {% endblock %}

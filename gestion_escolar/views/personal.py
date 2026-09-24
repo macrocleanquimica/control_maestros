@@ -7,9 +7,100 @@ from django.http import JsonResponse
 
 from ..models import Maestro, Escuela, DocumentoExpediente
 from ..forms import MaestroForm, DocumentoExpedienteForm
+from .helpers import es_status_activo, FUNCION_MAPPING
 
 # Vistas para Maestros
 from unidecode import unidecode
+
+
+def _normalizar_para_duplicado(txt):
+    """Normaliza un texto para comparaciones de identidad (sin acentos, en mayúsculas)."""
+    if not txt:
+        return ''
+    return unidecode(str(txt).strip().upper())
+
+
+def persona_raiz(maestro):
+    """Devuelve el registro raíz de la persona (recorre la cadena maestro_principal)."""
+    m = maestro
+    vistos = set()
+    while m and m.maestro_principal:
+        if m.id_maestro in vistos:
+            break
+        vistos.add(m.id_maestro)
+        m = m.maestro_principal
+    return m
+
+
+def registros_de_persona(maestro):
+    """IDs de todos los registros que pertenecen a la misma persona (raíz + plazas secundarias)."""
+    raiz = persona_raiz(maestro)
+    if raiz is None:
+        return [maestro.id_maestro]
+    ids = [raiz.id_maestro]
+    ids += list(Maestro.objects.filter(maestro_principal=raiz).values_list('id_maestro', flat=True))
+    return ids
+
+
+def buscar_persona_existente(datos):
+    """
+    Busca si ya existe un registro de la misma persona antes de crearla.
+    Prioriza CURP; si no hay CURP, busca por nombre completo normalizado.
+    Excluye el propio registro en ediciones.
+    """
+    curp = datos.get('curp')
+    exclude_pk = datos.get('exclude_pk')
+    qs_base = Maestro.objects.all()
+    if exclude_pk:
+        qs_base = qs_base.exclude(id_maestro=exclude_pk)
+
+    if curp:
+        curp_limpio = curp.strip().upper()
+        qs = qs_base.filter(curp__iexact=curp_limpio)
+        if qs.exists():
+            return qs.first()
+
+    nombres = datos.get('nombres')
+    a_paterno = datos.get('a_paterno')
+    a_materno = datos.get('a_materno')
+    if all(v is not None for v in [nombres, a_paterno, a_materno]) and any([nombres, a_paterno, a_materno]):
+        paterno_n = _normalizar_para_duplicado(a_paterno)
+        materno_n = _normalizar_para_duplicado(a_materno)
+        nombres_n = _normalizar_para_duplicado(nombres)
+        qs_nombre = qs_base.filter(
+            a_paterno_normalized=paterno_n or None,
+            a_materno_normalized=materno_n or None,
+            nombres_normalized=nombres_n or None,
+        )
+        if qs_nombre.exists():
+            return qs_nombre.first()
+    return None
+
+
+def _verificar_directores_duplicados(request, maestro_guardado):
+    """Tras guardar un maestro, si este quedó con función DIRECTOR(A) y su C.T.
+    ya tiene otro maestro ACTIVO también marcado como director, emite un aviso
+    para que el usuario resuelva manualmente quién es el director real."""
+    if (maestro_guardado.funcion or '') != 'DIRECTOR(A)':
+        return
+    escuela = maestro_guardado.id_escuela
+    if not escuela:
+        return
+    otros = Maestro.objects.filter(
+        id_escuela=escuela,
+        funcion='DIRECTOR(A)',
+    ).exclude(id_maestro=maestro_guardado.id_maestro)
+    activos = [m for m in otros if es_status_activo(m.status)]
+    extra = activos or list(otros)
+    if not extra:
+        return
+    nombres = ', '.join(f"{m.nombres} {m.a_paterno} (ID {m.id_maestro})" for m in extra)
+    messages.warning(
+        request,
+        f"Advertencia: el C.T. {escuela.id_escuela} ya tiene a otro maestro con "
+        f"función DIRECTOR(A): {nombres}. Revisa manualmente cuál es el director real "
+        "para evitar duplicados."
+    )
 
 @login_required
 def lista_maestros(request):
@@ -39,7 +130,17 @@ def lista_maestros_ajax(request):
             queryset = Maestro.objects.none()
     else:
         queryset = Maestro.objects.all()
-    
+
+    # Agrupar por persona: si 'agrupar' está activo, solo se muestran los
+    # registros raíz (maestro_principal NULL). Las plazas adicionales siguen
+    # visibles como badge "+N" y en la vista de detalle.
+    agrupar = request.GET.get('agrupar', '1') != '0'
+    if agrupar:
+        from django.db.models import Count
+        queryset = queryset.filter(maestro_principal__isnull=True).annotate(
+            n_plazas_sec=Count('plazas_secundarias', distinct=True)
+        )
+
     queryset = queryset.select_related('id_escuela')
     queryset = queryset.exclude(id_maestro__isnull=True).exclude(id_maestro='')
 
@@ -75,7 +176,7 @@ def lista_maestros_ajax(request):
             actions += f'<a href="{reverse("eliminar_maestro", args=[maestro.pk])}" class="btn btn-sm btn-light border btn-action-custom" title="Eliminar"><i class="fas fa-trash text-danger"></i></a>'
         
         actions += '</div>'
-        status_map = {'ACTIVO': 'success', 'INACTIVO': 'warning'}
+        status_map = {'ACTIVO': 'success', 'INACTIVO': 'danger'}
         status_class = status_map.get(maestro.status, 'secondary')
         status_html = f'<span class="badge bg-{status_class}">{maestro.get_status_display()}</span>'
 
@@ -97,7 +198,8 @@ def lista_maestros_ajax(request):
             status_html,
             actions,
             is_misplaced,
-            is_interino
+            is_interino,
+            getattr(maestro, 'n_plazas_sec', 0) if agrupar else 0
         ])
 
     response = {
@@ -123,8 +225,50 @@ def agregar_maestro(request):
         form = MaestroForm(request.POST, request=request)
         if form.is_valid():
             maestro = form.save(commit=False)
-            maestro.save()
-            messages.success(request, 'Maestro agregado correctamente.')
+            maestro.clave_presupuestal = maestro.generar_clave_presupuestal()
+
+            existente = buscar_persona_existente({
+                'curp': maestro.curp,
+                'nombres': maestro.nombres,
+                'a_paterno': maestro.a_paterno,
+                'a_materno': maestro.a_materno,
+            })
+
+            if existente:
+                ids_persona = registros_de_persona(existente)
+                claves_existentes = set(
+                    Maestro.objects.filter(id_maestro__in=ids_persona)
+                    .exclude(clave_presupuestal__isnull=True)
+                    .exclude(clave_presupuestal='')
+                    .values_list('clave_presupuestal', flat=True)
+                )
+                if maestro.clave_presupuestal and maestro.clave_presupuestal in claves_existentes:
+                    form.add_error(
+                        None,
+                        f'Ya existe un registro de esta persona con la clave presupuestal '
+                        f'{maestro.clave_presupuestal} (ID {existente.id_maestro}). No se guardó '
+                        'para evitar un duplicado. Revisa el registro existente.'
+                    )
+                    return render(request, 'gestion_escolar/form_maestro.html', {
+                        'form': form,
+                        'titulo': 'Agregar Maestro',
+                        'all_escuelas': all_escuelas
+                    })
+                else:
+                    raiz = persona_raiz(existente)
+                    maestro.maestro_principal = raiz
+                    maestro.save()
+                    messages.success(
+                        request,
+                        f'Maestro agregado correctamente como plaza secundaria de la persona '
+                        f'(CURP {existente.curp or "s/nombre"}, ID raíz {raiz.id_maestro if raiz else existente.id_maestro}). '
+                        'No se creó un registro duplicado.'
+                    )
+            else:
+                maestro.save()
+                messages.success(request, 'Maestro agregado correctamente.')
+
+            _verificar_directores_duplicados(request, maestro)
             if escuela_id:
                 return redirect('detalle_escuela', pk=escuela_id)
             return redirect('lista_maestros')
@@ -161,6 +305,7 @@ def editar_maestro(request, pk):
             if form.is_valid():
                 form.save()
                 messages.success(request, 'Maestro actualizado correctamente.')
+                _verificar_directores_duplicados(request, maestro)
                 return redirect('lista_maestros')
             else:
                 print(form.errors.as_json())
@@ -239,6 +384,16 @@ def detalle_maestro(request, pk):
     # Combinar ambas listas y eliminar duplicados
     otras_plazas = (otras_por_curp | otras_por_vinculo).distinct()
 
+    # --- Historial de interinatos de la persona (todas sus plazas) ---
+    from ..models import Interinato
+    ids_persona = registros_de_persona(maestro)
+    interinatos_cubiertos = Interinato.objects.filter(
+        maestro_interino_id__in=ids_persona
+    ).select_related('maestro_titular', 'escuela').order_by('-fecha_inicio')
+    interinatos_como_titular = Interinato.objects.filter(
+        maestro_titular_id__in=ids_persona
+    ).select_related('maestro_interino', 'escuela').order_by('-fecha_inicio')
+
     context = {
         'maestro': maestro,
         'documentos': documentos,
@@ -248,6 +403,8 @@ def detalle_maestro(request, pk):
         'maestro_siguiente': maestro_siguiente,
         'otras_plazas': otras_plazas,
         'maestro_raiz': maestro_raiz,
+        'interinatos_cubiertos': interinatos_cubiertos,
+        'interinatos_como_titular': interinatos_como_titular,
     }
     return render(request, 'gestion_escolar/detalle_maestro.html', context)
     
@@ -326,38 +483,7 @@ def eliminar_documento_expediente(request, doc_pk):
 
 # Vistas para diferentes funciones
 def lista_por_funcion(request, funcion):
-    funcion_mapping = {
-        'DIRECTOR': {'display': 'Director', 'values': ['DIRECTOR', 'DIRECTOR (A)']},
-        'SUPERVISOR': {'display': 'Supervisor', 'values': ['SUPERVISOR', 'SUPERVISOR (A)', 'SUPERVISOR(A)']},
-        'MAESTRO_GRUPO': {'display': 'Maestro de Grupo', 'values': ['MAESTRO_GRUPO', 'MAESTRO(A) DE GRUPO', 'MAESTRO(A) DE GRUPO CON ESPECIALIDAD', 'MAESTRO(A) DE GRUPO ESPECIALISTA','MATRO(A) DE GRUPO ESPECIALISTA']},
-        'DOCENTE_APOYO': {'display': 'Docente de Apoyo', 'values': ['MAESTRO(A) DE APOYO']},
-        'PSICOLOGO': {'display': 'Psicólogo', 'values': ['PSICOLOGO', 'PSICÓLOGO(A)', 'PSICÓLOGO (A)']},
-        'TRABAJADOR_SOCIAL': {'display': 'Trabajador Social', 'values': ['TRABAJADOR_SOCIAL', 'TRABAJADOR (A) SOCIAL']},
-        'NIÑERO': {'display': 'Niñero', 'values': ['NIÑERO', 'NIÑERO(A)']},
-        'SECRETARIO': {'display': 'Secretario', 'values': ['SECRETARIO', 'SECRETARIA ', 'SECRETARIO(A)']},
-        'INTENDENTE': {'display': 'Intendente', 'values': ['INTENDENTE']},
-        'VELADOR': {'display': 'Velador', 'values': ['VELADOR']},
-        'VIGILANTE': {'display': 'Vigilante', 'values': ['VIGILANTE', 'VIGILANTE ']},
-        'OTRO': {'display': 'Otro', 'values': ['OTRO']},
-        'APOYO_TECNICO_PEDAGOGICO': {'display': 'Apoyo Técnico Pedagógico', 'values': ['APOYO TECNICO PEDAGOGICO']},
-        'INSTRUCTOR_TALLER': {'display': 'Instructor de Taller', 'values': ['INSTRUCTOR(A) DE TALLER']},
-        'MAESTRO_TALLER': {'display': 'Maestro de Taller', 'values': ['MAESTRO(A) DE TALLER', 'MAESTRO DE TALLER']},
-        'MAESTRO_MUSICA': {'display': 'Maestro de Música', 'values': ['MAESTRO(A) MUSICA']},
-        'MAESTRO_EDUCACION_FISICA': {'display': 'Maestro de Educación Física', 'values': ['MAESTRO(A) DE EDUCACIÓN FÍSICA']},
-        'MEDICO': {'display': 'Médico', 'values': ['MÉDICO(A)', 'MÉDICO (A)']},
-        'PROMOTOR_TIC': {'display': 'Promotor TIC', 'values': ['PROMOTOR TIC', 'PROMOTOR TIC ']},
-        'TERAPISTA_FISICO': {'display': 'Terapista Físico', 'values': ['TERAPISTA FISICO ']},
-        'BIBLIOTECARIO': {'display': 'Bibliotecario', 'values': ['BIBLIOTECARIO(A)']},
-        'ADMINISTRATIVO_ESPECIALIZADO': {'display': 'Administrativo Especializado', 'values': ['ADMINISTRATIVO ESPECIALIZADO']},
-        'OFICIAL_SERVICIOS_MANTENIMIENTO': {'display': 'Oficial de Servicios y Mantenimiento', 'values': ['OFICIAL DE SERVICIOS Y MANTENIMIENTO', 'OFICIAL DE SERVICIOS DE MANTENIMIENTO']},
-        'ASISTENTE_DE_SERVICIOS': {'display': 'Asistente de Servicios', 'values': ['ASISTENTE DE SERVICIOS']},
-        'ASESOR_JURIDICO': {'display': 'Asesor Jurídico', 'values': ['ASESOR JURÍDICO']},
-        'AUXILIAR_DE_GRUPO': {'display': 'Auxiliar de Grupo', 'values': ['AUXILIAR DE GRUPO']},
-        'MAESTRO_COMUNICACION': {'display': 'Maestro de Comunicación', 'values': ['MAESTRO(A) DE COMUNICACIÓN ']},
-        'MAESTRO_AULA_HOSPITALARIA': {'display': 'Maestro Aula Hospitalaria', 'values': ['MAESTRO(A) AULA HOSPITALARIA']},
-    }
-
-    funcion_info = funcion_mapping.get(funcion)
+    funcion_info = FUNCION_MAPPING.get(funcion)
     if not funcion_info:
         funcion_values = [funcion]
         funcion_display = funcion.replace(' ', '_').title()
@@ -401,3 +527,39 @@ def lista_trabajadores_sociales(request):
 
 def lista_docentes_apoyo(request):
     return lista_por_funcion(request, 'DOCENTE_APOYO')
+
+
+@login_required
+def reporte_personas_vs_plazas(request):
+    from .helpers import contar_personal
+    from django.db.models import Count
+
+    total = contar_personal()
+
+    # Lista de personas (raíces / agrupadas por CURP)
+    personas = []
+    multiplas = 0
+    raices = (Maestro.objects.filter(maestro_principal__isnull=True)
+              .order_by('a_paterno', 'a_materno', 'nombres'))
+    for raiz in raices:
+        placas = [raiz] + list(raiz.plazas_secundarias.order_by('id_maestro'))
+        n_plazas = len(placas)
+        if n_plazas > 1:
+            multiplas += 1
+        personas.append({
+            'raiz': raiz,
+            'plazas': placas,
+            'n_plazas': n_plazas,
+            'n_activas': sum(1 for p in placas if es_status_activo(p.status)),
+        })
+
+    # Maestros sin CURP (personas individuales)
+    sin_curp = Maestro.objects.filter(curp__isnull=True).count() + Maestro.objects.filter(curp='').count()
+
+    return render(request, 'gestion_escolar/reporte_personas_plazas.html', {
+        'total': total,
+        'multiplas': multiplas,
+        'personas': personas,
+        'sin_curp': sin_curp,
+        'titulo': 'Reporte de Personas vs Plazas',
+    })

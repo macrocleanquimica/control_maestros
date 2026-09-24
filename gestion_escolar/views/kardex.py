@@ -89,7 +89,9 @@ def kardex_maestro_detail(request, maestro_id):
 
     maestro_full_name = f"{maestro.nombres or ''} {maestro.a_paterno or ''} {maestro.a_materno or ''}".strip()
     historial_maestro = Historial.objects.filter(
-        Q(maestro=maestro) | Q(maestro_secundario_nombre=maestro_full_name)
+        Q(maestro=maestro) | 
+        Q(maestro_secundario_nombre=maestro_full_name) |
+        Q(datos_tramite__maestro_interino=maestro.pk)
     ).select_related('usuario')
     # Pre-cargar vacancias para el historial
     from ..models import Vacancia

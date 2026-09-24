@@ -132,7 +132,14 @@
             <h1 class="mb-0"><i class="fas fa-chalkboard-teacher text-primary me-2"></i> Gestión de Personal</h1>
             <p class="text-muted small mb-0">Administre la base de datos de maestros y personal administrativo del sistema.</p>
         </div>
-        <div class="header-actions d-flex gap-2">
+        <div class="header-actions d-flex gap-2 align-items-center">
+            <div class="form-check form-switch me-2 text-muted" style="white-space: nowrap;">
+                <input class="form-check-input" type="checkbox" role="switch" id="toggle-agrupar" checked>
+                <label class="form-check-label small fw-bold" for="toggle-agrupar" title="Mostrar una fila por persona; sus otras plazas se agrupan como badge.
+Desactívelo para ver todas las plazas por separado.">
+                    <i class="fas fa-user-friends me-1 text-primary"></i> Agrupar por persona
+                </label>
+            </div>
             <button id="export-excel-btn" class="btn btn-success text-white border-0 rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
                 <i class="fas fa-file-excel me-2"></i>Exportar a Excel
             </button>
@@ -182,13 +189,17 @@
 {% block extra_js %}
 <script>
     $(document).ready(function() {
+        var agrupar = true;
         var table = $('#tablaMaestrosPremium').DataTable({
             destroy: true,
             processing: true,
             serverSide: true,
             ajax: {
                 url: $('#tablaMaestrosPremium').data('ajax-url'),
-                type: 'GET'
+                type: 'GET',
+                data: function(d) {
+                    d.agrupar = agrupar ? '1' : '0';
+                }
             },
             responsive: true,
             language: {
@@ -214,6 +225,10 @@
                         if (row && row[8]) { // is_interino
                             indicators += '<span class="indicator-pill ms-1 text-info" title="Personal Interino"><i class="fas fa-user-clock"></i> Interino</span>';
                         }
+                        if (row && row[9] > 0) { // n_plazas_sec (plazas adicionales agrupadas)
+                            indicators += '<a href="javascript:void(0)" class="indicator-pill ms-1 text-primary text-decoration-none" title="Este maestro tiene plaza(s) adicional(s). Ver detalle para consultarlas.">'
+                                + '<i class="fas fa-copy me-1"></i>' + row[9] + ' plaza' + (row[9] > 1 ? 's' : '') + '</a>';
+                        }
                         return `
                             <div class="d-flex align-items-center">
                                 <div class="avatar-circle me-3">${initials}</div>
@@ -227,15 +242,16 @@
                 },
                 { data: 2, className: 'fw-bold text-primary' },
                 { data: 3, className: 'small text-muted font-monospace' },
-                { data: 4, className: 'small' },
+                { data: 4, className: 'fw-bold text-dark' },
                 { 
                     data: 5,
-                    render: function(data) {
-                        if (!data) return '';
-                        var is_active = data.includes('ACTIVO');
-                        var badgeClass = is_active ? 'badge-soft-success' : 'badge-soft-warning';
-                        return `<span class="badge ${badgeClass}">${data.replace(/<\/?[^>]+(>|$)/g, "")}</span>`;
-                    }
+render: function(data) {
+                    if (!data) return '';
+                    // Detectar por la clase que envía la vista (bg-success=activo, bg-danger=inactivo)
+                    var is_active = /bg-success/.test(data);
+                    var badgeClass = is_active ? 'badge-soft-success' : 'badge-soft-danger';
+                    return `<span class="badge ${badgeClass}">${data.replace(/<\/?[^>]+(>|$)/g, "")}</span>`;
+                }
                 },
                 { 
                     data: 6, 
@@ -253,8 +269,14 @@
         });
 
         $('#export-excel-btn').on('click', function() {
-            var search = table.search();
-            window.location.href = "{% url 'exportar_maestros_excel' %}?search=" + encodeURIComponent(search);
+            var params = 'search=' + encodeURIComponent(table.search());
+            if (agrupar) { params += '&agrupar=1'; }
+            window.location.href = "{% url 'exportar_maestros_excel' %}?" + params;
+        });
+
+        $('#toggle-agrupar').on('change', function() {
+            agrupar = $(this).is(':checked');
+            table.ajax.reload();
         });
     });
 </script>

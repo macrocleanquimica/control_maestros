@@ -19,11 +19,6 @@ def index(request):
         context['total_maestros'] = Maestro.objects.count()
         context['total_directores'] = Maestro.objects.filter(funcion__icontains='DIRECTOR').count()
 
-    if request.user.has_perm('gestion_escolar.ver_grafico_distribucion_zona'):
-        distribucion_por_zona = Zona.objects.annotate(num_escuelas=Count('escuela')).order_by('numero')
-        context['zona_labels'] = json.dumps([f"Zona {zona.numero}" for zona in distribucion_por_zona])
-        context['zona_data'] = json.dumps([zona.num_escuelas for zona in distribucion_por_zona])
-
     if request.user.has_perm('gestion_escolar.ver_lista_pendientes'):
         today = timezone.now().date()
         context['ultimos_pendientes'] = Pendiente.objects.filter(

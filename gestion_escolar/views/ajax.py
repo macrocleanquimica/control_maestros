@@ -6,7 +6,10 @@ from ..models import Prelacion, MotivoTramite, PlantillaTramite, Maestro
 
 # Vista AJAX para obtener datos de prelación
 def get_prelacion_data_ajax(request):
-    curp_interino = request.GET.get('curp_interino')
+    curp = request.GET.get('curp')
+    rfc = request.GET.get('rfc')
+    nombre = request.GET.get('nombre')
+    
     datos_prelacion = {
         'encontrado': False,
         'numero_prelacion': '',
@@ -15,9 +18,25 @@ def get_prelacion_data_ajax(request):
         'nombre_prelacion': ''
     }
 
-    if curp_interino:
+    if curp or rfc or nombre:
         try:
-            prelacion = Prelacion.objects.filter(curp=curp_interino).first()
+            # Primero intentar por CURP o RFC
+            query = Q()
+            if curp:
+                query |= Q(curp=curp.strip())
+            if rfc:
+                query |= Q(curp=rfc.strip())
+                
+            prelacion = None
+            if query:
+                prelacion = Prelacion.objects.filter(query).first()
+            
+            # Si no se encuentra, intentar por nombre completo (si se proporcionó)
+            if not prelacion and nombre:
+                from unidecode import unidecode
+                nombre_norm = unidecode(nombre.upper().strip())
+                # Buscamos coincidencias aproximadas en el nombre
+                prelacion = Prelacion.objects.filter(nombre__icontains=nombre_norm).first()
             
             if prelacion:
                 datos_prelacion = {
@@ -51,12 +70,18 @@ def get_motivos_tramite_ajax(request):
                 ids = [13]
             elif opcion == "PROPUESTA DE MOVIMIENTO":
                 ids = [11, 12, 25, 26, 27]
-            elif opcion == "ALTA INICIAL":
+            elif opcion == "ALTA INICIAL (09)":
                 ids = [39]
             elif opcion == "OFICIO DE REINCORPORACION":
                 ids = [1, 2, 4, 15, 21, 22, 24, 40]
-            elif opcion == "PRESENTACION LABORAL":
+            elif opcion == "PRESENTACION LABORAL" or opcion == "PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION":
                 ids = [1, 2, 3, 4, 5, 6, 7, 21, 22, 24, 40]
+            elif opcion == "LIBERACION DE SUPERVISORES":
+                ids = []  # Sin motivo de movimiento
+            elif opcion == "SOLICITUD BECA COMISION":
+                ids = [1, 40]  # BECA COMISIÓN, PRÓRROGA DE BECA COMISIÓN
+            elif opcion == "CAPTURA DE GRAVIDEZ":
+                ids = []  # Sin motivo de movimiento
             else:
                 ids = []
 
@@ -129,8 +154,18 @@ def get_maestro_data_ajax(request):
                 'clave_presupuestal': maestro.clave_presupuestal or '',
                 'categoria': maestro.categog.descripcion if maestro.categog else '',
                 'funcion': maestro.funcion or '',
+                'form_academica': maestro.form_academica or '',
+                'ze_techo_f': '', # Placeholder
                 'incentivos': incentivos_str,
+                'escuela_cct': maestro.id_escuela.id_escuela if maestro.id_escuela else '',
+                'escuela_nombre': maestro.id_escuela.nombre_ct if maestro.id_escuela else '',
             }
+            # Obtener ZE del techo financiero
+            if maestro.techo_f:
+                from ..models import Escuela
+                escuela_pago = Escuela.objects.filter(id_escuela=maestro.techo_f).first()
+                if escuela_pago:
+                    data['ze_techo_f'] = escuela_pago.zona_economica or ''
         except Maestro.DoesNotExist:
             data = {'error': 'Maestro no encontrado'}
     return JsonResponse(data)
@@ -183,3 +218,30 @@ def get_interino_and_prelacion_data_ajax(request):
             data['curp_interino'] = 'Error'
 
     return JsonResponse(data)
+
+@login_required
+def buscar_escuelas_ajax(request):
+    search_term = request.GET.get('term', '')
+    
+    if not search_term or len(search_term) < 2:
+        return JsonResponse({'results': []})
+    
+    from ..models import Escuela
+    from unidecode import unidecode
+    
+    # Normalizamos el término de búsqueda
+    search_norm = unidecode(search_term.upper())
+
+    # Búsqueda por CCT o por Nombre
+    query = Q(id_escuela__icontains=search_term.upper()) | Q(nombre_ct__icontains=search_norm)
+    
+    escuelas = Escuela.objects.filter(query).order_by('id_escuela')[:20]
+    
+    results = []
+    for escuela in escuelas:
+        results.append({
+            "id": escuela.id_escuela,
+            "text": f"{escuela.nombre_ct} ({escuela.id_escuela})"
+        })
+    
+    return JsonResponse({'results': results})

@@ -114,7 +114,7 @@
             </div>
             <div class="stat-item">
                 <label>Estado</label>
-                <span class="badge rounded-pill {% if lote.estado == 'PROCESADO' %}bg-success{% else %}bg-primary{% endif %} px-3">
+                <span class="badge rounded-pill {% if lote.estado == 'GENERADO' %}bg-success{% elif lote.estado == 'CANCELADO' %}bg-danger{% else %}bg-primary{% endif %} px-3">
                     {{ lote.get_estado_display }}
                 </span>
             </div>

@@ -128,6 +128,9 @@
             </div>
 
             {% if perms.gestion_escolar.acceder_prelacion %}
+            <a href="{% url 'descargar_prelacion_excel' %}" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm btn-hover-animate">
+                <i class="fas fa-file-excel me-2"></i> Descargar Excel
+            </a>
             <a href="{% url 'importar_prelacion_excel' %}" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm btn-hover-animate">
                 <i class="fas fa-file-upload me-2"></i> Importar Lista Anual
             </a>
@@ -160,6 +163,7 @@
                         <th>Nombre del Candidato</th>
                         <th>Tipo de Valoración</th>
                         <th class="text-center">Estado</th>
+                        <th>Teléfonos</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -198,7 +202,8 @@
                 { data: 2, name: 'curp', className: 'font-monospace small' },
                 { data: 3, name: 'nombre', orderable: false },
                 { data: 4, name: 'tipo_val', className: 'small' },
-                { data: 5, name: 'estado', orderable: false, className: 'text-center' }
+                { data: 5, name: 'estado', orderable: false, className: 'text-center' },
+                { data: 6, name: 'telefonos', className: 'small' }
             ],
             order: [[0, 'asc']],
             language: {

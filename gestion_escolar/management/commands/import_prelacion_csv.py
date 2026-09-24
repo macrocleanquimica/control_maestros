@@ -14,8 +14,8 @@ class Command(BaseCommand):
         try:
             with open(csv_file_path, newline='', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
-                if not all(field in reader.fieldnames for field in ['pos_orden', 'FOLIO', 'CURP', 'NOMBRE', 'tipo_val']):
-                    raise CommandError("El archivo CSV debe contener las columnas: pos_orden, FOLIO, CURP, NOMBRE, tipo_val")
+                if not all(field in reader.fieldnames for field in ['pos_orden', 'FOLIO', 'CURP', 'NOMBRE', 'tipo_val', 'telefonos']):
+                    raise CommandError("El archivo CSV debe contener las columnas: pos_orden, FOLIO, CURP, NOMBRE, tipo_val, telefonos")
                 
                 imported_count = 0
                 updated_count = 0
@@ -35,6 +35,7 @@ class Command(BaseCommand):
                                 'curp': row['CURP'],
                                 'nombre': row['NOMBRE'],
                                 'tipo_val': row['tipo_val'],
+                                'telefonos': row.get('telefonos', ''),
                             }
                         )
                         if created:

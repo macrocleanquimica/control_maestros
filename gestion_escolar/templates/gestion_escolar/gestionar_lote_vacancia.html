@@ -127,10 +127,14 @@
                                 El lote tiene <strong>{{ vacancias_en_lote.count }}</strong> vacancia(s). Al exportar se generará el Excel consolidado, los oficios Word y se sincronizará con Google Sheets.
                             </p>
                         </div>
-                        <div class="col-md-auto mt-3 mt-md-0">
-                            <button type="button" class="btn btn-success rounded-pill px-4 shadow-sm fw-bold d-flex align-items-center gap-2 btn-hover-animate" onclick="confirmExport({{ lote.id }})">
-                                <i class="fas fa-file-excel me-2"></i>
-                                Exportar a Excel
+                        <div class="col-md-auto mt-3 mt-md-0 d-flex gap-2">
+                            <button type="button" class="btn btn-success rounded-pill px-4 shadow-sm fw-bold d-flex align-items-center gap-2 btn-hover-animate" onclick="confirmExport({{ lote.id }}, 'normal')">
+                                <i class="fas fa-file-excel"></i>
+                                Excel USICAMM
+                            </button>
+                            <button type="button" class="btn btn-outline-success rounded-pill px-4 shadow-sm fw-bold d-flex align-items-center gap-2 btn-hover-animate" onclick="confirmExport({{ lote.id }}, 'eo')">
+                                <i class="fas fa-file-contract"></i>
+                                Formato EO
                             </button>
                         </div>
                     </div>
@@ -278,9 +282,13 @@ function showSuccessMessage(message) {
     location.reload(); 
 }
 
-function confirmExport(loteId) {
-    if (confirm('¿Está seguro de que desea procesar y finalizar este lote?\n\nEsta acción generará un archivo Excel con todas las vacancias, documentos Word para las vacancias de corta duración con interino, y enviará datos a Google Sheets.')) {
-        iniciarProcesoExportacion(loteId);
+function confirmExport(loteId, tipo = 'normal') {
+    const msg = tipo === 'eo' 
+        ? '¿Está seguro de que desea procesar este lote en FORMATO EO?\n\nEsta acción generará el archivo de Validación EO.'
+        : '¿Está seguro de que desea procesar y finalizar este lote?\n\nEsta acción generará el archivo Excel USICAMM, documentos Word y sincronizará con Google Sheets.';
+    
+    if (confirm(msg)) {
+        iniciarProcesoExportacion(loteId, tipo);
     }
 }
 
@@ -289,12 +297,36 @@ function updateLoadingMessage(message, title = null) {
     if (title) $('#loading-title').text(title);
 }
 
-function iniciarProcesoExportacion(loteId) {
+function iniciarProcesoExportacion(loteId, tipo = 'normal') {
     const csrfToken = $('[name=csrfmiddlewaretoken]').val();
     $('#loadingModal').modal('show');
     $('#loading-spinner').show();
     $('#loading-success-icon').hide();
     $('#final-links').hide().empty();
+
+    if (tipo === 'eo') {
+        updateLoadingMessage('<i class="fas fa-file-excel fa-spin me-2"></i> Generando Formato de Validación EO...', 'Procesando EO');
+        $.ajax({
+            url: `/vacancias/exportar/paso_excel_eo/${loteId}/`,
+            type: 'POST',
+            data: { 'csrfmiddlewaretoken': csrfToken },
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#loading-spinner').hide();
+                    $('#loading-success-icon').show();
+                    updateLoadingMessage('¡Formato EO generado satisfactoriamente!', '¡Todo Listo!');
+                    
+                    let finalLinksHtml = '<div class="d-grid gap-2">';
+                    finalLinksHtml += `<a href="${response.excel_url}" target="_blank" class="btn btn-success rounded-pill fw-bold py-2 btn-hover-animate"><i class="fas fa-file-excel me-2"></i>Descargar Formato EO</a>`;
+                    finalLinksHtml += '<button type="button" class="btn btn-light border mt-4" data-bs-dismiss="modal" onclick="location.reload()">Cerrar</button></div>';
+                    $('#final-links').html(finalLinksHtml).fadeIn();
+                } else { handleExportError('Excel EO', response.message); }
+            },
+            error: function(xhr) { handleExportError('Excel EO', 'Error de red'); }
+        });
+        return;
+    }
+
     updateLoadingMessage('<i class="fas fa-cog fa-spin me-2"></i> Paso 1 de 3: Generando documentos Word...', 'Generando Oficios');
 
     // PASO 1: WORD

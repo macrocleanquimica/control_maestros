@@ -1,0 +1,173 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="fw-bold mb-1"><i class="fas fa-file-invoice text-primary me-2"></i>{{ titulo }}</h2>
+                            <p class="text-muted mb-0">Consulte el historial de vacancias reportadas con filtros personalizados.</p>
+                        </div>
+                        <div>
+                            <a href="{% url 'reportes_dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4 me-2">
+                                <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Filtros -->
+                    <div class="bg-light p-4 rounded-4 mb-4">
+                        <form method="GET" action="{% url 'reporte_vacancias_fecha' %}" id="filterForm">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small text-uppercase">Fecha de Inicio (Rango)</label>
+                                    <div class="input-group">
+                                        <input type="date" name="f_inicio_desde" class="form-control" value="{{ filtros.f_inicio_desde }}">
+                                        <span class="input-group-text">a</span>
+                                        <input type="date" name="f_inicio_hasta" class="form-control" value="{{ filtros.f_inicio_hasta }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small text-uppercase">Fecha Final (Rango)</label>
+                                    <div class="input-group">
+                                        <input type="date" name="f_final_desde" class="form-control" value="{{ filtros.f_final_desde }}">
+                                        <span class="input-group-text">a</span>
+                                        <input type="date" name="f_final_hasta" class="form-control" value="{{ filtros.f_final_hasta }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small text-uppercase">Fecha de Reporte (Rango)</label>
+                                    <div class="input-group">
+                                        <input type="date" name="f_reporte_desde" class="form-control" value="{{ filtros.f_reporte_desde }}">
+                                        <span class="input-group-text">a</span>
+                                        <input type="date" name="f_reporte_hasta" class="form-control" value="{{ filtros.f_reporte_hasta }}">
+                                    </div>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end mt-4">
+                                    <button type="submit" class="btn btn-primary rounded-pill px-4 me-2">
+                                        <i class="fas fa-filter me-2"></i>Aplicar Filtros
+                                    </button>
+                                    <a href="{% url 'reporte_vacancias_fecha' %}" class="btn btn-outline-secondary rounded-pill px-4 me-2">
+                                        <i class="fas fa-undo me-2"></i>Limpiar
+                                    </a>
+                                    <button type="button" onclick="exportExcel()" class="btn btn-success rounded-pill px-4">
+                                        <i class="fas fa-file-excel me-2"></i>Exportar a Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tabla de Resultados -->
+                    <div class="table-responsive">
+                        <table id="tablaVacancias" class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>C. Presupuestal</th>
+                                    <th>F. Reporte</th>
+                                    <th>F. Inicio</th>
+                                    <th>F. Final</th>
+                                    <th>Titular</th>
+                                    <th>Interino</th>
+                                    <th>Tipo Vacante</th>
+                                    <th>Motivo</th>
+                                    <th>CCT / Escuela</th>
+                                    <th>Trámite Realizado</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for v in vacancias %}
+                                <tr>
+                                    <td><span class="badge bg-light text-dark border fw-bold">{{ v.clave_presupuestal|default:"N/A" }}</span></td>
+                                    <td data-order="{{ v.lote.fecha_creacion|date:'YmdHis' }}">{{ v.lote.fecha_creacion|date:"d/m/Y" }}</td>
+                                    <td data-order="{{ v.fecha_inicio|date:'Ymd' }}">{{ v.fecha_inicio|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if v.fecha_final %}
+                                            {{ v.fecha_final|date:"d/m/Y" }}
+                                        {% else %}
+                                            <span class="text-success fw-bold">AL COBRO</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ v.nombre_titular_reporte }}</td>
+                                    <td>
+                                        {% if v.maestro_interino %}
+                                            {{ v.maestro_interino.nombres }} {{ v.maestro_interino.a_paterno }} {{ v.maestro_interino.a_materno }}
+                                            <div class="small text-muted">{{ v.maestro_interino.curp }}</div>
+                                        {% elif v.nombre_interino %}
+                                            {{ v.nombre_interino }}
+                                            <div class="small text-muted">{{ v.curp_interino|default:"" }}</div>
+                                        {% else %}
+                                            <span class="text-muted small">SIN ASIGNAR</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if v.tipo_vacante == 'DEFINITIVA' %}bg-primary{% else %}bg-info text-dark{% endif %}">
+                                            {{ v.get_tipo_vacante_display }}
+                                        </span>
+                                    </td>
+                                    <td class="small">{{ v.tipo_movimiento_reporte|default:v.tipo_movimiento_original }}</td>
+                                    <td>
+                                        <div class="fw-bold">{{ v.clave_ct }}</div>
+                                        <div class="small text-muted text-truncate" style="max-width: 150px;">{{ v.maestro_titular.id_escuela.nombre_ct }}</div>
+                                    </td>
+                                    <td>
+                                        {% if v.tramite_vinculado %}
+                                            <div class="badge bg-success mb-1">{{ v.tramite_vinculado.tipo_documento }}</div>
+                                            <div class="small text-muted">{{ v.tramite_vinculado.fecha_creacion|date:"d/m/Y H:i" }}</div>
+                                        {% else %}
+                                            <span class="badge bg-secondary">NO REALIZADO</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">
+                                        <span class="text-truncate d-inline-block" style="max-width: 150px;" title="{{ v.observaciones }}">
+                                            {{ v.observaciones|default:"-" }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#tablaVacancias').DataTable({
+            "language": window.SpanishDataTable,
+            "order": [[1, "desc"]],
+            "pageLength": 25,
+            "dom": '<"d-flex justify-content-between align-items-center mb-3"lf>rt<"d-flex justify-content-between align-items-center mt-3"ip>'
+        });
+    });
+
+    function exportExcel() {
+        // Obtener los parámetros actuales de la URL de filtros
+        const params = new URLSearchParams(window.location.search);
+        // Redirigir a la URL de exportación con los mismos parámetros
+        window.location.href = "{% url 'exportar_reporte_vacancias_excel' %}?" + params.toString();
+    }
+</script>
+
+<style>
+    .table thead th {
+        font-size: 0.75rem;
+        background-color: #f8fafc !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+    }
+    .badge {
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+</style>
+{% endblock %}

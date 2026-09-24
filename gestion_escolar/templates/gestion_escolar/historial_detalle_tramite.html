@@ -156,6 +156,18 @@
         </div>
     </div>
 
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="detail-card">
         <div class="card-banner">
             <h5 class="mb-0 fw-bold text-dark">Información General del Registro</h5>
@@ -166,7 +178,7 @@
                     <i class="fas fa-edit me-1"></i> Corregir Datos y Regenerar
                 </a>
                 {% endif %}
-                <a href="{% url 'descargar_archivo_historial' historial_item.id %}" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold d-print-none btn-hover-animate">
+                <a href="{% url 'descargar_archivo_historial' historial_item.id %}" target="_blank" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold d-print-none btn-hover-animate">
                     <i class="fas fa-download me-1"></i> Descargar Documento Original
                 </a>
             </div>
@@ -277,4 +289,19 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        if (window.location.search.indexOf('descargar=1') !== -1) {
+            var url = "{% url 'descargar_archivo_historial' historial_item.id %}";
+            var a = document.createElement('a');
+            a.href = url;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+    })();
+</script>
 {% endblock %}

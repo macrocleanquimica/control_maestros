@@ -1,7 +1,7 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
-{% block title %}Dashboard de Reportes | Control de Maestros{% endblock %}
+{% block title %}Reportes | Control de Maestros{% endblock %}
 
 {% block content %}
 <style>
@@ -185,6 +185,7 @@
         background: var(--rp-indigo);
         color: white;
     }
+
 </style>
 
 <div class="page-container">
@@ -192,7 +193,6 @@
     <div class="header-section">
         <div class="header-title">
             <h1 class="mb-1"><i class="fas fa-chart-line text-primary me-2"></i> {{ titulo }}</h1>
-            <p class="text-muted small mb-0">Centro de control y análisis de datos del sistema educativo.</p>
         </div>
     </div>
 
@@ -207,18 +207,6 @@
                 <h3 class="report-title">Personal Desubicado</h3>
                 <p class="report-desc">Identifique al personal que no coincide con su C.C.T. de adscripción física vs nómina.</p>
                 <a href="{% url 'reporte_personal_fuera_adscripcion' %}" class="stretched-link"></a>
-            </div>
-        </div>
-
-        <!-- Distribución Funcional -->
-        <div class="report-card report-emerald">
-            <div class="card-body-custom">
-                <div class="icon-wrapper">
-                    <i class="fas fa-chart-pie"></i>
-                </div>
-                <h3 class="report-title">Distribución Funcional</h3>
-                <p class="report-desc">Visualice la composición del personal según su función (Directores, Docentes, etc).</p>
-                <a href="{% url 'reporte_distribucion_funcion' %}" class="stretched-link"></a>
             </div>
         </div>
 
@@ -258,40 +246,30 @@
             </div>
         </div>
 
-        <!-- Última Correspondencia -->
-        {% if perms.gestion_escolar.ver_ultima_correspondencia %}
-        <div class="report-card report-rose h-auto" style="grid-row: span 2;">
+        <!-- Reporte de Vacancias Detallado -->
+        <div class="report-card report-amber">
             <div class="card-body-custom">
                 <div class="icon-wrapper">
-                    <i class="fas fa-envelope-open-text"></i>
+                    <i class="fas fa-file-invoice"></i>
                 </div>
-                <h3 class="report-title">Correspondencia Reciente</h3>
-                <p class="report-desc mb-3">Últimas entradas registradas en la oficialía de partes.</p>
-                
-                <ul class="corr-list">
-                    {% for registro in ultimos_registros_correspondencia %}
-                    <li class="corr-item">
-                        <div class="corr-info">
-                            <span class="corr-meta">{{ registro.fecha_recibido|date:"d M Y" }} | {{ registro.folio_documento|default:"S/F" }}</span>
-                            <span class="corr-text">{{ registro.remitente }}</span>
-                        </div>
-                        <a href="{% url 'registrocorrespondencia_detail' registro.pk %}" class="btn-view-quick">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </li>
-                    {% empty %}
-                    <li class="text-muted small py-4 text-center">No hay registros recientes.</li>
-                    {% endfor %}
-                </ul>
-
-                <div class="mt-4 pt-3 border-top">
-                    <a href="{% url 'registrocorrespondencia_list' %}" class="btn btn-light w-100 rounded-pill fw-bold text-muted small btn-hover-animate">
-                        Ver todo el archivo
-                    </a>
-                </div>
+                <h3 class="report-title">Reporte Detallado de Vacancias</h3>
+                <p class="report-desc">Historial completo de vacancias con claves presupuestales, titulares e interinos.</p>
+                <a href="{% url 'reporte_vacancias_fecha' %}" class="stretched-link"></a>
             </div>
         </div>
-        {% endif %}
+
+        <!-- Relación de Centros de Trabajo -->
+        <div class="report-card report-rose">
+            <div class="card-body-custom">
+                <div class="icon-wrapper">
+                    <i class="fas fa-file-pdf"></i>
+                </div>
+                <h3 class="report-title">Relación de Centros de Trabajo</h3>
+                <p class="report-desc">Directorio de centros de trabajo por zona, con supervisor y director de cada centro. Descarga en PDF.</p>
+                <a href="{% url 'reporte_centros_trabajo_pdf' %}" class="stretched-link" target="_blank" rel="noopener"></a>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}

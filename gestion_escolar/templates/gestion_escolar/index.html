@@ -50,6 +50,12 @@
         border-color: var(--db-primary);
     }
 
+    a.kpi-card-link:hover .kpi-card {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border-color: var(--db-primary);
+    }
+
     .kpi-icon-container {
         width: 60px;
         height: 60px;
@@ -182,14 +188,157 @@
         padding: 1rem;
         background: white;
     }
+
+    /* Calendario Escolar */
+    .calendar-carousel {
+        position: relative;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        border: 2px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .calendar-carousel-track {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .calendar-slides {
+        display: flex;
+        transition: transform 0.4s ease;
+    }
+
+    .calendar-slide {
+        flex: 0 0 100%;
+        min-width: 100%;
+    }
+
+    .calendar-slide img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .calendar-slide {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .calendar-slide:hover img {
+        filter: brightness(0.97);
+    }
+
+    .calendar-slide::after {
+        content: "\f065";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        position: absolute;
+        top: 0.6rem;
+        right: 0.6rem;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(30, 64, 175, 0.9);
+        color: white;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+    }
+
+    .calendar-slide:hover::after {
+        opacity: 1;
+    }
+
+    .calendar-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.95);
+        color: #1e40af;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        z-index: 2;
+        transition: all 0.2s ease;
+        opacity: 0.85;
+    }
+
+    .calendar-nav:hover {
+        background: #1e40af;
+        color: white;
+        opacity: 1;
+    }
+
+    .calendar-nav.prev { left: 0.75rem; }
+    .calendar-nav.next { right: 0.75rem; }
+
+    .calendar-dots {
+        display: flex;
+        justify-content: center;
+        gap: 0.4rem;
+        margin-top: 0.6rem;
+    }
+
+    .calendar-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: none;
+        background: #cbd5e1;
+        cursor: pointer;
+        padding: 0;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-dot.active {
+        background: #1e40af;
+        width: 22px;
+        border-radius: 2rem;
+    }
+
+    .calendar-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.25rem;
+        justify-content: center;
+    }
+
+    .calendar-summary-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.78rem;
+        color: var(--db-text-main);
+    }
+
+    .calendar-summary-item i {
+        font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+        .calendar-summary { flex-direction: column; align-items: center; }
+        .calendar-nav { width: 34px; height: 34px; font-size: 0.85rem; }
+    }
 </style>
 
 <div class="dashboard-wrapper">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-end mb-4">
         <div>
-            <h1 class="h3 fw-bold mb-1">¡Bienvenido al Sistema! ✨</h1>
-            <p class="text-muted small mb-0">Resumen ejecutivo y actividades pendientes para hoy.</p>
+            <h1 class="h3 fw-bold mb-1">¡Bienvenido al Sistema!</h1>
+            <p class="text-muted small mb-0">Resumen y actividades pendientes para hoy.</p>
         </div>
         <div class="text-end">
             <span class="badge bg-light text-dark border p-2 small">
@@ -202,71 +351,113 @@
     {% if perms.gestion_escolar.ver_estadisticas_generales %}
     <div class="row g-4 mb-5">
         <div class="col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-icon-container bg-soft-primary">
-                    <i class="fas fa-map-marked"></i>
+            <a href="{% url 'lista_zonas' %}" class="text-decoration-none kpi-card-link">
+                <div class="kpi-card">
+                    <div class="kpi-icon-container bg-soft-primary">
+                        <i class="fas fa-map-marked"></i>
+                    </div>
+                    <div>
+                        <p class="kpi-label mb-0">Zonas</p>
+                        <h2 class="kpi-value mb-0">{{ total_zonas }}</h2>
+                    </div>
                 </div>
-                <div>
-                    <p class="kpi-label mb-0">Zonas</p>
-                    <h2 class="kpi-value mb-0">{{ total_zonas }}</h2>
-                </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-icon-container bg-soft-success">
-                    <i class="fas fa-school"></i>
+            <a href="{% url 'lista_escuelas' %}" class="text-decoration-none kpi-card-link">
+                <div class="kpi-card">
+                    <div class="kpi-icon-container bg-soft-success">
+                        <i class="fas fa-school"></i>
+                    </div>
+                    <div>
+                        <p class="kpi-label mb-0">Centros C.T.</p>
+                        <h2 class="kpi-value mb-0">{{ total_escuelas }}</h2>
+                    </div>
                 </div>
-                <div>
-                    <p class="kpi-label mb-0">Centros C.T.</p>
-                    <h2 class="kpi-value mb-0">{{ total_escuelas }}</h2>
-                </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-icon-container bg-soft-info">
-                    <i class="fas fa-users-cog"></i>
+            <a href="{% url 'lista_maestros' %}" class="text-decoration-none kpi-card-link">
+                <div class="kpi-card">
+                    <div class="kpi-icon-container bg-soft-info">
+                        <i class="fas fa-users-cog"></i>
+                    </div>
+                    <div>
+                        <p class="kpi-label mb-0">Personal</p>
+                        <h2 class="kpi-value mb-0">{{ total_maestros }}</h2>
+                    </div>
                 </div>
-                <div>
-                    <p class="kpi-label mb-0">Personal</p>
-                    <h2 class="kpi-value mb-0">{{ total_maestros }}</h2>
-                </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-icon-container bg-soft-warning">
-                    <i class="fas fa-user-tie"></i>
+            <a href="{% url 'lista_directores' %}" class="text-decoration-none kpi-card-link">
+                <div class="kpi-card">
+                    <div class="kpi-icon-container bg-soft-warning">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div>
+                        <p class="kpi-label mb-0">Directores</p>
+                        <h2 class="kpi-value mb-0">{{ total_directores }}</h2>
+                    </div>
                 </div>
-                <div>
-                    <p class="kpi-label mb-0">Directores</p>
-                    <h2 class="kpi-value mb-0">{{ total_directores }}</h2>
-                </div>
-            </div>
+            </a>
         </div>
     </div>
     {% endif %}
 
     <div class="row g-4 d-flex align-items-stretch">
         <!-- Chart Column -->
-        {% if perms.gestion_escolar.ver_grafico_distribucion_zona %}
         <div class="col-lg-6">
             <div class="widget-card h-100">
                 <div class="widget-header">
-                    <h5 class="mb-0 fw-bold"><i class="fas fa-chart-bar text-primary me-2"></i> Distribución por Zona</h5>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-light border-0" type="button"><i class="fas fa-ellipsis-v"></i></button>
-                    </div>
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-calendar-alt text-primary me-2"></i> Calendario Escolar 2026-2027</h5>
+                    <span class="badge bg-primary bg-opacity-10 text-primary fw-bold" style="font-size:0.7rem;">CICLO ESCOLAR</span>
                 </div>
                 <div class="widget-body">
-                    <div class="chart-container-modern">
-                        <canvas id="zoneChart" height="280"></canvas>
+                    <div class="calendar-carousel" id="calendarCarousel">
+                        <div class="calendar-carousel-track" id="calendarTrack">
+                            <div class="calendar-slides" id="calendarSlides">
+                                <div class="calendar-slide" data-link="https://educacionbasica.sep.gob.mx/wp-content/uploads/2026/07/Foto-1-Calendario-Escolar-2026-2027.jpeg">
+                                    <img src="https://educacionbasica.sep.gob.mx/wp-content/uploads/2026/07/Foto-1-Calendario-Escolar-2026-2027.jpeg" alt="Calendario Escolar 2026-2027">
+                                </div>
+                                <div class="calendar-slide" data-link="https://educacionbasica.sep.gob.mx/wp-content/uploads/2026/07/Foto-Calendario-Escolar-2026-2027.jpeg">
+                                    <img src="https://educacionbasica.sep.gob.mx/wp-content/uploads/2026/07/Foto-Calendario-Escolar-2026-2027.jpeg" alt="Detalle Calendario Escolar 2026-2027">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="calendar-nav prev" id="calPrev" aria-label="Anterior">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button type="button" class="calendar-nav next" id="calNext" aria-label="Siguiente">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="calendar-dots" id="calendarDots">
+                        <button type="button" class="calendar-dot active" data-index="0" aria-label="Imagen 1"></button>
+                        <button type="button" class="calendar-dot" data-index="1" aria-label="Imagen 2"></button>
+                    </div>
+                    <div class="calendar-summary mt-3">
+                        <div class="calendar-summary-item">
+                            <i class="fas fa-play-circle text-success"></i>
+                            <span>Inicio: <strong>31 ago 2026</strong></span>
+                        </div>
+                        <div class="calendar-summary-item">
+                            <i class="fas fa-stop-circle text-danger"></i>
+                            <span>Fin: <strong>9 jul 2027</strong></span>
+                        </div>
+                        <div class="calendar-summary-item">
+                            <i class="fas fa-moon text-warning"></i>
+                            <span>Recesos: <strong>21 dic – 5 ene</strong> / <strong>22 mar – 3 abr</strong></span>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="https://educacionbasica.sep.gob.mx/publica-sep-calendario-escolar-2026-2027-para-educacion-basica-y-normal/" target="_blank" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold">
+                            <i class="fas fa-external-link-alt me-1"></i> Publicación oficial SEP
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-        {% endif %}
 
         <!-- Activity Feed Column -->
         <div class="col-lg-6">
@@ -361,71 +552,54 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('zoneChart').getContext('2d');
-        
-        // Colores premium para el gráfico
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(37, 99, 235, 0.8)');
-        gradient.addColorStop(1, 'rgba(37, 99, 235, 0.2)');
+        const slides = document.getElementById('calendarSlides');
+        const prevBtn = document.getElementById('calPrev');
+        const nextBtn = document.getElementById('calNext');
+        const dots = document.querySelectorAll('.calendar-dot');
+        let current = 0;
+        const total = 2;
 
-        const zoneChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: {{ zona_labels|safe }},
-                datasets: [{
-                    label: 'Centros de Trabajo',
-                    data: {{ zona_data|safe }},
-                    backgroundColor: gradient,
-                    borderColor: '#2563eb',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    barThickness: 30,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#1e293b',
-                        padding: 12,
-                        titleFont: { size: 14, weight: 'bold' },
-                        bodyFont: { size: 13 },
-                        cornerRadius: 8,
-                        displayColors: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: '#f1f5f9',
-                            drawBorder: false
-                        },
-                        ticks: {
-                            color: '#64748b',
-                            stepSize: 1,
-                            font: { size: 11, weight: '500' }
-                        }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: {
-                            color: '#64748b',
-                            font: { size: 11, weight: '600' }
-                        }
-                    }
-                }
-            }
+        function updateSlide() {
+            slides.style.transform = 'translateX(-' + (current * 100) + '%)';
+            dots.forEach(function(dot, i) {
+                dot.classList.toggle('active', i === current);
+            });
+        }
+
+        prevBtn.addEventListener('click', function() {
+            current = (current - 1 + total) % total;
+            updateSlide();
+        });
+
+        nextBtn.addEventListener('click', function() {
+            current = (current + 1) % total;
+            updateSlide();
+        });
+
+        dots.forEach(function(dot) {
+            dot.addEventListener('click', function() {
+                current = parseInt(this.dataset.index, 10);
+                updateSlide();
+            });
+        });
+
+        const slideEls = document.querySelectorAll('.calendar-slide');
+        slideEls.forEach(function(slide) {
+            slide.addEventListener('click', function() {
+                window.open(this.dataset.link, '_blank');
+            });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') { prevBtn.click(); }
+            if (e.key === 'ArrowRight') { nextBtn.click(); }
         });
     });
 </script>
 {% endblock %}
+

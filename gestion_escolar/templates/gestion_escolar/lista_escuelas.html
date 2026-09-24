@@ -92,6 +92,9 @@
             <p class="text-muted small mb-0">Directorio de centros de trabajo, zonas escolares y sostenimientos.</p>
         </div>
         <div class="header-actions d-flex gap-2">
+            <a href="{% url 'mapa_zonas' %}" class="btn btn-info text-white border-0 rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
+                <i class="fas fa-map-marked-alt me-2"></i> Mapa de Zonas
+            </a>
             <button id="export-excel-escuelas-btn" class="btn btn-success text-white border-0 rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
                 <i class="fas fa-file-excel me-2"></i> Exportar a Excel
             </button>
@@ -139,7 +142,7 @@
                             </td>
                             <td>
                                 <span class="badge bg-light text-primary border px-2 py-1">
-                                    <i class="fas fa-map-marker-alt me-1"></i> Zona {{ escuela.zona_esc.numero }}
+                                    <i class="fas fa-map-marker-alt me-1"></i> {{ escuela.zona_esc.etiqueta }}
                                 </span>
                             </td>
                             <td><span class="text-muted small">{{ escuela.get_turno_display }}</span></td>
