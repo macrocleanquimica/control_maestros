@@ -5,15 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --fe-primary: #0ea5e9;
-        --fe-secondary: #64748b;
-        --fe-border: #e2e8f0;
-        --fe-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
     .page-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
     }
 
@@ -23,98 +16,71 @@
     }
 
     .form-card {
-        background: white;
-        border-radius: 1.5rem;
-        border: 1px solid var(--fe-border);
-        box-shadow: var(--fe-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
         max-width: 1000px;
         margin: 0 auto;
     }
 
     .form-header {
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        padding: 2.5rem;
-        border-bottom: 1px solid var(--fe-border);
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
+        padding: 1.5rem clamp(17px, 3vw, 2rem);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .header-icon {
-        width: 64px;
-        height: 64px;
-        background: white;
-        color: var(--fe-primary);
-        border-radius: 1.25rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.75rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-
-    .form-header h1 {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin: 0;
+        display: none;
     }
 
     .form-body {
-        padding: 2.5rem;
+        padding: clamp(17px, 3vw, 2rem);
     }
 
     .form-section {
-        margin-bottom: 3rem;
+        margin-bottom: 2rem;
     }
 
     .section-title {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: var(--fe-primary);
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 2px solid #f1f5f9;
+        font-size: 0.9rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text, #1d1d1f);
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     /* Form Styles */
     .form-label {
         font-size: 0.75rem;
-        font-weight: 700;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
+        letter-spacing: 0.025em;
         margin-bottom: 0.5rem;
     }
 
     .form-control, .form-select {
-        border-radius: 0.75rem;
-        border: 1px solid var(--fe-border);
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.08);
         padding: 0.75rem 1rem;
         font-size: 0.95rem;
-        color: #1e293b;
-        transition: all 0.2s;
-        background-color: #f8fafc;
+        color: var(--text, #1d1d1f);
+        background-color: var(--surface, #fff);
     }
 
     .form-control:focus, .form-select:focus {
-        border-color: var(--fe-primary);
-        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        border-color: var(--accent, #0071e3);
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
         background-color: white;
     }
 
     /* Alert Styling */
     .alert-premium {
-        border-radius: 1rem;
+        border-radius: 14px;
         border: none;
         padding: 1rem 1.25rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         font-size: 0.9rem;
         display: flex;
         align-items: center;
@@ -122,49 +88,43 @@
     }
 
     .btn-save {
-        background: var(--fe-primary);
+        background: var(--accent, #0071e3);
         border: none;
-        border-radius: 0.75rem;
+        border-radius: var(--r-pill, 999px);
         padding: 0.85rem 2.5rem;
-        font-weight: 700;
+        font-weight: 600;
         color: white;
-        transition: all 0.2s;
         display: flex;
         align-items: center;
         gap: 0.75rem;
     }
 
     .btn-save:hover {
-        background: #0284c7;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.4);
+        opacity: 0.92;
+        color: white;
     }
 
     .btn-cancel {
-        background: white;
-        border: 1px solid var(--fe-border);
-        border-radius: 0.75rem;
+        background: transparent;
+        border: none;
+        border-radius: var(--r-pill, 999px);
         padding: 0.85rem 2rem;
-        font-weight: 700;
-        color: #64748b;
-        transition: all 0.2s;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
     }
 
     .btn-cancel:hover {
-        background: #f8fafc;
-        color: #1e293b;
+        background: rgba(0,0,0,0.05);
+        color: var(--text, #1d1d1f);
     }
 </style>
 
 <div class="page-container">
     <div class="form-card">
         <div class="form-header">
-            <div class="header-icon">
-                <i class="fas {% if 'Editar' in titulo %}fa-edit{% else %}fa-school{% endif %}"></i>
-            </div>
             <div>
-                <h1>{{ titulo }}</h1>
-                <p class="text-muted small mb-0 mt-1">Gestión administrativa de centros de trabajo.</p>
+                <h1 class="apple-title">{{ titulo }}</h1>
+                <p class="apple-subtitle mb-0 mt-1">Datos del centro de trabajo.</p>
             </div>
         </div>
 
@@ -185,7 +145,7 @@
                 <!-- Sección 1: Identificación -->
                 <div class="form-section">
                     <div class="section-title">
-                        <i class="fas fa-fingerprint"></i> Identificación del C.T.
+                        Identificación
                     </div>
                     <div class="row g-4">
                         <div class="col-md-4">
@@ -209,7 +169,7 @@
                 <!-- Sección 2: Perfil y Clasificación -->
                 <div class="form-section">
                     <div class="section-title">
-                        <i class="fas fa-tags"></i> Perfil y Clasificación
+                        Perfil
                     </div>
                     <div class="row g-4">
                         <div class="col-md-3">
@@ -246,7 +206,7 @@
                 <!-- Sección 3: Ubicación y Datos Técnicos -->
                 <div class="form-section">
                     <div class="section-title">
-                        <i class="fas fa-map-marked-alt"></i> Ubicación y Datos Técnicos
+                        Ubicación
                     </div>
                     <div class="row g-4 mb-4">
                         <div class="col-md-4">
@@ -283,12 +243,12 @@
                 </div>
 
                 <!-- Acciones -->
-                <div class="d-flex justify-content-end gap-3 mt-5 pt-4 border-top">
-                    <a href="{% url 'lista_escuelas' %}" class="btn btn-cancel">
+                <div class="d-flex justify-content-end gap-3 mt-4 pt-4" style="border-top: 1px solid var(--hairline, rgba(0,0,0,0.07));">
+                    <a href="{% url 'lista_escuelas' %}" class="btn-cancel">
                         Cancelar
                     </a>
-                    <button type="submit" class="btn btn-save">
-                        <i class="fas fa-save"></i> Guardar Cambios
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-save me-2"></i> Guardar
                     </button>
                 </div>
             </form>
