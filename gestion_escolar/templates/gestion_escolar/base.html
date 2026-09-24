@@ -229,14 +229,20 @@
             color: rgba(255, 255, 255, 0.9);
             padding: 10px 15px; /* Reducido verticalmente */
             margin: 4px 10px;
-            border-radius: 8px;
-            transition: all var(--transition-speed);
+            border-radius: 10px;
+            transition: background-color 0.2s ease, color 0.2s ease;
             display: flex;
             align-items: center;
             white-space: nowrap; /* Cambiado de normal a nowrap para ellipsis */
             line-height: 1.2;
             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
             overflow: hidden; /* Garantiza contención */
+        }
+
+        /* Foco visible para teclado (accesibilidad) */
+        .sidebar .nav-link:focus-visible {
+            outline: 2px solid var(--accent, #0071e3);
+            outline-offset: 2px;
         }
 
         .sidebar .nav-link:hover {
@@ -248,18 +254,20 @@
         .sidebar .nav-link.active {
             background-color: var(--primary-color);
             color: white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
         }
 
         .sidebar .nav-link i {
-            transition: transform var(--transition-speed);
+            transition: color 0.2s ease;
             min-width: 25px;
             text-align: center;
             font-size: 1.1rem; /* Un poco más grande para legibilidad */
         }
 
-        .sidebar .nav-link.active i {
-            transform: scale(1.2);
+        /* Marca del menú: tracking negativo, sin saltos al pasar el mouse */
+        #accordionSidebar .sidebar-brand-text {
+            letter-spacing: -0.01em;
+            font-weight: 700;
         }
 
         /* Contenido principal con margen ajustable */
