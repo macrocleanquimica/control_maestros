@@ -5,15 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --fd-primary: #6366f1;
-        --fd-success: #10b981;
-        --fd-border: #e2e8f0;
-        --fd-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
     .page-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
     }
 
@@ -22,126 +15,119 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header Section */
+    /* Encabezado simple */
     .header-section {
-        background: white;
-        border-radius: 1.25rem;
-        padding: 1.5rem 2rem;
-        box-shadow: var(--fd-shadow);
-        border: 1px solid var(--fd-border);
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
-    /* Main Detail Card */
+    /* Tarjeta única */
     .detail-card {
-        background: white;
-        border-radius: 1.5rem;
-        border: 1px solid var(--fd-border);
-        box-shadow: var(--fd-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
     }
 
     .card-banner {
-        background: #f8fafc;
-        padding: 1.5rem 2.5rem;
-        border-bottom: 1px solid var(--fd-border);
+        padding: 1.25rem clamp(17px, 3vw, 2.5rem);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
     }
 
     .card-body-custom {
-        padding: 3rem;
+        padding: clamp(17px, 3vw, 2.5rem);
     }
 
     /* Info Grid */
     .info-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 2.5rem;
-        margin-bottom: 3rem;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
     }
 
     .info-item label {
         display: block;
         font-size: 0.75rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #64748b;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
         margin-bottom: 0.5rem;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.025em;
     }
 
     .info-item p {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #1e293b;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text, #1d1d1f);
         margin-bottom: 0;
+        letter-spacing: -0.01em;
     }
 
     .data-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        border: 1px solid var(--fd-border);
-        border-radius: 1rem;
+        border-radius: 14px;
         overflow: hidden;
     }
 
     .data-table td {
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid #f1f5f9;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .data-table tr:last-child td { border-bottom: none; }
 
     .label-cell {
-        background: #f8fafc;
         width: 35%;
-        font-weight: 700;
-        color: #475569;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
         font-size: 0.85rem;
     }
 
     .value-cell {
-        color: #1e293b;
+        color: var(--text, #1d1d1f);
         font-weight: 600;
         font-size: 1rem;
     }
 
-    /* Observation Box */
+    /* Observaciones */
     .observation-box {
-        background: #fffbeb;
-        border: 1px solid #fde68a;
-        border-radius: 1rem;
-        padding: 1.5rem;
-        margin-top: 3rem;
+        background: rgba(0,0,0,0.03);
+        border: 1px solid var(--hairline, rgba(0,0,0,0.07));
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
+        margin-top: 2rem;
     }
 
-    /* Sidebar cards */
+    /* Laterales */
     .side-card {
-        background: white;
-        border-radius: 1.25rem;
-        border: 1px solid var(--fd-border);
-        box-shadow: var(--fd-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-card, 18px);
+        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
         padding: 1.5rem;
         margin-bottom: 1.5rem;
     }
 
     .btn-action-side {
-        border-radius: 0.75rem;
+        border-radius: var(--r-pill, 999px);
         padding: 0.6rem 1rem;
-        font-weight: 700;
+        font-weight: 600;
         width: 100%;
         margin-bottom: 0.75rem;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        transition: all 0.2s;
     }
 
     @media print {
@@ -149,7 +135,6 @@
         .page-container { padding: 0; }
         .detail-card { border: none; box-shadow: none; width: 100% !important; }
         .col-lg-8 { width: 100% !important; flex: 0 0 100%; max-width: 100%; }
-        .card-banner { border-bottom: 2px solid #000; }
     }
 </style>
 
@@ -157,15 +142,15 @@
     <!-- Header -->
     <div class="header-section d-print-none">
         <div>
-            <h1 class="h3 fw-bold mb-1"><i class="fas fa-id-card text-primary me-2"></i> Detalle del FUP</h1>
-            <p class="text-muted small mb-0">Folio de Registro: <span class="fw-bold">#{{ fup.folio }}</span></p>
+            <h1 class="apple-title">FUP <span class="apple-num">#{{ fup.folio }}</span></h1>
+            <p class="apple-subtitle mb-0">Detalle del formato.</p>
         </div>
-        <div class="d-flex gap-2">
-            <a href="{% url 'lista_fup' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted btn-hover-animate">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'lista_fup' %}" class="apple-btn-ghost">
                 <i class="fas fa-arrow-left me-2"></i> Volver
             </a>
-            <button onclick="window.print();" class="btn btn-info text-white rounded-pill px-4 fw-bold shadow-sm btn-hover-animate">
-                <i class="fas fa-print me-2"></i> Imprimir Ficha
+            <button onclick="window.print();" class="apple-btn-ghost">
+                <i class="fas fa-print me-2"></i> Imprimir
             </button>
         </div>
     </div>
@@ -175,8 +160,8 @@
         <div class="col-lg-8">
             <div class="detail-card">
                 <div class="card-banner">
-                    <h5 class="mb-0 fw-bold text-dark">Información del Formato Único</h5>
-                    <span class="badge bg-light text-primary border px-3 rounded-pill fw-bold">ID: {{ fup.pk }}</span>
+                    <h5 class="mb-0 fw-bold">Formato Único</h5>
+                    <span class="apple-tag apple-num">ID: {{ fup.pk }}</span>
                 </div>
 
                 <div class="card-body-custom">
@@ -184,7 +169,7 @@
                     <div class="info-grid">
                         <div class="info-item">
                             <label>Folio del Documento</label>
-                            <p class="text-primary font-monospace">#{{ fup.folio }}</p>
+                            <p class="font-monospace apple-num">#{{ fup.folio }}</p>
                         </div>
                         <div class="info-item">
                             <label>Fecha de Emisión</label>
@@ -192,12 +177,12 @@
                         </div>
                         <div class="info-item">
                             <label>Sostenimiento</label>
-                            <p><span class="badge bg-soft-success text-success border px-2">{{ fup.get_sostenimiento_display }}</span></p>
+                            <p><span class="apple-tag">{{ fup.get_sostenimiento_display }}</span></p>
                         </div>
                     </div>
 
-                    <h6 class="text-uppercase fw-bold text-dark border-bottom pb-2 mb-4 mt-5" style="font-size: 0.8rem; letter-spacing: 0.1em;">
-                        <i class="fas fa-user-tie text-primary me-2"></i> Datos del Maestro Asignado
+                    <h6 class="fw-bold pb-2 mb-4 mt-5" style="font-size: 0.85rem; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));">
+                        Datos del maestro
                     </h6>
 
                     <table class="data-table">
@@ -221,8 +206,8 @@
                         </tbody>
                     </table>
 
-                    <h6 class="text-uppercase fw-bold text-dark border-bottom pb-2 mb-4 mt-5" style="font-size: 0.8rem; letter-spacing: 0.1em;">
-                        <i class="fas fa-building text-primary me-2"></i> Detalles de Adscripción y Efectos
+                    <h6 class="fw-bold pb-2 mb-4 mt-5" style="font-size: 0.85rem; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));">
+                        Adscripción y efectos
                     </h6>
 
                     <table class="data-table">
@@ -246,8 +231,8 @@
 
                     {% if fup.observaciones %}
                     <div class="observation-box">
-                        <label class="form-label fw-bold text-dark mb-2"><i class="fas fa-comment-alt text-warning me-2"></i> Observaciones</label>
-                        <p class="mb-0 text-muted small" style="white-space: pre-wrap;">{{ fup.observaciones }}</p>
+                        <label class="form-label fw-bold mb-2">Observaciones</label>
+                        <p class="mb-0 small" style="color: var(--text-2, #6e6e73); white-space: pre-wrap;">{{ fup.observaciones }}</p>
                     </div>
                     {% endif %}
                 </div>
@@ -263,7 +248,7 @@
                 <div class="mb-4">
                     <i class="fas fa-file-pdf fa-5x text-danger opacity-75"></i>
                 </div>
-                <a href="{{ fup.archivo.url }}" target="_blank" class="btn btn-primary d-block rounded-pill fw-bold shadow-sm btn-hover-animate">
+                <a href="{{ fup.archivo.url }}" target="_blank" class="apple-btn w-100 justify-content-center">
                     <i class="fas fa-download me-2"></i> Descargar PDF
                 </a>
                 <p class="text-muted small mt-3 mb-0">Archivo verificado y guardado en servidor.</p>
@@ -278,11 +263,11 @@
             <!-- Actions Card -->
             <div class="side-card">
                 <h6 class="fw-bold text-dark mb-4 border-bottom pb-2">Control de Registro</h6>
-                <a href="{% url 'editar_fup' fup.pk %}" class="btn btn-light border btn-action-side text-primary">
-                    <i class="fas fa-edit"></i> Modificar Datos
+                <a href="{% url 'editar_fup' fup.pk %}" class="apple-btn-ghost btn-action-side">
+                    <i class="fas fa-edit me-2"></i> Modificar
                 </a>
-                <a href="{% url 'eliminar_fup' fup.pk %}" class="btn btn-light border btn-action-side text-danger">
-                    <i class="fas fa-trash"></i> Eliminar Registro
+                <a href="{% url 'eliminar_fup' fup.pk %}" class="apple-btn-ghost btn-action-side">
+                    <i class="fas fa-trash me-2"></i> Eliminar
                 </a>
             </div>
 

@@ -5,15 +5,8 @@
 
 {% block content %}
 <style>
-    :root {
-        --pz-primary: #0ea5e9;
-        --pz-secondary: #64748b;
-        --pz-border: #e2e8f0;
-        --pz-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
     .page-container {
-        padding: 2rem;
+        padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
     }
 
@@ -22,42 +15,28 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header Section */
+    /* Encabezado simple */
     .premium-header {
-        background: white;
-        border-radius: 1.25rem;
-        padding: 1.5rem 2rem;
-        box-shadow: var(--pz-shadow);
-        border: 1px solid var(--pz-border);
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-end;
         flex-wrap: wrap;
-        gap: 1.5rem;
+        gap: 1rem;
     }
 
-    .header-info h1 {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin: 0;
-    }
-
-    /* Main Card */
+    /* Tarjeta única */
     .premium-card {
-        background: white;
-        border-radius: 1.5rem;
-        border: 1px solid var(--pz-border);
-        box-shadow: var(--pz-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
 
     .card-section {
-        padding: 2rem 2.5rem;
-        border-bottom: 1px solid #f1f5f9;
-        transition: background-color 0.2s;
+        padding: 1.75rem clamp(17px, 3vw, 2.5rem);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .card-section:last-child {
@@ -68,34 +47,25 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
     }
 
     .section-header h5 {
-        font-size: 0.9rem;
-        font-weight: 800;
-        color: #334155;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text, #1d1d1f);
         margin: 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
     }
 
     .section-icon {
-        width: 32px;
-        height: 32px;
-        background: #f0f9ff;
-        color: var(--pz-primary);
-        border-radius: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.9rem;
+        display: none;
     }
 
     .info-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 2rem;
+        gap: 1.5rem;
     }
 
     .info-item {
@@ -106,60 +76,55 @@
 
     .info-label {
         font-size: 0.7rem;
-        font-weight: 700;
-        color: #94a3b8;
-        text-transform: uppercase;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
         letter-spacing: 0.025em;
     }
 
     .info-value {
         font-size: 0.95rem;
         font-weight: 600;
-        color: #1e293b;
+        color: var(--text, #1d1d1f);
     }
 
-    /* Table Styles */
+    /* Tabla interna */
     .table-container {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid var(--pz-border);
+        border-radius: 14px;
         overflow: hidden;
     }
 
     .table thead th {
-        background: #f8fafc;
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.025em;
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--pz-border);
+        background: var(--surface, #fff);
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--text-2, #6e6e73);
+        padding: 0.9rem 1.5rem;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .table tbody td {
-        padding: 1rem 1.5rem;
+        padding: 0.9rem 1.5rem;
         font-size: 0.9rem;
-        font-weight: 500;
-        color: #334155;
-        border-bottom: 1px solid #f1f5f9;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .table tbody tr:last-child td {
         border-bottom: none;
     }
 
-    .table tbody tr:hover {
-        background-color: #f0f9ff;
+    .table tbody tr:hover td {
+        background: var(--hover, #fbfbfd);
     }
 
-    /* Badges */
-    .badge-soft {
-        font-weight: 700;
+    /* Etiquetas neutras */
+    .badge-soft, .bg-soft-info {
+        background: rgba(0,0,0,0.05) !important;
+        color: var(--text-2, #6e6e73) !important;
+        font-weight: 600;
         padding: 0.4em 1em;
         border-radius: 2rem;
     }
-    .bg-soft-info { background: #e0f2fe; color: #0369a1; }
 
     @media print {
         .premium-header, .btn, footer, .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate {
@@ -175,14 +140,14 @@
     <!-- Header -->
     <div class="premium-header">
         <div class="header-info">
-            <h1><i class="fas fa-map-marked-alt text-info me-2"></i> {{ zona.etiqueta }}</h1>
-            <p class="text-muted small mb-0">Gestión de centros de trabajo y supervisión académica.</p>
+            <h1 class="apple-title">{{ zona.etiqueta }}</h1>
+            <p class="apple-subtitle mb-0">Centros de trabajo y supervisión.</p>
         </div>
-        <div class="d-flex gap-2">
-            <button onclick="window.print();" class="btn btn-info rounded-pill px-4 fw-bold text-white small btn-hover-animate">
-                <i class="fas fa-print me-2"></i> Imprimir Ficha
+        <div class="d-flex gap-2 flex-wrap">
+            <button onclick="window.print();" class="apple-btn-ghost">
+                <i class="fas fa-print me-2"></i> Imprimir
             </button>
-            <a href="{% url 'lista_zonas' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted small btn-hover-animate">
+            <a href="{% url 'lista_zonas' %}" class="apple-btn-ghost">
                 <i class="fas fa-arrow-left me-2"></i> Regresar
             </a>
         </div>
@@ -200,7 +165,7 @@
             <div class="info-grid">
                 <div class="info-item">
                     <span class="info-label">Nombre del Supervisor</span>
-                    <span class="info-value text-primary fw-bold">{{ zona.supervisor.nombres }} {{ zona.supervisor.a_paterno }} {{ zona.supervisor.a_materno }}</span>
+                    <span class="info-value fw-bold">{{ zona.supervisor.nombres }} {{ zona.supervisor.a_paterno }} {{ zona.supervisor.a_materno }}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Correo Electrónico</span>
@@ -220,7 +185,7 @@
         </div>
 
         <!-- Section 2: Zone Remarks -->
-        <div class="card-section bg-light bg-opacity-25">
+        <div class="card-section">
             <div class="section-header">
                 <div class="section-icon"><i class="fas fa-sticky-note"></i></div>
                 <h5>Observaciones Generales</h5>
@@ -259,7 +224,7 @@
                             <td>{{ escuela.get_turno_display }}</td>
                             <td class="small">{{ escuela.domicilio|truncatechars:50 }}</td>
                             <td class="text-end pe-4">
-                                <a href="{% url 'detalle_escuela' escuela.pk %}" class="btn btn-sm btn-light border rounded-pill px-3 fw-bold btn-hover-animate" title="Ver Detalles">
+                                <a href="{% url 'detalle_escuela' escuela.pk %}" class="apple-btn-ghost" style="min-height: 38px; font-size: 13px;" title="Ver Detalles">
                                     <i class="fas fa-eye me-1"></i> Detalles
                                 </a>
                             </td>
