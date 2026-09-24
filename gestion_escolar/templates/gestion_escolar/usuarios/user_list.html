@@ -5,16 +5,6 @@
 
 {% block content %}
 <style>
-    :root {
-        --ul-primary: #2563eb;
-        --ul-success: #10b981;
-        --ul-danger: #ef4444;
-        --ul-warning: #f59e0b;
-        --ul-info: #0ea5e9;
-        --ul-border: #e2e8f0;
-        --ul-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-
     .page-container {
         padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
@@ -25,69 +15,56 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header Section */
+    /* Encabezado simple */
     .header-section {
-        background: white;
-        border-radius: 1rem;
-        padding: 1.5rem 2rem;
-        box-shadow: var(--ul-shadow);
-        border: 1px solid var(--ul-border);
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
-    /* Stat Cards Modern */
+    /* Conteos */
     .stat-card-modern {
-        background: white;
-        border: 1px solid var(--ul-border);
-        border-radius: 0.75rem;
+        background: var(--surface, #fff);
+        border-radius: var(--r-card, 18px);
         padding: 1.25rem;
         position: relative;
         overflow: hidden;
-        transition: transform 0.2s;
-        box-shadow: var(--ul-shadow);
+        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
         height: 100%;
     }
 
-    .stat-card-modern:hover {
-        transform: translateY(-5px);
-    }
-
     .stat-card-modern .icon-bg {
-        position: absolute;
-        right: -10px;
-        bottom: -10px;
-        font-size: 3.5rem;
-        opacity: 0.05;
-        color: var(--ul-primary);
+        display: none;
     }
 
     .stat-value {
         font-size: 1.75rem;
-        font-weight: 800;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
         margin: 0;
         line-height: 1;
+        color: var(--text, #1d1d1f);
     }
 
     .stat-label {
         font-size: 0.7rem;
-        text-transform: uppercase;
-        font-weight: 700;
-        color: #64748b;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
         margin-bottom: 0.5rem;
     }
 
-    /* Filters Pill Styling */
+    /* Filtros segmentados */
     .filter-pills {
-        background: #f1f5f9;
-        padding: 0.4rem;
+        background: rgba(0,0,0,0.05);
+        padding: 0.3rem;
         border-radius: 2rem;
         display: inline-flex;
         gap: 0.25rem;
         margin-bottom: 1.5rem;
-        border: 1px solid var(--ul-border);
     }
 
     .pill-btn {
@@ -96,52 +73,56 @@
         border-radius: 1.5rem;
         font-size: 0.85rem;
         font-weight: 600;
-        transition: all 0.2s;
-        color: #64748b;
+        color: var(--text-2, #6e6e73);
         background: transparent;
         text-decoration: none;
     }
 
     .pill-btn:hover {
-        background: rgba(255, 255, 255, 0.5);
-        color: var(--ul-primary);
+        color: var(--text, #1d1d1f);
     }
 
     .pill-btn.active {
-        background: white;
-        color: var(--ul-primary);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background: var(--text, #1d1d1f);
+        color: white;
     }
 
-    /* Table Card */
+    /* Tabla en panel único */
     .table-container-card {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid var(--ul-border);
-        box-shadow: var(--ul-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
     }
 
     .table thead th {
-        background-color: #f8fafc;
-        color: #475569;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 0.7rem;
-        border-bottom: 2px solid var(--ul-border);
-        padding: 1rem;
+        background: var(--surface, #fff);
+        color: var(--text-2, #6e6e73);
+        font-weight: 600;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+        padding: 0.9rem 1rem;
+    }
+
+    .table tbody td {
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+
+    .table tbody tr:last-child td {
+        border-bottom: none;
     }
 
     .avatar-circle {
         width: 35px;
         height: 35px;
-        background-color: #e2e8f0;
+        background: rgba(0,0,0,0.05);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
-        color: #475569;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
         font-size: 0.85rem;
     }
 
@@ -150,21 +131,32 @@
         padding: 0.35rem 0.65rem;
         border-radius: 2rem;
         font-weight: 600;
+        background: rgba(0,0,0,0.05);
+        color: var(--text-2, #6e6e73);
+        display: inline-flex;
+        align-items: center;
     }
 
-    .badge-soft-success { background: #ecfdf5; color: #059669; }
-    .badge-soft-danger { background: #fef2f2; color: #dc2626; }
-    .badge-soft-primary { background: #eff6ff; color: #1d4ed8; }
+    .badge-soft-success { color: var(--text, #1d1d1f); }
+    .badge-soft-success::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 6px;
+        background: var(--live, #30d158);
+    }
 </style>
 
 <div class="page-container">
     <div class="header-section">
         <div>
-            <h2 class="mb-0 fw-bold text-dark"><i class="fas fa-users text-primary me-2"></i> Gestión de Usuarios</h2>
-            <p class="text-muted small mb-0 mt-1">Administra accesos, roles y permisos del personal</p>
+            <h2 class="apple-title" style="font-size: clamp(20px, 3vw, 26px);">Usuarios</h2>
+            <p class="apple-subtitle mb-0 mt-1">Accesos, roles y permisos.</p>
         </div>
-        <a href="{% url 'user_create' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
-            <i class="fas fa-plus me-2"></i> Agregar Usuario
+        <a href="{% url 'user_create' %}" class="apple-btn">
+            <i class="fas fa-plus me-2"></i> Agregar
         </a>
     </div>
 

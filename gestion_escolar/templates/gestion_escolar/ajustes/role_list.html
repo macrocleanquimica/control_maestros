@@ -5,17 +5,6 @@
 
 {% block content %}
 <style>
-    :root {
-        --rl-primary: #2563eb;
-        --rl-secondary: #475569;
-        --rl-success: #10b981;
-        --rl-warning: #f59e0b;
-        --rl-danger: #ef4444;
-        --rl-light: #f8fafc;
-        --rl-border: #e2e8f0;
-        --rl-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-
     .page-container {
         padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
@@ -26,82 +15,61 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header Styling */
+    /* Encabezado simple */
     .header-section {
-        background: white;
-        border-radius: 1rem;
-        padding: 1.5rem 2rem;
-        box-shadow: var(--rl-shadow);
-        border: 1px solid var(--rl-border);
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
-    /* Stat Cards Overlay */
+    /* Tarjetas de conteo */
     .stat-card-modern {
-        background: white;
-        border: 1px solid var(--rl-border);
-        border-radius: 0.75rem;
+        background: var(--surface, #fff);
+        border-radius: var(--r-card, 18px);
         padding: 1.25rem;
         position: relative;
         overflow: hidden;
-        transition: transform 0.2s;
-        box-shadow: var(--rl-shadow);
+        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
         height: 100%;
     }
 
-    .stat-card-modern:hover {
-        transform: translateY(-5px);
-    }
-
     .stat-card-modern .icon-bg {
-        position: absolute;
-        right: -10px;
-        bottom: -10px;
-        font-size: 4rem;
-        opacity: 0.05;
-        color: var(--rl-primary);
+        display: none;
     }
 
     .stat-value {
         font-size: 2rem;
-        font-weight: 800;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
         margin: 0;
         line-height: 1;
+        color: var(--text, #1d1d1f);
     }
 
     .stat-label {
         font-size: 0.75rem;
-        text-transform: uppercase;
-        font-weight: 700;
-        color: #64748b;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
         margin-bottom: 0.5rem;
     }
 
-    /* Role Cards */
+    /* Tarjetas de rol */
     .role-grid-card {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid var(--rl-border);
-        box-shadow: var(--rl-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-card, 18px);
+        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
         height: 100%;
         display: flex;
         flex-direction: column;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .role-grid-card:hover {
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-        border-color: var(--rl-primary);
     }
 
     .role-card-header {
         padding: 1.25rem;
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        border-bottom: 1px solid var(--rl-border);
-        border-radius: 1rem 1rem 0 0;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .role-card-body {
@@ -110,10 +78,8 @@
     }
 
     .role-card-footer {
-        padding: 1rem;
-        background: #fdfdfd;
-        border-top: 1px solid var(--rl-border);
-        border-radius: 0 0 1rem 1rem;
+        padding: 1rem 1.25rem;
+        border-top: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .badge-soft {
@@ -124,29 +90,34 @@
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
+        background: rgba(0,0,0,0.05);
+        color: var(--text-2, #6e6e73);
     }
 
-    .badge-soft-primary { background: #eff6ff; color: #1d4ed8; }
-    .badge-soft-success { background: #ecfdf5; color: #059669; }
-    .badge-soft-info { background: #f0f9ff; color: #0369a1; }
-
-    /* Table Styling */
+    /* Tabla en panel único */
     .table-card {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid var(--rl-border);
-        box-shadow: var(--rl-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
     }
 
     .table thead th {
-        background-color: #f8fafc;
-        color: #475569;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        border-bottom: 2px solid var(--rl-border);
-        padding: 1rem;
+        background: var(--surface, #fff);
+        color: var(--text-2, #6e6e73);
+        font-weight: 600;
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+        padding: 0.9rem 1rem;
+    }
+
+    .table tbody td {
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    }
+
+    .table tbody tr:last-child td {
+        border-bottom: none;
     }
 
 </style>
@@ -155,11 +126,11 @@
     <!-- Header -->
     <div class="header-section">
         <div>
-            <h1 class="h3 mb-1"><i class="fas fa-shield-alt text-primary me-2"></i> {{ titulo }}</h1>
-            <p class="text-muted small mb-0">Gestión centralizada de roles, permisos y accesos del sistema.</p>
+            <h1 class="apple-title">{{ titulo }}</h1>
+            <p class="apple-subtitle mb-0">Roles, permisos y accesos.</p>
         </div>
-        <a href="{% url 'role_create' %}" class="btn btn-primary rounded-pill px-4 shadow-sm btn-hover-animate">
-            <i class="fas fa-plus-circle me-1"></i> Crear Nuevo Rol
+        <a href="{% url 'role_create' %}" class="apple-btn">
+            <i class="fas fa-plus me-2"></i> Nuevo Rol
         </a>
     </div>
 
@@ -197,20 +168,14 @@
 
     <!-- Grid de Roles -->
     <div class="mb-5">
-        <div class="d-flex align-items-center mb-4">
-            <div class="flex-shrink-0 bg-primary text-white p-2 rounded-3 me-3">
-                <i class="fas fa-list-ul"></i>
-            </div>
-            <h4 class="mb-0">Roles del Sistema</h4>
-        </div>
+        <h4 class="mb-3" style="font-weight: 600; letter-spacing: -0.01em;">Roles del Sistema</h4>
 
         <div class="row g-4">
             {% for role in roles %}
             <div class="col-md-6 col-lg-4">
                 <div class="role-grid-card">
                     <div class="role-card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 font-weight-bold text-dark">{{ role.name }}</h5>
-                        <i class="fas fa-shield-virus text-primary opacity-50"></i>
+                        <h5 class="mb-0" style="font-weight: 600; letter-spacing: -0.01em;">{{ role.name }}</h5>
                     </div>
                     <div class="role-card-body">
                         <div class="d-flex gap-2 mb-4">
@@ -241,12 +206,12 @@
                     <div class="role-card-footer">
                         <div class="row g-2">
                             <div class="col-6">
-                                <a href="{% url 'role_update' role.pk %}" class="btn btn-sm btn-outline-primary w-100 rounded-pill btn-hover-animate">
+                                <a href="{% url 'role_update' role.pk %}" class="apple-btn-ghost w-100 justify-content-center" style="min-height: 38px; font-size: 13px;">
                                     <i class="fas fa-lock-open me-1"></i> Permisos
                                 </a>
                             </div>
                             <div class="col-6">
-                                <a href="{% url 'role_members' role.pk %}" class="btn btn-sm btn-info text-white w-100 rounded-pill btn-hover-animate">
+                                <a href="{% url 'role_members' role.pk %}" class="apple-btn-ghost w-100 justify-content-center" style="min-height: 38px; font-size: 13px;">
                                     <i class="fas fa-users me-1"></i> Miembros
                                 </a>
                             </div>
@@ -275,11 +240,8 @@
 
     <!-- Tabla Resumen -->
     <div class="table-card">
-        <div class="card-header bg-white p-4 border-bottom d-flex align-items-center">
-            <div class="bg-dark text-white p-2 rounded-3 me-3">
-                <i class="fas fa-table"></i>
-            </div>
-            <h4 class="mb-0">Resumen de Permisos por Usuario</h4>
+        <div class="p-4" style="border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));">
+            <h4 class="mb-0" style="font-weight: 600; letter-spacing: -0.01em;">Permisos por Usuario</h4>
         </div>
         <div class="p-4">
             <div class="table-responsive">
