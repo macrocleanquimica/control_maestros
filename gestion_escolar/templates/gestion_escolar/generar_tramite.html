@@ -6,13 +6,6 @@
 
 {% block content %}
 <style>
-    :root {
-        --of-primary: #6366f1;
-        --of-secondary: #64748b;
-        --of-border: #e2e8f0;
-        --of-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
     .page-container {
         padding: 2rem;
         animation: fadeIn 0.4s ease-out;
@@ -23,42 +16,36 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header Section */
+    /* Encabezado simple */
     .premium-header {
-        background: white;
-        border-radius: 1.25rem;
-        padding: 1.5rem 2rem;
-        box-shadow: var(--of-shadow);
-        border: 1px solid var(--of-border);
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-end;
         flex-wrap: wrap;
-        gap: 1.5rem;
+        gap: 1rem;
     }
 
     .header-info h1 {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #1e293b;
+        font-size: clamp(22px, 3.4vw, 30px);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text, #1d1d1f);
         margin: 0;
     }
 
-    /* Form Container */
+    /* Contenedor único */
     .form-card {
-        background: white;
-        border-radius: 1.5rem;
-        border: 1px solid var(--of-border);
-        box-shadow: var(--of-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
         margin-bottom: 3rem;
     }
 
     .section-container {
-        padding: 2.5rem;
-        border-bottom: 1px solid #f1f5f9;
-        transition: all 0.3s ease;
+        padding: 2rem clamp(17px, 3vw, 2.5rem);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .section-container:last-child {
@@ -69,96 +56,83 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         padding-bottom: 0.75rem;
-        border-bottom: 2px solid #f1f5f9;
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
 
     .section-title h4 {
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: #334155;
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--text, #1d1d1f);
         margin: 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
     }
 
     .section-icon {
-        width: 36px;
-        height: 36px;
-        background: #f5f3ff;
-        color: var(--of-primary);
-        border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1rem;
+        display: none;
     }
 
-    /* Input Styling */
+    /* Etiquetas y campos */
     .form-label {
         font-size: 0.75rem;
-        font-weight: 700;
-        color: #64748b;
-        text-transform: uppercase;
+        font-weight: 600;
+        color: var(--text-2, #6e6e73);
         letter-spacing: 0.025em;
         margin-bottom: 0.5rem;
     }
 
     .form-control, .form-select {
-        border-radius: 0.75rem;
-        border: 1px solid var(--of-border);
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.08);
         padding: 0.6rem 1rem;
-        background-color: #f8fafc;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        background-color: var(--surface, #fff);
+        transition: border-color 0.2s;
         font-weight: 500;
     }
 
     .form-control:focus, .form-select:focus {
         background-color: white;
-        border-color: var(--of-primary);
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        border-color: var(--accent, #0071e3);
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
     }
 
     .form-control[readonly] {
-        background-color: #f1f5f9;
-        color: #64748b;
+        background-color: rgba(0,0,0,0.03);
+        color: var(--text-2, #6e6e73);
         cursor: not-allowed;
     }
 
-    /* Alert Styling */
+    /* Alertas */
     .alert-premium {
-        border-radius: 1rem;
+        border-radius: 14px;
         border: none;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         padding: 1rem 1.5rem;
     }
 
-    /* Buttons */
+    /* Botón principal */
     .btn-generate {
-        background: var(--of-primary);
+        background: var(--accent, #0071e3);
         color: white;
         border: none;
-        padding: 1rem 3rem;
-        border-radius: 2rem;
-        font-weight: 800;
+        padding: 0 2.5rem;
+        min-height: 48px;
+        border-radius: var(--r-pill, 999px);
+        font-weight: 600;
         font-size: 1rem;
-        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
-        transition: all 0.2s;
     }
 
     .btn-generate:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.5);
+        opacity: 0.92;
         color: white;
     }
 
     /* Select2 integration */
     .select2-container--default .select2-selection--single {
-        border-radius: 0.75rem !important;
-        border: 1px solid var(--of-border) !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(0,0,0,0.08) !important;
         height: 45px !important;
-        background-color: #f8fafc !important;
+        background-color: var(--surface, #fff) !important;
     }
 
     .select2-container--default .select2-selection--single .select2-selection__rendered {
@@ -176,12 +150,12 @@
     <!-- Header -->
     <div class="premium-header">
         <div class="header-info">
-            <h1><i class="fas fa-file-signature text-primary me-2"></i> {{ titulo }}</h1>
-            <p class="text-muted small mb-0">Generación automatizada de documentos y oficios oficiales.</p>
+            <h1>{{ titulo }}</h1>
+            <p class="mb-0" style="font-size: 0.9rem; color: var(--text-2, #6e6e73);">Documentos y oficios oficiales.</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{% url 'historial' %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted small btn-hover-animate">
-                <i class="fas fa-history me-2"></i> Ver Historial
+            <a href="{% url 'historial' %}" class="apple-btn-ghost">
+                <i class="fas fa-history me-2"></i> Historial
             </a>
         </div>
     </div>
@@ -220,7 +194,6 @@
             <!-- SECCIÓN 1: CONFIGURACIÓN BASE -->
             <div class="section-container bg-light bg-opacity-50">
                 <div class="section-title">
-                    <div class="section-icon"><i class="fas fa-cog"></i></div>
                     <h4>Configuración del Documento</h4>
                 </div>
                 <div class="row g-4">
@@ -261,7 +234,6 @@
             <!-- SECCIÓN 2: DATOS DEL TITULAR -->
             <div class="section-container" id="datos-titular-section">
                 <div class="section-title">
-                    <div class="section-icon"><i class="fas fa-user-tie"></i></div>
                     <h4>Datos del Maestro Titular</h4>
                 </div>
                 <div class="row g-4">
@@ -326,7 +298,6 @@
             <!-- SECCIÓN 3: DATOS DEL INTERINO -->
             <div class="section-container" id="datos-interino-section">
                 <div class="section-title">
-                    <div class="section-icon"><i class="fas fa-user-clock"></i></div>
                     <h4>Datos del Maestro Interino</h4>
                 </div>
                 <div class="row g-4">
@@ -400,7 +371,6 @@
             <!-- SECCIÓN PARA CAMBIO DE ADSCRIPCIÓN -->
             <div class="section-container" id="cambio-adscripcion-section">
                 <div class="section-title">
-                    <div class="section-icon"><i class="fas fa-exchange-alt"></i></div>
                     <h4>Datos del Cambio de Adscripción</h4>
                 </div>
                 <div class="row g-4">
@@ -432,7 +402,6 @@
             <!-- SECCIÓN 4: OTROS DATOS -->
             <div class="section-container" id="otros-datos-section">
                 <div class="section-title">
-                    <div class="section-icon"><i class="fas fa-list-alt"></i></div>
                     <h4>Otros Datos del Trámite</h4>
                 </div>
                 <div class="row g-4">
