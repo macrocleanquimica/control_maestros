@@ -293,6 +293,12 @@ def exportar_paso_gsheets(request, lote_id):
         mensaje_final = f'Se enviaron datos de {vacancias_enviadas} vacancia(s) a Google Sheets.'
         if errores_gsheets:
             mensaje_final += f' Hubo {len(errores_gsheets)} error(es).'
+            return JsonResponse({
+                'status': 'warning',
+                'message': mensaje_final,
+                'gsheets_count': vacancias_enviadas,
+                'gsheets_errors': errores_gsheets
+            })
 
         return JsonResponse({
             'status': 'success',
