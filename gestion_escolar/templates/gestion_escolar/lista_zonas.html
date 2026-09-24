@@ -5,12 +5,6 @@
 
 {% block content %}
 <style>
-    :root {
-        --zn-primary: #2563eb;
-        --zn-border: #e2e8f0;
-        --zn-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-
     .page-container {
         padding: 1.5rem;
         animation: fadeIn 0.4s ease-out;
@@ -21,64 +15,59 @@
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Header Section */
+    /* Encabezado simple */
     .header-section {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        background: white;
-        padding: 1.25rem 1.5rem;
-        border-radius: 1rem;
-        border: 1px solid var(--zn-border);
-        box-shadow: var(--zn-shadow);
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
     }
 
-    .header-title h1 {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin-bottom: 0.25rem;
-    }
-
-    /* Table Container */
+    /* Tabla en panel único */
     .table-container-card {
-        background: white;
-        border-radius: 1rem;
-        border: 1px solid var(--zn-border);
-        box-shadow: var(--zn-shadow);
+        background: var(--surface, #fff);
+        border-radius: var(--r-panel, 22px);
+        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
         overflow: hidden;
     }
 
     thead th {
-        background: #f8fafc !important;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
-        color: #64748b;
-        border-bottom: 2px solid var(--zn-border) !important;
-        padding: 1rem !important;
+        background: var(--surface, #fff) !important;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--text-2, #6e6e73);
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important;
+        padding: 0.9rem 1rem !important;
     }
 
-    /* Homogenized Action Buttons */
-    .btn-action-custom {
-        transition: all 0.2s;
+    tbody td {
+        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
     }
-    
-    .btn-action-custom:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    tbody tr:hover td {
+        background: var(--hover, #fbfbfd);
+    }
+
+    /* Botones de acción sin saltos */
+    .btn-action-custom {
+        transition: background 0.2s;
     }
 
     .zona-number-badge {
-        background: #eff6ff;
-        color: #1d4ed8;
+        background: rgba(0,0,0,0.05);
+        color: var(--text, #1d1d1f);
         padding: 0.4rem 0.8rem;
         border-radius: 0.5rem;
-        font-weight: 800;
+        font-weight: 700;
         font-size: 1rem;
-        border: 1px solid #dbeafe;
+        font-variant-numeric: tabular-nums;
     }
 
 </style>
@@ -87,12 +76,12 @@
     <!-- Header Section -->
     <div class="header-section">
         <div class="header-title">
-            <h1 class="mb-0"><i class="fas fa-map-marked-alt text-primary me-2"></i> Gestión de Zonas Escolares</h1>
-            <p class="text-muted small mb-0">Administración de las zonas geográficas y supervisores asignados.</p>
+            <h1 class="apple-title mb-0">Zonas</h1>
+            <p class="apple-subtitle mb-0">Zonas geográficas y supervisores.</p>
         </div>
         <div class="header-actions">
-            <a href="{% url 'agregar_zona' %}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold btn-hover-animate">
-                <i class="fas fa-plus-circle me-1"></i> Agregar Zona
+            <a href="{% url 'agregar_zona' %}" class="apple-btn">
+                <i class="fas fa-plus me-2"></i> Agregar Zona
             </a>
         </div>
     </div>
@@ -133,7 +122,7 @@
                             <td>
                                 {% if sup %}
                                     <div class="d-flex align-items-center">
-                                        <div class="avatar-sm bg-light rounded-circle p-2 me-2 text-center d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem;">
+                                        <div class="avatar-sm rounded-circle p-2 me-2 text-center d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem; background: rgba(0,0,0,0.05); color: var(--text, #1d1d1f);">
                                             {{ item.nombre_supervisor|slice:":1"|upper }}
                                         </div>
                                         <div class="fw-bold text-dark">
@@ -141,7 +130,7 @@
                                         </div>
                                     </div>
                                 {% else %}
-                                    <span class="badge bg-light text-muted border py-2 px-3"><i class="fas fa-user-slash me-1"></i> Sin Asignar</span>
+                                    <span class="apple-tag"><i class="fas fa-user-slash me-1"></i> Sin Asignar</span>
                                 {% endif %}
                             </td>
                             <td class="text-muted">
