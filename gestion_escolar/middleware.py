@@ -8,12 +8,18 @@ class LoginRequiredMiddleware:
         self.exempt_urls = [
             reverse('login'),
             reverse('signup'),
-            # Agrega aquí otras URLs que quieras exentar, como 'password_reset', etc.
+            reverse('reset_password'),
+            reverse('password_reset_done'),
+            reverse('password_reset_complete'),
         ]
+        # Prefijos exentos (incluye reset/<uidb64>/<token>/ que lleva parámetros)
+        self.exempt_prefixes = ('/reset',)
 
     def __call__(self, request):
         # Si el usuario no está autenticado y la URL no está en la lista de exentos
-        if not request.user.is_authenticated and request.path not in self.exempt_urls:
+        if (not request.user.is_authenticated
+                and request.path not in self.exempt_urls
+                and not request.path.startswith(self.exempt_prefixes)):
             # Redirigir al login, añadiendo la página actual como parámetro 'next'
             # para que el usuario sea redirigido de vuelta después de iniciar sesión.
             return redirect(f"{reverse('login')}?next={request.path}")
