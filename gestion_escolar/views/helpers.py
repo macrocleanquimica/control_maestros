@@ -31,10 +31,96 @@ def get_school_info(escuela):
         'sostenimiento': escuela.get_sostenimiento_display() or '',
     }
 
+# Regex tolerante: coincide con DIRECTOR(A), DIRECTOR (A), DIRECTOR, etc.
+import re
+
+def es_status_activo(status):
+    """Devuelve True si el valor de status representa a un maestro activo,
+    tolerando variantes de mayúsculas y espacios (ej. 'ACTIVO', 'ACTIVA', 'ACTIVO ')."""
+    return (status or '').strip().upper().startswith('ACTIV')
+
+
+def contar_personal(queryset=None):
+    """Cuenta PERSONAS únicas (por CURP), no registros/plazas.
+
+    Recibe un queryset de Maestro (o None para todos). Devuelve un dict:
+      {'personas': n_personas_unicas, 'plazas': n_registros}
+    Una persona con varias plazas (mismo CURP) cuenta como UNA. Las plazas sin CURP
+    se consideran personas individuales (cada registro cuenta como una persona).
+    """
+    from django.db.models import Q
+    qs = queryset if queryset is not None else Maestro.objects.all()
+    plazas = qs.count()
+    # Agrupar por CURP no vacía: cada CURP distinta = 1 persona
+    con_curp = qs.exclude(curp__isnull=True).exclude(curp='')
+    personas_con_curp = con_curp.values('curp').distinct().count()
+    # Registros sin CURP -> cada uno cuenta como persona propia
+    sin_curp = qs.filter(Q(curp__isnull=True) | Q(curp='')).count()
+    personas = personas_con_curp + sin_curp
+    return {'personas': personas, 'plazas': plazas}
+
+
+# Mapa único de funciones canónicas -> valores de Maestro.funcion.
+# Centralizado aquí para que personal.py (lista_por_funcion) y reportes.py
+# (exportar_maestros_excel) usen la misma definición y no se desincronicen.
+FUNCION_MAPPING = {
+    'DIRECTOR': {'display': 'Director', 'values': ['DIRECTOR(A)']},
+    'SUPERVISOR': {'display': 'Supervisor', 'values': ['SUPERVISOR(A)']},
+    'MAESTRO_GRUPO': {'display': 'Maestro de Grupo', 'values': ['MAESTRO(A) DE GRUPO', 'MAESTRO(A) DE GRUPO CON ESPECIALIDAD', 'MAESTRO(A) DE GRUPO ESPECIALISTA']},
+    'DOCENTE_APOYO': {'display': 'Docente de Apoyo', 'values': ['MAESTRO(A) ESPECIALISTA DOCENTE DE APOYO']},
+    'PSICOLOGO': {'display': 'Psicólogo', 'values': ['PSICÓLOGO(A)']},
+    'TRABAJADOR_SOCIAL': {'display': 'Trabajador Social', 'values': ['TRABAJADOR(A) SOCIAL']},
+    'NIÑERO': {'display': 'Niñero', 'values': ['NIÑERO(A)']},
+    'SECRETARIO': {'display': 'Secretario', 'values': ['SECRETARIO(A)']},
+    'INTENDENTE': {'display': 'Intendente', 'values': ['INTENDENTE']},
+    'VELADOR': {'display': 'Velador', 'values': ['VELADOR']},
+    'VIGILANTE': {'display': 'Vigilante', 'values': ['VIGILANTE']},
+    'OTRO': {'display': 'Otro', 'values': ['OTRO']},
+    'APOYO_TECNICO_PEDAGOGICO': {'display': 'Apoyo Técnico Pedagógico', 'values': ['APOYO TÉCNICO PEDAGÓGICO']},
+    'MAESTRO_TALLER': {'display': 'Maestro de Taller', 'values': ['MAESTRO(A) DE TALLER']},
+    'MAESTRO_MUSICA': {'display': 'Maestro de Música', 'values': ['MAESTRO(A) MÚSICA']},
+    'MAESTRO_EDUCACION_FISICA': {'display': 'Maestro de Educación Física', 'values': ['MAESTRO(A) DE EDUCACIÓN FÍSICA']},
+    'MAESTRO_EDUCACION_ARTISTICA': {'display': 'Maestro de Educación Artística', 'values': ['MAESTRO(A) DE EDUCACIÓN ARTÍSTICA']},
+    'MEDICO': {'display': 'Médico', 'values': ['MÉDICO(A)']},
+    'PROMOTOR_TIC': {'display': 'Promotor TIC', 'values': ['PROMOTOR TIC']},
+    'TERAPISTA_FISICO': {'display': 'Terapista Físico', 'values': ['TERAPISTA FÍSICO']},
+    'BIBLIOTECARIO': {'display': 'Bibliotecario', 'values': ['BIBLIOTECARIO']},
+    'ADMINISTRATIVO_ESPECIALIZADO': {'display': 'Administrativo Especializado', 'values': ['ADMINISTRATIVO ESPECIALIZADO']},
+    'OFICIAL_SERVICIOS_MANTENIMIENTO': {'display': 'Oficial de Servicios y Mantenimiento', 'values': ['OFICIAL DE SERVICIOS Y MANTENIMIENTO']},
+    'ASISTENTE_DE_SERVICIOS': {'display': 'Asistente de Servicios', 'values': ['ASISTENTE DE SERVICIOS']},
+    'ASESOR_JURIDICO': {'display': 'Asesor Jurídico', 'values': ['ASESOR JURÍDICO']},
+    'AUXILIAR_DE_GRUPO': {'display': 'Auxiliar de Grupo', 'values': ['AUXILIAR DE GRUPO']},
+    'MAESTRO_COMUNICACION': {'display': 'Maestro de Comunicación', 'values': ['MAESTRO(A) DE COMUNICACIÓN']},
+    'MAESTRO_AULA_HOSPITALARIA': {'display': 'Maestro Aula Hospitalaria', 'values': ['MAESTRO(A) AULA HOSPITALARIA']},
+    'NO_ESPECIFICADO': {'display': 'No Especificado', 'values': ['NO ESPECIFICADO']},
+}
+
 # Helper function to get director
+def elegir_director_activo(escuela):
+    """Elige al director de un centro de trabajo con lógica priorizada:
+    1) Maestro con función DIRECTOR y status ACTIVO y categoría E0629 (director formal).
+    2) Maestro con función DIRECTOR y status ACTIVO (responsable de dirección sin categoría).
+    Se excluye siempre a los INACTIVO. Devuelve el maestro o None.
+    """
+    if not escuela:
+        return None
+    candidatos = Maestro.objects.filter(
+        id_escuela=escuela,
+        funcion__in=['DIRECTOR(A)'],
+    )
+    activos = [m for m in candidatos if es_status_activo(m.status)]
+    if not activos:
+        return None
+    # Preferir categoría E0629 (director de educación especial)
+    for m in activos:
+        if m.categog and m.categog.id_categoria == 'E0629':
+            return m
+    return activos[0]
+
 def get_director_info(escuela):
-    if not escuela: return {'nombre': 'DIRECTOR NO ENCONTRADO', 'nivel': ''}
-    director = Maestro.objects.filter(id_escuela=escuela, funcion__in=['DIRECTOR', 'DIRECTOR (A)']).first()
+    if not escuela:
+        return {'nombre': 'DIRECTOR NO ENCONTRADO', 'nivel': ''}
+    director = elegir_director_activo(escuela)
     if director:
         return {'nombre': get_full_name(director), 'nivel': director.nivel_estudio or ''}
     return {'nombre': 'DIRECTOR NO ENCONTRADO', 'nivel': ''}
@@ -42,7 +128,7 @@ def get_director_info(escuela):
 # Helper function to get supervisor
 def get_supervisor_info(zona):
     if not zona: return {'nombre': 'SUPERVISOR NO ENCONTRADO', 'nivel': ''}
-    supervisor = Maestro.objects.filter(id_escuela__zona_esc=zona, funcion__in=['SUPERVISOR', 'SUPERVISOR (A)', 'SUPERVISOR(A)']).first()
+    supervisor = Maestro.objects.filter(id_escuela__zona_esc=zona, funcion__in=['SUPERVISOR(A)']).first()
     if supervisor:
         return {'nombre': get_full_name(supervisor), 'nivel': supervisor.nivel_estudio or ''}
     return {'nombre': 'SUPERVISOR NO ENCONTRADO', 'nivel': ''}
@@ -268,11 +354,25 @@ def generate_word_document(form_data, plantilla_tramite, user):
         nombre_titular = get_full_name(maestro_titular)
         curp_titular = maestro_titular.curp or '' if maestro_titular else ''
         rfc_titular = maestro_titular.rfc or '' if maestro_titular else ''
-        categoria_titular = maestro_titular.categog.descripcion if maestro_titular and maestro_titular.categog else ''
+        cat_obj = maestro_titular.categog if maestro_titular and maestro_titular.categog else None
+        categoria_titular = cat_obj.descripcion if cat_obj else ''
+        codigo_categoria_titular = cat_obj.id_categoria if cat_obj else ''
         presupuestal_titular = maestro_titular.clave_presupuestal or '' if maestro_titular else ''
         techo_financiero_titular = maestro_titular.techo_f or '' if maestro_titular else ''
         funcion_titular = maestro_titular.funcion or '' if maestro_titular else ''
-        codigo_titular = maestro_titular.codigo or '' if maestro_titular else ''
+        codigo_titular = maestro_titular.codigo if maestro_titular else ''
+        # Forzar código 09 si el trámite es ALTA INICIAL (09)
+        if plantilla_tramite.nombre == "ALTA INICIAL (09)":
+            codigo_titular = "09"
+        
+        # Extraer partes del nombre del titular
+        paterno_titular = maestro_titular.a_paterno or '' if maestro_titular else ''
+        materno_titular = maestro_titular.a_materno or '' if maestro_titular else ''
+        nombre_titular_solo = maestro_titular.nombres or '' if maestro_titular else ''
+        domicilio_part_titular = maestro_titular.domicilio_part or '' if maestro_titular else ''
+        codigo_postal_titular = maestro_titular.codigo_postal or '' if maestro_titular else ''
+        poblacion_titular = maestro_titular.poblacion or '' if maestro_titular else ''
+        telefono_titular = maestro_titular.telefono or '' if maestro_titular else ''
         
 
 
@@ -376,12 +476,22 @@ def generate_word_document(form_data, plantilla_tramite, user):
         # --- Preparación del contexto para la plantilla ---
         quincena_inicial = form_data.get('quincena_inicial') or ''
         quincena_final = form_data.get('quincena_final') or ''
-        i_dia = f"{fecha_efecto3.day:02d}" if fecha_efecto3 else ''
-        i_mes = f"{fecha_efecto3.month:02d}" if fecha_efecto3 else ''
-        i_ano = fecha_efecto3.year if fecha_efecto3 else ''
-        f_dia = f"{fecha_efecto4.day:02d}" if fecha_efecto4 else ''
-        f_mes = f"{fecha_efecto4.month:02d}" if fecha_efecto4 else ''
-        f_ano = fecha_efecto4.year if fecha_efecto4 else ''
+
+        # Determinar qué fechas usar para los componentes individuales (Día/Mes/Año)
+        # Para ALTA INICIAL (09), usamos las fechas del titular (efecto1 y efecto2)
+        if plantilla_tramite.nombre == "ALTA INICIAL (09)":
+            ref_fecha_i = fecha_efecto1
+            ref_fecha_f = fecha_efecto2
+        else:
+            ref_fecha_i = fecha_efecto3
+            ref_fecha_f = fecha_efecto4
+
+        i_dia = f"{ref_fecha_i.day:02d}" if ref_fecha_i else ''
+        i_mes = f"{ref_fecha_i.month:02d}" if ref_fecha_i else ''
+        i_ano = ref_fecha_i.year if ref_fecha_i else ''
+        f_dia = f"{ref_fecha_f.day:02d}" if ref_fecha_f else ''
+        f_mes = f"{ref_fecha_f.month:02d}" if ref_fecha_f else ''
+        f_ano = ref_fecha_f.year if ref_fecha_f else ''
         no_prel = form_data.get('no_prel_display') or ''
         folio_prel = form_data.get('folio_prel_display') or ''
         tipo_val = form_data.get('tipo_val_display') or ''
@@ -390,12 +500,19 @@ def generate_word_document(form_data, plantilla_tramite, user):
         context = {
             'quienlohizo': quienlohizo,
             'Nombre_Titular': nombre_titular,
+            'Prefijo': maestro_titular.nivel_estudio or '' if maestro_titular else '',
             'CURP_Titular': curp_titular,
             'RFC_Titular': rfc_titular,
             'Categoria_Titular': categoria_titular,
             'Presupuestal_Titular': presupuestal_titular,
             'Techo_Financiero': techo_financiero_titular,
+            'Categoria_Titular': categoria_titular,
+            'Categoria': categoria_titular,
+            'Id_Categoria_Titular': maestro_titular.categog.id_categoria if maestro_titular and maestro_titular.categog else '',
+            'Horas_Categoria': (maestro_titular.categog.horas.split('.')[0] if maestro_titular and maestro_titular.categog and maestro_titular.categog.horas and '.' in maestro_titular.categog.horas else (maestro_titular.categog.horas if maestro_titular and maestro_titular.categog and maestro_titular.categog.horas else '')),
             'FUNCION_TITULAR': funcion_titular,       
+            'Funcion_Titular': funcion_titular,
+            'Funcion': funcion_titular,
             'Codigo_Titular': str(codigo_titular),
             'CODIGO_TITULAR': str(codigo_titular),
             'Codigo': str(codigo_titular),
@@ -433,6 +550,7 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'Domicilio_CT_Techo_F': escuela_pago_info['domicilio'],
             'Poblacion_Techo_F': escuela_pago_info['region'],
             'Nom_CT_Techo_F_Completo': escuela_pago_info['nombre_ct'],
+            'Z_economica_Techo_F': form_data.get('ze_techo_f_display') or escuela_pago_info['zona_economica'],
             'Supervisor_Techo_F': supervisor_pago_info['nombre'],
             'P_Sup_Techo_F': supervisor_pago_info['nivel'],
             'Director_Techo_F': director_pago_info['nombre'],
@@ -441,27 +559,30 @@ def generate_word_document(form_data, plantilla_tramite, user):
             # --- Resto del contexto ---
             'T_Movimiento': motivo_movimiento,
             'Efecto_1': fecha_efecto1.strftime("%d/%m/%Y") if fecha_efecto1 else '',
+            'Efecto_1_Letra': f"{fecha_efecto1.day} de {meses[fecha_efecto1.month - 1]} del {fecha_efecto1.year}" if fecha_efecto1 else '',
             'Efecto_2': fecha_efecto2.strftime("%d/%m/%Y") if fecha_efecto2 else '',
             'Efecto_3': format_date_for_solicitud_asignacion(fecha_efecto3) if plantilla_tramite.nombre == "SOLICITUD DE ASIGNACION" else (fecha_efecto3.strftime("%d/%m/%Y") if fecha_efecto3 else ''),
             'Efecto_4': format_date_for_solicitud_asignacion(fecha_efecto4) if plantilla_tramite.nombre == "SOLICITUD DE ASIGNACION" else (fecha_efecto4.strftime("%d/%m/%Y") if fecha_efecto4 else ''),
             'F_Hoy': f_hoy,
             'F_OfPres': folio,
             'F_Calculo': f_calculo, # Added F_Calculo here
+            'F2_Calculo': form_data.get('F2_Calculo', ''),
             'COMENTARIOS': observaciones,
             'Nombre_Interino': nombre_interino,
             'CURP_Interino': curp_interino,
             'RFC_Interino': rfc_interino,
-            'Dom_Particular': domicilio_part_interino,
-            'C_P_Interino': codigo_postal_interino,
-            'Poblacion_Interino': poblacion_interino,
-            'Telefono_Interino': telefono_interino,
+            'Dom_Particular': domicilio_part_titular if plantilla_tramite.nombre == "ALTA INICIAL (09)" else domicilio_part_interino,
+            'C_P_Interino': codigo_postal_titular if plantilla_tramite.nombre == "ALTA INICIAL (09)" else codigo_postal_interino,
+            'Poblacion_Interino': poblacion_titular if plantilla_tramite.nombre == "ALTA INICIAL (09)" else poblacion_interino,
+            'Telefono_Interino': telefono_titular if plantilla_tramite.nombre == "ALTA INICIAL (09)" else telefono_interino,
             'Presupuestal_Interino': presupuestal_interino,
             'Funcion_Interino': funcion_interino,
             'Tipo_Movimiento_Interino': tipo_movimiento_interino,
             'Codigo_Interino': codigo_interino,
-            'Paterno': paterno_interino,
-            'Materno': materno_interino,
-            'Nombre': nombre_interino_solo,
+            # Para ALTA INICIAL usamos apellidos y nombres del TITULAR, para el resto los del INTERINO
+            'Paterno': paterno_titular if plantilla_tramite.nombre == "ALTA INICIAL (09)" else paterno_interino,
+            'Materno': materno_titular if plantilla_tramite.nombre == "ALTA INICIAL (09)" else materno_interino,
+            'Nombre': nombre_titular_solo if plantilla_tramite.nombre == "ALTA INICIAL (09)" else nombre_interino_solo,
             'Formacion_Academica': formacion_academica_interino,
             'No_Prel': no_prel,
             'Folio_Prel': folio_prel,
@@ -470,6 +591,7 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'QuincenaInicial': '',
             'QuincenaFinal': '',
             'Horario': maestro_titular.horario if maestro_titular else '',
+            'Horario_Turno': "08:00 a 13:00 Hrs." if (escuela_adscripcion_info['turno'] or '').upper() in ('MATUTINO', 'DISCONTINUO') else ("14:00 a 19:00 Hrs." if (escuela_adscripcion_info['turno'] or '').upper() == 'VESPERTINO' else ''),
             'TipoPlaza': 'JORNADA' if (maestro_titular and maestro_titular.hrs == "00.0") else "HORA/SEMANA/MES",
             'Horas': maestro_titular.hrs.split('.')[0] if (maestro_titular and maestro_titular.hrs and '.' in maestro_titular.hrs) else '',
             'Nivel': 'Educación Especial',
@@ -495,9 +617,39 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'fecha_al_corte': form_data.get('fecha_al_corte', '').strftime("%d/%m/%Y") if form_data.get('fecha_al_corte') else '', # Added new fields to context
             'antiguedad_funcion': form_data.get('antiguedad_funcion', '') ,
             'antiguedad_categoria': form_data.get('antiguedad_categoria', '') ,
+            'antiguedad_servicio': form_data.get('antiguedad_servicio', '') ,
             'fecha_adscripcion': form_data.get('fecha_adscripcion', '').strftime("%d/%m/%Y") if form_data.get('fecha_adscripcion') else '',
             'incentivos': form_data.get('incentivos', '') ,
+            'Formacion_Titular': form_data.get('form_academica_titular_display') or (maestro_titular.form_academica if maestro_titular else ''),
+            'Sustituida': form_data.get('sustituida_nombre', ''),
+            # --- Variables dedicadas para CAMBIO DE EFECTOS ---
+            # Clave presupuestal propia del interino (sin modificacion por motivo)
+            'Presupuestal_Interino_Propio': maestro_interino.clave_presupuestal if maestro_interino else '',
+            # Techo financiero del interino (CCT donde se paga al interino)
+            'Techo_Financiero_Interino': maestro_interino.techo_f if maestro_interino else '',
         }
+
+        # Sobrescribir contexto con escuela destino para PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION
+        dest_escuela = form_data.get('_dest_escuela')
+        if dest_escuela and template_name_upper == 'PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION':
+            dest_info = get_school_info(dest_escuela)
+            dest_director = get_director_info(dest_escuela)
+            dest_supervisor = get_supervisor_info(dest_escuela.zona_esc) if dest_escuela.zona_esc else {'nombre': '', 'nivel': ''}
+            context.update({
+                'Clave_CT': dest_info['id_escuela'],
+                'Nombre_CT': dest_info['nombre_ct'],
+                'Nom_CTCompleto': dest_info['nombre_ct'],
+                'Turno': dest_info['turno'],
+                'Domicilio_CT': dest_info['domicilio'],
+                'Poblacion': dest_info['region'],
+                'Z_economica': dest_info['zona_economica'],
+                'Z_Escolar': dest_info['zona_esc_numero'],
+                'Director': dest_director['nombre'],
+                'P_Dir': dest_director['nivel'],
+                'Supervisor': dest_supervisor['nombre'],
+                'P_Sup': dest_supervisor['nivel'],
+            })
+
         doc.render(context)
         output_base_dir = os.path.join(settings.BASE_DIR, 'tramites_generados')
         template_name_clean = plantilla_tramite.nombre.replace(" ", "_").replace(".", "").replace("(", "").replace(")", "").replace(",", "").replace("-", "").upper()
@@ -514,6 +666,12 @@ def generate_word_document(form_data, plantilla_tramite, user):
             "PROPUESTA_DE_MOVIMIENTO": "propuesta_movimiento",
             "OFICIO_DE_REINCORPORACION": "oficio_reincorporacion",
             "PRESENTACION_LABORAL": "presentacion_laboral",
+            "PRESENTACION_LABORAL_PARA_CAMBIO_DE_ADSCRIPCION": "presentacion_laboral_cambio_adscripcion",
+            "SOLICITUD_BECA_COMISION": "solicitud_beca_comision",
+            "LIBERACION_DE_SUPERVISORES": "liberacion_supervisores",
+            "CAPTURA_DE_GRAVIDEZ": "captura_gravidez",
+            "CAMBIO_DE_EFECTOS": "cambio_efectos",
+            "ALTA_INICIAL_09": "alta_inicial",
         }
         subfolder = subfolder_map.get(template_name_clean, "otros_tramites")
         output_dir = os.path.join(output_base_dir, subfolder)

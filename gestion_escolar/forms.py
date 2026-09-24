@@ -15,7 +15,10 @@ class UppercaseFormMixin(object):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        no_upper = getattr(self, 'no_upper_fields', ())
         for field_name, field in self.fields.items():
+            if field_name in no_upper:
+                continue
             if isinstance(field, forms.CharField) and not isinstance(field, forms.EmailField):
                 if isinstance(field.widget, (forms.TextInput, forms.Textarea)):
                     field.widget.attrs.update({
@@ -25,7 +28,10 @@ class UppercaseFormMixin(object):
 
     def clean(self):
         cleaned_data = super().clean()
+        no_upper = getattr(self, 'no_upper_fields', ())
         for field_name, value in cleaned_data.items():
+            if field_name in no_upper:
+                continue
             field = self.fields.get(field_name)
             if isinstance(value, str) and field and not isinstance(field, forms.EmailField):
                 cleaned_data[field_name] = value.upper()
@@ -119,12 +125,10 @@ class VacanciaForm(UppercaseFormMixin, forms.ModelForm):
         self.fields['fecha_final'].required = False
         self.fields['tipo_movimiento_original'].required = False
 
-        # Ensure the special apreciacion is always in the choices
-        promocion_apreciacion, created = TipoApreciacion.objects.get_or_create(
-            descripcion="PROMOCIÓN.EDUCACIÓN BÁSICA.DIRECCIÓN.ESPECIAL.ESPECIAL.DIRECTOR DE ESCUELA DE EDUCACIÓN ESPECIAL"
-        )
-        existing_queryset = self.fields['apreciacion'].queryset
-        self.fields['apreciacion'].queryset = (existing_queryset | TipoApreciacion.objects.filter(pk=promocion_apreciacion.pk)).distinct().order_by('descripcion')
+        # Solo lectura: no crear catálogos desde el formulario.
+        # El TipoApreciacion de promoción debe existir por datos/migración;
+        # aquí solo se ordena el queryset sin efectos secundarios.
+        self.fields['apreciacion'].queryset = TipoApreciacion.objects.all().order_by('descripcion')
 
         for field_name, field in self.fields.items():
             if field_name not in ['maestro_titular', 'maestro_interino', 'apreciacion', 'tipo_vacante', 'tipo_movimiento_original']:
@@ -157,7 +161,9 @@ class VacanciaForm(UppercaseFormMixin, forms.ModelForm):
             self.add_error('fecha_final', 'Este campo es requerido para vacantes temporales.')
 
         if apreciacion_desc == "ADMISIÓN.EDUCACIÓN BÁSICA.DOCENTE.EDUCACIÓN ESPECIAL.PSICOLOGÍA EDUCATIVA":
-            if categoria not in ["E0689", "P04803"]:
+            funcion = (maestro.funcion or '').upper().replace('Ó', 'O')
+            es_psicologo = 'PSICOLOG' in funcion
+            if not es_psicologo and categoria not in ["E0689", "P04803"]:
                 raise forms.ValidationError(
                     f"Para la apreciación '{apreciacion_desc}', la categoría del maestro ({categoria}) debe ser 'E0689' o 'P04803'."
                 )
@@ -186,9 +192,15 @@ class CategoriaChoiceField(forms.ModelChoiceField):
 
 class EscuelaChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
+        return f"{obj.nombre_ct} ({obj.id_escuela})"
+
+class ClaveChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
         return obj.id_escuela
 
 class ZonaForm(UppercaseFormMixin, forms.ModelForm):
+    no_upper_fields = ('nombre',)
+
     class Meta:
         model = Zona
         fields = '__all__'
@@ -197,6 +209,7 @@ class ZonaForm(UppercaseFormMixin, forms.ModelForm):
         }
         labels = {
             'numero': 'Número de Zona',
+            'nombre': 'Nombre de la zona (opcional)',
         }
 
 class EscuelaForm(UppercaseFormMixin, forms.ModelForm):
@@ -238,9 +251,84 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
     )
     id_escuela = EscuelaChoiceField(
         queryset=Escuela.objects.all().order_by('id_escuela'),
-        label="Escuela (CCT)",
-        widget=forms.Select(attrs={'class': 'form-control select2'})
+        label="Escuela de Adscripción (CCT)",
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control select2-escuelas', 'style': 'width: 100%;'})
     )
+    
+    techo_f = ClaveChoiceField(
+        queryset=Escuela.objects.all().order_by('id_escuela'),
+        label="CCT del Techo Financiero",
+        required=False,
+        to_field_name='id_escuela',
+        widget=forms.Select(attrs={'class': 'form-control select2-escuelas', 'style': 'width: 100%;'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+        # Cargamos el catálogo completo para estabilidad (solo 127 registros)
+        self.fields['id_escuela'].queryset = Escuela.objects.all().order_by('nombre_ct')
+        self.fields['techo_f'].queryset = Escuela.objects.all().order_by('id_escuela')
+        
+        # Configuración de otros campos
+        self.fields['maestro_principal'].queryset = Maestro.objects.all().order_by('a_paterno', 'a_materno', 'nombres')
+        self.fields['maestro_principal'].widget.attrs.update({'class': 'form-control select2'})
+        
+        self.fields['sexo'].widget.attrs.update({'class': 'form-control'})
+        self.fields['est_civil'].widget.attrs.update({'class': 'form-control'})
+        self.fields['nivel_estudio'].widget.attrs.update({'class': 'form-control'})
+        self.fields['status'].widget.attrs.update({'class': 'form-control'})
+        
+        if request and not request.user.is_superuser:
+            if 'user' in self.fields:
+                self.fields.pop('user')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        a_paterno = cleaned_data.get('a_paterno')
+        a_materno = cleaned_data.get('a_materno')
+        nombres = cleaned_data.get('nombres')
+        curp = cleaned_data.get('curp')
+        rfc = cleaned_data.get('rfc')
+        id_escuela = cleaned_data.get('id_escuela')
+
+        if all(v is not None for v in [a_paterno, a_materno, nombres, curp, rfc]) and id_escuela:
+            qs = Maestro.objects.filter(
+                a_paterno=a_paterno, a_materno=a_materno, nombres=nombres,
+                curp=curp, rfc=rfc, id_escuela=id_escuela,
+            )
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError(
+                    'Ya existe un maestro registrado con esos mismos datos '
+                    '(nombre, CURP, RFC, escuela, clave presupuestal). '
+                    'Verifique antes de crear un duplicado.'
+                )
+
+        # Validar formato de campos de clave solo si se capturaron
+        # (el modelo los permite en blanco, asi que no se fuerzan como obligatorios).
+        import re as _re
+        formatos = [
+            ('dep', r'^\d{2}$', 'Dependencia debe tener 2 dígitos'),
+            ('unid', r'^\d{2}$', 'Unidad debe tener 2 dígitos'),
+            ('sub_unid', r'^\d{2}$', 'Subunidad debe tener 2 dígitos'),
+            ('hrs', r'^\d{2}\.\d$', 'Horas deben tener formato XX.X'),
+            ('num_plaza', r'^\d{6}$', 'Número de plaza debe tener 6 dígitos'),
+        ]
+        for campo, patron, mensaje in formatos:
+            valor = cleaned_data.get(campo)
+            if valor and not _re.match(patron, str(valor)):
+                self.add_error(campo, mensaje)
+        return cleaned_data
+
+    def clean_techo_f(self):
+        techo = self.cleaned_data.get('techo_f')
+        # Si es un objeto Escuela (porque usamos ModelChoiceField), devolvemos solo la clave string
+        if techo and hasattr(techo, 'id_escuela'):
+            return techo.id_escuela
+        return techo
 
     class Meta:
         model = Maestro
@@ -256,7 +344,6 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
             'nombres': forms.TextInput(attrs={'class': 'form-control'}),
             'curp': forms.TextInput(attrs={'class': 'form-control'}),
             'rfc': forms.TextInput(attrs={'class': 'form-control'}),
-            'techo_f': forms.TextInput(attrs={'class': 'form-control'}),
             'codigo': forms.TextInput(attrs={'class': 'form-control'}),
             'form_academica': forms.TextInput(attrs={'class': 'form-control'}),
             'horario': forms.TextInput(attrs={'class': 'form-control'}),
@@ -297,28 +384,6 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
                 'placeholder': '000000'
             }),
         }
-    
-    def __init__(self, *args, **kwargs):
-        request = kwargs.pop('request', None)
-        super().__init__(*args, **kwargs)
-        self.fields['maestro_principal'].queryset = Maestro.objects.all().order_by('a_paterno', 'a_materno', 'nombres')
-        self.fields['maestro_principal'].widget.attrs.update({'class': 'form-control select2'})
-        
-        self.fields['sexo'].widget.attrs.update({'class': 'form-control'})
-        self.fields['est_civil'].widget.attrs.update({'class': 'form-control'})
-        self.fields['nivel_estudio'].widget.attrs.update({'class': 'form-control'})
-        self.fields['status'].widget.attrs.update({'class': 'form-control'})
-        self.fields['dep'].widget.attrs.update({'class': 'form-control'})
-        self.fields['unid'].widget.attrs.update({'class': 'form-control'})
-        self.fields['sub_unid'].widget.attrs.update({'class': 'form-control'})
-        self.fields['hrs'].widget.attrs.update({'class': 'form-control'})
-        self.fields['num_plaza'].widget.attrs.update({'class': 'form-control'})
-
-
-
-        if request and not request.user.is_superuser:
-            if 'user' in self.fields:
-                self.fields.pop('user')
 
     def clean_hrs(self):
         horas = self.cleaned_data.get('hrs')
@@ -329,14 +394,6 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
             if parte_entera < 0 or parte_entera > 42:
                 raise forms.ValidationError('Las horas deben estar entre 00.0 y 42.0')
         return horas
-
-    def clean(self):
-        cleaned_data = super().clean()
-        campos_clave = ['dep', 'unid', 'sub_unid', 'hrs', 'num_plaza']
-        for campo in campos_clave:
-            if campo not in cleaned_data:
-                self.add_error(campo, 'Este campo es requerido para generar la clave presupuestal')
-        return cleaned_data
 
 class TramiteForm(UppercaseFormMixin, forms.Form):
     archivo_plantilla_especifico = forms.ChoiceField(
@@ -364,6 +421,25 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
         else:
             self.fields['plantilla'].queryset = PlantillaTramite.objects.all().exclude(nombre__icontains="36").order_by('nombre')
 
+    tipo_cambio = forms.ChoiceField(
+        choices=[('', '--- Seleccione ---'), ('sustitucion', 'Sustitución'), ('incremento', 'Incremento')],
+        label="Tipo de Cambio",
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    maestro_sustituido = forms.ModelChoiceField(
+        queryset=Maestro.objects.all().order_by('a_paterno', 'a_materno', 'nombres'),
+        label="Maestro Sustituido",
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control select2'})
+    )
+    escuela_destino = forms.ModelChoiceField(
+        queryset=Escuela.objects.all().order_by('nombre_ct'),
+        to_field_name='id_escuela',
+        label="Centro de Trabajo Destino",
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control select2'})
+    )
     plantilla = forms.ModelChoiceField(
         queryset=PlantillaTramite.objects.all().order_by('nombre'),
         label="Tipo de Trámite (Plantilla)",
@@ -398,6 +474,10 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
                                                 widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
     funcion_titular_display = forms.CharField(label="Función Titular", required=False,
                                               widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
+    form_academica_titular_display = forms.CharField(label="Formación Académica Titular", required=False,
+                                                    widget=forms.TextInput(attrs={'class': 'form-control'}))
+    ze_techo_f_display = forms.CharField(label="Zona Económica (Techo F.)", required=False,
+                                         widget=forms.TextInput(attrs={'class': 'form-control'}))
     nombre_interino_display = forms.CharField(label="Nombre Completo Interino", required=False,
                                              widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}))
     curp_interino_display = forms.CharField(label="CURP Interino", required=False,
@@ -461,6 +541,17 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
     antiguedad_categoria = forms.CharField(
         max_length=100,
         label="Antigüedad en la Categoría",
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    fecha_del_calculo_servicio = forms.DateField(
+        label="Fecha Ingreso al Servicio",
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d')
+    )
+    antiguedad_servicio = forms.CharField(
+        max_length=100,
+        label="Antigüedad en el Servicio",
         required=False,
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )

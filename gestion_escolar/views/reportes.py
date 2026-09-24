@@ -10,7 +10,8 @@ from django.http import HttpResponse
 from django.db.models import Q, Count
 from django.db.models.functions import Upper, Trim
 
-from ..models import Maestro, Zona, Escuela, RegistroCorrespondencia # Import RegistroCorrespondencia
+from ..models import Maestro, Zona, Escuela, RegistroCorrespondencia
+from .helpers import get_director_info, get_supervisor_info, get_full_name, elegir_director_activo, FUNCION_MAPPING
 
 @permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
 def reportes_dashboard(request):
@@ -21,7 +22,7 @@ def reportes_dashboard(request):
         ultimos_registros_correspondencia = RegistroCorrespondencia.objects.all().order_by('-fecha_recibido', '-fecha_registro')[:5] # Get latest 5
 
     context = {
-        'titulo': 'Dashboard de Reportes',
+        'titulo': 'Reportes',
         'ultimos_registros_correspondencia': ultimos_registros_correspondencia,
     }
     return render(request, 'gestion_escolar/reportes_dashboard.html', context)
@@ -60,7 +61,7 @@ def export_maestro_excel(request, pk):
         "Techo Financiero": maestro.techo_f,
         "C.C.T.": maestro.id_escuela.id_escuela if maestro.id_escuela else 'N/A',
         "Nombre del Centro de Trabajo": maestro.id_escuela.nombre_ct if maestro.id_escuela else 'N/A',
-        "Zona Escolar": maestro.id_escuela.zona_esc.numero if maestro.id_escuela and maestro.id_escuela.zona_esc else 'N/A',
+        "Zona Escolar": maestro.id_escuela.zona_esc.etiqueta if maestro.id_escuela and maestro.id_escuela.zona_esc else 'N/A',
         "Clave Presupuestal": maestro.clave_presupuestal,
         "Categoría": str(maestro.categog) if maestro.categog else '',
         "Código": maestro.codigo,
@@ -103,14 +104,12 @@ def exportar_maestros_excel(request):
     maestros_qs = Maestro.objects.select_related('id_escuela', 'id_escuela__zona_esc', 'categog').all().order_by('a_paterno', 'a_materno', 'nombres')
 
     if funcion:
-        # This mapping should ideally be in a more centralized place
-        funcion_mapping = {
-            'DIRECTOR': {'values': ['DIRECTOR', 'DIRECTOR (A)']},
-            # ... add all other mappings here ...
-        }
-        funcion_info = funcion_mapping.get(funcion)
+        funcion_info = FUNCION_MAPPING.get(funcion)
         if funcion_info:
             maestros_qs = maestros_qs.filter(funcion__in=funcion_info['values'])
+        elif funcion not in FUNCION_MAPPING:
+            # Función no mapeada: filtrar por el valor literal (defensivo).
+            maestros_qs = maestros_qs.filter(funcion=funcion)
 
     if filtro:
         maestros_qs = maestros_qs.filter(
@@ -141,15 +140,15 @@ def exportar_maestros_excel(request):
 
     for maestro in maestros_qs:
         escuela = maestro.id_escuela
-        zona_numero = ''
+        zona_label = ''
         if escuela and escuela.zona_esc:
-            zona_numero = escuela.zona_esc.numero
+            zona_label = escuela.zona_esc.etiqueta
 
         row = [
             maestro.id_maestro, maestro.nombres, maestro.a_paterno, maestro.a_materno, maestro.rfc, maestro.curp,
             maestro.get_sexo_display(), maestro.get_est_civil_display(),
             maestro.fecha_nacimiento.strftime("%Y-%m-%d") if maestro.fecha_nacimiento else '',
-            maestro.techo_f, escuela.id_escuela if escuela else '', escuela.nombre_ct if escuela else '', zona_numero,
+            maestro.techo_f, escuela.id_escuela if escuela else '', escuela.nombre_ct if escuela else '', zona_label,
             maestro.get_funcion_display(), maestro.categog.descripcion if maestro.categog else '',
             maestro.clave_presupuestal, maestro.codigo,
             maestro.fecha_ingreso.strftime("%Y-%m-%d") if maestro.fecha_ingreso else '',
@@ -247,9 +246,9 @@ def export_personal_fuera_adscripcion_excel(request):
     # 5. Escribir los datos de cada maestro
     for maestro in queryset:
         escuela = maestro.id_escuela
-        zona_numero = ''
+        zona_label = ''
         if escuela and escuela.zona_esc:
-            zona_numero = escuela.zona_esc.numero
+            zona_label = escuela.zona_esc.etiqueta
 
         row = [
             maestro.id_maestro, maestro.nombres, maestro.a_paterno, maestro.a_materno, maestro.rfc, maestro.curp,
@@ -258,7 +257,7 @@ def export_personal_fuera_adscripcion_excel(request):
             maestro.techo_f, 
             escuela.id_escuela if escuela else '', 
             escuela.nombre_ct if escuela else '', 
-            zona_numero,
+            zona_label,
             maestro.get_funcion_display(), 
             maestro.categog.descripcion if maestro.categog else '',
             maestro.clave_presupuestal, maestro.codigo,
@@ -313,12 +312,12 @@ def exportar_escuelas_excel(request):
 
     # 5. Escribir los datos de cada escuela
     for escuela in escuelas_qs:
-        zona_numero = escuela.zona_esc.numero if escuela.zona_esc else ''
+        zona_label = escuela.zona_esc.etiqueta if escuela.zona_esc else ''
         
         row = [
             escuela.id_escuela,
             escuela.nombre_ct,
-            zona_numero,
+            zona_label,
             escuela.get_turno_display(),
             escuela.zona_economica,
             escuela.u_d,
@@ -381,7 +380,7 @@ def exportar_maestros_personalizado_excel(request):
 
     for maestro in maestros_qs:
         escuela = maestro.id_escuela
-        zona_numero = escuela.zona_esc.numero if escuela and escuela.zona_esc else ''
+        zona_label = escuela.zona_esc.etiqueta if escuela and escuela.zona_esc else ''
         
         # Situación: 10 -> BASE, otros -> INTERINO
         situacion = "BASE" if maestro.codigo == '10' else "INTERINO"
@@ -399,7 +398,7 @@ def exportar_maestros_personalizado_excel(request):
             escuela.id_escuela if escuela else '',
             escuela.nombre_ct if escuela else '',
             escuela.nombre_ct if escuela else '',
-            zona_numero,
+            zona_label,
             maestro.get_sexo_display() or '',
             maestro.codigo or '',
             maestro.fecha_ingreso.strftime("%d/%m/%Y") if maestro.fecha_ingreso else '',
@@ -625,6 +624,367 @@ def exportar_datos_dinamicos_excel(request):
     )
     wb.save(response)
 
+    return response
+
+
+def _obtener_director_escuela(escuela):
+    """Obtiene el director de un centro de trabajo según el maestro activo adecuado."""
+    return elegir_director_activo(escuela)
+
+
+def _nombre_con_escolaridad(maestro):
+    """Construye el nombre completo con el prefijo de nivel de estudio (ej: MTRA. X)."""
+    if not maestro:
+        return ''
+    nombre = get_full_name(maestro)
+    if maestro.nivel_estudio:
+        return f"{maestro.nivel_estudio} {nombre}".strip()
+    return nombre
+
+
+def _supervisor_zona(zona):
+    """Obtiene el nombre del supervisor asignado a la zona (con escolaridad)."""
+    # Se prioriza al maestro cuya función sea SUPERVISOR en la zona
+    from gestion_escolar.models import Maestro as M
+    supervisor = Maestro.objects.filter(
+        id_escuela__zona_esc=zona, funcion__in=['SUPERVISOR(A)']
+    ).first()
+    if supervisor:
+        return _nombre_con_escolaridad(supervisor)
+    # Respaldo: FK zona.supervisor o helper
+    supervisor = None
+    if zona.supervisor_id:
+        supervisor = zona.supervisor
+    if not supervisor:
+        info = get_supervisor_info(zona)
+        if info.get('nombre'):
+            nivel = info.get('nivel') or ''
+            nombre = info['nombre']
+            if nombre in ('SUPERVISOR NO ENCONTRADO',):
+                return ''
+            return f"{nivel} {nombre}".strip()
+        return ''
+    return _nombre_con_escolaridad(supervisor)
+
+
+@login_required
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
+def reporte_centros_trabajo_pdf(request):
+    """Genera el PDF 'Relación de Centros de Trabajo' organizado por zona escolar."""
+    import os
+    from io import BytesIO
+
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.lib.pagesizes import LETTER, landscape
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether, PageBreak
+    )
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+
+    # Registrar fuentes TrueType si están disponibles para garantizar acentos.
+    # Prioridad: Arial (Windows) y DejaVuSans (Linux/Servidor).
+    pares_fuentes = [
+        (r'C:\Windows\Fonts\arial.ttf', r'C:\Windows\Fonts\arialbd.ttf'),
+        (r'C:\Windows\Fonts\Arial.ttf', r'C:\Windows\Fonts\Arial Bold.ttf'),
+        ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'),
+    ]
+    fuente_normal = 'Helvetica'
+    fuente_bold = 'Helvetica-Bold'
+    for ruta_normal, ruta_bold in pares_fuentes:
+        if os.path.exists(ruta_normal):
+            try:
+                pdfmetrics.registerFont(TTFont('ReporteNormal', ruta_normal))
+                try:
+                    pdfmetrics.registerFont(TTFont('ReporteBold', ruta_bold))
+                    fuente_bold = 'ReporteBold'
+                except Exception:
+                    pass
+                fuente_normal = 'ReporteNormal'
+                break
+            except Exception:
+                pass
+
+    def inicial_turno(escuela):
+        """Devuelve la inicial del turno según la BD (M/V/D)."""
+        turno = (escuela.get_turno_display() or '').strip().upper()
+        if not turno:
+            return ''
+        return turno[0]
+
+    def formatear_celular(numero):
+        """Normaliza un número celular agregando el prefijo 'CEL. ' cuando hace falta."""
+        numero = (numero or '').strip()
+        if not numero:
+            return ''
+        if 'CEL' in numero.upper():
+            return numero
+        if len(''.join(ch for ch in numero if ch.isdigit())) == 10:
+            return f"CEL. {numero}"
+        return numero
+
+    def telefono_supervisor(zona):
+        """Teléfono del supervisor con formato 'CEL. ...' cuando es un celular de 10 dígitos."""
+        supervisor = None
+        if zona.supervisor_id:
+            supervisor = zona.supervisor
+        if not supervisor:
+            return ''
+        return formatear_celular(supervisor.telefono)
+
+    # Recolectar centros de trabajo agrupados por zona (ordenadas por número)
+    zonas = Zona.objects.exclude(numero__in=[0, 21, 22, 23]).order_by('numero')
+    datos_por_zona = []
+    consecutivo = 0
+
+    for zona in zonas:
+        escuelas = list(Escuela.objects.filter(zona_esc=zona).order_by('nombre_ct'))
+        if not escuelas:
+            continue
+        supervisor = _supervisor_zona(zona)
+
+        # Tabla de supervisión: centros cuya clave inicia en 10FSE o cuyo nombre
+        # contiene "SUPERVISIÓN".
+        supervision = []
+        centros = []
+        for escuela in escuelas:
+            nombre_upper = (escuela.nombre_ct or '').upper()
+            es_supervision = (
+                (escuela.id_escuela or '').upper().startswith('10FSE')
+                or 'SUPERVISI' in nombre_upper
+            )
+            if not es_supervision:
+                centros.append(escuela)
+                continue
+
+            telefono_ct = (escuela.telefono_ct or '').strip()
+            telefono_ct = telefono_ct if telefono_ct != '000-000-00-00' else ''
+            domicilio_sup = (escuela.domicilio or '').strip()
+            if escuela.region:
+                domicilio_sup = f"{domicilio_sup}, {escuela.region}" if domicilio_sup else escuela.region
+            supervision.append({
+                'clave': escuela.id_escuela or '',
+                'nombre': escuela.nombre_ct or '',
+                'turno': inicial_turno(escuela),
+                'domicilio': domicilio_sup,
+                'tel_ct': telefono_ct,
+                'tel_supervisor': telefono_supervisor(zona),
+            })
+
+        filas = []
+        for escuela in centros:
+            consecutivo += 1
+            director = _obtener_director_escuela(escuela)
+            nombre_director = _nombre_con_escolaridad(director)
+
+            telefono = (escuela.telefono_ct or '').strip()
+            telefono = telefono if telefono != '000-000-00-00' else ''
+            # Teléfono del director en su propia columna
+            cel_director = formatear_celular(director.telefono) if director else ''
+
+            domicilio_ct = (escuela.domicilio or '').strip()
+            if escuela.region:
+                domicilio_ct = f"{domicilio_ct}, {escuela.region}" if domicilio_ct else escuela.region
+
+            filas.append([
+                str(zona.numero),
+                str(consecutivo),
+                escuela.nombre_ct or '',
+                escuela.id_escuela or '',
+                nombre_director,
+                inicial_turno(escuela),
+                domicilio_ct,
+                telefono,
+                cel_director,
+            ])
+
+        if not supervision and not filas:
+            continue
+
+        datos_por_zona.append({
+            'zona_etiqueta': zona.etiqueta,
+            'supervisor': supervisor,
+            'supervision': supervision,
+            'filas': filas,
+        })
+
+    if not datos_por_zona:
+        # Sin datos: generar un PDF sencillo indicando que no hay centros
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(LETTER), title="Relación de Centros de Trabajo")
+        estilos = getSampleStyleSheet()
+        doc.build([Paragraph("No hay centros de trabajo registrados.", estilos['Normal'])])
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="relacion_centros_trabajo.pdf"'
+        return response
+
+    # Construcción del documento
+    buffer = BytesIO()
+
+    def numerar_pagina(canvas_g, documento):
+        """Dibuja el número de página centrado en la parte inferior."""
+        canvas_g.saveState()
+        canvas_g.setFont(fuente_normal, 9)
+        canvas_g.setFillColor(colors.HexColor('#64748b'))
+        pagina = f"Página {canvas_g.getPageNumber()}"
+        width = landscape(LETTER)[0]
+        canvas_g.drawCentredString(width / 2, 0.25 * inch, pagina)
+        canvas_g.restoreState()
+
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(LETTER),
+        leftMargin=0.4 * inch,
+        rightMargin=0.4 * inch,
+        topMargin=0.55 * inch,
+        bottomMargin=0.6 * inch,
+        title="Relación de Centros de Trabajo",
+        onPage=numerar_pagina,
+    )
+
+    estilos = getSampleStyleSheet()
+    estilo_encabezado = ParagraphStyle(
+        'Encabezado', parent=estilos['Normal'],
+        fontName=fuente_bold, fontSize=13, leading=16, alignment=TA_CENTER,
+        textColor=colors.HexColor('#1e3a8a'),
+        spaceAfter=2,
+    )
+    estilo_titulo = ParagraphStyle(
+        'Titulo', parent=estilos['Normal'],
+        fontName=fuente_bold, fontSize=15, leading=18, alignment=TA_CENTER,
+        textColor=colors.black, spaceAfter=2,
+    )
+    estilo_parrafo = ParagraphStyle(
+        'Parrafo', parent=estilos['Normal'],
+        fontName=fuente_normal, fontSize=10, leading=13, alignment=TA_CENTER,
+        textColor=colors.black, spaceAfter=2,
+    )
+    estilo_fecha_derecha = ParagraphStyle(
+        'FechaDerecha', parent=estilos['Normal'],
+        fontName=fuente_normal, fontSize=10, leading=13, alignment=TA_RIGHT,
+        textColor=colors.black, spaceAfter=2,
+    )
+    estilo_subseccion = ParagraphStyle(
+        'Subseccion', parent=estilos['Normal'],
+        fontName=fuente_bold, fontSize=9, leading=11, alignment=TA_LEFT,
+        textColor=colors.HexColor('#1e3a8a'),
+    )
+    estilo_celda = ParagraphStyle(
+        'Celda', parent=estilos['Normal'],
+        fontName=fuente_normal, fontSize=8, leading=10, alignment=TA_LEFT,
+    )
+    estilo_celda_centro = ParagraphStyle(
+        'CeldaCentro', parent=estilos['Normal'],
+        fontName=fuente_normal, fontSize=8, leading=10, alignment=TA_CENTER,
+    )
+    estilo_cabecera_tabla = ParagraphStyle(
+        'CabeceraTabla', parent=estilos['Normal'],
+        fontName=fuente_bold, fontSize=8.5, leading=10, alignment=TA_CENTER,
+        textColor=colors.white,
+    )
+
+    historia = []
+
+    # Encabezado institucional
+    historia.append(Paragraph('DEPARTAMENTO DE EDUCACIÓN ESPECIAL', estilo_encabezado))
+    historia.append(Paragraph('RELACIÓN DE CENTROS DE TRABAJO', estilo_titulo))
+    historia.append(Paragraph('CICLO ESCOLAR 2026-2027', estilo_parrafo))
+    historia.append(Paragraph('REGIÓN DURANGO', estilo_parrafo))
+    nombres_meses_es = ['', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+    hoy = date.today()
+    fecha_texto = f"{hoy.day:02d} de {nombres_meses_es[hoy.month]} de {hoy.year}"
+    historia.append(Paragraph(fecha_texto, estilo_fecha_derecha))
+    historia.append(Spacer(1, 0.2 * inch))
+
+    # Tabla de supervisión por zona (mismos anchos que centros para alinear)
+    encabezados_sup = [Paragraph(h, estilo_cabecera_tabla) for h in [
+        '', 'ZONA', 'CLAVE', 'SUPERVISOR', 'T', 'DOMICILIO DE LA SEDE', 'TEL C.T.', 'TEL. PART'
+    ]]
+    anchos_sup = [0.45 * inch, 1.85 * inch, 1.1 * inch, 2.1 * inch, 0.4 * inch, 2.4 * inch, 0.9 * inch, 1.0 * inch]
+
+    # Tabla de centros de trabajo por zona (sin columna ZONA)
+    encabezados_ct = [Paragraph(h, estilo_cabecera_tabla) for h in [
+        'No.', 'CENTRO', 'CLAVE', 'NOMBRE DEL DIRECTOR', 'T', 'DOMICILIO DE LA SEDE', 'TEL C.T.', 'TEL. DEL DIRECTOR'
+    ]]
+    anchos_ct = [0.45 * inch, 1.85 * inch, 1.1 * inch, 2.1 * inch, 0.4 * inch, 2.4 * inch, 0.9 * inch, 1.0 * inch]
+
+    def construir_tabla(encabezados, anchos, filas, cabecera_color='#1e3a8a',
+                        fondo_par='#eff6ff', fondo_unico=None):
+        """Construye una tabla con cabecera azul y filas alternadas."""
+        data = [encabezados] + filas
+        tabla = Table(data, colWidths=anchos, repeatRows=1)
+        estilos = [
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor(cabecera_color)),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), fuente_bold),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#94a3b8')),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 4),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ]
+        if fondo_unico is not None:
+            estilos.append(('BACKGROUND', (0, 1), (-1, -1), colors.HexColor(fondo_unico)))
+        else:
+            estilos.append(('ROWBACKGROUNDS', (0, 1), (-1, -1),
+                            [colors.white, colors.HexColor(fondo_par)]))
+        tabla.setStyle(TableStyle(estilos))
+        return tabla
+
+    for indice, bloque in enumerate(datos_por_zona):
+        zona_bloque = []
+
+        # Tabla de supervisión
+        filas_sup = []
+        for s in bloque['supervision']:
+            filas_sup.append([
+                Paragraph('', estilo_celda_centro),              # columna vacía (alineación)
+                Paragraph(str(bloque['zona_etiqueta']), estilo_celda_centro),
+                Paragraph(s['clave'], estilo_celda_centro),
+                Paragraph(bloque['supervisor'], estilo_celda),
+                Paragraph(s['turno'], estilo_celda_centro),
+                Paragraph(s['domicilio'], estilo_celda),
+                Paragraph(s['tel_ct'], estilo_celda_centro),
+                Paragraph(s['tel_supervisor'], estilo_celda_centro),
+            ])
+        if filas_sup:
+            zona_bloque.append(construir_tabla(
+                encabezados_sup, anchos_sup, filas_sup,
+                cabecera_color='#92400e', fondo_unico='#fef3c7',
+            ))
+            zona_bloque.append(Spacer(1, 0.14 * inch))
+
+        # Tabla de centros de trabajo
+        filas_ct = []
+        for fila in bloque['filas']:
+            filas_ct.append([
+                Paragraph(str(fila[1]), estilo_celda_centro),   # No.
+                Paragraph(fila[2], estilo_celda),               # CENTRO
+                Paragraph(fila[3], estilo_celda_centro),        # CLAVE
+                Paragraph(fila[4], estilo_celda),               # NOMBRE DEL DIRECTOR
+                Paragraph(fila[5], estilo_celda_centro),        # T
+                Paragraph(fila[6], estilo_celda),               # DOMICILIO DE LA SEDE
+                Paragraph(fila[7], estilo_celda_centro),        # TEL C.T.
+                Paragraph(fila[8], estilo_celda_centro),        # TEL. DEL DIRECTOR
+            ])
+        if filas_ct:
+            zona_bloque.append(construir_tabla(encabezados_ct, anchos_ct, filas_ct))
+
+        if indice > 0:
+            historia.append(PageBreak())
+        historia.append(KeepTogether(zona_bloque))
+
+    doc.build(historia)
+
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="relacion_centros_trabajo.pdf"'
     return response
 
 
