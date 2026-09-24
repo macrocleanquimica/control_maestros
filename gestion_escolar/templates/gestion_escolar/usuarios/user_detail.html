@@ -7,14 +7,14 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-user"></i> Detalle de Usuario</h2>
-                <div>
-                    <a href="{% url 'user_update' usuario.pk %}" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Editar
+            <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+                <h2 class="apple-title">Usuario <span style="color: var(--text-2, #6e6e73);">{{ usuario.username }}</span></h2>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'user_update' usuario.pk %}" class="apple-btn">
+                        <i class="fas fa-edit me-2"></i> Editar
                     </a>
-                    <a href="{% url 'user_list' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Volver
+                    <a href="{% url 'user_list' %}" class="apple-btn-ghost">
+                        <i class="fas fa-arrow-left me-2"></i> Volver
                     </a>
                 </div>
             </div>
@@ -24,41 +24,41 @@
     <div class="row">
         <!-- Información Básica -->
         <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Información Básica</h5>
+            <div class="card apple-panel border-0 mb-4">
+                <div class="card-header py-3" style="background: var(--surface, #fff); border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));">
+                    <h5 class="mb-0 fw-bold">Datos</h5>
                 </div>
                 <div class="card-body">
-                    <table class="table table-borderless">
+                    <table class="table table-borderless mb-0">
                         <tr>
-                            <th width="40%">Usuario:</th>
-                            <td>{{ usuario.username }}</td>
+                            <th width="40%" style="color: var(--text-2, #6e6e73); font-size: 0.8rem;">Usuario</th>
+                            <td class="fw-bold">{{ usuario.username }}</td>
                         </tr>
                         <tr>
-                            <th>Nombre Completo:</th>
+                            <th style="color: var(--text-2, #6e6e73); font-size: 0.8rem;">Nombre</th>
                             <td>{{ usuario.get_full_name|default:"-" }}</td>
                         </tr>
                         <tr>
-                            <th>Email:</th>
+                            <th style="color: var(--text-2, #6e6e73); font-size: 0.8rem;">Email</th>
                             <td>{{ usuario.email|default:"-" }}</td>
                         </tr>
                         <tr>
-                            <th>Estado:</th>
+                            <th style="color: var(--text-2, #6e6e73); font-size: 0.8rem;">Estado</th>
                             <td>
                                 {% if usuario.is_active %}
-                                <span class="badge bg-success">Activo</span>
+                                <span class="apple-tag">Activo</span>
                                 {% else %}
-                                <span class="badge bg-danger">Inactivo</span>
+                                <span class="apple-tag">Inactivo</span>
                                 {% endif %}
                             </td>
                         </tr>
                         <tr>
-                            <th>Fecha de Registro:</th>
-                            <td>{{ usuario.date_joined|date:"d/m/Y H:i" }}</td>
+                            <th style="color: var(--text-2, #6e6e73); font-size: 0.8rem;">Registro</th>
+                            <td class="apple-num">{{ usuario.date_joined|date:"d/m/Y H:i" }}</td>
                         </tr>
                         <tr>
-                            <th>Último Login:</th>
-                            <td>{{ usuario.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</td>
+                            <th style="color: var(--text-2, #6e6e73); font-size: 0.8rem;">Último acceso</th>
+                            <td class="apple-num">{{ usuario.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</td>
                         </tr>
                     </table>
                 </div>
@@ -67,23 +67,23 @@
 
         <!-- Permisos y Roles -->
         <div class="col-md-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Permisos y Roles</h5>
+            <div class="card apple-panel border-0 mb-4">
+                <div class="card-header py-3" style="background: var(--surface, #fff); border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));">
+                    <h5 class="mb-0 fw-bold">Permisos y roles</h5>
                 </div>
                 <div class="card-body">
-                    <h6>Nivel de Acceso:</h6>
+                    <h6>Nivel de acceso:</h6>
                     <ul>
                         {% if usuario.is_superuser %}
-                        <li><span class="badge bg-danger">Superusuario</span> - Acceso total al sistema</li>
+                        <li><span class="apple-tag">Superusuario</span> - Acceso total al sistema</li>
                         {% elif usuario.is_staff %}
-                        <li><span class="badge bg-warning">Staff</span> - Acceso al panel de administración</li>
+                        <li><span class="apple-tag">Staff</span> - Acceso al panel de administración</li>
                         {% else %}
-                        <li><span class="badge bg-info">Usuario Regular</span></li>
+                        <li><span class="apple-tag">Usuario regular</span></li>
                         {% endif %}
                     </ul>
 
-                    <h6 class="mt-3">Grupos Asignados:</h6>
+                    <h6 class="mt-3">Grupos asignados:</h6>
                     {% if grupos %}
                     <ul>
                         {% for grupo in grupos %}
@@ -91,11 +91,11 @@
                         {% endfor %}
                     </ul>
                     {% else %}
-                    <p class="text-muted">Sin grupos asignados</p>
+                    <p style="color: var(--text-2, #6e6e73);">Sin grupos asignados</p>
                     {% endif %}
 
                     {% if maestro_vinculado %}
-                    <h6 class="mt-3">Maestro Vinculado:</h6>
+                    <h6 class="mt-3">Maestro vinculado:</h6>
                     <p>
                         <a href="{% url 'detalle_maestro' maestro_vinculado.id_maestro %}">
                             {{ maestro_vinculado }}
