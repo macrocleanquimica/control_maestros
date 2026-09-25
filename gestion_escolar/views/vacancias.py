@@ -170,7 +170,7 @@ def exportar_paso_word(request, lote_id):
         return JsonResponse({'status': 'warning', 'message': 'Plantilla "SOLICITUD DE ASIGNACION" no encontrada. Saltando paso de Word.', 'word_count': 0, 'word_docs': []})
 
     for vacancia in vacancias:
-        if vacancia.maestro_interino and vacancia.fecha_inicio and vacancia.fecha_final:
+        if vacancia.maestro_interino and vacancia.fecha_inicio:
             form_data_for_word = {
                 'plantilla': plantilla_solicitud_asignacion,
                 'maestro_titular': vacancia.maestro_titular,
@@ -398,7 +398,7 @@ def exportar_paso_excel(request, lote_id):
                     'tipo_vacante': v.get_tipo_vacante_display(),
                     'tipo_movimiento': v.tipo_movimiento_reporte or v.tipo_movimiento_original,
                     'fecha_inicio': v.fecha_inicio.strftime('%Y-%m-%d') if v.fecha_inicio else '',
-                    'fecha_final': v.fecha_final.strftime('%Y-%m-%d') if v.fecha_final else 'AL COBRO',
+                    'fecha_final': v.fecha_final.strftime('%Y-%m-%d') if v.fecha_final else '',
                     'techo_financiero': v.techo_financiero or '',
                     'clave_presupuestal': v.clave_presupuestal or '',
                     'centro_trabajo': v.clave_ct or ''
@@ -541,8 +541,8 @@ def exportar_paso_excel_eo(request, lote_id):
                     # Otros
                     sheet["E16"] = (vacancia.destino or "ADMISIÓN").upper()
                     f_init = vacancia.fecha_inicio.strftime('%d/%m/%Y') if vacancia.fecha_inicio else ""
-                    f_end = vacancia.fecha_final.strftime('%d/%m/%Y') if vacancia.fecha_final else "AL COBRO"
-                    sheet["F16"] = f"{f_init} AL {f_end}"
+                    f_end = vacancia.fecha_final.strftime('%d/%m/%Y') if vacancia.fecha_final else ""
+                    sheet["F16"] = f"{f_init} AL {f_end}" if f_end else f_init
                     sheet["G16"] = vacancia.clave_presupuestal or ""
                     sheet["H16"] = (vacancia.tipo_movimiento_reporte or vacancia.tipo_movimiento_original or "").upper()
                     sheet["I16"] = (vacancia.observaciones or "").upper()
@@ -764,7 +764,7 @@ def exportar_reporte_vacancias_excel(request):
             v.clave_presupuestal or "",
             v.lote.fecha_creacion.strftime("%d/%m/%Y") if v.lote and v.lote.fecha_creacion else "",
             v.fecha_inicio.strftime("%d/%m/%Y") if v.fecha_inicio else "",
-            v.fecha_final.strftime("%d/%m/%Y") if v.fecha_final else "AL COBRO",
+            v.fecha_final.strftime("%d/%m/%Y") if v.fecha_final else "",
             v.nombre_titular_reporte or "",
             nombre_interino,
             v.curp_interino or "",

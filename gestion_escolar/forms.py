@@ -152,9 +152,9 @@ class VacanciaForm(UppercaseFormMixin, forms.ModelForm):
 
         apreciacion_desc = apreciacion.descripcion
 
-        # Si la vacante es definitiva, la fecha final no es requerida y debe ser nula.
+        # Si la vacante es definitiva, la fecha final es opcional: se conserva
+        # la fecha tecleada si existe, y solo queda en blanco si no se capturó.
         if tipo_vacante == 'DEFINITIVA':
-            cleaned_data['fecha_final'] = None
             cleaned_data['tipo_movimiento_original'] = None
         elif not cleaned_data.get('fecha_final'):
             # Si es temporal, la fecha final es obligatoria.
