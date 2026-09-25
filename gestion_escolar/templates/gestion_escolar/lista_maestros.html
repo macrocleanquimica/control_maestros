@@ -227,7 +227,8 @@ Desactívelo para ver todas las plazas por separado.">
                             indicators += '<span class="indicator-pill ms-1 text-info" title="Personal Interino"><i class="fas fa-user-clock"></i> Interino</span>';
                         }
                         if (row && row[9] > 0) { // n_plazas_sec (plazas adicionales agrupadas)
-                            indicators += '<a href="javascript:void(0)" class="indicator-pill ms-1 text-primary text-decoration-none" title="Este maestro tiene plaza(s) adicional(s). Ver detalle para consultarlas.">'
+                            var detailUrl = (row[10] !== undefined && row[10] !== null) ? ('/maestros/detalle/' + row[10] + '/') : 'javascript:void(0)';
+                            indicators += '<a href="' + detailUrl + '" class="indicator-pill ms-1 text-primary text-decoration-none" title="Ver plazas en el detalle.">'
                                 + '<i class="fas fa-copy me-1"></i>' + row[9] + ' plaza' + (row[9] > 1 ? 's' : '') + '</a>';
                         }
                         return `

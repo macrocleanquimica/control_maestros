@@ -199,7 +199,8 @@ def lista_maestros_ajax(request):
             actions,
             is_misplaced,
             is_interino,
-            getattr(maestro, 'n_plazas_sec', 0) if agrupar else 0
+            getattr(maestro, 'n_plazas_sec', 0) if agrupar else 0,
+            maestro.pk
         ])
 
     response = {
