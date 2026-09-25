@@ -36,10 +36,6 @@
         height: 100%;
     }
 
-    .stat-card-modern .icon-bg {
-        display: none;
-    }
-
     .stat-value {
         font-size: 2rem;
         font-weight: 700;
@@ -138,30 +134,26 @@
     <div class="row g-4 mb-5">
         <div class="col-md-3">
             <div class="stat-card-modern">
-                <div class="icon-bg"><i class="fas fa-users-cog"></i></div>
                 <label class="stat-label">Total Roles</label>
-                <p class="stat-value text-primary">{{ roles|length }}</p>
+                <p class="stat-value">{{ roles|length }}</p>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stat-card-modern">
-                <div class="icon-bg"><i class="fas fa-users"></i></div>
                 <label class="stat-label">Total Usuarios</label>
                 <p class="stat-value">{{ users|length }}</p>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stat-card-modern">
-                <div class="icon-bg"><i class="fas fa-user-check"></i></div>
                 <label class="stat-label">Con Roles</label>
-                <p class="stat-value text-success">{{ users_with_roles }}</p>
+                <p class="stat-value">{{ users_with_roles }}</p>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stat-card-modern">
-                <div class="icon-bg"><i class="fas fa-user-times"></i></div>
                 <label class="stat-label">Sin Roles</label>
-                <p class="stat-value text-warning">{{ users_without_roles }}</p>
+                <p class="stat-value">{{ users_without_roles }}</p>
             </div>
         </div>
     </div>
@@ -179,10 +171,10 @@
                     </div>
                     <div class="role-card-body">
                         <div class="d-flex gap-2 mb-4">
-                            <div class="badge-soft badge-soft-info">
+                            <div class="badge-soft">
                                 <i class="fas fa-user-friends"></i> {{ role.user_set.count }} miembro{{ role.user_set.count|pluralize:"s" }}
                             </div>
-                            <div class="badge-soft badge-soft-primary">
+                            <div class="badge-soft">
                                 <i class="fas fa-key"></i> {{ role.permissions.count }} permiso{{ role.permissions.count|pluralize:"s" }}
                             </div>
                         </div>
@@ -276,21 +268,21 @@
                             <td class="text-muted small">{{ user.email|default:"-" }}</td>
                             <td>
                                 {% for group in user.groups.all %}
-                                <span class="badge-soft badge-soft-primary me-1 mb-1">{{ group.name }}</span>
+                                <span class="badge-soft me-1 mb-1">{{ group.name }}</span>
                                 {% empty %}
                                 <span class="text-muted small">Sin roles</span>
                                 {% endfor %}
                             </td>
                             <td>
                                 {% if user.is_active %}
-                                <span class="badge-soft badge-soft-success">Activo</span>
+                                <span class="badge-soft">Activo</span>
                                 {% else %}
                                 <span class="badge bg-light text-muted border">Inactivo</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'user_update' user.pk %}" class="btn btn-sm btn-light border" title="Editar Perfil">
-                                    <i class="fas fa-user-edit text-primary"></i>
+                                <a href="{% url 'user_update' user.pk %}" class="apple-btn-ghost" style="min-height: 32px; padding: 0 10px; font-size: 13px;" title="Editar Perfil">
+                                    <i class="fas fa-user-edit"></i>
                                 </a>
                             </td>
                         </tr>
