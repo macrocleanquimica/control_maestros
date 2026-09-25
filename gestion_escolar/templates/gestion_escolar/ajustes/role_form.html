@@ -134,7 +134,7 @@
                                                 {% else %}
                                                 <i class="fas fa-cog text-primary fs-xs opacity-75"></i>
                                                 {% endif %}
-                                                {{ item.model_name|capfac }}
+                                                {{ item.model_name|capfirst }}
                                             </span>
                                         </td>
                                         
@@ -221,6 +221,8 @@
     }
 </style>
 
+{% endblock %}
+
 {% block extra_js %}
 <script>
 $(document).ready(function() {
@@ -231,7 +233,7 @@ $(document).ready(function() {
         setTimeout(() => $(this).removeClass('bg-success bg-opacity-10'), 300);
     });
     
-    $('#uncheck-all').click(function) {
+    $('#uncheck-all').click(function() {
         $('input[name="permissions"]').prop('checked', false);
         $(this).addClass('bg-danger bg-opacity-10');
         setTimeout(() => $(this).removeClass('bg-danger bg-opacity-10'), 300);
