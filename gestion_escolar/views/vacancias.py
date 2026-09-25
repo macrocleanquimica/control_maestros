@@ -263,7 +263,7 @@ def exportar_paso_gsheets(request, lote_id):
                 vacancia.horas if vacancia.tipo_plaza == "HORA/SEMANA/MES" else '',
                 vacancia.sostenimiento or '',
                 vacancia.fecha_inicio.strftime("%Y-%m-%d") if vacancia.fecha_inicio else '',
-                vacancia.fecha_final.strftime("%Y-%m-%d") if vacancia.fecha_final else '',
+                '' if vacancia.tipo_vacante == 'DEFINITIVA' else (vacancia.fecha_final.strftime("%Y-%m-%d") if vacancia.fecha_final else ''),
                 vacancia.categoria or '',
                 vacancia.pseudoplaza or '',
                 vacancia.clave_presupuestal or '',
@@ -278,7 +278,7 @@ def exportar_paso_gsheets(request, lote_id):
                                             "N/A" if vacancia.tipo_plaza == "JORNADA" else (vacancia.apreciacion.descripcion if vacancia.apreciacion else ''),
                 '', '', '', '',
                 format_date_for_solicitud_asignacion(vacancia.fecha_inicio) if vacancia.fecha_inicio else '',
-                format_date_for_solicitud_asignacion(vacancia.fecha_final) if vacancia.fecha_final else '',
+                '' if vacancia.tipo_vacante == 'DEFINITIVA' else (format_date_for_solicitud_asignacion(vacancia.fecha_final) if vacancia.fecha_final else ''),
                 '', '',
                 f"DEE/{vacancia.folio_prelacion}/2025" if vacancia.folio_prelacion else '',
                 '', '',
@@ -365,7 +365,10 @@ def exportar_paso_excel(request, lote_id):
                         valor = getattr(vacancia, field_name, '') or ''
                         
                     if field_name in ['fecha_inicio', 'fecha_final'] and valor and isinstance(valor, (datetime, date)):
-                        valor = valor.strftime("%Y-%m-%d")
+                        if field_name == 'fecha_final' and vacancia.tipo_vacante == 'DEFINITIVA':
+                            valor = ''
+                        else:
+                            valor = valor.strftime("%Y-%m-%d")
                             
                 except Exception as field_error:
                     valor = f"Error: {field_error}"
@@ -541,7 +544,7 @@ def exportar_paso_excel_eo(request, lote_id):
                     # Otros
                     sheet["E16"] = (vacancia.destino or "ADMISIÓN").upper()
                     f_init = vacancia.fecha_inicio.strftime('%d/%m/%Y') if vacancia.fecha_inicio else ""
-                    f_end = vacancia.fecha_final.strftime('%d/%m/%Y') if vacancia.fecha_final else ""
+                    f_end = "" if vacancia.tipo_vacante == 'DEFINITIVA' else (vacancia.fecha_final.strftime('%d/%m/%Y') if vacancia.fecha_final else "")
                     sheet["F16"] = f"{f_init} AL {f_end}" if f_end else f_init
                     sheet["G16"] = vacancia.clave_presupuestal or ""
                     sheet["H16"] = (vacancia.tipo_movimiento_reporte or vacancia.tipo_movimiento_original or "").upper()
@@ -764,7 +767,7 @@ def exportar_reporte_vacancias_excel(request):
             v.clave_presupuestal or "",
             v.lote.fecha_creacion.strftime("%d/%m/%Y") if v.lote and v.lote.fecha_creacion else "",
             v.fecha_inicio.strftime("%d/%m/%Y") if v.fecha_inicio else "",
-            v.fecha_final.strftime("%d/%m/%Y") if v.fecha_final else "",
+            "" if v.tipo_vacante == 'DEFINITIVA' else (v.fecha_final.strftime("%d/%m/%Y") if v.fecha_final else ""),
             v.nombre_titular_reporte or "",
             nombre_interino,
             v.curp_interino or "",
