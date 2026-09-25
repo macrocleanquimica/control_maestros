@@ -876,6 +876,8 @@ class Tema(models.Model):
 
     color_dropdown = ColorField(default='#3a506b', verbose_name="Color de Fondo del Submenú", help_text="Color de fondo para los menús desplegables del sidebar")
 
+    color_boton = ColorField(default='#0071e3', verbose_name="Color del Botón Primario", help_text="Color de los botones primarios (.apple-btn) para combinar con el menú lateral.")
+
     usar_filtro_oscuro = models.BooleanField(default=True, verbose_name="Usar filtro oscuro en imagen", help_text="Si está activo, se aplicará un filtro oscuro sobre la imagen de fondo para mejorar la legibilidad del texto blanco.")
     activo = models.BooleanField(default=True, verbose_name="Activo", help_text="Solo un tema puede estar activo a la vez para un rango de fechas.")
 

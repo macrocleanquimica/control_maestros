@@ -16,7 +16,7 @@ class TemaAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {'fields': ('nombre', 'activo')}),
         ('Rango de Fechas', {'fields': ('fecha_inicio', 'fecha_fin')}),
-        ('Apariencia', {'fields': ('color_principal', 'color_secundario', 'color_texto', 'imagen_fondo')}),
+        ('Apariencia', {'fields': ('color_principal', 'color_secundario', 'color_texto', 'color_dropdown', 'color_boton', 'imagen_fondo')}),
     )
 
 @admin.register(Zona)

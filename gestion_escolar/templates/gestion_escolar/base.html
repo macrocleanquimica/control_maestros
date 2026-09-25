@@ -15,6 +15,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{%static 'gestion_escolar/css/custom.css'%}">
     <link rel="stylesheet" href="{%static 'gestion_escolar/css/apple-tokens.css'%}">
+    {% if active_theme and active_theme.color_boton %}
+    <style>
+        :root {
+            --accent: {{ active_theme.color_boton }};
+            --accent-link: {{ active_theme.color_boton }};
+        }
+    </style>
+    {% endif %}
     <link href="{%static 'gestion_escolar/css/print.css'%}" rel="stylesheet" media="print">
 
     <style>

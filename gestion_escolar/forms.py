@@ -644,7 +644,7 @@ class RolePermissionForm(UppercaseFormMixin, forms.ModelForm):
 class TemaForm(UppercaseFormMixin, forms.ModelForm):
     class Meta:
         model = Tema
-        fields = ['nombre', 'activo', 'fecha_inicio', 'fecha_fin', 'color_principal', 'color_secundario', 'color_texto', 'color_dropdown', 'imagen_fondo', 'usar_filtro_oscuro']
+        fields = ['nombre', 'activo', 'fecha_inicio', 'fecha_fin', 'color_principal', 'color_secundario', 'color_texto', 'color_dropdown', 'color_boton', 'imagen_fondo', 'usar_filtro_oscuro']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
