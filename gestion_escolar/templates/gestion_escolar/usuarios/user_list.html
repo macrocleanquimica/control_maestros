@@ -36,10 +36,6 @@
         height: 100%;
     }
 
-    .stat-card-modern .icon-bg {
-        display: none;
-    }
-
     .stat-value {
         font-size: 1.75rem;
         font-weight: 700;
@@ -164,23 +160,20 @@
     <div class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="stat-card-modern">
-                <i class="fas fa-users icon-bg"></i>
                 <div class="stat-label">Total Usuarios</div>
-                <div class="stat-value text-primary">{{ total_usuarios }}</div>
+                <div class="stat-value">{{ total_usuarios }}</div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="stat-card-modern">
-                <i class="fas fa-user-check icon-bg text-success"></i>
                 <div class="stat-label">Usuarios Activos</div>
-                <div class="stat-value text-success">{{ usuarios_activos }}</div>
+                <div class="stat-value">{{ usuarios_activos }}</div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="stat-card-modern">
-                <i class="fas fa-user-times icon-bg text-danger"></i>
                 <div class="stat-label">Usuarios Inactivos</div>
-                <div class="stat-value text-danger">{{ usuarios_inactivos }}</div>
+                <div class="stat-value">{{ usuarios_inactivos }}</div>
             </div>
         </div>
     </div>

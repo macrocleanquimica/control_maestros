@@ -41,36 +41,19 @@
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <!-- Breadcrumb & Header -->
-    <div class="row mb-4 animate__animated animate__fadeIn">
-        <div class="col-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-2">
-                    <li class="breadcrumb-item"><a href="{% url 'ajustes' %}" class="text-decoration-none">Ajustes</a></li>
-                    <li class="breadcrumb-item"><a href="{% url 'user_list' %}" class="text-decoration-none">Gestión de Usuarios</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">{{ titulo }}</li>
-                </ol>
-            </nav>
-            <div class="d-flex align-items-center gap-3">
-                <div>
-                    <h2 class="fw-extrabold mb-0 text-capitalize">{{ titulo }}</h2>
-                    <p class="mb-0" style="color: var(--text-2, #6e6e73);">{% if editando %}Actualiza los datos y permisos del usuario.{% else %}Nueva cuenta de acceso al sistema.{% endif %}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Alert Messages -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-premium fade show shadow-sm mb-4" role="alert">
-                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
-                {{ message }}
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-xl-10 mx-auto">
+            <h4 class="apple-title mb-1" style="font-size: clamp(20px, 2.5vw, 24px);">{{ titulo }}</h4>
+            <p class="text-muted mb-4">{% if editando %}Actualiza los datos y permisos del usuario.{% else %}Nueva cuenta de acceso al sistema.{% endif %}</p>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
 
     <div class="row justify-content-center">
         <div class="col-xl-10">
