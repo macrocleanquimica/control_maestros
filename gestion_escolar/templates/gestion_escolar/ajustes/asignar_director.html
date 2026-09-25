@@ -19,19 +19,11 @@
                         {% csrf_token %}
                         
                         <div class="mb-4">
-                            <label class="form-label fw-bold letter-spacing-wider text-muted fs-xs text-uppercase mb-2">Seleccionar Maestro</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0 rounded-start-3"><i class="fas fa-chalkboard-teacher text-primary"></i></span>
-                                {{ form.maestro|as_crispy_field }}
-                            </div>
+                            {{ form.maestro|as_crispy_field }}
                         </div>
 
-                        <div class="mb-5">
-                            <label class="form-label fw-bold letter-spacing-wider text-muted fs-xs text-uppercase mb-2">Cuenta de Usuario (Login)</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0 rounded-start-3"><i class="fas fa-user-circle text-primary"></i></span>
-                                {{ form.usuario|as_crispy_field }}
-                            </div>
+                        <div class="mb-4">
+                            {{ form.usuario|as_crispy_field }}
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
