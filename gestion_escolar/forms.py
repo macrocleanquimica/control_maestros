@@ -240,6 +240,7 @@ class CategoriaForm(UppercaseFormMixin, forms.ModelForm):
         widgets = {
             'id_categoria': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.TextInput(attrs={'class': 'form-control'}),
+            'horas': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
 class MaestroForm(UppercaseFormMixin, forms.ModelForm):
