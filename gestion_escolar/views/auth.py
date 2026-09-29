@@ -82,7 +82,7 @@ def login_view(request):
     
     context = {
         'form': form,
-        'titulo': 'Iniciar Sesión'
+        'titulo': 'Iniciar Sesión en Sistema de Educ. Esp.'
     }
     return render(request, 'gestion_escolar/login.html', context)
 
