@@ -151,7 +151,7 @@
                         Recordarme
                     </label>
                 </div>
-                <a href="{% url 'reset_password' %}" class="smaller text-primary fw-bold text-decoration-none">
+                <a href="{% url 'reset_password' %}" class="smaller inline-link">
                     ¿Olvidaste tu contraseña?
                 </a>
             </div>
@@ -162,13 +162,15 @@
             </button>
 
             <div class="text-center">
-                <p class="mb-0 smaller text-muted"> ¿No tienes una cuenta? 
-                    <a href="{% url 'signup' %}" class="text-primary fw-bold text-decoration-none">Regístrate ahora</a>
+                <p class="mb-0 smaller text-muted"> ¿No tienes una cuenta?
+                    <a href="{% url 'signup' %}" class="inline-link">Regístrate ahora</a>
                 </p>
             </div>
         </form>
     </div>
 </div>
+
+{% endblock %}
 
 {% block extra_js %}
 <script>
@@ -186,5 +188,4 @@
         }
     });
 </script>
-{% endblock %}
 {% endblock %}
