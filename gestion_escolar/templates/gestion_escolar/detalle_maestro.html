@@ -196,6 +196,11 @@
             </div>
         </div>
         <div class="d-flex gap-2 btn-group-actions flex-wrap">
+            {% if perms.gestion_escolar.change_maestro %}
+            <a href="{% url 'editar_maestro' maestro.id_maestro %}" class="apple-btn">
+                <i class="fas fa-edit me-2"></i> Editar
+            </a>
+            {% endif %}
             {% if perms.gestion_escolar.acceder_kardex %}
             <a href="{% url 'kardex_maestro_detail' maestro.id_maestro %}?from=detalle" class="apple-btn-ghost">
                 <i class="fas fa-history me-2"></i> Kardex
