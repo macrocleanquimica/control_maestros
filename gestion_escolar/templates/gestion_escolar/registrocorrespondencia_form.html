@@ -4,6 +4,16 @@
 {% block title %}{% if object %}Editar registro{% else %}Nuevo registro{% endif %} | Control de Maestros{% endblock %}
 
 {% block content %}
+<style>
+    /* El texto que se captura en las búsquedas de Select2 (por ejemplo
+       Maestro Relacionado) se muestra en mayúsculas. Es solo visual: la
+       búsqueda del servidor ya ignora mayúsculas y acentos. */
+    html body .select2-container .select2-search--dropdown .select2-search__field,
+    html body .select2-container .select2-search--inline .select2-search__field {
+        text-transform: uppercase !important;
+    }
+</style>
+
 <div class="comp-page-container">
     <div class="comp-page-header">
         <div class="comp-title-group">
