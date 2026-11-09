@@ -2,16 +2,454 @@ import json
 import openpyxl
 import datetime
 from datetime import date
+from unidecode import unidecode
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_POST
 from django.db.models import Q, Count
 from django.db.models.functions import Upper, Trim
 
-from ..models import Maestro, Zona, Escuela, RegistroCorrespondencia
-from .helpers import get_director_info, get_supervisor_info, get_full_name, elegir_director_activo, FUNCION_MAPPING
+from ..models import Maestro, Zona, Escuela, RegistroCorrespondencia, Historial, TipoApreciacion, Vacancia
+from .helpers import get_director_info, get_full_name, elegir_director_activo, elegir_supervisor_activo, FUNCION_MAPPING, es_director, escuela_de_director
+
+# --- Control de Basificacion (Alta Inicial 09) ---
+# El plazo de 6 meses NO se calcula aqui: se toma de datos_tramite.fecha_efecto2,
+# que es la fecha de terminacion que capturo quien genero el tramite ALTA INICIAL (09).
+ALTA_INICIAL_TIPO = "Trámite - ALTA INICIAL (09)"
+DIAS_ALERTA_BASIFICACION = 15
+
+
+def _a_date(valor):
+    """Convierte a date lo que venga del JSONField datos_tramite (date o 'YYYY-MM-DD')."""
+    if not valor:
+        return None
+    if isinstance(valor, datetime.datetime):
+        return valor.date()
+    if isinstance(valor, date):
+        return valor
+    try:
+        return datetime.datetime.strptime(str(valor)[:10], "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return None
+
+
+def construir_control_basificacion(hoy=None):
+    """
+    Arma las dos listas del reporte de basificacion.
+
+   (con_tramite): maestros con un tramite ALTA INICIAL (09) en el Historial.
+        La fecha limite es datos_tramite['fecha_efecto2'] (dato capturado).
+        fecha_basificar es el dia siguiente: desde ahi el maestro debe tener codigo 10.
+    (sin_tramite): maestros con codigo '09' que no tienen ese tramite registrado.
+        NO se les inventa una fecha: quedan como 'Falta capturar', porque
+        fecha_ingreso es el ingreso al sistema, no la fecha del alta inicial.
+
+    Se deduplica por CURP porque hay CURPs repetidos en Maestro.
+    """
+    hoy = hoy or date.today()
+
+    # --- Un maestro puede tener mas de un ALTA INICIAL; gana el mas reciente ---
+    con_tramite_por_curp = {}
+    for h in (Historial.objects
+              .filter(tipo_documento=ALTA_INICIAL_TIPO)
+              .select_related('maestro', 'maestro__id_escuela', 'maestro__id_escuela__zona_esc')
+              .order_by('fecha_creacion')):
+        if not h.maestro:
+            continue
+        datos = h.datos_tramite or {}
+        fecha_alta = _a_date(datos.get('fecha_efecto1'))
+        fecha_limite = _a_date(datos.get('fecha_efecto2'))
+
+        item = {
+            'maestro': h.maestro,
+            'nombre': get_full_name(h.maestro),
+            'curp': h.maestro.curp or '',
+            'rfc': h.maestro.rfc or '',
+            'clave_presupuestal': h.maestro.clave_presupuestal or '',
+            'codigo': h.maestro.codigo or '',
+            'escuela': h.maestro.id_escuela,
+            'cct': h.maestro.id_escuela.id_escuela if h.maestro.id_escuela else '',
+            'nombre_ct': h.maestro.id_escuela.nombre_ct if h.maestro.id_escuela else '',
+            'zona': h.maestro.id_escuela.zona_esc.etiqueta if h.maestro.id_escuela and h.maestro.id_escuela.zona_esc else '',
+            'folio': datos.get('folio') or '',
+            'fecha_alta': fecha_alta,
+            'fecha_limite': fecha_limite,
+            'historial': h,
+            'dato_faltante': False,
+            'duda_datos': False,
+        }
+        if fecha_limite:
+            item['dias_restantes'] = (fecha_limite - hoy).days
+            # Dia siguiente al limite: desde esta fecha el maestro debe tener codigo 10.
+            item['fecha_basificar'] = fecha_limite + datetime.timedelta(days=1)
+        else:
+            item['dias_restantes'] = None
+            item['fecha_basificar'] = None
+
+        clave = h.maestro.curp or f"pk-{h.maestro.pk}"
+        con_tramite_por_curp[clave] = item
+
+    con_tramite = list(con_tramite_por_curp.values())
+
+    # --- codigo 09 sin el tramite ALTA INICIAL registrado ---
+    curps_con_tramite = {i['curp'] for i in con_tramite if i['curp']}
+    vistos = set()
+    sin_tramite = []
+    for m in (Maestro.objects
+              .filter(codigo='09')
+              .exclude(status='INACTIVO')
+              .select_related('id_escuela', 'id_escuela__zona_esc')
+              .order_by('a_paterno', 'a_materno', 'nombres')):
+        clave = m.curp or f"pk-{m.pk}"
+        if clave in curps_con_tramite or clave in vistos:
+            continue
+        vistos.add(clave)
+
+        # Ingreso de mas de 3 anos es improbable para un alta inicial: probable captura incorrecta.
+        ingreso_dudoso = bool(m.fecha_ingreso and (hoy - m.fecha_ingreso).days > 365 * 3)
+
+        sin_tramite.append({
+            'maestro': m,
+            'nombre': get_full_name(m),
+            'curp': m.curp or '',
+            'rfc': m.rfc or '',
+            'clave_presupuestal': m.clave_presupuestal or '',
+            'codigo': m.codigo or '',
+            'escuela': m.id_escuela,
+            'cct': m.id_escuela.id_escuela if m.id_escuela else '',
+            'nombre_ct': m.id_escuela.nombre_ct if m.id_escuela else '',
+            'zona': m.id_escuela.zona_esc.etiqueta if m.id_escuela and m.id_escuela.zona_esc else '',
+            'folio': '',
+            'fecha_alta': None,
+            'fecha_limite': None,
+            'fecha_basificar': None,
+            'dias_restantes': None,
+            'historial': None,
+            'dato_faltante': True,
+            'duda_datos': ingreso_dudoso,
+            'fecha_ingreso': m.fecha_ingreso,
+        })
+
+    # Mas urgentes primero; los que ya vencieron secedencepestan.
+    con_tramite.sort(key=lambda i: (
+        i['fecha_limite'] is None,
+        i['fecha_limite'] or date.max,
+    ))
+    sin_tramite.sort(key=lambda i: i['nombre'])
+
+    return con_tramite, sin_tramite
+
+
+def alertas_basificacion(con_tramite=None):
+    """Maestros con fecha limite vencida o dentro de DIAS_ALERTA_BASIFICACION dias."""
+    if con_tramite is None:
+        con_tramite, _ = construir_control_basificacion()
+    return [i for i in con_tramite
+            if i['dias_restantes'] is not None
+            and i['dias_restantes'] <= DIAS_ALERTA_BASIFICACION]
+
+
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
+def reporte_control_basificacion(request):
+    """Reporte de control de basificacion para maestros en ALTA INICIAL (09)."""
+    con_tramite, sin_tramite = construir_control_basificacion()
+
+    zona_sel = request.GET.get('zona', '')
+    cct_sel = request.GET.get('cct', '')
+    grupo_sel = request.GET.get('grupo', 'con_tramite')
+    estado_sel = request.GET.get('estado', '')
+
+    def _filtrar(lista):
+        out = []
+        for i in lista:
+            if zona_sel and i['zona'] != zona_sel:
+                continue
+            if cct_sel and i['cct'] != cct_sel:
+                continue
+            if estado_sel:
+                if estado_sel == 'vencido' and not (i['dias_restantes'] is not None and i['dias_restantes'] < 0):
+                    continue
+                if estado_sel == 'proximo' and not (i['dias_restantes'] is not None and 0 <= i['dias_restantes'] <= DIAS_ALERTA_BASIFICACION):
+                    continue
+                if estado_sel == 'urgente' and not (i['dias_restantes'] is not None and DIAS_ALERTA_BASIFICACION < i['dias_restantes'] <= 30):
+                    continue
+                if estado_sel == 'dato_faltante' and not i['dato_faltante']:
+                    continue
+                if estado_sel == 'duda' and not i['duda_datos']:
+                    continue
+                if estado_sel == 'tranquilo' and not (i['dias_restantes'] is not None and i['dias_restantes'] > 30):
+                    continue
+            out.append(i)
+        return out
+
+    filtradas = {
+        'con_tramite': _filtrar(con_tramite),
+        'sin_tramite': _filtrar(sin_tramite),
+    }
+
+    zonas = sorted({i['zona'] for i in con_tramite + sin_tramite if i['zona']})
+    ccts = sorted({i['cct'] for i in con_tramite + sin_tramite if i['cct']})
+
+    context = {
+        'titulo': 'Control de Basificación (Alta Inicial 09)',
+        'con_tramite': filtradas['con_tramite'],
+        'sin_tramite': filtradas['sin_tramite'],
+        'total_con_tramite': len(con_tramite),
+        'total_sin_tramite': len(sin_tramite),
+        'zonas': zonas,
+        'ccts': ccts,
+        'zona_sel': zona_sel,
+        'cct_sel': cct_sel,
+        'grupo_sel': grupo_sel if grupo_sel in ('con_tramite', 'sin_tramite') else 'con_tramite',
+        'estado_sel': estado_sel,
+        'dias_alerta': DIAS_ALERTA_BASIFICACION,
+        # Contadores del encabezado (ya calculados, no recalcular en plantilla)
+        'vencidos': sum(1 for i in con_tramite if i['dias_restantes'] is not None and i['dias_restantes'] < 0),
+        'proximos': sum(1 for i in con_tramite if i['dias_restantes'] is not None and 0 <= i['dias_restantes'] <= DIAS_ALERTA_BASIFICACION),
+    }
+    return render(request, 'gestion_escolar/reporte_control_basificacion.html', context)
+
+
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
+def export_control_basificacion_excel(request):
+    """Exporta el control de basificacion a Excel respetando los filtros activos."""
+    con_tramite, sin_tramite = construir_control_basificacion()
+
+    grupo = request.GET.get('grupo', 'con_tramite')
+    estado = request.GET.get('estado', '')
+    zona = request.GET.get('zona', '')
+    cct = request.GET.get('cct', '')
+
+    base = con_tramite if grupo == 'con_tramite' else sin_tramite
+
+    filas = []
+    for i in base:
+        if zona and i['zona'] != zona:
+            continue
+        if cct and i['cct'] != cct:
+            continue
+        if estado == 'vencido' and not (i['dias_restantes'] is not None and i['dias_restantes'] < 0):
+            continue
+        if estado == 'proximo' and not (i['dias_restantes'] is not None and 0 <= i['dias_restantes'] <= DIAS_ALERTA_BASIFICACION):
+            continue
+        if estado == 'urgente' and not (i['dias_restantes'] is not None and DIAS_ALERTA_BASIFICACION < i['dias_restantes'] <= 30):
+            continue
+        if estado == 'dato_faltante' and not i['dato_faltante']:
+            continue
+        if estado == 'duda' and not i['duda_datos']:
+            continue
+        if estado == 'tranquilo' and not (i['dias_restantes'] is not None and i['dias_restantes'] > 30):
+            continue
+        filas.append(i)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Control Basificación 09"
+
+    ws.append([
+        "Maestro", "CURP", "RFC", "Clave Presupuestal", "Código", "CCT",
+        "Centro de Trabajo", "Zona Escolar", "Folio Trámite",
+        "Fecha Alta (efecto1)", "Fecha Límite (efecto2)",
+        "Debe tener código 10 desde", "Días Restantes", "Estatus", "Observación",
+    ])
+
+    for i in filas:
+        if i['dias_restantes'] is None:
+            estatus = "FALTA CAPTURAR"
+        elif i['dias_restantes'] < 0:
+            estatus = f"VENCIDO (hace {abs(i['dias_restantes'])} días)"
+        elif i['dias_restantes'] <= DIAS_ALERTA_BASIFICACION:
+            estatus = f"URGENTE ({i['dias_restantes']} días)"
+        elif i['dias_restantes'] <= 30:
+            estatus = f"PRÓXIMO ({i['dias_restantes']} días)"
+        else:
+            estatus = f"EN TIEMPO ({i['dias_restantes']} días)"
+
+        obs = []
+        if i['dato_faltante']:
+            obs.append("Sin trámite ALTA INICIAL registrado en el historial.")
+        if i['duda_datos']:
+            obs.append("Fecha de ingreso antigua: verificar si el código 09 es correcto.")
+        if not i['dato_faltante'] and i['codigo'] and i['codigo'] != '09':
+            obs.append(f"Código actual {i['codigo']}: ya no está en 09, confirmar si fue basificado.")
+
+        ws.append([
+            i['nombre'],
+            i['curp'],
+            i['rfc'],
+            i['clave_presupuestal'],
+            i['codigo'],
+            i['cct'],
+            i['nombre_ct'],
+            i['zona'],
+            i['folio'],
+            i['fecha_alta'].strftime("%d/%m/%Y") if i['fecha_alta'] else "",
+            i['fecha_limite'].strftime("%d/%m/%Y") if i['fecha_limite'] else "",
+            i['fecha_basificar'].strftime("%d/%m/%Y") if i.get('fecha_basificar') else "",
+            i['dias_restantes'] if i['dias_restantes'] is not None else "",
+            estatus,
+            " ".join(obs),
+        ])
+
+    for col, ancho in zip("ABCDEFGHIJKLMNOP", [34, 20, 14, 24, 9, 14, 34, 22, 13, 18, 20, 22, 14, 24, 55]):
+        ws.column_dimensions[col].width = ancho
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': 'attachment; filename="control_basificacion_09.xlsx"'},
+    )
+    wb.save(response)
+    return response
+
+
+# ---------------------------------------------------------------------------
+# Catalogo de Apreciaciones
+#
+# Son los textos que se eligen en el formulario de vacancias. Ojo: varios de
+# ellos tienen validaciones por igualdad de cadena en VacanciaForm.clean
+# (gestion_escolar/forms.py). Renombrar uno de estos hace que su validacion de
+# categoria deje de aplicar sin que salte ningun error, por eso se marcan en la
+# tabla con la insignia "Con regla". Debe mantenerse sincronizado con forms.py.
+# ---------------------------------------------------------------------------
+APRECIACIONES_CON_REGLA = {
+    "ADMISIÓN.EDUCACIÓN BÁSICA.DOCENTE.EDUCACIÓN ESPECIAL.PSICOLOGÍA EDUCATIVA",
+    "ADMISIÓN.EDUCACIÓN BÁSICA.DOCENTE.EDUCACIÓN ESPECIAL.EDUCACIÓN ESPECIAL",
+    "ADMISIÓN.EDUCACIÓN BÁSICA.DOCENTE.EDUCACIÓN FÍSICA",
+    "PROMOCIÓN.EDUCACIÓN BÁSICA.DIRECCIÓN.ESPECIAL.ESPECIAL.DIRECTOR DE ESCUELA DE EDUCACIÓN ESPECIAL",
+    "PROMOCIÓN. EDUCACIÓN BÁSICA. SUPERVISIÓN. ESPECIAL. ESPECIAL. SUPERVISOR DE EDUCACIÓN ESPECIAL. FORÁNEO",
+    "ADMISIÓN.EDUCACIÓN BÁSICA.TÉCNICO DOCENTE.EDUCACIÓN ESPECIAL.MAESTRO DE TALLER",
+}
+
+
+def _apreciaciones():
+    """Catalogo anotado con cuantas vacancias usa cada apreciacion."""
+    return TipoApreciacion.objects.annotate(
+        en_uso=Count('vacancia', distinct=True)
+    ).order_by('descripcion')
+
+
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
+def reporte_apreciaciones(request):
+    """Listado del catalogo de apreciaciones con su uso en vacancias."""
+    filas = _apreciaciones()
+
+    # El buscador del DataTable tambien filtra aqui para que el Excel coincida
+    # con lo que el usuario ve en pantalla.
+    q = (request.GET.get('q') or '').strip()
+    if q:
+        # Igual que el buscador de la tabla: cada palabra por separado.
+        for palabra in q.split():
+            filas = filas.filter(descripcion__icontains=palabra)
+
+    filas = list(filas)
+    total = TipoApreciacion.objects.count()
+
+    context = {
+        'titulo': 'Catálogo de Apreciaciones',
+        'apreciaciones': filas,
+        'q': q,
+        'total': total,
+        'en_uso': sum(1 for f in filas if f.en_uso),
+        'sin_usar': sum(1 for f in filas if not f.en_uso),
+        'con_regla': sum(1 for f in filas if f.descripcion in APRECIACIONES_CON_REGLA),
+        'con_regla_lista': APRECIACIONES_CON_REGLA,
+        'puede_editar': request.user.has_perm('gestion_escolar.change_tipoapreciacion'),
+    }
+    return render(request, 'gestion_escolar/reporte_apreciaciones.html', context)
+
+
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
+def export_apreciaciones_excel(request):
+    """Exporta el catalogo de apreciaciones respetando la busqueda activa."""
+    filas = _apreciaciones()
+
+    q = (request.GET.get('q') or '').strip()
+    if q:
+        # Igual que el buscador de la tabla: cada palabra por separado.
+        for palabra in q.split():
+            filas = filas.filter(descripcion__icontains=palabra)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Apreciaciones"
+    ws.append(["ID", "Descripción", "Vacancias que la usan", "Con regla en trámites"])
+
+    for f in filas:
+        ws.append([
+            f.id,
+            f.descripcion,
+            f.en_uso,
+            "Sí" if f.descripcion in APRECIACIONES_CON_REGLA else "",
+        ])
+
+    # Estilo de encabezado (mismo criterio que los demas reportes)
+    desde_estilo = openpyxl.styles
+    for celda in ws[1]:
+        celda.font = desde_estilo.Font(bold=True, color="FFFFFF")
+        celda.fill = desde_estilo.PatternFill("solid", start_color="2C3E50")
+
+    for col, ancho in zip("ABCD", [8, 95, 24, 24]):
+        ws.column_dimensions[col].width = ancho
+    ws.freeze_panes = "A2"
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': 'attachment; filename="catalogo_apreciaciones.xlsx"'},
+    )
+    wb.save(response)
+    return response
+
+
+def _respuesta_validacion(mensaje):
+    return JsonResponse({'ok': False, 'error': mensaje})
+
+
+@require_POST
+@permission_required('gestion_escolar.change_tipoapreciacion', raise_exception=True)
+def apreciacion_crear(request):
+    """Crea una apreciacion desde el modal."""
+    descripcion = (request.POST.get('descripcion') or '').strip()
+    if not descripcion:
+        return _respuesta_validacion("La descripción es obligatoria.")
+    if TipoApreciacion.objects.filter(descripcion__iexact=descripcion).exists():
+        return _respuesta_validacion("Ya existe una apreciación con ese texto.")
+    TipoApreciacion.objects.create(descripcion=descripcion)
+    return JsonResponse({'ok': True, 'msg': 'Apreciación creada.'})
+
+
+@require_POST
+@permission_required('gestion_escolar.change_tipoapreciacion', raise_exception=True)
+def apreciacion_editar(request, pk):
+    """Actualiza la descripcion de una apreciacion desde el modal."""
+    obj = get_object_or_404(TipoApreciacion, pk=pk)
+    descripcion = (request.POST.get('descripcion') or '').strip()
+
+    if not descripcion:
+        return _respuesta_validacion("La descripción es obligatoria.")
+    if TipoApreciacion.objects.filter(descripcion__iexact=descripcion).exclude(pk=obj.pk).exists():
+        return _respuesta_validacion("Ya existe otra apreciación con ese texto.")
+
+    obj.descripcion = descripcion
+    obj.save()
+    return JsonResponse({'ok': True, 'msg': 'Apreciación actualizada.'})
+
+
+@require_POST
+@permission_required('gestion_escolar.change_tipoapreciacion', raise_exception=True)
+def apreciacion_eliminar(request, pk):
+    """Elimina una apreciacion, salvo que vacancias la esten usando."""
+    obj = get_object_or_404(TipoApreciacion, pk=pk)
+    en_uso = Vacancia.objects.filter(apreciacion=obj).count()
+    if en_uso:
+        return _respuesta_validacion(
+            "No se puede eliminar: %d vacancia(s) la están usando." % en_uso
+        )
+    obj.delete()
+    return JsonResponse({'ok': True, 'msg': 'Apreciación eliminada.'})
+
 
 @permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
 def reportes_dashboard(request):
@@ -28,6 +466,7 @@ def reportes_dashboard(request):
     return render(request, 'gestion_escolar/reportes_dashboard.html', context)
 
 @login_required
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
 def reporte_personal_fuera_adscripcion(request):
     personal_qs = Maestro.objects.annotate(
         techo_f_clean=Trim(Upper('techo_f')),
@@ -43,8 +482,17 @@ def reporte_personal_fuera_adscripcion(request):
     return render(request, 'gestion_escolar/reporte_fuera_adscripcion.html', context)
 
 @login_required
+@permission_required('gestion_escolar.view_maestro', raise_exception=True)
 def export_maestro_excel(request, pk):
     maestro = get_object_or_404(Maestro, id_maestro=pk)
+    if es_director(request.user):
+        # El director solo exporta personal de su escuela.
+        from django.core.exceptions import PermissionDenied
+        escuela_dir = escuela_de_director(request.user)
+        cct_dir = (escuela_dir.id_escuela or '').strip().upper() if escuela_dir and escuela_dir.id_escuela else ''
+        cct_mtro = (maestro.id_escuela.id_escuela or '').strip().upper() if maestro.id_escuela and maestro.id_escuela.id_escuela else ''
+        if not cct_dir or cct_mtro != cct_dir:
+            raise PermissionDenied
     
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -97,11 +545,29 @@ def export_maestro_excel(request, pk):
     return response
 
 @login_required
+@permission_required('gestion_escolar.view_maestro', raise_exception=True)
 def exportar_maestros_excel(request):
     filtro = request.GET.get('filtro', '')
     funcion = request.GET.get('funcion', '')
+    # La lista envía 'search' + 'agrupar' (ver lista_maestros.html); se respetan
+    # para que el Excel contenga lo mismo que se ve en pantalla.
+    search = request.GET.get('search', '') or filtro
+    agrupar = request.GET.get('agrupar', '1') != '0'
+    status_exp = (request.GET.get('status') or '').strip().upper()
 
     maestros_qs = Maestro.objects.select_related('id_escuela', 'id_escuela__zona_esc', 'categog').all().order_by('a_paterno', 'a_materno', 'nombres')
+
+    if es_director(request.user):
+        # El Excel contiene lo mismo que ve en pantalla: solo su escuela.
+        escuela_dir = escuela_de_director(request.user)
+        if escuela_dir is None:
+            maestros_qs = maestros_qs.none()
+        else:
+            maestros_qs = maestros_qs.filter(id_escuela=escuela_dir)
+        agrupar = False
+
+    if status_exp in ('ACTIVO', 'LICENCIA', 'INACTIVO'):
+        maestros_qs = maestros_qs.filter(status=status_exp)
 
     if funcion:
         funcion_info = FUNCION_MAPPING.get(funcion)
@@ -111,18 +577,33 @@ def exportar_maestros_excel(request):
             # Función no mapeada: filtrar por el valor literal (defensivo).
             maestros_qs = maestros_qs.filter(funcion=funcion)
 
-    if filtro:
-        maestros_qs = maestros_qs.filter(
-            Q(nombres__icontains=filtro) |
-            Q(a_paterno__icontains=filtro) |
-            Q(a_materno__icontains=filtro) |
-            Q(rfc__icontains=filtro) |
-            Q(curp__icontains=filtro) |
-            Q(id_maestro__icontains=filtro) |
-            Q(id_escuela__nombre_ct__icontains=filtro) |
-            Q(id_escuela__id_escuela__icontains=filtro) |
-            Q(categog__descripcion__icontains=filtro)
-        )
+    if agrupar:
+        maestros_qs = maestros_qs.filter(maestro_principal__isnull=True)
+
+    if search:
+        from unidecode import unidecode
+        search_unaccented = unidecode(search.upper())
+        query = Q(id_maestro__icontains=search) | \
+                Q(curp__icontains=search) | \
+                Q(rfc__icontains=search) | \
+                Q(clave_presupuestal__icontains=search) | \
+                Q(id_escuela__id_escuela__icontains=search) | \
+                Q(id_escuela__nombre_ct__icontains=search) | \
+                Q(categog__descripcion__icontains=search) | \
+                Q(nombre_completo_unaccented__icontains=search_unaccented)
+        if agrupar:
+            # En vista agrupada, la búsqueda también rastrea secundarias para
+            # traer a la persona raíz (igual que lista_maestros_ajax).
+            query = query | \
+                    Q(plazas_secundarias__id_maestro__icontains=search) | \
+                    Q(plazas_secundarias__curp__icontains=search) | \
+                    Q(plazas_secundarias__rfc__icontains=search) | \
+                    Q(plazas_secundarias__clave_presupuestal__icontains=search) | \
+                    Q(plazas_secundarias__id_escuela__id_escuela__icontains=search) | \
+                    Q(plazas_secundarias__nombre_completo_unaccented__icontains=search_unaccented)
+            maestros_qs = maestros_qs.filter(query).distinct()
+        else:
+            maestros_qs = maestros_qs.filter(query)
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -168,6 +649,7 @@ def exportar_maestros_excel(request):
     return response
 
 @login_required
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
 def reporte_distribucion_funcion(request):
     maestros_qs = Maestro.objects.all()
 
@@ -200,6 +682,7 @@ def reporte_distribucion_funcion(request):
     return render(request, 'gestion_escolar/reporte_distribucion_funcion.html', context)
 
 @login_required
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
 def export_personal_fuera_adscripcion_excel(request):
     """Exporta el reporte de personal fuera de adscripción a un archivo Excel, aplicando un filtro de búsqueda."""
     filtro = request.GET.get('filtro', '')
@@ -216,16 +699,18 @@ def export_personal_fuera_adscripcion_excel(request):
     pks = [p.pk for p in personal_fuera_adscripcion]
     queryset = Maestro.objects.filter(pk__in=pks)
 
-    # 2. Aplicar el filtro si existe
+    # 2. Aplicar el filtro con la misma lógica que DataTables: cada palabra
+    #    debe aparecer en alguno de los campos visibles (no la frase completa).
     if filtro:
-        queryset = queryset.filter(
-            Q(nombres__icontains=filtro) |
-            Q(a_paterno__icontains=filtro) |
-            Q(a_materno__icontains=filtro) |
-            Q(clave_presupuestal__icontains=filtro) |
-            Q(id_escuela__id_escuela__icontains=filtro) | # CCT Físico
-            Q(techo_f__icontains=filtro) # CCT de Pago
-        )
+        for palabra in filtro.split():
+            queryset = queryset.filter(
+                Q(nombres__icontains=palabra) |
+                Q(a_paterno__icontains=palabra) |
+                Q(a_materno__icontains=palabra) |
+                Q(clave_presupuestal__icontains=palabra) |
+                Q(id_escuela__id_escuela__icontains=palabra) |  # CCT Físico
+                Q(techo_f__icontains=palabra)  # CCT de Pago
+            )
 
     # 3. Crear el libro de Excel
     wb = openpyxl.Workbook()
@@ -279,24 +764,44 @@ def export_personal_fuera_adscripcion_excel(request):
     return response
 
 @login_required
+@permission_required('gestion_escolar.view_escuela', raise_exception=True)
 def exportar_escuelas_excel(request):
-    """Exporta el reporte de escuelas a un archivo Excel, aplicando un filtro de búsqueda."""
+    """Exporta el reporte de escuelas a un archivo Excel.
+
+    Aplica el mismo criterio que el buscador de la tabla: sin distinguir
+    mayúsculas ni acentos y buscando en todas las columnas visibles
+    (incluida la etiqueta de zona, por ejemplo "Zona 2").
+    """
     filtro = request.GET.get('filtro', '')
 
-    # 1. Obtener el queryset base
-    escuelas_qs = Escuela.objects.select_related('zona_esc').all().order_by('id_escuela') # Ordenar por CCT
+    # 1. Obtener las escuelas
+    escuelas = list(
+        Escuela.objects.select_related('zona_esc').all().order_by('id_escuela')
+    )
 
-    # 2. Aplicar el filtro si existe
-    if filtro:
-        escuelas_qs = escuelas_qs.filter(
-            Q(id_escuela__icontains=filtro) |
-            Q(nombre_ct__icontains=filtro) |
-            Q(zona_esc__numero__icontains=filtro) |
-            Q(zona_economica__icontains=filtro) |
-            Q(u_d__icontains=filtro) |
-            Q(turno__icontains=filtro) |
-            Q(sostenimiento__icontains=filtro)
-        )
+    # 2. Aplicar el filtro con la misma lógica que DataTables: cada palabra
+    #    debe aparecer en alguna de las columnas mostradas en pantalla.
+    palabras = [
+        unidecode(p).lower()
+        for p in str(filtro or '').split()
+        if p.strip()
+    ]
+    if palabras:
+        def coincide(escuela):
+            valores = [
+                escuela.id_escuela,
+                escuela.nombre_ct,
+                escuela.zona_esc.etiqueta if escuela.zona_esc else '',
+                escuela.get_turno_display(),
+                escuela.zona_economica,
+                escuela.u_d,
+                escuela.get_sostenimiento_display(),
+                escuela.domicilio,
+            ]
+            texto_fila = unidecode(' '.join(str(v or '') for v in valores)).lower()
+            return all(palabra in texto_fila for palabra in palabras)
+
+        escuelas = [e for e in escuelas if coincide(e)]
 
     # 3. Crear el libro de Excel
     wb = openpyxl.Workbook()
@@ -311,7 +816,7 @@ def exportar_escuelas_excel(request):
     ws.append(headers)
 
     # 5. Escribir los datos de cada escuela
-    for escuela in escuelas_qs:
+    for escuela in escuelas:
         zona_label = escuela.zona_esc.etiqueta if escuela.zona_esc else ''
         
         row = [
@@ -643,28 +1148,20 @@ def _nombre_con_escolaridad(maestro):
 
 
 def _supervisor_zona(zona):
-    """Obtiene el nombre del supervisor asignado a la zona (con escolaridad)."""
-    # Se prioriza al maestro cuya función sea SUPERVISOR en la zona
-    from gestion_escolar.models import Maestro as M
-    supervisor = Maestro.objects.filter(
-        id_escuela__zona_esc=zona, funcion__in=['SUPERVISOR(A)']
-    ).first()
+    """Obtiene el nombre del supervisor asignado a la zona (con escolaridad).
+
+    Definición única: supervisor activo con nombre por función, con respaldo
+    en la FK manual de la zona (ver helpers.elegir_supervisor_activo).
+    """
+    from .helpers import _supervisor_fk_valido
+    supervisor = elegir_supervisor_activo(zona)
+    if supervisor is None and getattr(zona, 'supervisor_id', None):
+        fk = zona.supervisor
+        if _supervisor_fk_valido(fk):
+            supervisor = fk
     if supervisor:
         return _nombre_con_escolaridad(supervisor)
-    # Respaldo: FK zona.supervisor o helper
-    supervisor = None
-    if zona.supervisor_id:
-        supervisor = zona.supervisor
-    if not supervisor:
-        info = get_supervisor_info(zona)
-        if info.get('nombre'):
-            nivel = info.get('nivel') or ''
-            nombre = info['nombre']
-            if nombre in ('SUPERVISOR NO ENCONTRADO',):
-                return ''
-            return f"{nivel} {nombre}".strip()
-        return ''
-    return _nombre_con_escolaridad(supervisor)
+    return ''
 
 
 @login_required

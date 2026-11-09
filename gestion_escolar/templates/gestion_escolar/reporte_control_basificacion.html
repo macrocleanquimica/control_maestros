@@ -1,0 +1,271 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Control de Basificación (09) | Control de Maestros{% endblock %}
+
+{% block content %}
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Control de Basificación</h1>
+            <p class="comp-subtitle">Maestros en ALTA INICIAL (09) y su fecha límite de basificación.</p>
+        </div>
+        <div class="comp-actions d-print-none">
+            <a href="{% url 'reportes_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Reportes
+            </a>
+            <button type="button" id="btn-exportar" class="btn btn-outline-secondary">
+                <i class="fas fa-file-excel me-2"></i> Exportar
+            </button>
+            <button type="button" onclick="window.print();" class="btn btn-outline-secondary">
+                <i class="fas fa-print me-2"></i> Imprimir
+            </button>
+        </div>
+    </div>
+
+    <div class="comp-note">
+        <i class="fas fa-info-circle"></i>
+        La fecha límite proviene del <strong>trámite ALTA INICIAL (09)</strong> generado en el sistema
+        (<code>fecha_efecto2</code>). El día siguiente a esa fecha el maestro debe quedar con <strong>código 10 (base)</strong>.
+        Los maestros con código 09 que <strong>no tienen ese trámite registrado</strong> se listan aparte sin fecha,
+        porque su <code>fecha_ingreso</code> es el ingreso al sistema, no la fecha del alta inicial.
+    </div>
+
+    <div class="comp-kpi-grid">
+        <div class="comp-kpi-card is-danger">
+            <div class="comp-kpi-value">{{ vencidos }}</div>
+            <div class="comp-kpi-label">Vencidos</div>
+        </div>
+        <div class="comp-kpi-card is-warning">
+            <div class="comp-kpi-value">{{ proximos }}</div>
+            <div class="comp-kpi-label">≤ {{ dias_alerta }} días</div>
+        </div>
+        <div class="comp-kpi-card is-success">
+            <div class="comp-kpi-value" id="c-con-tramite">{{ total_con_tramite }}</div>
+            <div class="comp-kpi-label">Con trámite</div>
+        </div>
+        <div class="comp-kpi-card">
+            <div class="comp-kpi-value">{{ total_sin_tramite }}</div>
+            <div class="comp-kpi-label">Sin trámite</div>
+        </div>
+    </div>
+
+    <div class="comp-segmented mb-3 d-print-none">
+        <button type="button" class="btn tab-btn {% if grupo_sel == 'con_tramite' %}active{% endif %}" data-grupo="con_tramite">
+            Con trámite ({{ total_con_tramite }})
+        </button>
+        <button type="button" class="btn tab-btn {% if grupo_sel == 'sin_tramite' %}active{% endif %}" data-grupo="sin_tramite">
+            Sin trámite ({{ total_sin_tramite }})
+        </button>
+    </div>
+
+    <form method="GET" id="form-filtros" class="comp-form d-flex gap-2 flex-wrap mb-3 align-items-center d-print-none">
+        <input type="hidden" name="grupo" id="input-grupo" value="{{ grupo_sel }}">
+        <select name="zona" class="form-select form-select-sm" style="max-width:220px;">
+            <option value="">Todas las zonas</option>
+            {% for z in zonas %}
+            <option value="{{ z }}" {% if zona_sel == z %}selected{% endif %}>{{ z }}</option>
+            {% endfor %}
+        </select>
+        <select name="cct" class="form-select form-select-sm" style="max-width:220px;">
+            <option value="">Todos los CCT</option>
+            {% for c in ccts %}
+            <option value="{{ c }}" {% if cct_sel == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+        <select name="estado" class="form-select form-select-sm" style="max-width:220px;">
+            <option value="">Todos los estatus</option>
+            {% if grupo_sel == 'con_tramite' %}
+            <option value="vencido" {% if estado_sel == 'vencido' %}selected{% endif %}>Vencidos</option>
+            <option value="proximo" {% if estado_sel == 'proximo' %}selected{% endif %}>≤ {{ dias_alerta }} días</option>
+            <option value="urgente" {% if estado_sel == 'urgente' %}selected{% endif %}>Entre {{ dias_alerta|add:1 }} y 30 días</option>
+            <option value="tranquilo" {% if estado_sel == 'tranquilo' %}selected{% endif %}>Más de 30 días</option>
+            {% else %}
+            <option value="duda" {% if estado_sel == 'duda' %}selected{% endif %}>Revisar código 09 dudoso</option>
+            {% endif %}
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">
+            <i class="fas fa-filter me-1"></i> Filtrar
+        </button>
+        <a href="{% url 'reporte_control_basificacion' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-rotate-left me-1"></i> Limpiar
+        </a>
+    </form>
+
+    <div class="comp-panel">
+        <div class="comp-section">
+            <div class="comp-section-title mb-0 pb-0 border-0">
+                <h5>{% if grupo_sel == 'con_tramite' %}Con trámite registrado{% else %}Sin trámite registrado{% endif %}</h5>
+            </div>
+        </div>
+        <div class="comp-panel-body pt-0">
+            <div class="table-responsive">
+                <table class="comp-table comp-table-sm w-100" id="tablaBasificacion">
+                    <thead>
+                        {% if grupo_sel == 'con_tramite' %}
+                        <tr>
+                            <th>Maestro</th>
+                            <th>CURP</th>
+                            <th>Clave Presupuestal</th>
+                            <th>CCT</th>
+                            <th>Centro de Trabajo</th>
+                            <th>Zona</th>
+                            <th>Folio</th>
+                            <th>Fecha Alta</th>
+                            <th>Fecha Límite</th>
+                            <th class="text-center">Días Restantes</th>
+                            <th>Debe tener<br>código 10 desde</th>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <th>Maestro</th>
+                            <th>CURP</th>
+                            <th>Clave Presupuestal</th>
+                            <th>CCT</th>
+                            <th>Centro de Trabajo</th>
+                            <th>Zona</th>
+                            <th>Fecha de Ingreso</th>
+                            <th class="text-center">Fecha Límite</th>
+                        </tr>
+                        {% endif %}
+                    </thead>
+                    <tbody>
+                        {% if grupo_sel == 'con_tramite' %}
+                            {% for i in con_tramite %}
+                            {% with codigo_actual=i.codigo fecha_basificar=i.fecha_basificar fecha_limite=i.fecha_limite fecha_alta=i.fecha_alta dias=i.dias_restantes %}
+                            <tr class="{% if dias is not None and dias < 0 %}row-vencido{% endif %}">
+                                <td>
+                                    <div class="fw-bold text-dark">{{ i.nombre }}</div>
+                                    <div class="small text-muted">Cód. actual: {{ codigo_actual|default:"-" }}
+                                        {% if codigo_actual != '09' and codigo_actual %}
+                                        <i class="fas fa-circle-exclamation ms-1" title="Ya no está en 09: confirmar si fue basificado"></i>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td><span class="comp-code">{{ i.curp|default:"-" }}</span></td>
+                                <td><span class="comp-code">{{ i.clave_presupuestal|default:"-" }}</span></td>
+                                <td><span class="comp-code">{{ i.cct|default:"-" }}</span></td>
+                                <td><div class="small">{{ i.nombre_ct|default:"-" }}</div></td>
+                                <td class="small">{{ i.zona|default:"-" }}</td>
+                                <td><span class="comp-code">{{ i.folio|default:"-" }}</span></td>
+                                <td class="small">
+                                    {% if fecha_alta %}{{ fecha_alta|date:"d/m/Y" }}{% else %}<span class="text-muted">-</span>{% endif %}
+                                </td>
+                                <td class="small fw-bold">
+                                    {% if fecha_limite %}{{ fecha_limite|date:"d/m/Y" }}{% else %}<span class="text-muted">-</span>{% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if dias is None %}
+                                        <span class="comp-badge comp-badge-soft">Sin fecha</span>
+                                    {% elif dias < 0 %}
+                                        <span class="comp-badge comp-badge-danger">Vencido ({{ dias }} d)</span>
+                                    {% elif dias <= dias_alerta %}
+                                        <span class="comp-badge comp-badge-warning">{{ dias }} días</span>
+                                    {% elif dias <= 30 %}
+                                        <span class="comp-badge comp-badge-warning">{{ dias }} días</span>
+                                    {% else %}
+                                        <span class="comp-badge comp-badge-success">{{ dias }} días</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small">
+                                    {% if fecha_basificar %}{{ fecha_basificar|date:"d/m/Y" }}{% else %}<span class="text-muted">-</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="11">
+                                    <div class="comp-empty-state">
+                                        <i class="fas fa-calendar-check"></i>
+                                        <p>No hay trámites ALTA INICIAL (09) que coincidan con los filtros.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            {% for i in sin_tramite %}
+                            {% with duda=i.duda_datos fecha_ingreso=i.fecha_ingreso %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ i.nombre }}</div>
+                                    <div class="small text-muted">
+                                        Cód. actual: {{ i.codigo|default:"-" }}
+                                        {% if duda %}
+                                        <span class="comp-badge comp-badge-warning ms-1" title="Fecha de ingreso antigua: probablemente el código 09 está mal capturado.">
+                                            <i class="fas fa-triangle-exclamation me-1"></i> Revisar
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td><span class="comp-code">{{ i.curp|default:"-" }}</span></td>
+                                <td><span class="comp-code">{{ i.clave_presupuestal|default:"-" }}</span></td>
+                                <td><span class="comp-code">{{ i.cct|default:"-" }}</span></td>
+                                <td><div class="small">{{ i.nombre_ct|default:"-" }}</div></td>
+                                <td class="small">{{ i.zona|default:"-" }}</td>
+                                <td class="small text-muted">
+                                    {% if fecha_ingreso %}{{ fecha_ingreso|date:"d/m/Y" }}{% else %}Sin fecha{% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="comp-badge comp-badge-soft">Falta capturar</span>
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="8">
+                                    <div class="comp-empty-state">
+                                        <i class="fas fa-calendar-check"></i>
+                                        <p>No hay maestros con código 09 sin trámite que coincidan con los filtros.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .row-vencido td {
+        background: rgba(255, 59, 48, 0.045);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    var grupoEsConTramite = "{{ grupo_sel }}" === 'con_tramite';
+    var tabla = $('#tablaBasificacion').DataTable({
+        responsive: true,
+        autoWidth: false,
+        language: {
+            ...window.SpanishDataTable,
+            search: "_INPUT_",
+            searchPlaceholder: "Filtrar por maestro, CURP, CCT..."
+        },
+        pageLength: 25,
+        order: grupoEsConTramite ? [[9, 'asc']] : [[0, 'asc']],
+        dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>',
+        drawCallback: function() {
+            $('.dataTables_paginate > .pagination').addClass('pagination-sm');
+        }
+    });
+
+    $('.tab-btn').on('click', function() {
+        $('#input-grupo').val($(this).data('grupo'));
+        $('#form-filtros').submit();
+    });
+
+    $('#btn-exportar').on('click', function() {
+        var params = new URLSearchParams($('#form-filtros').serialize());
+        var busqueda = tabla.search();
+        if (busqueda) params.set('q', busqueda);
+        window.location.href = "{% url 'export_control_basificacion_excel' %}?" + params.toString();
+    });
+});
+</script>
+{% endblock %}

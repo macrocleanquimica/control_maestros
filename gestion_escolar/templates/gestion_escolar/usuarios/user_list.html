@@ -4,224 +4,80 @@
 {% block title %}Gestión de Usuarios{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .header-section {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    /* Conteos */
-    .stat-card-modern {
-        background: var(--surface, #fff);
-        border-radius: var(--r-card, 18px);
-        padding: 1.25rem;
-        position: relative;
-        overflow: hidden;
-        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
-        height: 100%;
-    }
-
-    .stat-value {
-        font-size: 1.75rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        font-variant-numeric: tabular-nums;
-        margin: 0;
-        line-height: 1;
-        color: var(--text, #1d1d1f);
-    }
-
-    .stat-label {
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        margin-bottom: 0.5rem;
-    }
-
-    /* Filtros segmentados */
-    .filter-pills {
-        background: rgba(0,0,0,0.05);
-        padding: 0.3rem;
-        border-radius: 2rem;
-        display: inline-flex;
-        gap: 0.25rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .pill-btn {
-        border: none;
-        padding: 0.5rem 1.25rem;
-        border-radius: 1.5rem;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        background: transparent;
-        text-decoration: none;
-    }
-
-    .pill-btn:hover {
-        color: var(--text, #1d1d1f);
-    }
-
-    .pill-btn.active {
-        background: var(--text, #1d1d1f);
-        color: white;
-    }
-
-    /* Tabla en panel único */
-    .table-container-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    .table thead th {
-        background: var(--surface, #fff);
-        color: var(--text-2, #6e6e73);
-        font-weight: 600;
-        font-size: 0.72rem;
-        letter-spacing: 0.04em;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        padding: 0.9rem 1rem;
-    }
-
-    .table tbody td {
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    .avatar-circle {
-        width: 35px;
-        height: 35px;
-        background: rgba(0,0,0,0.05);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        font-size: 0.85rem;
-    }
-
-    .badge-soft {
-        font-size: 0.7rem;
-        padding: 0.35rem 0.65rem;
-        border-radius: 2rem;
-        font-weight: 600;
-        background: rgba(0,0,0,0.05);
-        color: var(--text-2, #6e6e73);
-        display: inline-flex;
-        align-items: center;
-    }
-
-    .badge-soft-success { color: var(--text, #1d1d1f); }
-    .badge-soft-success::before {
-        content: '';
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 6px;
-        background: var(--live, #30d158);
-    }
-</style>
-
-<div class="page-container">
-    <div class="header-section">
-        <div>
-            <h2 class="apple-title" style="font-size: clamp(20px, 3vw, 26px);">Usuarios</h2>
-            <p class="apple-subtitle mb-0 mt-1">Accesos, roles y permisos.</p>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Usuarios</h1>
+            <p class="comp-subtitle">Accesos, roles y permisos.</p>
         </div>
-        <a href="{% url 'user_create' %}" class="apple-btn">
-            <i class="fas fa-plus me-2"></i> Agregar
-        </a>
-    </div>
-
-    <!-- Estadísticas -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="stat-card-modern">
-                <div class="stat-label">Total Usuarios</div>
-                <div class="stat-value">{{ total_usuarios }}</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card-modern">
-                <div class="stat-label">Usuarios Activos</div>
-                <div class="stat-value">{{ usuarios_activos }}</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="stat-card-modern">
-                <div class="stat-label">Usuarios Inactivos</div>
-                <div class="stat-value">{{ usuarios_inactivos }}</div>
-            </div>
+        <div class="comp-actions">
+            <a href="{% url 'user_create' %}" class="comp-btn comp-btn-primary">
+                <i class="fas fa-plus"></i> Agregar
+            </a>
         </div>
     </div>
 
-    <!-- Filtros -->
-    <div class="filter-pills">
-        <a href="?estado=todos" class="pill-btn {% if estado_actual == 'todos' %}active{% endif %}">Todos</a>
-        <a href="?estado=activos" class="pill-btn {% if estado_actual == 'activos' %}active{% endif %}">Activos</a>
-        <a href="?estado=inactivos" class="pill-btn {% if estado_actual == 'inactivos' %}active{% endif %}">Inactivos</a>
-        <a href="?estado=staff" class="pill-btn {% if estado_actual == 'staff' %}active{% endif %}">Staff</a>
-        <a href="?estado=superusuarios" class="pill-btn {% if estado_actual == 'superusuarios' %}active{% endif %}">Superusuarios</a>
+    <div class="comp-kpi-grid">
+        <div class="comp-kpi-card">
+            <div class="comp-kpi-value">{{ total_usuarios }}</div>
+            <div class="comp-kpi-label">Total usuarios</div>
+        </div>
+        <div class="comp-kpi-card">
+            <div class="comp-kpi-value">{{ usuarios_activos }}</div>
+            <div class="comp-kpi-label">Usuarios activos</div>
+        </div>
+        <div class="comp-kpi-card">
+            <div class="comp-kpi-value">{{ usuarios_inactivos }}</div>
+            <div class="comp-kpi-label">Usuarios inactivos</div>
+        </div>
     </div>
 
-    <!-- Tabla -->
-    <div class="table-container-card">
-        <div class="table-responsive p-3">
-            <table id="usuariosTable" class="table table-hover align-middle mb-0 w-100">
-                <thead>
-                    <tr>
-                        <th class="ps-4">Usuario</th>
-                        <th>Nombre Completo</th>
-                        <th>Email</th>
-                        <th>Grupos/Roles</th>
-                        <th>Estado</th>
-                        <th>Permisos</th>
-                        <th>Último Login</th>
-                        <th class="text-center pe-4">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Datos cargados por AJAX -->
-                </tbody>
-            </table>
+    <div class="comp-segmented mb-4">
+        <a href="?estado=todos" class="btn {% if estado_actual == 'todos' %}active{% endif %}">Todos</a>
+        <a href="?estado=activos" class="btn {% if estado_actual == 'activos' %}active{% endif %}">Activos</a>
+        <a href="?estado=inactivos" class="btn {% if estado_actual == 'inactivos' %}active{% endif %}">Inactivos</a>
+        <a href="?estado=staff" class="btn {% if estado_actual == 'staff' %}active{% endif %}">Staff</a>
+        <a href="?estado=superusuarios" class="btn {% if estado_actual == 'superusuarios' %}active{% endif %}">Superusuarios</a>
+    </div>
+
+    <div class="comp-panel">
+        <div class="comp-panel-body">
+            <div class="table-responsive">
+                <table id="usuariosTable" class="comp-table comp-user-table w-100">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Usuario</th>
+                            <th>Nombre Completo</th>
+                            <th>Email</th>
+                            <th>Grupos/Roles</th>
+                            <th>Estado</th>
+                            <th>Permisos</th>
+                            <th>Último Login</th>
+                            <th class="text-center pe-4">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Datos cargados por AJAX -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- DataTables CSS/JS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
 <script>
 $(document).ready(function() {
     const urlParams = new URLSearchParams(window.location.search);
     const estadoActual = urlParams.get('estado') || 'todos';
+    const csrfToken = '{{ csrf_token }}';
+
+    function addCellTitle(td, value) {
+        if (value !== null && value !== undefined && String(value).trim() !== '' && String(value).trim() !== '-') {
+            td.title = String(value).trim();
+        }
+    }
 
     var table = $('#usuariosTable').DataTable({
         processing: true,
@@ -234,22 +90,24 @@ $(document).ready(function() {
             }
         },
         columns: [
-            { data: 'username', className: 'ps-4 fw-bold text-dark' },
-            { data: 'nombre_completo' },
-            { data: 'email', className: 'text-muted small' },
-            { data: 'grupos' },
+            { data: 'username', className: 'ps-4 fw-bold text-dark', createdCell: addCellTitle },
+            { data: 'nombre_completo', createdCell: addCellTitle },
+            { data: 'email', className: 'comp-text-muted', createdCell: addCellTitle },
+            { data: 'grupos', createdCell: addCellTitle },
             { data: 'estado', orderable: false },
             { data: 'permisos', orderable: false },
-            { data: 'ultimo_login', className: 'small' },
+            { data: 'ultimo_login', className: 'comp-text-muted', createdCell: addCellTitle },
             { data: 'acciones', orderable: false, searchable: false, className: 'pe-4' }
         ],
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json',
-            search: "_INPUT_",
-            searchPlaceholder: "Buscar por nombre, email o grupo..."
+            ...window.SpanishDataTable,
+            "search": "_INPUT_",
+            "searchPlaceholder": "Buscar por nombre, email o grupo..."
         },
         order: [[0, 'asc']],
-        dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>'
+        pageLength: 10,
+        searchDelay: 300,
+        dom: '<"d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"lf>rt<"d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3"ip>'
     });
 
     $('#usuariosTable').on('click', '.toggle-active', function() {
@@ -261,10 +119,9 @@ $(document).ready(function() {
             $.ajax({
                 url: `/ajustes/usuarios/${userId}/toggle-active/`,
                 type: 'POST',
-                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                headers: { 'X-CSRFToken': csrfToken },
                 success: function(response) {
                     if (response.success) {
-                        // Toast or alert integration
                         table.ajax.reload(null, false);
                     } else {
                         alert(response.message);

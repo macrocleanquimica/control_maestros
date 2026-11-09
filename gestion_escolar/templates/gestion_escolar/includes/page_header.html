@@ -1,0 +1,46 @@
+{% comment %}
+Encabezado de página reutilizable.
+
+Parámetros:
+  title          Título principal (obligatorio).
+  subtitle       Texto de apoyo (opcional).
+  primary_url    URL del botón principal (opcional).
+  primary_id     ID del botón principal si se maneja con JavaScript (opcional).
+  primary_label  Texto del botón principal.
+  primary_icon   Clase de Font Awesome sin el prefijo "fa-" (opcional).
+  secondary_url  URL del botón secundario (opcional).
+  secondary_id   ID del botón secundario si se maneja con JavaScript (opcional).
+  secondary_label Texto del botón secundario.
+  secondary_icon Clase de Font Awesome sin el prefijo "fa-" (opcional).
+
+Para acciones totalmente personalizadas se puede usar el contenedor
+<div class="comp-page-header"> directamente en la plantilla.
+{% endcomment %}
+<div class="comp-page-header">
+    <div class="comp-title-group">
+        <h1 class="comp-title">{{ title }}</h1>
+        {% if subtitle %}<p class="comp-subtitle">{{ subtitle }}</p>{% endif %}
+    </div>
+    {% if primary_url or primary_id or secondary_url or secondary_id %}
+    <div class="comp-actions">
+        {% if secondary_url %}
+            <a href="{{ secondary_url }}" class="btn btn-outline-secondary"{% if secondary_id %} id="{{ secondary_id }}"{% endif %}>
+                {% if secondary_icon %}<i class="fas {{ secondary_icon }} me-2"></i>{% endif %}{{ secondary_label }}
+            </a>
+        {% elif secondary_id %}
+            <button type="button" id="{{ secondary_id }}" class="btn btn-outline-secondary">
+                {% if secondary_icon %}<i class="fas {{ secondary_icon }} me-2"></i>{% endif %}{{ secondary_label }}
+            </button>
+        {% endif %}
+        {% if primary_url %}
+            <a href="{{ primary_url }}" class="btn btn-primary"{% if primary_id %} id="{{ primary_id }}"{% endif %}>
+                {% if primary_icon %}<i class="fas {{ primary_icon }} me-2"></i>{% endif %}{{ primary_label }}
+            </a>
+        {% elif primary_id %}
+            <button type="button" id="{{ primary_id }}" class="btn btn-primary">
+                {% if primary_icon %}<i class="fas {{ primary_icon }} me-2"></i>{% endif %}{{ primary_label }}
+            </button>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

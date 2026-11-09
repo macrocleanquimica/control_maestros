@@ -4,183 +4,61 @@
 {% block title %}Gestión de Personal | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado: título con tracking negativo, subtítulo gris */
-    .header-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    /* Tabla en panel único con líneas finas */
-    .table-container-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    thead th {
-        background: var(--surface, #fff) !important;
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        color: var(--text-2, #6e6e73);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important;
-        padding: 0.9rem 1rem !important;
-    }
-
-    tbody td {
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important;
-    }
-
-    tbody tr:last-child td {
-        border-bottom: none !important;
-    }
-
-    tbody tr:hover td {
-        background: var(--hover, #fbfbfd);
-    }
-
-    /* Avatar neutro (mismo nombre de clase: el JS no cambia) */
-    .avatar-circle {
-        width: 38px;
-        height: 38px;
-        background-color: rgba(0,0,0,0.05);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        color: var(--text, #1d1d1f);
-        font-size: 0.85rem;
-        flex-shrink: 0;
-    }
-
-    /* Etiquetas grises con punto (mismos nombres: el JS no cambia) */
-    .badge-soft-success,
-    .badge-soft-danger {
-        font-size: 0.72rem;
-        padding: 0.3rem 0.7rem;
-        border-radius: 2rem;
-        font-weight: 600;
-        background: rgba(0,0,0,0.05);
-        display: inline-flex;
-        align-items: center;
-    }
-
-    .badge-soft-success { color: var(--text, #1d1d1f); }
-    .badge-soft-danger { color: var(--text-2, #6e6e73); }
-
-    .badge-soft-success::before,
-    .badge-soft-danger::before {
-        content: '';
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 6px;
-    }
-
-    .badge-soft-success::before { background: var(--live, #30d158); }
-    .badge-soft-danger::before { background: var(--text-4, #aeaeb2); }
-
-    .badge-soft-warning { background: rgba(0,0,0,0.05); color: var(--text-2, #6e6e73); }
-    .badge-soft-info { background: rgba(0,113,227,0.08); color: var(--accent-link, #0066cc); }
-
-    .indicator-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 11px;
-        padding: 2px 8px;
-        border-radius: 12px;
-        background: rgba(0,0,0,0.05);
-        color: var(--text-2, #6e6e73);
-        font-weight: 500;
-    }
-
-    .indicator-pill.text-danger,
-    .indicator-pill.text-info,
-    .indicator-pill.text-primary {
-        color: var(--text-2, #6e6e73) !important;
-    }
-
-    /* Botones de acción: sin saltos que muevan la tabla */
-    .btn-action-custom {
-        transition: background 0.2s;
-    }
-
-</style>
-
-<div class="page-container">
-    <!-- Header Section -->
-    <div class="header-section">
-        <div class="header-title">
-            <h1 class="apple-title mb-0">Personal</h1>
-            <p class="apple-subtitle mb-0">Maestros y personal administrativo del sistema.</p>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Personal</h1>
+            <p class="comp-subtitle">Maestros y personal administrativo del sistema.</p>
         </div>
-        <div class="header-actions d-flex gap-2 align-items-center">
-            <div class="form-check form-switch me-2 text-muted" style="white-space: nowrap;">
+        <div class="comp-actions align-items-center">
+            <div class="form-check form-switch comp-text-muted text-nowrap mb-0">
                 <input class="form-check-input" type="checkbox" role="switch" id="toggle-agrupar" checked>
                 <label class="form-check-label small fw-bold" for="toggle-agrupar" title="Mostrar una fila por persona; sus otras plazas se agrupan como badge.
 Desactívelo para ver todas las plazas por separado.">
                     Agrupar por persona
                 </label>
             </div>
-            <button id="export-excel-btn" class="apple-btn-ghost">
-                <i class="fas fa-file-excel me-2"></i>Exportar
+            <button type="button" id="export-excel-btn" class="btn btn-outline-secondary">
+                <i class="fas fa-file-excel me-2"></i> Exportar
             </button>
-            <a href="{% url 'agregar_maestro' %}" class="apple-btn">
-                <i class="fas fa-plus me-2"></i>Agregar
+            {% if perms.gestion_escolar.add_maestro %}
+            <a href="{% url 'agregar_maestro' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Agregar
             </a>
+            {% endif %}
         </div>
     </div>
 
     {% if messages %}
-    <div class="mb-4">
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
-                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="alert comp-alert comp-alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
             </div>
         {% endfor %}
-    </div>
     {% endif %}
 
-    <!-- Table Section -->
-    <div class="table-container-card">
-        <div class="p-0">
-            <table id="tablaMaestrosPremium" class="table table-hover align-middle w-100" data-ajax-url="{% url 'lista_maestros_ajax' %}">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Personal</th>
-                        <th>CCT</th>
-                        <th>CURP</th>
-                        <th>Clave Presupuestal</th>
-                        <th>Estado</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Data loaded via AJAX -->
-                </tbody>
-            </table>
+    <div class="comp-panel comp-personal-list">
+        <div class="comp-panel-body">
+            <div class="table-responsive">
+                <table id="tablaMaestrosPremium" class="comp-table comp-table-sm align-middle w-100" data-ajax-url="{% url 'lista_maestros_ajax' %}">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Personal</th>
+                            <th>CCT</th>
+                            <th>CURP</th>
+                            <th>Clave Presupuestal</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data loaded via AJAX -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -209,6 +87,7 @@ Desactívelo para ver todas las plazas por separado.">
                 searchPlaceholder: "Buscar personal..."
             },
             pageLength: 15,
+            lengthMenu: [10, 15, 25, 50, 100],
             order: [[1, 'asc']],
             columns: [
                 { data: 0, className: 'text-muted small fw-bold' },
@@ -216,9 +95,6 @@ Desactívelo para ver todas las plazas por separado.">
                     data: 1,
                     render: function(data, type, row) {
                         if (!data) return '';
-                        var initials = data.trim().split(' ').filter(n => n.length > 0).slice(0, 2).map(n => n[0]).join('').toUpperCase();
-                        if (initials === '') initials = '?';
-                        
                         var indicators = '';
                         if (row && row[7]) { // is_misplaced
                             indicators += '<span class="indicator-pill ms-2 text-danger" title="Fuera de Adscripción"><i class="fas fa-exclamation-triangle"></i> Adscrip.</span>';
@@ -233,7 +109,7 @@ Desactívelo para ver todas las plazas por separado.">
                         }
                         return `
                             <div class="d-flex align-items-center">
-                                <div class="avatar-circle me-3">${initials}</div>
+
                                 <div>
                                     <div class="fw-bold text-dark">${data}</div>
                                     <div class="d-flex mt-1">${indicators}</div>

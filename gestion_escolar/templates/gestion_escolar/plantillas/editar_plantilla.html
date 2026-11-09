@@ -1,0 +1,608 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ plantilla.nombre }} | Plantillas{% endblock %}
+
+{% block content %}
+<style>
+    .plantilla-campo {
+        border: 1px solid var(--comp-hairline);
+        border-radius: 12px;
+        padding: .85rem 1rem;
+        background: var(--comp-surface);
+        height: 100%;
+    }
+    .plantilla-custom-row {
+        border: 1px solid var(--comp-hairline);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: .75rem;
+        background: var(--comp-surface);
+    }
+    .plantilla-seccion h5 {
+        color: var(--comp-text);
+        font-size: .95rem;
+        font-weight: 700;
+    }
+</style>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ plantilla.nombre }}</h1>
+            <p class="comp-subtitle">
+                {% if plantilla.descripcion %}{{ plantilla.descripcion }}{% else %}
+                {% if es_sistema %}Plantilla de base del sistema.{% else %}Plantilla creada por un administrador.{% endif %}
+                {% endif %}
+            </p>
+            <div class="comp-chip-row mt-2">
+                <span class="comp-badge comp-badge-soft">
+                    {% if plantilla.tipo_documento == 'OFICIO' %}Oficio{% else %}Trámite{% endif %}
+                </span>
+                {% if es_sistema %}
+                <span class="comp-badge comp-badge-accent"><i class="fas fa-lock"></i> Base del sistema</span>
+                {% else %}
+                <span class="comp-badge comp-badge-soft"><i class="fas fa-user-pen"></i> Editable</span>
+                {% endif %}
+                {% if plantilla.activa %}
+                <span class="comp-badge comp-badge-success">Activa</span>
+                {% else %}
+                <span class="comp-badge comp-badge-danger">Inactiva</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="comp-actions">
+            <a href="{{ url_generacion }}" class="comp-btn comp-btn-primary" target="_blank" rel="noopener">
+                <i class="fas fa-flask"></i> Probar plantilla
+            </a>
+            <form method="post" action="{% url 'duplicar_plantilla' plantilla.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="comp-btn comp-btn-ghost">
+                    <i class="fas fa-copy"></i> Duplicar
+                </button>
+            </form>
+            <a href="{% url 'lista_plantillas' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="comp-alert {% if message.tags == 'error' %}comp-alert-danger{% elif message.tags == 'success' %}comp-alert-success{% elif message.tags == 'warning' %}comp-alert-warning{% else %}comp-alert-info{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if errores %}
+    <div class="comp-alert comp-alert-danger" role="alert">
+        <i class="fas fa-exclamation-circle"></i>
+        <div>
+            <strong>Revisa lo siguiente:</strong>
+            <ul class="mb-0 mt-1">
+                {% for error in errores %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if es_sistema %}
+    <div class="comp-alert comp-alert-info" role="alert">
+        <i class="fas fa-lock"></i>
+        <div>
+            Esta plantilla es parte de la base del sistema y no se puede editar
+            ni eliminar, para no alterar los trámites que ya funcionan. Puedes
+            probarla o usar <strong>Duplicar</strong> para crear una versión
+            propia y modificable.
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ================= VARIABLES DEL DOCUMENTO ================= -->
+    <div class="comp-panel">
+        <div class="comp-panel-body">
+            <div class="comp-section-title">
+                <h4>Variables del documento</h4>
+            </div>
+            <p class="comp-form-text mb-3">
+                Variables <code>{% verbatim %}{{ ... }}{% endverbatim %}</code> encontradas en el archivo de Word.
+                Si el documento no se llena, revisa que la variable esté escrita igual en Word y en esta lista.
+            </p>
+
+            {% if variables_detectadas %}
+            <div class="comp-chip-row">
+                {% for variable in variables_detectadas %}
+                <span class="comp-chip comp-chip-accent"><code>{{ variable }}</code></span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="comp-alert comp-alert-warning mb-0">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    No se detectaron variables en el documento. Abre el .docx en Word y
+                    escribe los datos con la forma <code>{% verbatim %}{{ Nombre_Variable }}{% endverbatim %}</code>.
+                </div>
+            </div>
+            {% endif %}
+
+            {% if variables_no_reconocidas %}
+            <div class="comp-alert comp-alert-warning mt-3 mb-0">
+                <i class="fas fa-question-circle"></i>
+                <div>
+                    <strong>Variables que el sistema no conoce:</strong>
+                    {{ variables_no_reconocidas|join:", " }}.
+                    Puedes usarlas igual, pero no se llenan solas: agrégalas como
+                    campo personalizado si el usuario debe capturarlas.
+                </div>
+            </div>
+            {% endif %}
+
+            {% if variables_sin_detectar %}
+            <div class="comp-alert comp-alert-info mt-3 mb-0">
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    <strong>Variables configuradas que no están en el Word:</strong>
+                    {{ variables_sin_detectar|join:", " }}.
+                    No pasa nada si el documento no las usa; si deberían aparecer,
+                    revisa la ortografía en Word.
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if es_sistema %}
+    <!-- ================= CONFIGURACIÓN DE SOLO LECTURA ================= -->
+    <div class="comp-panel">
+        <div class="comp-panel-body">
+            <div class="comp-section-title"><h4>Datos que pide el formulario</h4></div>
+            {% for seccion in secciones_formulario %}
+            {% with tiene_campos=False %}
+            <div class="mb-4">
+                <h5 class="mb-2">{{ seccion.titulo }}</h5>
+                <div class="row g-2">
+                    {% for campo in seccion.campos %}
+                    {% if campo.clave in config.campos %}
+                    <div class="col-md-4">
+                        <div class="comp-chip">
+                            {{ campo.label }}
+                            {% if campo.clave in config.requeridos %}
+                            <span class="text-danger" title="Obligatorio">*</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+
+            {% if not config.mostrar_motivo %}
+            <div class="comp-alert comp-alert-info mb-3">
+                <i class="fas fa-info-circle"></i>
+                <div>Esta plantilla no pide motivo de trámite.</div>
+            </div>
+            {% else %}
+            <div class="comp-section-title mt-4"><h4>Motivos permitidos</h4></div>
+            <div class="comp-chip-row">
+                {% for motivo in motivos %}
+                {% if motivo.id in config.motivos %}
+                <span class="comp-chip">{{ motivo.motivo_tramite }}</span>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% if config.motivo_auto %}
+            <div class="comp-form-text mt-2">
+                Motivo automático: <strong>{{ config.motivo_auto }}</strong>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            {% if personalizados %}
+            <div class="comp-section-title mt-4"><h4>Campos personalizados</h4></div>
+            <div class="table-responsive">
+                <table class="comp-table comp-table-sm">
+                    <thead>
+                        <tr><th>Etiqueta</th><th>Variable</th><th>Tipo</th><th>Obligatorio</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for campo in personalizados %}
+                        <tr>
+                            <td>{{ campo.etiqueta }}</td>
+                            <td><code>{{ campo.variable }}</code></td>
+                            <td>{{ campo.tipo_texto }}</td>
+                            <td>{% if campo.requerido %}Sí{% else %}No{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <!-- ================= FORMULARIO EDITABLE ================= -->
+    <form method="post" enctype="multipart/form-data" id="form-plantilla">
+        {% csrf_token %}
+
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <div class="comp-section-title"><h4>Datos generales</h4></div>
+                <div class="row g-4">
+                    <div class="col-md-8">
+                        <div class="comp-form-group">
+                            <label for="nombre" class="comp-form-label">Nombre de la plantilla</label>
+                            <input type="text" class="comp-form-control" id="nombre" name="nombre"
+                                   value="{{ valores.nombre|default:plantilla.nombre }}" maxlength="100" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="comp-form-group">
+                            <label for="tipo_documento" class="comp-form-label">Tipo de documento</label>
+                            <select class="comp-form-select" id="tipo_documento" name="tipo_documento">
+                                <option value="TRAMITE" {% if valores.tipo_documento|default:plantilla.tipo_documento != 'OFICIO' %}selected{% endif %}>Trámite</option>
+                                <option value="OFICIO" {% if valores.tipo_documento|default:plantilla.tipo_documento == 'OFICIO' %}selected{% endif %}>Oficio</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="comp-form-group">
+                            <label for="descripcion" class="comp-form-label">Descripción (opcional)</label>
+                            <input type="text" class="comp-form-control" id="descripcion" name="descripcion"
+                                   value="{{ valores.descripcion|default:plantilla.descripcion }}" maxlength="255">
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="comp-form-group mb-0">
+                            <label for="archivo_docx" class="comp-form-label">Reemplazar archivo .docx (opcional)</label>
+                            <input type="file" class="comp-form-control" id="archivo_docx" name="archivo_docx"
+                                   accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                            <div class="comp-form-text">
+                                Si no seleccionas archivo, se conserva el documento actual.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="comp-btn comp-btn-ghost comp-btn-sm"
+                            formaction="{% url 'analizar_variables_plantilla' plantilla.pk %}"
+                            formmethod="post" formnovalidate>
+                        <i class="fas fa-sync-alt"></i> Volver a analizar variables
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <div class="comp-section-title"><h4>Datos que pedirá el formulario</h4></div>
+                <p class="comp-form-text mb-3">
+                    Marca los datos que el usuario debe capturar. Si marcas
+                    <strong>Obligatorio</strong>, el formulario no dejará generar el
+                    documento sin ese dato.
+                </p>
+
+                {% for seccion in secciones_formulario %}
+                <div class="plantilla-seccion mb-4">
+                    <h5 class="mb-3">{{ seccion.titulo }}</h5>
+                    <div class="row g-3">
+                        {% for campo in seccion.campos %}
+                        <div class="col-lg-6">
+                            <div class="plantilla-campo">
+                                <div class="form-check">
+                                    <input class="form-check-input campo-check" type="checkbox"
+                                           name="campos" value="{{ campo.clave }}"
+                                           id="campo_{{ campo.clave }}"
+                                           {% if campo.clave in config.campos %}checked{% endif %}>
+                                    <label class="form-check-label" for="campo_{{ campo.clave }}">
+                                        <strong>{{ campo.label }}</strong>
+                                        {% if campo.tipo == 'maestro' %}
+                                        <span class="comp-badge comp-badge-soft">buscador</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                <div class="form-check ms-4 mt-1">
+                                    {% if campo.clave not in campos_solo_lectura %}
+                                    <input class="form-check-input requerido-check" type="checkbox"
+                                           name="requeridos" value="{{ campo.clave }}"
+                                           id="req_{{ campo.clave }}"
+                                           data-campo="{{ campo.clave }}"
+                                           {% if campo.clave in config.requeridos %}checked{% endif %}>
+                                    <label class="form-check-label small" for="req_{{ campo.clave }}">
+                                        Obligatorio
+                                    </label>
+                                    {% else %}
+                                    <span class="comp-form-text">Se llena automáticamente</span>
+                                    {% endif %}
+                                </div>
+                                {% if campo.descripcion %}
+                                <div class="comp-form-text ms-4">{{ campo.descripcion }}</div>
+                                {% endif %}
+                                {% if campo.variables %}
+                                <div class="comp-form-text ms-4">
+                                    Variables: {% for variable in campo.variables %}<code>{{ variable }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <div class="comp-section-title"><h4>Motivos del trámite</h4></div>
+
+                <div class="comp-switch-row mb-3">
+                    <label for="mostrar_motivo">
+                        Mostrar el campo de motivo
+                        <small>Si se desactiva, el trámite no pedirá motivo.</small>
+                    </label>
+                    <input class="form-check-input" type="checkbox" id="mostrar_motivo"
+                           name="mostrar_motivo" {% if config.mostrar_motivo %}checked{% endif %}>
+                </div>
+
+                <div id="motivos-panel">
+                    <p class="comp-form-text">Marca los motivos permitidos para esta plantilla.</p>
+                    <div class="row g-2" id="lista-motivos">
+                        {% for motivo in motivos %}
+                        <div class="col-lg-6">
+                            <div class="form-check">
+                                <input class="form-check-input motivo-check" type="checkbox"
+                                       name="motivos" value="{{ motivo.id }}" id="motivo_{{ motivo.id }}"
+                                       {% if motivo.id in config.motivos %}checked{% endif %}>
+                                <label class="form-check-label" for="motivo_{{ motivo.id }}">
+                                    {{ motivo.motivo_tramite }}
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if not motivos %}
+                    <div class="comp-form-text">No hay motivos registrados en el catálogo.</div>
+                    {% endif %}
+
+                    <div class="comp-form-group mt-3 mb-0">
+                        <label for="motivo_auto" class="comp-form-label">Motivo automático (opcional)</label>
+                        <select class="comp-form-select" id="motivo_auto" name="motivo_auto">
+                            <option value="">Ninguno: el usuario elige</option>
+                            {% for motivo in motivos %}
+                            <option value="{{ motivo.id }}" {% if config.motivo_auto == motivo.id %}selected{% endif %}>
+                                {{ motivo.motivo_tramite }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="comp-form-text">
+                            Si eliges uno, el formulario lo selecciona solo. Útil para
+                            trámites que siempre usan el mismo motivo.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <div class="comp-section-title"><h4>Opciones de cálculo</h4></div>
+                <div class="comp-switch-row">
+                    <label for="calcular_antiguedad">
+                        Calcular la antigüedad automáticamente
+                        <small>
+                            Con la fecha al corte y la fecha del cálculo, el sistema
+                            llena la antigüedad en la función y en la categoría.
+                        </small>
+                    </label>
+                    <input class="form-check-input" type="checkbox" id="calcular_antiguedad"
+                           name="calcular_antiguedad" {% if config.calcular_antiguedad %}checked{% endif %}>
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <div class="comp-section-title d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Campos personalizados</h4>
+                    <button type="button" class="comp-btn comp-btn-ghost comp-btn-sm" id="btn-agregar-campo">
+                        <i class="fas fa-plus"></i> Agregar campo
+                    </button>
+                </div>
+                <p class="comp-form-text mb-3">
+                    Para datos que no están en el catálogo. La variable debe escribirse
+                    igual en el Word, por ejemplo <code>{% verbatim %}{{ Numero_Oficio }}{% endverbatim %}</code>.
+                    Usa letras, números y guion bajo, sin espacios ni acentos.
+                </p>
+
+                <div id="campos-personalizados-lista">
+                    {% for campo in personalizados %}
+                    <div class="plantilla-custom-row">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-3">
+                                <label class="comp-form-label">Variable en Word</label>
+                                <input type="text" class="comp-form-control custom-variable"
+                                       name="custom_variable" value="{{ campo.variable }}"
+                                       placeholder="Numero_Oficio">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="comp-form-label">Etiqueta del formulario</label>
+                                <input type="text" class="comp-form-control custom-etiqueta"
+                                       name="custom_etiqueta" value="{{ campo.etiqueta }}"
+                                       placeholder="Número de oficio">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="comp-form-label">Tipo</label>
+                                <select class="comp-form-select custom-tipo" name="custom_tipo">
+                                    {% for clave, texto in tipos_campo %}
+                                    <option value="{{ clave }}" {% if campo.tipo == clave %}selected{% endif %}>{{ texto }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="comp-form-label">Ayuda (opcional)</label>
+                                <input type="text" class="comp-form-control" name="custom_ayuda"
+                                       value="{{ campo.ayuda }}" placeholder="Texto de apoyo">
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <button type="button" class="comp-btn comp-btn-icon comp-btn-danger btn-quitar-campo"
+                                        title="Quitar campo">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="col-md-9 custom-opciones-wrap" {% if campo.tipo != 'opciones' %}style="display:none;"{% endif %}>
+                                <label class="comp-form-label">Opciones (una por línea)</label>
+                                <textarea class="comp-form-control custom-opciones" name="custom_opciones"
+                                          rows="2" placeholder="Opción 1&#10;Opción 2">{{ campo.opciones_texto }}</textarea>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check mt-3">
+                                    <input class="form-check-input custom-requerido" type="checkbox"
+                                           name="custom_requerido" value="{{ forloop.counter0 }}"
+                                           id="custom_req_{{ forloop.counter0 }}"
+                                           {% if campo.requerido %}checked{% endif %}>
+                                    <label class="form-check-label" for="custom_req_{{ forloop.counter0 }}">
+                                        Obligatorio
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div id="sin-campos-personalizados" class="comp-form-text {% if personalizados %}d-none{% endif %}">
+                    Aún no hay campos personalizados.
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-form-actions">
+            {% if not plantilla.es_sistema %}
+            <a href="{% url 'lista_plantillas' %}" class="comp-btn comp-btn-ghost">Cancelar</a>
+            <button type="submit" class="comp-btn comp-btn-primary">
+                <i class="fas fa-save"></i> Guardar plantilla
+            </button>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if not plantilla.es_sistema %}
+    <div class="comp-panel mt-3">
+        <div class="comp-panel-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <strong>Eliminar plantilla</strong>
+                <div class="comp-form-text">
+                    Solo se elimina la plantilla del catálogo. Los trámites ya
+                    generados y sus archivos se conservan.
+                </div>
+            </div>
+            <form method="post" action="{% url 'eliminar_plantilla' plantilla.pk %}"
+                  onsubmit="return confirm('¿Eliminar la plantilla {{ plantilla.nombre|escapejs }}?');">
+                {% csrf_token %}
+                <button type="submit" class="comp-btn comp-btn-danger">
+                    <i class="fas fa-trash"></i> Eliminar plantilla
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        // --- Campos obligatorios solo si el campo está marcado ---
+        function sincronizarRequeridos() {
+            $('.requerido-check').each(function () {
+                var campo = $(this).data('campo');
+                var marcado = $('#campo_' + campo).is(':checked');
+                $(this).prop('disabled', !marcado);
+                if (!marcado) { $(this).prop('checked', false); }
+            });
+        }
+        $('.campo-check').on('change', sincronizarRequeridos);
+        sincronizarRequeridos();
+
+        // --- Motivos ---
+        function sincronizarMotivos() {
+            var activo = $('#mostrar_motivo').is(':checked');
+            $('#motivos-panel').toggle(activo);
+            $('#motivo_auto').prop('disabled', !activo);
+        }
+        $('#mostrar_motivo').on('change', sincronizarMotivos);
+        sincronizarMotivos();
+
+        // --- Reindexar campos personalizados ---
+        function reindexarPersonalizados() {
+            $('#campos-personalizados-lista .plantilla-custom-row').each(function (indice) {
+                var checkbox = $(this).find('.custom-requerido');
+                checkbox.val(indice);
+                checkbox.attr('id', 'custom_req_' + indice);
+                $(this).find('label[for^="custom_req_"]').attr('for', 'custom_req_' + indice);
+            });
+            $('#sin-campos-personalizados').toggle(
+                $('#campos-personalizados-lista .plantilla-custom-row').length === 0);
+        }
+
+        function actualizarOpciones(fila) {
+            var tipo = fila.find('.custom-tipo').val();
+            fila.find('.custom-opciones-wrap').toggle(tipo === 'opciones');
+        }
+
+        function nuevaFilaPersonalizada() {
+            var fila = $(
+                '<div class="plantilla-custom-row">' +
+                '<div class="row g-2 align-items-end">' +
+                '<div class="col-md-3"><label class="comp-form-label">Variable en Word</label>' +
+                '<input type="text" class="comp-form-control custom-variable" name="custom_variable" placeholder="Numero_Oficio"></div>' +
+                '<div class="col-md-3"><label class="comp-form-label">Etiqueta del formulario</label>' +
+                '<input type="text" class="comp-form-control custom-etiqueta" name="custom_etiqueta" placeholder="Número de oficio"></div>' +
+                '<div class="col-md-2"><label class="comp-form-label">Tipo</label>' +
+                '<select class="comp-form-select custom-tipo" name="custom_tipo">' +
+                {% for clave, texto in tipos_campo %}
+                '<option value="{{ clave }}">{{ texto }}</option>' +
+                {% endfor %}
+                '</select></div>' +
+                '<div class="col-md-3"><label class="comp-form-label">Ayuda (opcional)</label>' +
+                '<input type="text" class="comp-form-control" name="custom_ayuda" placeholder="Texto de apoyo"></div>' +
+                '<div class="col-md-1 text-end"><button type="button" class="comp-btn comp-btn-icon comp-btn-danger btn-quitar-campo" title="Quitar campo"><i class="fas fa-trash"></i></button></div>' +
+                '<div class="col-md-9 custom-opciones-wrap" style="display:none;"><label class="comp-form-label">Opciones (una por línea)</label>' +
+                '<textarea class="comp-form-control custom-opciones" name="custom_opciones" rows="2" placeholder="Opción 1&#10;Opción 2"></textarea></div>' +
+                '<div class="col-md-3"><div class="form-check mt-3">' +
+                '<input class="form-check-input custom-requerido" type="checkbox" name="custom_requerido" value="0">' +
+                '<label class="form-check-label">Obligatorio</label></div></div>' +
+                '</div></div>'
+            );
+            return fila;
+        }
+
+        $('#btn-agregar-campo').on('click', function () {
+            $('#campos-personalizados-lista').append(nuevaFilaPersonalizada());
+            reindexarPersonalizados();
+        });
+
+        $('#campos-personalizados-lista').on('click', '.btn-quitar-campo', function () {
+            $(this).closest('.plantilla-custom-row').remove();
+            reindexarPersonalizados();
+        });
+
+        $('#campos-personalizados-lista').on('change', '.custom-tipo', function () {
+            actualizarOpciones($(this).closest('.plantilla-custom-row'));
+        });
+
+        $('#campos-personalizados-lista .plantilla-custom-row').each(function () {
+            actualizarOpciones($(this));
+        });
+
+        $('#form-plantilla').on('submit', function () {
+            reindexarPersonalizados();
+        });
+    });
+</script>
+{% endblock %}

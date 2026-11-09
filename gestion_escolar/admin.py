@@ -1,4 +1,5 @@
 from django.contrib import admin
+from .forms import MaestroForm
 from .models import (
     Tema, Zona, Escuela, Categoria, Maestro, MotivoTramite, 
     PlantillaTramite, Prelacion, TipoApreciacion, LoteReporteVacancia, 
@@ -17,6 +18,10 @@ class TemaAdmin(admin.ModelAdmin):
         (None, {'fields': ('nombre', 'activo')}),
         ('Rango de Fechas', {'fields': ('fecha_inicio', 'fecha_fin')}),
         ('Apariencia', {'fields': ('color_principal', 'color_secundario', 'color_texto', 'color_dropdown', 'color_boton', 'imagen_fondo')}),
+        ('Velo sobre la Foto', {
+            'description': 'Capa translúcida opcional sobre la imagen del sidebar. Con opacidad 0.00 la foto se ve limpia; la legibilidad del texto la resuelven su sombra y el chip del menú.',
+            'fields': ('color_velo', 'opacidad_velo'),
+        }),
     )
 
 @admin.register(Zona)
@@ -36,6 +41,7 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 @admin.register(Maestro)
 class MaestroAdmin(admin.ModelAdmin):
+    form = MaestroForm
     list_display = ('a_paterno', 'a_materno', 'nombres', 'rfc', 'curp', 'maestro_principal')
     search_fields = ('a_paterno', 'a_materno', 'nombres', 'rfc', 'curp')
 
@@ -46,8 +52,19 @@ class MotivoTramiteAdmin(admin.ModelAdmin):
 
 @admin.register(PlantillaTramite)
 class PlantillaTramiteAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'tipo_documento')
-    search_fields = ('nombre',)
+    list_display = ('nombre', 'tipo_documento', 'es_sistema', 'activa')
+    list_filter = ('tipo_documento', 'es_sistema', 'activa')
+    search_fields = ('nombre', 'descripcion')
+    readonly_fields = ('es_sistema', 'variables_detectadas')
+    fieldsets = (
+        (None, {'fields': ('nombre', 'descripcion', 'tipo_documento')}),
+        ('Documento', {'fields': ('ruta_archivo', 'variables_detectadas')}),
+        ('Diseñador', {
+            'fields': ('es_sistema', 'activa', 'configuracion'),
+            'description': 'Las plantillas del sistema son de solo lectura. '
+                           'Para modificarlas, usa el botón Duplicar en el diseñador.',
+        }),
+    )
 
 @admin.register(Prelacion)
 class PrelacionAdmin(admin.ModelAdmin):

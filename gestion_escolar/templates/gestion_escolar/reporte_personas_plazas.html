@@ -4,95 +4,79 @@
 {% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="page-container">
-    <style>
-        :root {
-            --rp-primary: #2563eb;
-            --rp-success: #10b981;
-            --rp-warning: #f59e0b;
-            --rp-border: #e2e8f0;
-            --rp-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        .page-container { padding: 1.5rem; }
-        .header-section {
-            display: flex; justify-content: space-between; align-items: flex-end;
-            flex-wrap: wrap; gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-        .kpi-card { background: var(--surface, #fff); border-radius: var(--r-card, 18px); padding: 1.25rem; box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05)); }
-        .kpi-card .value { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; color: var(--text, #1d1d1f); font-variant-numeric: tabular-nums; }
-        .kpi-card .label { font-size: 0.8rem; color: var(--text-2, #6e6e73); }
-        .table-container-card { background: var(--surface, #fff); border-radius: var(--r-panel, 22px); box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05)); overflow: hidden; }
-        .table-scroll { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        thead th { background: var(--surface, #fff); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; color: var(--text-2, #6e6e73); padding: 0.85rem 1rem; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)); text-align: left; }
-        tbody td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)); font-size: 0.875rem; color: var(--text, #1d1d1f); }
-        tbody tr:last-child td { border-bottom: none; }
-        tbody tr:hover { background: var(--hover, #fbfbfd); }
-        .badge-status { padding: 0.25rem 0.6rem; border-radius: 2rem; font-size: 0.72rem; font-weight: 600; background: rgba(0,0,0,0.05); color: var(--text-2, #6e6e73); }
-    </style>
-
-    <div class="header-section">
-        <div class="header-title">
-            <h1 class="apple-title">{{ titulo }}</h1>
-            <p class="apple-subtitle mb-0">Personas con varias plazas (una por CURP).</p>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ titulo }}</h1>
+            <p class="comp-subtitle">Personas con varias plazas (una por CURP).</p>
+        </div>
+        <div class="comp-actions">
+            <a href="{% url 'reportes_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Reportes
+            </a>
         </div>
     </div>
 
-    <div class="kpi-row">
-        <div class="kpi-card">
-            <div class="value">{{ total.personas }}</div>
-            <div class="label">Personas Únicas</div>
+    <div class="comp-kpi-grid">
+        <div class="comp-kpi-card">
+            <div class="comp-kpi-value">{{ total.personas }}</div>
+            <div class="comp-kpi-label">Personas Únicas</div>
         </div>
-        <div class="kpi-card">
-            <div class="value">{{ total.plazas }}</div>
-            <div class="label">Plazas (Registros)</div>
+        <div class="comp-kpi-card">
+            <div class="comp-kpi-value">{{ total.plazas }}</div>
+            <div class="comp-kpi-label">Plazas (Registros)</div>
         </div>
-        <div class="kpi-card" style="color: var(--rp-warning);">
-            <div class="value">{{ multiplas }}</div>
-            <div class="label">Personas con Plazas Múltiples</div>
+        <div class="comp-kpi-card is-warning">
+            <div class="comp-kpi-value">{{ multiplas }}</div>
+            <div class="comp-kpi-label">Personas con Plazas Múltiples</div>
         </div>
     </div>
 
-    <div class="table-container-card">
-        <div class="table-scroll">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Persona</th>
-                        <th>Plazas</th>
-                        <th>Activas</th>
-                        <th>Detalle de Plazas</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in personas %}
-                        {% if p.n_plazas > 1 %}
+    <div class="comp-panel">
+        <div class="comp-panel-body">
+            <div class="table-responsive">
+                <table class="comp-table comp-table-sm w-100">
+                    <thead>
                         <tr>
-                            <td>
-                                <strong>{{ p.raiz.a_paterno }} {{ p.raiz.a_materno }}, {{ p.raiz.nombres }}</strong>
-                                <div class="text-muted small">{{ p.raiz.curp|default:"Sin CURP" }}</div>
-                            </td>
-                            <td>{{ p.n_plazas }}</td>
-                            <td>{{ p.n_activas }}</td>
-                            <td>
-                                {% for pl in p.plazas %}
-                                    <span class="badge-status">
-                                        {{ pl.clave_presupuestal|default:'-' }} · {{ pl.funcion|default:'Sin función' }}
-                                        {% if pl.id_escuela %}· {{ pl.id_escuela.id_escuela }}{% endif %}
-                                    </span>
-                                    {% if not forloop.last %}<br>{% endif %}
-                                {% endfor %}
-                            </td>
+                            <th>Persona</th>
+                            <th>Plazas</th>
+                            <th>Activas</th>
+                            <th>Detalle de Plazas</th>
                         </tr>
-                        {% endif %}
-                    {% endfor %}
-                    {% if not personas %}
-                        <tr><td colspan="4" class="text-center text-muted py-4">No hay personas registradas.</td></tr>
-                    {% endif %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for p in personas %}
+                            {% if p.n_plazas > 1 %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ p.raiz.a_paterno }} {{ p.raiz.a_materno }}, {{ p.raiz.nombres }}</div>
+                                    <div class="small text-muted">{{ p.raiz.curp|default:"Sin CURP" }}</div>
+                                </td>
+                                <td><span class="comp-badge comp-badge-soft">{{ p.n_plazas }}</span></td>
+                                <td><span class="comp-badge comp-badge-soft">{{ p.n_activas }}</span></td>
+                                <td>
+                                    {% for pl in p.plazas %}
+                                        <span class="comp-badge comp-badge-soft d-inline-block text-start mb-1" style="white-space: normal; line-height: 1.35;">
+                                            {{ pl.clave_presupuestal|default:'-' }} · {{ pl.funcion|default:'Sin función' }}
+                                            {% if pl.id_escuela %}· {{ pl.id_escuela.id_escuela }}{% endif %}
+                                        </span>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                        {% empty %}
+                            <tr>
+                                <td colspan="4">
+                                    <div class="comp-empty-state">
+                                        <i class="fas fa-users"></i>
+                                        <p>No hay personas registradas.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

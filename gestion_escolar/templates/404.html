@@ -1,0 +1,17 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <div class="card apple-panel border-0">
+                <div class="card-body p-4 text-center">
+                    <h4 class="mb-3" style="font-weight: 700;">No encontrado (404)</h4>
+                    <p class="text-muted">La página que buscas no existe o fue movida.</p>
+                    <a href="{% url 'index' %}" class="apple-btn mt-2">Volver al inicio</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -47,4 +47,24 @@ def notifications_processor(request):
             'url': reverse('pendientes_activos')
         })
 
+    # 3. Basificaciones proximas o vencidas (solo usuarios con acceso a reportes)
+    if request.user.has_perm('gestion_escolar.acceder_reportes'):
+        try:
+            from .views.reportes import alertas_basificacion
+            for i in alertas_basificacion():
+                dias = i['dias_restantes']
+                texto = (
+                    f"Basificacion vencida (hace {abs(dias)} dias): {i['nombre']}"
+                    if dias < 0 else
+                    f"Basificar en {dias} dias: {i['nombre']}"
+                )
+                global_alerts.append({
+                    'type': 'task',
+                    'text': texto,
+                    'date': i['fecha_limite'],
+                    'url': reverse('reporte_control_basificacion')
+                })
+        except Exception:
+            pass
+
     return {'global_alerts': global_alerts, 'total_alerts': len(global_alerts)}

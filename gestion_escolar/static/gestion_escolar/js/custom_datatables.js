@@ -28,31 +28,8 @@ $(document).ready(function () {
         }
     });
 
-    // Lógica para el botón de exportar a Excel de Maestros
-    $('#export-excel-btn').on('click', function () {
-        var tablaMaestros_instance = $('#tablaMaestros').DataTable();
-        var filtro = tablaMaestros_instance.search();
-        var url = '/maestros/exportar/excel/?filtro=' + encodeURIComponent(filtro);
-        window.location.href = url;
-    });
-
-    // Lógica para el botón de exportar a Excel de FUPs
-    $('#export-excel-fup-btn').on('click', function () {
-        var tablaFUPs_instance = $('#tablaFUPs').DataTable();
-        var filtro = tablaFUPs_instance.search();
-        var url = '/fup/exportar/excel/?filtro=' + encodeURIComponent(filtro);
-        window.location.href = url;
-    });
-
-    // Lógica para el botón de exportar a Excel de Escuelas
-    $(document).on('click', '#export-excel-escuelas-btn', function () {
-        console.log('Botón exportar escuelas clickeado');
-        var tablaEscuelas_instance = $('#tablaEscuelas').DataTable();
-        var filtro = tablaEscuelas_instance.search();
-        console.log('Filtro actual:', filtro);
-        var url = '/escuelas/exportar/excel/?filtro=' + encodeURIComponent(filtro);
-        window.location.href = url;
-    });
+    // Nota: la exportación de Maestros, Escuelas y FUP se maneja en cada
+    // plantilla, porque cada una conoce su propia tabla y filtros.
 
     // Also, ensure the input field itself converts to uppercase on keyup
     $(document).on('keyup', '.dataTables_filter input', function () {

@@ -4,130 +4,162 @@
 {% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="page-container p-4">
-    <!-- Header -->
-    <div class="premium-header mb-4">
-        <div class="row align-items-end g-3">
-            <div class="col-md">
-                <h1 class="header-title">{{ titulo }}</h1>
-                <p class="header-subtitle mb-0">Lote <span class="apple-num">#{{ lote.id }}</span></p>
-            </div>
-            <div class="col-md-auto">
-                <a href="{% url 'lista_lotes_vacancia' %}" class="apple-btn-ghost">
-                    <i class="fas fa-history me-2"></i>
-                    <span>Histórico</span>
-                </a>
-            </div>
+<style>
+    .lote-form-panel {
+        overflow: visible;
+    }
+
+    @media (min-width: 1200px) {
+        .lote-form-panel {
+            position: sticky;
+            top: 1rem;
+        }
+    }
+
+    .lote-page .select2-container--default .select2-selection--single {
+        height: 44px;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background-color: var(--comp-surface);
+    }
+
+    .lote-page .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 42px;
+        padding-left: 12px;
+        font-weight: 500;
+    }
+
+    .lote-page .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 42px;
+    }
+
+    .lote-page .select2-dropdown {
+        border-radius: 12px;
+        border: 1px solid var(--comp-input-border);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* El texto que se captura en las búsquedas de Select2 (maestro titular e
+       interino) se muestra en mayúsculas, igual que en /tramites/generar/.
+       Es solo visual: la búsqueda del servidor ya ignora mayúsculas y acentos. */
+    html body .select2-container .select2-search--dropdown .select2-search__field,
+    html body .select2-container .select2-search--inline .select2-search__field {
+        text-transform: uppercase !important;
+    }
+</style>
+
+<div class="comp-page-container lote-page">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ titulo }}</h1>
+            <p class="comp-subtitle">Lote <span class="comp-tabular-nums">#{{ lote.id }}</span></p>
+        </div>
+        <div class="comp-actions">
+            <a href="{% url 'lista_lotes_vacancia' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-history"></i> Histórico
+            </a>
         </div>
     </div>
 
-    <!-- Alert Messages (Premium) -->
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-premium fade show shadow-sm mb-4" role="alert">
-                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
-                <div>{{ message }}</div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="comp-alert comp-alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
             </div>
         {% endfor %}
     {% endif %}
 
-    <div class="row">
-        <!-- Columna Formulario (Izquierda) -->
+    <div class="row g-4">
+        <!-- Columna formulario -->
         <div class="col-xl-4">
-            <div class="card premium-card shadow-sm border-0 mb-4 sticky-top" style="top: 1rem; z-index: 10;">
-                <div class="card-header py-3">
-                    <h6 class="m-0 fw-bold d-flex align-items-center gap-2">
-                        Nueva Vacancia
-                    </h6>
+            <div class="comp-panel lote-form-panel">
+                <div class="comp-section">
+                    <div class="comp-section-title mb-0 pb-0 border-0">
+                        <h4>Nueva Vacancia</h4>
+                    </div>
                 </div>
-                <div class="card-body p-4">
-                    <form method="post" id="formVacancia">
+                <div class="comp-panel-body">
+                    <form method="post" id="formVacancia" class="comp-form">
                         {% csrf_token %}
-                        
-                        <!-- Maestro Titular -->
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted text-uppercase">Maestro Titular</label>
-                            <select name="maestro_titular" id="id_maestro_titular" class="form-control select2-modern" style="width: 100%;"></select>
-                            {% if form.maestro_titular.errors %}<div class="text-danger smaller mt-1">{{ form.maestro_titular.errors|striptags }}</div>{% endif %}
+
+                        <div class="comp-form-group">
+                            <label class="comp-form-label" for="id_maestro_titular">Maestro Titular</label>
+                            <select name="maestro_titular" id="id_maestro_titular" class="form-control" style="width: 100%;"></select>
+                            {% if form.maestro_titular.errors %}<div class="comp-form-error">{{ form.maestro_titular.errors|striptags }}</div>{% endif %}
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted text-uppercase">Clave Presupuestal Titular</label>
-                            <input type="text" id="id_clave_presupuestal_display" name="clave_presupuestal_display" class="form-control bg-light border-0 fw-bold text-primary" readonly>
+                        <div class="comp-form-group">
+                            <label class="comp-form-label" for="id_clave_presupuestal_display">Clave Presupuestal Titular</label>
+                            <input type="text" id="id_clave_presupuestal_display" name="clave_presupuestal_display" class="form-control" readonly>
                         </div>
 
-                        <hr class="my-3 opacity-50">
-
-                        <!-- Maestro Interino -->
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted text-uppercase">Maestro Interino (Opcional)</label>
-                            <select name="maestro_interino" id="id_maestro_interino" class="form-control select2-modern" style="width: 100%;"></select>
+                        <div class="comp-form-group">
+                            <label class="comp-form-label" for="id_maestro_interino">Maestro Interino (Opcional)</label>
+                            <select name="maestro_interino" id="id_maestro_interino" class="form-control" style="width: 100%;"></select>
                         </div>
 
                         <div class="row g-2">
-                            <div class="col-6 mb-3">
-                                <label class="form-label small fw-bold text-muted text-uppercase">CURP Interino</label>
-                                <input type="text" id="id_curp_interino_display" name="curp_interino_display" class="form-control smaller bg-light border-0" readonly>
+                            <div class="col-6">
+                                <div class="comp-form-group">
+                                    <label class="comp-form-label" for="id_curp_interino_display">CURP Interino</label>
+                                    <input type="text" id="id_curp_interino_display" name="curp_interino_display" class="form-control" readonly>
+                                </div>
                             </div>
-                            <div class="col-6 mb-3">
-                                <label class="form-label small fw-bold text-muted text-uppercase">Folio Prelación</label>
-                                <input type="text" id="id_folio_prelacion_display" name="folio_prelacion_display" class="form-control smaller bg-light border-0" readonly>
+                            <div class="col-6">
+                                <div class="comp-form-group">
+                                    <label class="comp-form-label" for="id_folio_prelacion_display">Folio Prelación</label>
+                                    <input type="text" id="id_folio_prelacion_display" name="folio_prelacion_display" class="form-control" readonly>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Otros Campos Dinámicos -->
                         {% for field in form %}
                             {% if field.name != 'maestro_titular' and field.name != 'clave_presupuestal_display' and field.name != 'maestro_interino' and field.name != 'curp_interino_display' and field.name != 'folio_prelacion_display' and field.name != 'posicion_orden_display' %}
-                                <div class="mb-3" {% if field.name == 'plantilla_doc' %}id="div_id_plantilla_doc" style="display: none;"{% endif %}>
-                                    <label for="{{ field.id_for_label }}" class="form-label small fw-bold text-muted text-uppercase">
-                                        {{ field.label }}
-                                    </label>
+                                <div class="comp-form-group" {% if field.name == 'plantilla_doc' %}id="div_id_plantilla_doc" style="display: none;"{% endif %}>
+                                    <label class="comp-form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                     {{ field }}
-                                    {% if field.errors %}<div class="text-danger smaller mt-1">{{ field.errors|striptags }}</div>{% endif %}
+                                    {% if field.errors %}<div class="comp-form-error">{{ field.errors|striptags }}</div>{% endif %}
                                 </div>
                             {% endif %}
                         {% endfor %}
 
                         <div class="form-check mb-4 mt-2">
                             <input class="form-check-input" type="checkbox" id="limpiarFormulario" checked>
-                            <label class="form-check-label smaller text-muted" for="limpiarFormulario">
+                            <label class="form-check-label smaller comp-text-muted" for="limpiarFormulario">
                                 Limpiar formulario automáticamente
                             </label>
                         </div>
 
-                        <button type="submit" class="apple-btn w-100 justify-content-center">
-                            <i class="fas fa-plus me-2"></i>
-                            Agregar al Lote
+                        <button type="submit" class="comp-btn comp-btn-primary w-100 justify-content-center">
+                            <i class="fas fa-plus"></i> Agregar al Lote
                         </button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- Columna Lista (Derecha) -->
+        <!-- Columna lista -->
         <div class="col-xl-8">
             {% if vacancias_en_lote.exists %}
-            <!-- Panel de Exportación -->
-            <div class="card premium-card alert-success-premium border-0 shadow-sm mb-4">
-                <div class="card-body p-4">
-                    <div class="row align-items-center">
+            <div class="comp-panel mb-4">
+                <div class="comp-panel-body">
+                    <div class="row align-items-center g-3">
                         <div class="col-md">
                             <h5 class="fw-bold d-flex align-items-center gap-2 mb-2">
-                                <span class="apple-num">{{ vacancias_en_lote.count }}</span> en este lote
+                                <span class="comp-badge comp-badge-accent comp-tabular-nums">{{ vacancias_en_lote.count }}</span> en este lote
                             </h5>
-                            <p class="mb-0 smaller" style="color: var(--text-2, #6e6e73);">
+                            <p class="mb-0 smaller comp-text-muted">
                                 Al exportar se genera el Excel, los oficios Word y se sincroniza con Google Sheets.
                             </p>
                         </div>
-                        <div class="col-md-auto mt-3 mt-md-0 d-flex gap-2">
-                            <button type="button" class="apple-btn" onclick="confirmExport({{ lote.id }}, 'normal')">
-                                <i class="fas fa-file-excel me-2"></i>
-                                Excel USICAMM
+                        <div class="col-md-auto d-flex flex-wrap gap-2">
+                            <button type="button" class="comp-btn comp-btn-primary" onclick="confirmExport({{ lote.id }}, 'normal')">
+                                <i class="fas fa-file-excel"></i> Excel USICAMM
                             </button>
-                            <button type="button" class="apple-btn-ghost" onclick="confirmExport({{ lote.id }}, 'eo')">
-                                <i class="fas fa-file-contract me-2"></i>
-                                Formato EO
+                            <button type="button" class="comp-btn comp-btn-ghost" onclick="confirmExport({{ lote.id }}, 'eo')">
+                                <i class="fas fa-file-contract"></i> Formato EO
                             </button>
                         </div>
                     </div>
@@ -135,64 +167,67 @@
             </div>
             {% endif %}
 
-            <!-- Tabla de Vacancias -->
-            <div class="card premium-card border-0 shadow-sm">
-                <div class="card-header py-3">
-                    <h6 class="m-0 fw-bold d-flex align-items-center gap-2">
-                        Registros en este Lote
-                        <span class="apple-tag apple-num ms-2">{{ vacancias_en_lote.count }}</span>
-                    </h6>
+            <div class="comp-panel">
+                <div class="comp-section">
+                    <div class="comp-section-title">
+                        <h4>Registros en este Lote</h4>
+                        <span class="comp-badge comp-badge-soft ms-auto comp-tabular-nums">{{ vacancias_en_lote.count }}</span>
+                    </div>
                 </div>
-                <div class="card-body p-0">
+                <div class="comp-panel-body">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0" id="dataTableVacancias">
+                        <table class="comp-table comp-table-sm align-middle" id="dataTableVacancias">
                             <thead>
                                 <tr>
-                                    <th class="ps-4">Titular / Categoría</th>
+                                    <th>Titular / Categoría</th>
                                     <th>Apreciación</th>
                                     <th>Periodo</th>
                                     <th>Interino / Otros Datos</th>
-                                    <th class="text-end pe-4">Acciones</th>
+                                    <th class="text-end">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for vacancia in vacancias_en_lote %}
                                 <tr id="vacancia-{{ vacancia.id }}">
-                                    <td class="ps-4">
-                                        <div class="fw-bold text-dark">{{ vacancia.maestro_titular }}</div>
-                                        <div class="smaller text-muted font-monospace">{{ vacancia.maestro_titular.categoria|default:vacancia.maestro_titular.categog|default:"N/A" }}</div>
+                                    <td>
+                                        <div class="fw-bold comp-text-dark">{{ vacancia.maestro_titular }}</div>
+                                        <div class="smaller comp-text-muted comp-font-mono">{{ vacancia.maestro_titular.categoria|default:vacancia.maestro_titular.categog|default:"N/A" }}</div>
                                     </td>
                                     <td>
-                                        <div class="smaller text-dark fw-bold">{{ vacancia.apreciacion.descripcion|truncatechars:40 }}</div>
-                                        <div class="smaller text-muted">{{ vacancia.tipo_movimiento_original }}</div>
+                                        <div class="smaller fw-bold">{{ vacancia.apreciacion.descripcion|truncatechars:40 }}</div>
+                                        <div class="smaller comp-text-muted">{{ vacancia.tipo_movimiento_original }}</div>
                                     </td>
-                                    <td>
-                                        <div class="smaller text-dark fw-bold">{{ vacancia.fecha_inicio|date:"d/m/y" }}</div>
-                                        <div class="smaller text-dark fw-bold">{{ vacancia.fecha_final|date:"d/m/y" }}</div>
+                                    <td class="text-nowrap">
+                                        <div class="smaller fw-bold">{{ vacancia.fecha_inicio|date:"d/m/y" }}</div>
+                                        <div class="smaller fw-bold">{{ vacancia.fecha_final|date:"d/m/y" }}</div>
                                     </td>
                                     <td>
                                         {% if vacancia.maestro_interino %}
-                                            <div class="smaller fw-bold text-primary">{{ vacancia.maestro_interino }}</div>
-                                            <div class="smaller text-muted font-monospace">{{ vacancia.maestro_interino.curp }}</div>
+                                            <div class="smaller fw-bold">{{ vacancia.maestro_interino }}</div>
+                                            <div class="smaller comp-text-muted comp-font-mono">{{ vacancia.maestro_interino.curp }}</div>
                                         {% else %}
-                                            <div class="smaller fw-bold text-primary">{{ vacancia.nombre_interino|default:"N/A" }}</div>
-                                            <div class="smaller text-muted font-monospace">{{ vacancia.curp_interino|default:"N/A" }}</div>
+                                            <div class="smaller fw-bold">{{ vacancia.nombre_interino|default:"N/A" }}</div>
+                                            <div class="smaller comp-text-muted comp-font-mono">{{ vacancia.curp_interino|default:"N/A" }}</div>
                                         {% endif %}
-                                        <div class="smaller text-muted mt-1">
+                                        <div class="smaller comp-text-muted mt-1">
                                             Folio: {{ vacancia.folio_prelacion|default:"-" }} | Pos: {{ vacancia.posicion_orden|default:"-" }}
                                         </div>
                                     </td>
-                                    <td class="text-end pe-4">
-                                        <button type="button" class="btn btn-danger btn-sm rounded-circle shadow-sm btn-hover-animate eliminar-vacancia" data-id="{{ vacancia.id }}" title="Eliminar del Lote" style="width: 32px; height: 32px; padding: 0;">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                    <td class="text-end">
+                                        <div class="comp-action-group justify-content-end">
+                                            <button type="button" class="comp-action comp-action-delete eliminar-vacancia" data-id="{{ vacancia.id }}" title="Eliminar del lote" aria-label="Eliminar del lote">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center py-5">
-                                        <i class="fas fa-inbox mb-3 opacity-25" style="font-size: 3rem;"></i>
-                                        <p class="text-muted mb-0">No hay vacancias registradas en este lote aún.</p>
+                                    <td colspan="5">
+                                        <div class="comp-empty-state comp-empty-state-sm">
+                                            <i class="fas fa-inbox"></i>
+                                            <p>No hay vacancias registradas en este lote aún.</p>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -205,25 +240,25 @@
     </div>
 </div>
 
-<!-- Modal de Loading Premium -->
+<!-- Modal de proceso -->
 <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 1.5rem;">
             <div class="modal-body text-center p-5">
                 <div id="loading-spinner">
-                    <div class="spinner-border text-primary" style="width: 3.5rem; height: 3.5rem; border-width: 0.35rem;" role="status">
+                    <div class="spinner-border" style="width: 3.5rem; height: 3.5rem; border-width: 0.35rem; color: var(--comp-accent);" role="status">
                         <span class="visually-hidden">Procesando...</span>
                     </div>
                 </div>
                 <div id="loading-success-icon" style="display: none;">
-                    <div class="rounded-circle bg-soft-success text-success d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                    <div class="comp-action comp-action-success d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
                         <i class="fas fa-star fa-2x"></i>
                     </div>
                 </div>
-                
-                <h4 class="mt-4 fw-800" id="loading-title">Procesando Lote</h4>
-                <p id="loading-message" class="text-muted mt-2">Iniciando proceso coordinado...</p>
-                
+
+                <h4 class="mt-4 fw-bold" id="loading-title">Procesando Lote</h4>
+                <p id="loading-message" class="comp-text-muted mt-2">Iniciando proceso coordinado...</p>
+
                 <div id="final-links" class="mt-4 pt-4 border-top" style="display: none;">
                     <!-- Enlaces -->
                 </div>
@@ -231,40 +266,6 @@
         </div>
     </div>
 </div>
-
-<style>
-    /* Encabezado simple: título + subtítulo, sin tarjeta */
-    .premium-header { background: transparent; padding: 0.25rem 0 0; border: none; }
-    .header-title { font-size: clamp(22px, 3.4vw, 30px); font-weight: 700; letter-spacing: -0.02em; color: var(--text, #1d1d1f); margin: 0; }
-    .header-subtitle { font-size: 0.9rem; color: var(--text-2, #6e6e73); }
-    .header-icon-container { display: none; }
-
-    /* Panel único en vez de tarjetas separadas */
-    .premium-card { background: var(--surface, #fff); border-radius: var(--r-panel, 22px); box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05)); border: none !important; }
-    .premium-card .card-header { background: var(--surface, #fff) !important; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important; border-radius: var(--r-panel, 22px) var(--r-panel, 22px) 0 0 !important; }
-    .alert-success-premium { background: var(--surface, #fff) !important; border: none !important; color: var(--text, #1d1d1f); }
-
-    /* Select2 Premium Integration */
-    .select2-container--default .select2-selection--single {
-        height: 44px !important;
-        border-radius: 12px !important;
-        border: 1px solid rgba(0,0,0,0.08) !important;
-        background-color: var(--surface, #fff) !important;
-        display: flex;
-        align-items: center;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 44px !important; }
-    .select2-dropdown { border-radius: 12px !important; border: 1px solid rgba(0,0,0,0.08) !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important; }
-
-    .form-control, .form-select { border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); padding: 0.65rem 0.75rem; background-color: var(--surface, #fff); font-size: 0.9rem; transition: border-color 0.2s; }
-    .form-control:focus { background-color: white; border-color: var(--accent, #0071e3); box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12); }
-
-    .bg-soft-primary { background: rgba(0,0,0,0.05); color: var(--text-2, #6e6e73); }
-
-    .table thead th { background: var(--surface, #fff); font-size: 0.72rem; font-weight: 600; color: var(--text-2, #6e6e73); padding: 1rem 1.5rem; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)); }
-    .table tbody td { border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)); }
-    .table tbody tr:last-child td { border-bottom: none; }
-</style>
 {% endblock %}
 
 {% block extra_js %}

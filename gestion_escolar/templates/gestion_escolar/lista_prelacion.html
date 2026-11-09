@@ -4,99 +4,20 @@
 {% block title %}Lista de Prelación | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .premium-header {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .stat-card-mini {
-        background: rgba(0,0,0,0.03);
-        border-radius: 1rem;
-        padding: 0.75rem 1.25rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .stat-icon-mini {
-        display: none;
-    }
-
-    /* Tabla en panel único */
-    .table-container-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-        padding: 1.5rem;
-    }
-
-    #tablaPrelacion thead th {
-        background: var(--surface, #fff);
-        color: var(--text-2, #6e6e73);
-        font-weight: 600;
-        font-size: 0.72rem;
-        letter-spacing: 0.04em;
-        padding: 0.9rem 1rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    #tablaPrelacion tbody td {
-        padding: 0.9rem 1rem;
-        vertical-align: middle;
-        color: var(--text, #1d1d1f);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    #tablaPrelacion tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    .pos-number {
-        font-weight: 700;
-        color: var(--text, #1d1d1f);
-        font-size: 1.05rem;
-        font-variant-numeric: tabular-nums;
-    }
-
-
-    .dataTables_wrapper .dataTables_length select {
-        border-radius: 0.5rem !important;
-        padding: 0.4rem 2rem 0.4rem 0.75rem !important;
-        border: 1px solid rgba(0,0,0,0.08) !important;
-    }
-</style>
-
-<div class="page-container">
+<div class="comp-page-container">
     <!-- Header -->
-    <div class="premium-header">
-        <div class="header-info">
-            <h1 class="apple-title">Prelación</h1>
-            <p class="apple-subtitle mb-0">Orden de candidatos para asignación. Total: <span class="fw-bold apple-num" id="stat-total-prelacion">---</span></p>
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Prelación</h1>
+            <p class="comp-subtitle">Orden de candidatos para asignación. Total: <span class="fw-bold comp-tabular-nums" id="stat-total-prelacion">---</span></p>
         </div>
 
-        <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="comp-actions">
             {% if perms.gestion_escolar.acceder_prelacion %}
-            <a href="{% url 'descargar_prelacion_excel' %}" class="apple-btn-ghost">
+            <a href="{% url 'descargar_prelacion_excel' %}" class="btn btn-outline-secondary">
                 <i class="fas fa-file-excel me-2"></i> Descargar
             </a>
-            <a href="{% url 'importar_prelacion_excel' %}" class="apple-btn">
+            <a href="{% url 'importar_prelacion_excel' %}" class="btn btn-primary">
                 <i class="fas fa-file-upload me-2"></i> Importar
             </a>
             {% endif %}
@@ -105,21 +26,20 @@
 
     <!-- Messages -->
     {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
-        <div class="d-flex align-items-center gap-2">
-            <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} fa-lg"></i>
-            <span class="fw-bold">{{ message }}</span>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
+        {% for message in messages %}
+            <div class="comp-alert comp-alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
     {% endif %}
 
     <!-- Table Container -->
-    <div class="table-container-card">
+    <div class="comp-panel">
+        <div class="comp-panel-body">
         <div class="table-responsive">
-            <table id="tablaPrelacion" class="table table-hover w-100" data-ajax-url="{% url 'lista_prelacion_ajax' %}">
+            <table id="tablaPrelacion" class="comp-table comp-table-sm w-100" data-ajax-url="{% url 'lista_prelacion_ajax' %}">
                 <thead>
                     <tr>
                         <th class="text-center"># Posición</th>
@@ -135,6 +55,7 @@
                     <!-- AJAX Load -->
                 </tbody>
             </table>
+        </div>
         </div>
     </div>
 </div>
@@ -160,11 +81,11 @@
                     name: 'pos_orden',
                     className: 'text-center',
                     render: function(data) {
-                        return '<span class="pos-number">' + data + '</span>';
+                        return '<span class="fw-bold comp-tabular-nums">' + data + '</span>';
                     }
                 },
-                { data: 1, name: 'folio', className: 'font-monospace' },
-                { data: 2, name: 'curp', className: 'font-monospace small' },
+                { data: 1, name: 'folio', className: 'comp-font-mono' },
+                { data: 2, name: 'curp', className: 'comp-font-mono small' },
                 { data: 3, name: 'nombre', orderable: false },
                 { data: 4, name: 'tipo_val', className: 'small' },
                 { data: 5, name: 'estado', orderable: false, className: 'text-center' },

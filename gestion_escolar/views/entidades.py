@@ -1,30 +1,33 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required, permission_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
+from django.db.models.deletion import ProtectedError
 
 from ..models import Zona, Escuela, Maestro, Categoria
 from ..forms import ZonaForm, EscuelaForm, CategoriaForm
 from .helpers import get_full_name
 
 # Vistas para Zonas
+@login_required
+@permission_required('gestion_escolar.view_zona', raise_exception=True)
 def lista_zonas(request):
     if request.user.groups.filter(name='Directores').exists():
         raise PermissionDenied
 
     zonas = Zona.objects.select_related('supervisor').order_by('numero')
 
-    # Resolver el supervisor por FUNCIÓN (SUPERVISOR) dentro de cada zona.
-    # La FK zona.supervisor puede apuntar a un maestro sin dicha función (ATP, etc.),
-    # por lo que se prioriza al maestro marcado como SUPERVISOR(A) en la zona.
-    supervisores_por_zona = {
-        z.id: m for z in zonas for m in (
-            Maestro.objects.filter(
-                id_escuela__zona_esc_id=z.id,
-                funcion__in=['SUPERVISOR(A)'],
-            )[:1]
-        )
-    }
+    # Resolver el supervisor con la definición única (función SUPERVISOR activa
+    # con nombre; respaldo en la FK manual zona.supervisor). Ver helpers.
+    from .helpers import elegir_supervisor_activo, _supervisor_fk_valido
+    supervisores_por_zona = {}
+    for z in zonas:
+        sup = elegir_supervisor_activo(z)
+        if sup is None and _supervisor_fk_valido(z.supervisor):
+            sup = z.supervisor
+        if sup is not None:
+            supervisores_por_zona[z.id] = sup
 
     datos = []
     for zona in zonas:
@@ -37,6 +40,8 @@ def lista_zonas(request):
 
     return render(request, 'gestion_escolar/lista_zonas.html', {'zonas': datos})
 
+@login_required
+@permission_required('gestion_escolar.add_zona', raise_exception=True)
 def agregar_zona(request):
     if request.method == 'POST':
         form = ZonaForm(request.POST)
@@ -50,6 +55,8 @@ def agregar_zona(request):
         form = ZonaForm()
     return render(request, 'gestion_escolar/form_zona.html', {'form': form, 'titulo': 'Agregar Zona'})
 
+@login_required
+@permission_required('gestion_escolar.change_zona', raise_exception=True)
 def editar_zona(request, pk):
     zona = get_object_or_404(Zona.objects.select_related('supervisor'), pk=pk)
     if request.method == 'POST':
@@ -69,14 +76,40 @@ def editar_zona(request, pk):
         'titulo': 'Editar Zona'
     })
 
+@login_required
+@permission_required('gestion_escolar.delete_zona', raise_exception=True)
 def eliminar_zona(request, pk):
     zona = get_object_or_404(Zona, pk=pk)
+    n_escuelas = Escuela.objects.filter(zona_esc=zona).count()
+    n_personal = Maestro.objects.filter(id_escuela__zona_esc=zona).count()
+    bloqueado = bool(n_escuelas)
     if request.method == 'POST':
-        zona.delete()
+        if bloqueado:
+            messages.error(
+                request,
+                f'No se puede eliminar: la zona tiene {n_escuelas} escuela(s) y '
+                f'{n_personal} registro(s) de personal. Reasigne primero sus '
+                'escuelas a otra zona desde Editar Escuela.'
+            )
+            return redirect('lista_zonas')
+        try:
+            zona.delete()
+        except ProtectedError:
+            messages.error(
+                request,
+                'No se puede eliminar: la zona todavía tiene escuelas asignadas. '
+                'Reasigne primero sus escuelas a otra zona.'
+            )
+            return redirect('lista_zonas')
         messages.success(request, 'Zona eliminada correctamente.')
         return redirect('lista_zonas')
-    return render(request, 'gestion_escolar/eliminar_zona.html', {'zona': zona})
+    return render(request, 'gestion_escolar/eliminar_zona.html', {
+        'zona': zona, 'n_escuelas': n_escuelas,
+        'n_personal': n_personal, 'bloqueado': bloqueado,
+    })
 
+@login_required
+@permission_required('gestion_escolar.view_zona', raise_exception=True)
 def detalle_zona(request, pk):
     zona = get_object_or_404(Zona.objects.select_related('supervisor'), pk=pk)
     escuelas_en_zona = Escuela.objects.filter(zona_esc=zona).order_by('nombre_ct')
@@ -91,12 +124,16 @@ def detalle_zona(request, pk):
 
 
 # Vistas para Escuelas
+@login_required
+@permission_required('gestion_escolar.view_escuela', raise_exception=True)
 def lista_escuelas(request):
     if request.user.groups.filter(name='Directores').exists():
         raise PermissionDenied
     escuelas = Escuela.objects.all().order_by('nombre_ct')
     return render(request, 'gestion_escolar/lista_escuelas.html', {'escuelas': escuelas})
 
+@login_required
+@permission_required('gestion_escolar.add_escuela', raise_exception=True)
 def agregar_escuela(request):
     if request.method == 'POST':
         form = EscuelaForm(request.POST)
@@ -110,6 +147,8 @@ def agregar_escuela(request):
         form = EscuelaForm()
     return render(request, 'gestion_escolar/form_escuela.html', {'form': form, 'titulo': 'Agregar Escuela'})
 
+@login_required
+@permission_required('gestion_escolar.change_escuela', raise_exception=True)
 def editar_escuela(request, pk):
     escuela = get_object_or_404(Escuela, pk=pk)
     if request.method == 'POST':
@@ -124,17 +163,53 @@ def editar_escuela(request, pk):
         form = EscuelaForm(instance=escuela)
     return render(request, 'gestion_escolar/form_escuela.html', {'form': form, 'titulo': 'Editar Escuela'})
 
+@login_required
+@permission_required('gestion_escolar.delete_escuela', raise_exception=True)
 def eliminar_escuela(request, pk):
     escuela = get_object_or_404(Escuela, pk=pk)
+    n_personal = Maestro.objects.filter(id_escuela=escuela).count()
+    n_regulares = escuela.escuelas_regulares.count()
+    bloqueado = bool(n_personal or n_regulares)
     if request.method == 'POST':
-        escuela.delete()
+        if bloqueado:
+            messages.error(
+                request,
+                f'No se puede eliminar: la escuela tiene {n_personal} registro(s) '
+                f'de personal y {n_regulares} escuela(s) regular(es) atendida(s). '
+                'Reubique primero su personal (cambio de adscripción o INACTIVO).'
+            )
+            return redirect('lista_escuelas')
+        try:
+            escuela.delete()
+        except ProtectedError:
+            messages.error(
+                request,
+                'No se puede eliminar: la escuela todavía tiene personal o '
+                'escuelas regulares asignadas.'
+            )
+            return redirect('lista_escuelas')
         messages.success(request, 'Escuela eliminada correctamente.')
         return redirect('lista_escuelas')
-    return render(request, 'gestion_escolar/eliminar_escuela.html', {'escuela': escuela})
+    return render(request, 'gestion_escolar/eliminar_escuela.html', {
+        'escuela': escuela, 'n_personal': n_personal,
+        'n_regulares': n_regulares, 'bloqueado': bloqueado,
+    })
 
+@login_required
+@permission_required('gestion_escolar.view_escuela', raise_exception=True)
 def detalle_escuela(request, pk):
     escuela = get_object_or_404(Escuela, pk=pk)
-    personal = Maestro.objects.filter(id_escuela=escuela)
+    from django.db.models import Case, When, Value, IntegerField
+    # Activos primero, luego licencias, luego inactivos.
+    personal = Maestro.objects.filter(id_escuela=escuela).annotate(
+        _orden_status=Case(
+            When(status='ACTIVO', then=Value(0)),
+            When(status='LICENCIA', then=Value(1)),
+            When(status='INACTIVO', then=Value(2)),
+            default=Value(3),
+            output_field=IntegerField(),
+        )
+    ).order_by('_orden_status', 'a_paterno', 'a_materno', 'nombres')
     
     # Buscar director por el maestro activo adecuado (E0629 primero, luego responsable)
     from .helpers import elegir_director_activo
@@ -155,6 +230,8 @@ def detalle_escuela(request, pk):
     return render(request, 'gestion_escolar/detalle_escuela.html', context)
 
 # Vistas para Categorías
+@login_required
+@permission_required('gestion_escolar.view_categoria', raise_exception=True)
 def lista_categorias(request):
     if request.user.groups.filter(name='Directores').exists():
         raise PermissionDenied
@@ -172,6 +249,8 @@ def lista_categorias(request):
     }
     return render(request, 'gestion_escolar/lista_categorias.html', context)
 
+@login_required
+@permission_required('gestion_escolar.change_categoria', raise_exception=True)
 def editar_categoria(request, pk):
     categoria = get_object_or_404(Categoria, pk=pk)
     if request.method == 'POST':
@@ -186,6 +265,8 @@ def editar_categoria(request, pk):
         form = CategoriaForm(instance=categoria)
     return render(request, 'gestion_escolar/form_categoria.html', {'form': form, 'titulo': 'Editar Categoría'})
 
+@login_required
+@permission_required('gestion_escolar.delete_categoria', raise_exception=True)
 def eliminar_categoria(request, pk):
     categoria = get_object_or_404(Categoria, pk=pk)
     if request.method == 'POST':

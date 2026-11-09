@@ -1,0 +1,2410 @@
+/* ============================================================
+   Control de Maestros - Apple Theme
+   Paso 2: tokens, tipografia base, enlaces y puente con Bootstrap.
+   No modifica estructura HTML ni logica.
+   Se carga al final del <head> para ganar sobre los estilos inline.
+   ============================================================ */
+
+:root {
+  /* ---------- Paleta Apple ---------- */
+  --apple-blue: #007AFF;
+  --apple-blue-hover: #0066CC;
+  --apple-bg: #F2F2F7;
+  --apple-surface: #FFFFFF;
+  --apple-surface-2: #F9F9FB;
+  --apple-text: #1C1C1E;
+  --apple-text-secondary: #8E8E93;
+  --apple-text-tertiary: #AEAEB2;
+  --apple-separator: #E5E5EA;
+  --apple-fill: #E5E5EA;
+  --apple-green: #34C759;
+  --apple-orange: #FF9500;
+  --apple-red: #FF3B30;
+
+  /* ---------- Tipografia ---------- */
+  --apple-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  --apple-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* ---------- Geometria y profundidad ----------
+     Se aplican por componente en los pasos siguientes. */
+  --apple-radius-control: 10px;
+  --apple-radius-card: 16px;
+  --apple-radius-sheet: 20px;
+  --apple-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --apple-shadow-raised: 0 8px 24px rgba(0, 0, 0, 0.10);
+
+  /* ---------- Compatibilidad con apple-tokens.css ---------- */
+  --bg: var(--apple-bg);
+  --surface: var(--apple-surface);
+  --hover: var(--apple-surface-2);
+  --text: var(--apple-text);
+  --text-body: var(--apple-text);
+  --text-2: var(--apple-text-secondary);
+  --text-3: var(--apple-text-tertiary);
+  --hairline: var(--apple-separator);
+  --heat: var(--apple-orange);
+  --live: var(--apple-green);
+  --font: var(--apple-font);
+  --mono: var(--apple-font-mono);
+
+  /* ---------- Compatibilidad con components.css ---------- */
+  --comp-bg: var(--apple-bg);
+  --comp-surface: var(--apple-surface);
+  --comp-hover: var(--apple-surface-2);
+  --comp-hairline: var(--apple-separator);
+  --comp-text: var(--apple-text);
+  --comp-text-body: var(--apple-text);
+  --comp-text-2: var(--apple-text-secondary);
+  --comp-text-3: var(--apple-text-tertiary);
+  --comp-accent: var(--accent, var(--apple-blue));
+  --comp-accent-link: var(--accent-link, var(--apple-blue));
+  --comp-heat: var(--apple-orange);
+  --comp-live: var(--apple-green);
+  --comp-font: var(--apple-font);
+  --comp-mono: var(--apple-font-mono);
+
+  /* ---------- Puente Bootstrap 5 ---------- */
+  --bs-body-bg: var(--apple-bg);
+  --bs-body-color: var(--apple-text);
+  --bs-body-font-family: var(--apple-font);
+  --bs-body-font-size: 1.0625rem; /* 17px */
+  --bs-body-font-weight: 400;
+  --bs-body-line-height: 1.47059;
+  --bs-font-sans-serif: var(--apple-font);
+  --bs-font-monospace: var(--apple-font-mono);
+  --bs-heading-color: var(--apple-text);
+  --bs-link-color: var(--accent, var(--apple-blue));
+  --bs-link-color-rgb: 0, 122, 255;
+  --bs-link-hover-color: var(--accent-link, var(--apple-blue-hover));
+  --bs-link-hover-color-rgb: 0, 102, 204;
+  --bs-primary: var(--accent, var(--apple-blue));
+  --bs-primary-rgb: 0, 122, 255;
+  --bs-secondary-color: var(--apple-text-secondary);
+  --bs-secondary-color-rgb: 142, 142, 147;
+  --bs-tertiary-color: var(--apple-text-tertiary);
+  --bs-tertiary-color-rgb: 174, 174, 178;
+  --bs-emphasis-color: #000000;
+  --bs-focus-ring-color: rgba(0, 122, 255, 0.30);
+  --bs-box-shadow: var(--apple-shadow-card);
+  --bs-box-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --bs-box-shadow-lg: var(--apple-shadow-raised);
+}
+
+/* ---------- Base tipografica ---------- */
+html {
+  background-color: var(--apple-bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--apple-bg);
+  color: var(--apple-text);
+  font-family: var(--apple-font);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.47059;
+  letter-spacing: -0.010em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, .h1,
+h2, .h2,
+h3, .h3,
+h4, .h4,
+h5, .h5,
+h6, .h6 {
+  color: var(--apple-text);
+  font-family: var(--apple-font);
+  font-weight: 600;
+  letter-spacing: -0.022em;
+}
+
+/* Jerarquia: 34 / 28 / 22 / 20 / 17 / 15 px */
+h1, .h1 { font-size: 2.125rem; line-height: 1.10; letter-spacing: -0.030em; }
+h2, .h2 { font-size: 1.750rem; line-height: 1.14; letter-spacing: -0.025em; }
+h3, .h3 { font-size: 1.375rem; line-height: 1.20; letter-spacing: -0.018em; }
+h4, .h4 { font-size: 1.250rem; line-height: 1.25; letter-spacing: -0.012em; }
+h5, .h5 { font-size: 1.0625rem; line-height: 1.30; letter-spacing: -0.008em; }
+h6, .h6 { font-size: 0.9375rem; line-height: 1.35; letter-spacing: 0; }
+
+/* Titulos de pantalla que ya usan las plantillas */
+.apple-title {
+  font-size: clamp(28px, 3.6vw, 34px);
+  font-weight: 600;
+  letter-spacing: -0.030em;
+  color: var(--apple-text);
+}
+
+.apple-subtitle {
+  font-size: 15px;
+  color: var(--apple-text-secondary);
+  line-height: 1.50;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+strong, b {
+  font-weight: 600;
+}
+
+small, .small {
+  font-size: 0.9375rem; /* 15px */
+}
+
+.lead {
+  font-size: 1.25rem;
+  line-height: 1.35;
+  font-weight: 400;
+}
+
+/* ---------- Enlaces ---------- */
+a {
+  color: var(--accent, var(--apple-blue));
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-link, var(--apple-blue-hover));
+  text-decoration: none;
+}
+
+a:focus-visible {
+  outline: 3px solid rgba(0, 122, 255, 0.35);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: rgba(0, 122, 255, 0.20);
+  color: var(--apple-text);
+}
+
+/* ---------- Utilidades de texto Bootstrap alineadas ---------- */
+.text-muted {
+  color: var(--apple-text-secondary) !important;
+}
+
+.text-body-secondary {
+  color: var(--apple-text-secondary) !important;
+}
+
+.text-body-tertiary {
+  color: var(--apple-text-tertiary) !important;
+}
+
+/* ============================================================
+   Paso 3: shell (navbar, sidebar, dropdowns y movil)
+   El tema de temporada se conserva: aporta foto, colores y acento.
+   Apple aporta forma, tipografia, espaciado y contraste.
+   ============================================================ */
+
+/* ---------- Header / navbar ---------- */
+.header {
+  background: rgba(255, 255, 255, 0.78) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  position: sticky;
+  top: 12px;
+  z-index: 900;
+}
+
+.header h4 {
+  margin: 0;
+  color: var(--apple-text);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header .navbar-nav {
+  gap: 4px;
+}
+
+.header .nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: var(--apple-text-secondary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.header .nav-link:hover,
+.header .nav-link:focus-visible {
+  color: var(--apple-text);
+  background-color: var(--apple-bg);
+}
+
+.header .nav-link i {
+  font-size: 18px;
+}
+
+/* Titulo centrado en escritorio, sin tocar el HTML */
+@media (min-width: 768px) {
+  .header {
+    justify-content: center;
+  }
+
+  .header h4 {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 52%;
+    text-align: center;
+  }
+
+  .header .navbar-nav {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 575.98px) {
+  /* En iPhone el título largo no cabe junto al botón de menú: se deja
+     respirar la barra y la sección ya se identifica en el contenido. */
+  .header {
+    flex-direction: row;
+    justify-content: flex-end;
+    padding: 10px 14px 10px 66px;
+  }
+
+  .header h4 {
+    display: none;
+  }
+
+  .header .navbar-nav {
+    margin-left: auto;
+  }
+}
+
+/* Dropdowns del header: blancos, con vidrio y esquinas Apple */
+.header .dropdown-menu {
+  background: rgba(255, 255, 255, 0.94) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--apple-separator);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  min-width: 220px;
+}
+
+.header .dropdown-menu.shadow {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+.header .dropdown-item {
+  color: var(--apple-text) !important;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 15px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.header .dropdown-item:hover,
+.header .dropdown-item:focus {
+  background-color: var(--apple-bg) !important;
+  color: var(--accent, var(--apple-blue)) !important;
+  padding-left: 12px;
+}
+
+.header .dropdown-header {
+  color: var(--apple-text-secondary) !important;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+}
+
+.header .dropdown-divider {
+  border-color: var(--apple-separator);
+  margin: 6px 4px;
+}
+
+/* ---------- Sidebar: tema de temporada + acabado Apple ---------- */
+#accordionSidebar {
+  background-color: var(--theme-bg, #1C1C1E) !important;
+  background-image: var(--theme-image, linear-gradient(180deg, #1C1C1E, #2C2C2E)) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 1px 0 0 rgba(0, 0, 0, 0.04);
+}
+
+#accordionSidebar > .text-center {
+  border-bottom-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+#accordionSidebar .sidebar-brand-text,
+#accordionSidebar .nav-item .nav-link,
+#accordionSidebar .sidebar-heading {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.sidebar .nav-link {
+  position: relative;
+  margin: 4px 10px;
+  padding: 10px 12px;
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.16);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  font-size: 15px;
+  font-weight: 500;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar .nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.28);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.sidebar .nav-link:active {
+  transform: scale(0.98);
+}
+
+.sidebar .nav-link.active {
+  background-color: rgba(0, 0, 0, 0.36) !important;
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+}
+
+.sidebar .nav-link.active::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--accent, var(--apple-blue));
+  transform: translateY(-50%);
+}
+
+.sidebar .nav-link i {
+  min-width: 24px;
+  font-size: 18px;
+  text-align: center;
+}
+
+.sidebar-foto .nav-link {
+  background-color: rgba(0, 0, 0, 0.16);
+}
+
+.sidebar-foto .nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.28);
+}
+
+#sidebarCollapse {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--theme-text, #FFFFFF);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+#sidebarCollapse:hover {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: scale(1.04);
+}
+
+#sidebarCollapse:active {
+  transform: scale(0.98);
+}
+
+#sidebarToggle {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.86) !important;
+  color: var(--apple-text) !important;
+  border: 1px solid var(--apple-separator) !important;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+#sidebarToggle:hover {
+  background: #FFFFFF !important;
+}
+
+.sidebar-backdrop {
+  background-color: rgba(0, 0, 0, 0.28);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+/* ---------- Dropdowns del sidebar: conservan el tema ---------- */
+.sidebar .nav-item.dropdown > .dropdown-menu {
+  background-color: var(--theme-dropdown, #2C2C2E) !important;
+  background-image: var(--theme-image, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 8px;
+}
+
+.sidebar .dropdown-item {
+  margin: 2px 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.16);
+  color: var(--theme-text, #FFFFFF) !important;
+  font-size: 14px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar .dropdown-item:hover {
+  background-color: rgba(0, 0, 0, 0.26) !important;
+  color: var(--theme-text, #FFFFFF) !important;
+  padding-left: 12px;
+}
+
+.sidebar .dropdown-divider {
+  border-color: rgba(255, 255, 255, 0.14);
+  margin: 6px 4px;
+}
+
+/* ============================================================
+   Paso 5: componentes globales
+   Botones, tarjetas, avisos, badges, modales, paginación,
+   pestañas, dropdowns y controles auxiliares.
+   Solo piel: no cambia HTML, JS ni el layout de las pantallas.
+   ============================================================ */
+
+:root {
+  /* Geometría Bootstrap: 10px controles / 16px tarjetas / 20px hojas */
+  --bs-border-radius: 10px;
+  --bs-border-radius-sm: 10px;
+  --bs-border-radius-lg: 12px;
+  --bs-border-radius-xl: 16px;
+  --bs-border-radius-xxl: 20px;
+  --bs-border-color: var(--apple-separator);
+  --bs-border-color-translucent: rgba(0, 0, 0, 0.08);
+
+  /* Tarjetas */
+  --bs-card-border-radius: var(--apple-radius-card);
+  --bs-card-border-color: var(--apple-separator);
+  --bs-card-bg: var(--apple-surface);
+  --bs-card-cap-bg: transparent;
+  --bs-card-cap-color: var(--apple-text);
+  --bs-card-inner-border-radius: 15px;
+
+  /* Modales */
+  --bs-modal-border-radius: var(--apple-radius-sheet);
+  --bs-modal-bg: var(--apple-surface);
+  --bs-modal-border-color: var(--apple-separator);
+  --bs-modal-header-border-color: var(--apple-separator);
+  --bs-modal-footer-border-color: var(--apple-separator);
+  --bs-modal-header-padding: 1rem 1.25rem;
+  --bs-modal-header-padding-x: 1.25rem;
+  --bs-modal-header-padding-y: 1rem;
+
+  /* Paginación */
+  --bs-pagination-border-radius: 10px;
+  --bs-pagination-border-color: var(--apple-separator);
+  --bs-pagination-color: var(--apple-text);
+  --bs-pagination-bg: var(--apple-surface);
+  --bs-pagination-hover-color: var(--apple-text);
+  --bs-pagination-hover-bg: var(--apple-bg);
+  --bs-pagination-hover-border-color: #d1d1d6;
+  --bs-pagination-focus-color: var(--apple-text);
+  --bs-pagination-focus-bg: var(--apple-bg);
+  --bs-pagination-active-color: #ffffff;
+  --bs-pagination-active-bg: var(--accent, var(--apple-blue));
+  --bs-pagination-active-border-color: var(--accent, var(--apple-blue));
+  --bs-pagination-disabled-color: var(--apple-text-tertiary);
+  --bs-pagination-disabled-bg: var(--apple-bg);
+  --bs-pagination-disabled-border-color: var(--apple-separator);
+
+  /* Pestañas y dropdowns */
+  --bs-nav-link-color: var(--apple-text-secondary);
+  --bs-nav-link-hover-color: var(--apple-text);
+  --bs-nav-pills-border-radius: 10px;
+  --bs-nav-pills-link-active-bg: var(--accent, var(--apple-blue));
+  --bs-nav-pills-link-active-color: #ffffff;
+  --bs-dropdown-border-radius: 12px;
+  --bs-dropdown-border-color: var(--apple-separator);
+  --bs-dropdown-bg: var(--apple-surface);
+  --bs-dropdown-link-color: var(--apple-text);
+  --bs-dropdown-link-hover-bg: var(--apple-bg);
+  --bs-dropdown-link-hover-color: var(--apple-text);
+  --bs-dropdown-link-active-bg: var(--accent, var(--apple-blue));
+  --bs-dropdown-link-active-color: #ffffff;
+  --bs-dropdown-box-shadow: var(--apple-shadow-raised);
+  --bs-tooltip-bg: rgba(28, 28, 30, 0.92);
+  --bs-tooltip-border-radius: 8px;
+  --bs-focus-ring-color: color-mix(
+    in srgb,
+    var(--accent, var(--apple-blue)) 30%,
+    transparent
+  );
+
+  /* Puente con components.css: misma geometría Apple */
+  --comp-r-pill: var(--apple-radius-control);
+  --comp-r-card: var(--apple-radius-card);
+  --comp-r-panel: var(--apple-radius-card);
+  --comp-r-badge: 8px;
+  --comp-sh-card: var(--apple-shadow-card);
+  --comp-sh-panel: var(--apple-shadow-card);
+}
+
+/* ---------- Botones Bootstrap ---------- */
+.btn {
+  --bs-btn-border-radius: var(--apple-radius-control);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border-radius: var(--apple-radius-control);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.btn:active {
+  transform: scale(0.985);
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--accent, var(--apple-blue));
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.5;
+  box-shadow: none;
+  transform: none;
+}
+
+/* El lift heredado de base.html era muy marcado; se suaviza sin quitarlo */
+.btn-hover-animate:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.btn-primary {
+  --bs-btn-color: #ffffff;
+  --bs-btn-bg: var(--accent, var(--apple-blue));
+  --bs-btn-border-color: var(--accent, var(--apple-blue));
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--accent-link, var(--apple-blue-hover));
+  --bs-btn-hover-border-color: var(--accent-link, var(--apple-blue-hover));
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--accent-link, var(--apple-blue-hover));
+  --bs-btn-active-border-color: var(--accent-link, var(--apple-blue-hover));
+  --bs-btn-disabled-color: #ffffff;
+  --bs-btn-disabled-bg: var(--accent, var(--apple-blue));
+  --bs-btn-disabled-border-color: var(--accent, var(--apple-blue));
+}
+
+.btn-secondary {
+  --bs-btn-color: var(--apple-text);
+  --bs-btn-bg: var(--apple-fill);
+  --bs-btn-border-color: var(--apple-fill);
+  --bs-btn-hover-color: var(--apple-text);
+  --bs-btn-hover-bg: #d1d1d6;
+  --bs-btn-hover-border-color: #d1d1d6;
+  --bs-btn-active-color: var(--apple-text);
+  --bs-btn-active-bg: #c7c7cc;
+  --bs-btn-active-border-color: #c7c7cc;
+  --bs-btn-disabled-color: var(--apple-text-secondary);
+  --bs-btn-disabled-bg: var(--apple-fill);
+  --bs-btn-disabled-border-color: var(--apple-fill);
+}
+
+.btn-success {
+  --bs-btn-color: #ffffff;
+  --bs-btn-bg: #1d7a37;
+  --bs-btn-border-color: #1d7a37;
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #16642c;
+  --bs-btn-hover-border-color: #16642c;
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #115223;
+  --bs-btn-active-border-color: #115223;
+  --bs-btn-disabled-color: #ffffff;
+  --bs-btn-disabled-bg: #1d7a37;
+  --bs-btn-disabled-border-color: #1d7a37;
+}
+
+.btn-danger {
+  --bs-btn-color: #ffffff;
+  --bs-btn-bg: #c0392b;
+  --bs-btn-border-color: #c0392b;
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #a93226;
+  --bs-btn-hover-border-color: #a93226;
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #922b21;
+  --bs-btn-active-border-color: #922b21;
+  --bs-btn-disabled-color: #ffffff;
+  --bs-btn-disabled-bg: #c0392b;
+  --bs-btn-disabled-border-color: #c0392b;
+}
+
+.btn-warning {
+  --bs-btn-color: var(--apple-text);
+  --bs-btn-bg: var(--apple-orange);
+  --bs-btn-border-color: var(--apple-orange);
+  --bs-btn-hover-color: var(--apple-text);
+  --bs-btn-hover-bg: #f08900;
+  --bs-btn-hover-border-color: #f08900;
+  --bs-btn-active-color: var(--apple-text);
+  --bs-btn-active-bg: #e07f00;
+  --bs-btn-active-border-color: #e07f00;
+  --bs-btn-disabled-color: var(--apple-text);
+  --bs-btn-disabled-bg: var(--apple-orange);
+  --bs-btn-disabled-border-color: var(--apple-orange);
+}
+
+.btn-info {
+  --bs-btn-color: #ffffff;
+  --bs-btn-bg: var(--apple-blue);
+  --bs-btn-border-color: var(--apple-blue);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--apple-blue-hover);
+  --bs-btn-hover-border-color: var(--apple-blue-hover);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #005bb5;
+  --bs-btn-active-border-color: #005bb5;
+  --bs-btn-disabled-color: #ffffff;
+  --bs-btn-disabled-bg: var(--apple-blue);
+  --bs-btn-disabled-border-color: var(--apple-blue);
+}
+
+.btn-light {
+  --bs-btn-color: var(--apple-text);
+  --bs-btn-bg: var(--apple-surface);
+  --bs-btn-border-color: var(--apple-separator);
+  --bs-btn-hover-color: var(--apple-text);
+  --bs-btn-hover-bg: var(--apple-bg);
+  --bs-btn-hover-border-color: #d1d1d6;
+  --bs-btn-active-color: var(--apple-text);
+  --bs-btn-active-bg: var(--apple-fill);
+  --bs-btn-active-border-color: #c7c7cc;
+  --bs-btn-disabled-color: var(--apple-text-tertiary);
+  --bs-btn-disabled-bg: var(--apple-surface);
+  --bs-btn-disabled-border-color: var(--apple-separator);
+}
+
+.btn-dark {
+  --bs-btn-color: #ffffff;
+  --bs-btn-bg: var(--apple-text);
+  --bs-btn-border-color: var(--apple-text);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #2c2c2e;
+  --bs-btn-hover-border-color: #2c2c2e;
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #000000;
+  --bs-btn-active-border-color: #000000;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--accent, var(--apple-blue));
+  --bs-btn-border-color: color-mix(
+    in srgb,
+    var(--accent, var(--apple-blue)) 55%,
+    var(--apple-separator)
+  );
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--accent, var(--apple-blue));
+  --bs-btn-hover-border-color: var(--accent, var(--apple-blue));
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--accent-link, var(--apple-blue-hover));
+  --bs-btn-active-border-color: var(--accent-link, var(--apple-blue-hover));
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--apple-text);
+  --bs-btn-border-color: var(--apple-separator);
+  --bs-btn-hover-color: var(--apple-text);
+  --bs-btn-hover-bg: var(--apple-bg);
+  --bs-btn-hover-border-color: #d1d1d6;
+  --bs-btn-active-color: var(--apple-text);
+  --bs-btn-active-bg: var(--apple-fill);
+  --bs-btn-active-border-color: #c7c7cc;
+}
+
+.btn-outline-success {
+  --bs-btn-color: #1d7a37;
+  --bs-btn-border-color: rgba(29, 122, 55, 0.38);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #1d7a37;
+  --bs-btn-hover-border-color: #1d7a37;
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #16642c;
+  --bs-btn-active-border-color: #16642c;
+}
+
+.btn-outline-danger {
+  --bs-btn-color: #c0392b;
+  --bs-btn-border-color: rgba(192, 57, 43, 0.38);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #c0392b;
+  --bs-btn-hover-border-color: #c0392b;
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #a93226;
+  --bs-btn-active-border-color: #a93226;
+}
+
+.btn-outline-warning {
+  --bs-btn-color: #9a5b00;
+  --bs-btn-border-color: rgba(255, 149, 0, 0.48);
+  --bs-btn-hover-color: var(--apple-text);
+  --bs-btn-hover-bg: var(--apple-orange);
+  --bs-btn-hover-border-color: var(--apple-orange);
+  --bs-btn-active-color: var(--apple-text);
+  --bs-btn-active-bg: #f08900;
+  --bs-btn-active-border-color: #f08900;
+}
+
+.btn-outline-info {
+  --bs-btn-color: #0055cc;
+  --bs-btn-border-color: rgba(0, 122, 255, 0.38);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--apple-blue);
+  --bs-btn-hover-border-color: var(--apple-blue);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--apple-blue-hover);
+  --bs-btn-active-border-color: var(--apple-blue-hover);
+}
+
+.btn-outline-dark {
+  --bs-btn-color: var(--apple-text);
+  --bs-btn-border-color: var(--apple-text-tertiary);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--apple-text);
+  --bs-btn-hover-border-color: var(--apple-text);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: #000000;
+  --bs-btn-active-border-color: #000000;
+}
+
+.btn-link {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent, var(--apple-blue));
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  color: var(--accent-link, var(--apple-blue-hover));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.btn-sm {
+  min-height: 32px;
+  padding: 0.25rem 0.65rem;
+  border-radius: 10px;
+  font-size: 13px;
+  gap: 0.3rem;
+}
+
+.btn-lg {
+  min-height: 48px;
+  padding: 0.65rem 1.25rem;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+/* ---------- Acciones de tabla de personal ----------
+   Las acciones de fila usan el sistema circular .comp-action. */
+
+.input-group > .btn {
+  min-height: 0;
+}
+
+/* Botón de cierre: mismo lenguaje que el resto */
+.btn-close {
+  --bs-btn-close-opacity: 0.55;
+  --bs-btn-close-hover-opacity: 0.85;
+  border-radius: 8px;
+}
+
+.btn-close:focus-visible {
+  outline: 3px solid var(--accent, var(--apple-blue));
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* Botones y etiquetas propias ya existentes */
+.apple-btn,
+.apple-btn-ghost {
+  border-radius: var(--apple-radius-control);
+}
+
+.apple-btn:active,
+.apple-btn-ghost:active {
+  transform: scale(0.98);
+}
+
+.apple-btn-ghost {
+  background-color: var(--apple-surface);
+  border-color: var(--apple-separator);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  color: var(--apple-text);
+}
+
+.apple-btn-ghost:hover {
+  background-color: var(--apple-bg);
+  border-color: #d1d1d6;
+  color: var(--apple-text);
+}
+
+.apple-btn:focus-visible,
+.apple-btn-ghost:focus-visible {
+  outline: 3px solid var(--accent, var(--apple-blue));
+  outline-offset: 2px;
+}
+
+.apple-tag,
+.apple-tag-accent {
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.apple-tag-accent {
+  color: var(--accent, var(--apple-blue));
+  background-color: color-mix(
+    in srgb,
+    var(--accent, var(--apple-blue)) 10%,
+    var(--apple-surface)
+  );
+}
+
+/* ---------- Tarjetas ---------- */
+.card {
+  border: 1px solid var(--apple-separator);
+  border-radius: var(--apple-radius-card);
+  background-color: var(--apple-surface);
+  box-shadow: var(--apple-shadow-card);
+  color: var(--apple-text);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* El lift global heredado no es Apple: solo las tarjetas interactivas lo usan */
+.card:hover {
+  transform: none;
+  box-shadow: var(--apple-shadow-card);
+}
+
+.card > .card-header:first-child {
+  border-radius: calc(var(--apple-radius-card) - 1px)
+    calc(var(--apple-radius-card) - 1px) 0 0;
+}
+
+.card > .card-footer:last-child {
+  border-radius: 0 0 calc(var(--apple-radius-card) - 1px)
+    calc(var(--apple-radius-card) - 1px);
+}
+
+.card > .card-body {
+  display: block;
+  min-height: 0;
+  justify-content: initial;
+}
+
+.card-header,
+.card-footer {
+  border-color: var(--apple-separator);
+  background-color: transparent;
+}
+
+.card-header {
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+}
+
+.card-footer {
+  padding: 0.875rem 1.25rem;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.card-title {
+  margin-bottom: 0.5rem;
+  color: var(--apple-text);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.card-text:last-child {
+  margin-bottom: 0;
+}
+
+.apple-panel {
+  border-radius: var(--apple-radius-card);
+  box-shadow: var(--apple-shadow-card);
+}
+
+/* ---------- Alertas ---------- */
+.alert {
+  padding: 0.9rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+.alert-heading {
+  margin-bottom: 0.35rem;
+  color: inherit;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.alert-success {
+  --bs-alert-color: #1d7a37;
+  --bs-alert-bg: rgba(52, 199, 89, 0.1);
+  --bs-alert-border-color: rgba(52, 199, 89, 0.22);
+  --bs-alert-link-color: #16642c;
+}
+
+.alert-danger {
+  --bs-alert-color: #a93226;
+  --bs-alert-bg: rgba(255, 59, 48, 0.08);
+  --bs-alert-border-color: rgba(255, 59, 48, 0.2);
+  --bs-alert-link-color: #922b21;
+}
+
+.alert-warning {
+  --bs-alert-color: #8a5200;
+  --bs-alert-bg: rgba(255, 149, 0, 0.11);
+  --bs-alert-border-color: rgba(255, 149, 0, 0.24);
+  --bs-alert-link-color: #6e4200;
+}
+
+.alert-info {
+  --bs-alert-color: #0055cc;
+  --bs-alert-bg: rgba(0, 122, 255, 0.09);
+  --bs-alert-border-color: rgba(0, 122, 255, 0.2);
+  --bs-alert-link-color: #0047a8;
+}
+
+.alert-primary {
+  --bs-alert-color: var(--apple-text);
+  --bs-alert-bg: color-mix(
+    in srgb,
+    var(--accent, var(--apple-blue)) 10%,
+    var(--apple-surface)
+  );
+  --bs-alert-border-color: color-mix(
+    in srgb,
+    var(--accent, var(--apple-blue)) 24%,
+    var(--apple-surface)
+  );
+  --bs-alert-link-color: var(--accent-link, var(--apple-blue-hover));
+}
+
+.alert-secondary {
+  --bs-alert-color: var(--apple-text);
+  --bs-alert-bg: var(--apple-bg);
+  --bs-alert-border-color: var(--apple-separator);
+  --bs-alert-link-color: var(--apple-text);
+}
+
+.alert-light {
+  --bs-alert-color: var(--apple-text);
+  --bs-alert-bg: var(--apple-surface);
+  --bs-alert-border-color: var(--apple-separator);
+  --bs-alert-link-color: var(--apple-text);
+}
+
+.alert-dark {
+  --bs-alert-color: #ffffff;
+  --bs-alert-bg: var(--apple-text);
+  --bs-alert-border-color: var(--apple-text);
+  --bs-alert-link-color: #ffffff;
+}
+
+.alert.alert-premium,
+.alert.alert-auth {
+  border-radius: 12px;
+}
+
+.comp-alert {
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+/* ---------- Badges ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.34em 0.6em;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.005em;
+  vertical-align: middle;
+}
+
+/* ---------- Modales ---------- */
+.modal-content {
+  overflow: hidden;
+  border: 1px solid var(--apple-separator);
+  border-radius: var(--apple-radius-sheet);
+  background-color: var(--apple-surface);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+  color: var(--apple-text);
+}
+
+.modal-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--apple-separator);
+  align-items: center;
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.modal-body {
+  padding: 1.25rem;
+  font-size: 15px;
+}
+
+.modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--apple-separator);
+}
+
+.modal-footer > * {
+  margin: 0;
+}
+
+.modal-backdrop.show {
+  opacity: 0.28;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+/* ---------- Paginación ---------- */
+/* ---------- DataTables: barra, tabla y estados ---------- */
+.dataTables_wrapper {
+  padding: 0;
+  color: var(--apple-text);
+  font-family: var(--apple-font);
+  font-size: 14px;
+}
+
+.dataTables_wrapper > .dataTables_length,
+.dataTables_wrapper > .dataTables_filter {
+  margin: 0 0 18px !important;
+  color: var(--apple-text-secondary) !important;
+  font-size: 13.5px !important;
+  line-height: 1.35;
+}
+
+.dataTables_wrapper > .dataTables_length {
+  float: left !important;
+}
+
+.dataTables_wrapper > .dataTables_filter {
+  float: right !important;
+  text-align: right;
+}
+
+.dataTables_wrapper .dataTables_length label,
+.dataTables_wrapper .dataTables_filter label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--apple-text-secondary);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.dataTables_wrapper .dataTables_filter label {
+  justify-content: flex-end;
+}
+
+/* Selector de cantidad: misma geometría que un control Apple compacto. */
+.dataTables_wrapper .dataTables_length select {
+  width: auto !important;
+  min-width: 64px;
+  height: 38px !important;
+  margin: 0 !important;
+  padding: 0 32px 0 12px !important;
+  border: 1px solid var(--apple-separator) !important;
+  border-radius: var(--apple-radius-control) !important;
+  background-color: var(--apple-surface) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1.5 2.25 6 6.75l4.5-4.5' stroke='%238E8E93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 11px center !important;
+  background-size: 12px 8px !important;
+  box-shadow: none !important;
+  color: var(--apple-text) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  cursor: pointer;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+}
+
+.dataTables_wrapper .dataTables_length select:hover {
+  border-color: #d1d1d6 !important;
+}
+
+.dataTables_wrapper .dataTables_length select:focus {
+  border-color: var(--accent, var(--apple-blue)) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.16) !important;
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--accent, var(--apple-blue)) 18%, transparent) !important;
+}
+
+/* Buscador: campo relleno, icono discreto y foco con el acento del tema. */
+.dataTables_wrapper .dataTables_filter input {
+  width: 280px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 40px !important;
+  margin: 0 !important;
+  padding: 0 14px 0 38px !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--apple-radius-control) !important;
+  background-color: var(--apple-bg) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: 13px center !important;
+  background-size: 16px 16px !important;
+  box-shadow: none !important;
+  color: var(--apple-text) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+  text-transform: none !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease !important;
+}
+
+.dataTables_wrapper .dataTables_filter input::placeholder {
+  color: var(--apple-text-tertiary) !important;
+  opacity: 1;
+  text-transform: none !important;
+}
+
+.dataTables_wrapper .dataTables_filter input:hover {
+  background-color: #ececf1 !important;
+}
+
+.dataTables_wrapper .dataTables_filter input:focus {
+  border-color: var(--accent, var(--apple-blue)) !important;
+  outline: none !important;
+  background-color: var(--apple-surface) !important;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.16) !important;
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--accent, var(--apple-blue)) 18%, transparent) !important;
+}
+
+/* Tabla: separadores finos y cabecera tipográfica tipo Apple. */
+.dataTables_wrapper table.dataTable {
+  width: 100% !important;
+  margin: 0 0 4px !important;
+  border: 1px solid var(--apple-separator) !important;
+  border-radius: 12px !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  background-color: var(--apple-surface);
+  overflow: hidden !important;
+}
+
+.dataTables_wrapper table.dataTable > thead > tr > th {
+  padding: 12px 15px !important;
+  border-top: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 1px solid var(--apple-separator) !important;
+  border-left: 0 !important;
+  background-color: var(--apple-surface-2) !important;
+  color: var(--apple-text-secondary) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  letter-spacing: 0.06em !important;
+  text-align: left;
+  text-transform: uppercase !important;
+  vertical-align: middle;
+}
+
+.dataTables_wrapper table.dataTable > thead > tr > th[class*="sorting"]:not(.sorting_disabled) {
+  padding-right: 30px !important;
+}
+
+.dataTables_wrapper table.dataTable > tbody > tr > td {
+  padding: 13px 15px !important;
+  border-top: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 1px solid var(--apple-separator) !important;
+  border-left: 0 !important;
+  background-color: transparent;
+  color: var(--apple-text);
+  font-size: 14.5px;
+  line-height: 1.45;
+  text-transform: none;
+  vertical-align: middle;
+}
+
+/* Las tablas compactas conservan su densidad original. */
+.dataTables_wrapper table.dataTable.comp-table-sm > thead > tr > th {
+  padding: 10px 11px !important;
+  font-size: 11px !important;
+}
+
+.dataTables_wrapper table.dataTable.comp-table-sm > tbody > tr > td {
+  padding: 9px 11px !important;
+  font-size: 13.5px;
+}
+
+.dataTables_wrapper table.dataTable > tbody > tr:hover > td {
+  background-color: var(--apple-surface-2) !important;
+}
+
+.dataTables_wrapper table.dataTable > tbody > tr:last-child > td {
+  border-bottom: 0 !important;
+}
+
+.dataTables_wrapper table.dataTable > tbody > tr > td.dataTables_empty {
+  padding: 38px 16px !important;
+  color: var(--apple-text-secondary) !important;
+  font-size: 14px !important;
+  text-align: center !important;
+}
+
+/* Indicadores de orden: triángulos finos en vez de glifos de texto. */
+.dataTables_wrapper table.dataTable > thead > tr > th[class*="sorting"]:not(.sorting_disabled)::before,
+.dataTables_wrapper table.dataTable > thead > tr > th[class*="sorting"]:not(.sorting_disabled)::after {
+  right: 13px !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-right: 4px solid transparent !important;
+  border-left: 4px solid transparent !important;
+  content: "" !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  opacity: 0.5 !important;
+}
+
+.dataTables_wrapper table.dataTable > thead > tr > th[class*="sorting"]:not(.sorting_disabled)::before {
+  bottom: 50% !important;
+  margin-bottom: 2px !important;
+  border-bottom: 5px solid var(--apple-text-tertiary) !important;
+}
+
+.dataTables_wrapper table.dataTable > thead > tr > th[class*="sorting"]:not(.sorting_disabled)::after {
+  top: 50% !important;
+  margin-top: 2px !important;
+  border-top: 5px solid var(--apple-text-tertiary) !important;
+  border-bottom: 0 !important;
+}
+
+.dataTables_wrapper table.dataTable > thead > tr > th.sorting_asc:not(.sorting_disabled)::before,
+.dataTables_wrapper table.dataTable > thead > tr > th.sorting_desc:not(.sorting_disabled)::after {
+  border-bottom-color: var(--accent, var(--apple-blue)) !important;
+  border-top-color: var(--accent, var(--apple-blue)) !important;
+  opacity: 1 !important;
+}
+
+.dataTables_wrapper table.dataTable > thead > tr > th[class*="sorting"]:not(.sorting_disabled):hover::before,
+.dataTables_wrapper table.dataTable > thead > tr > th[class*="sorting"]:not(.sorting_disabled):hover::after {
+  opacity: 0.8 !important;
+}
+
+.dataTables_wrapper table.dataTable > thead > tr > th.sorting_asc:not(.sorting_disabled):hover::before,
+.dataTables_wrapper table.dataTable > thead > tr > th.sorting_desc:not(.sorting_disabled):hover::after {
+  opacity: 1 !important;
+}
+
+/* Estado de carga: tarjeta flotante, no una banda a todo el ancho. */
+.dataTables_wrapper .dataTables_processing {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  z-index: 5;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 11px 16px !important;
+  border: 1px solid var(--apple-separator) !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: var(--apple-shadow-raised) !important;
+  color: var(--apple-text) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0 !important;
+  text-align: center !important;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dataTables_wrapper .dataTables_processing::before {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 8px;
+  border: 2px solid var(--apple-separator);
+  border-top-color: var(--accent, var(--apple-blue));
+  border-radius: 50%;
+  content: "";
+  vertical-align: -2px;
+  animation: apple-dt-spin 0.7s linear infinite;
+}
+
+@keyframes apple-dt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Info y pie clásico. En los layouts flex de Bootstrap el espaciado lo
+   aporta el propio contenedor de DataTables. */
+.dataTables_wrapper > .dataTables_info {
+  float: left !important;
+  margin: 0 !important;
+  padding: 16px 0 0 !important;
+}
+
+.dataTables_wrapper .dataTables_info {
+  color: var(--apple-text-secondary) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+}
+
+.dataTables_wrapper > .dataTables_paginate {
+  float: right !important;
+  margin: 0 !important;
+  padding: 8px 0 0 !important;
+  text-align: right !important;
+}
+
+.dataTables_wrapper .d-flex > .dataTables_length,
+.dataTables_wrapper .d-flex > .dataTables_filter,
+.dataTables_wrapper .d-flex > .dataTables_info,
+.dataTables_wrapper .d-flex > .dataTables_paginate {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 0;
+}
+
+.page-item:not(:first-child) .page-link {
+  margin-left: 0;
+}
+
+.page-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--apple-separator);
+  border-radius: var(--apple-radius-control);
+  background-color: var(--apple-surface);
+  color: var(--apple-text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.page-link:hover {
+  border-color: #d1d1d6;
+  background-color: var(--apple-bg);
+  color: var(--apple-text);
+}
+
+.page-link:focus {
+  box-shadow: none;
+}
+
+.page-link:focus-visible {
+  outline: 3px solid var(--accent, var(--apple-blue));
+  outline-offset: 2px;
+}
+
+.page-item.active .page-link {
+  border-color: var(--accent, var(--apple-blue));
+  background-color: var(--accent, var(--apple-blue));
+  color: #ffffff;
+}
+
+.page-item.active .page-link:hover {
+  border-color: var(--accent-link, var(--apple-blue-hover));
+  background-color: var(--accent-link, var(--apple-blue-hover));
+  color: #ffffff;
+}
+
+.page-item.disabled .page-link {
+  border-color: var(--apple-separator);
+  background-color: var(--apple-bg);
+  color: var(--apple-text-tertiary);
+  opacity: 1;
+}
+
+.pagination-sm .page-link {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 9px;
+  font-size: 12.5px;
+}
+
+/* DataTables con markup Bootstrap: el <li> es solo el contenedor;
+   la piel visible la lleva el <a.page-link>. */
+.dataTables_paginate li.paginate_button,
+.dataTables_paginate li.paginate_button.current,
+.dataTables_paginate li.paginate_button:hover,
+.dataTables_paginate li.paginate_button:focus {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: inherit !important;
+}
+
+/* DataTables con markup clásico (varias listas del proyecto):
+   los <a.paginate_button> llevan directamente la piel Apple. */
+.dataTables_wrapper .dataTables_paginate a.paginate_button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  margin: 0 2px !important;
+  padding: 0 9px !important;
+  border: 1px solid var(--apple-separator) !important;
+  border-radius: 9px !important;
+  background: var(--apple-surface) !important;
+  color: var(--apple-text) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.dataTables_wrapper .dataTables_paginate a.paginate_button:hover:not(.disabled):not(.current) {
+  border-color: #d1d1d6 !important;
+  background: var(--apple-bg) !important;
+  color: var(--apple-text) !important;
+}
+
+.dataTables_wrapper .dataTables_paginate a.paginate_button.current {
+  border-color: var(--accent, var(--apple-blue)) !important;
+  background: var(--accent, var(--apple-blue)) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.dataTables_wrapper .dataTables_paginate a.paginate_button.disabled {
+  border-color: var(--apple-separator) !important;
+  background: var(--apple-bg) !important;
+  color: var(--apple-text-tertiary) !important;
+  cursor: default !important;
+  opacity: 1 !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 32px;
+  color: var(--apple-text-secondary);
+}
+
+/* DataTables con tema Bootstrap 5: la piel vive en el enlace, pero las
+   medidas deben coincidir con la paginación clásica del resto del sistema. */
+.dataTables_wrapper .dataTables_paginate .pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+}
+
+.dataTables_wrapper .dataTables_paginate .page-item {
+  margin: 0;
+}
+
+.dataTables_wrapper .dataTables_paginate .page-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px !important;
+  height: 32px !important;
+  padding: 0 9px !important;
+  border: 1px solid var(--apple-separator) !important;
+  border-radius: 9px !important;
+  background-color: var(--apple-surface) !important;
+  color: var(--apple-text) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.dataTables_wrapper .dataTables_paginate .page-link:hover {
+  border-color: #d1d1d6 !important;
+  background-color: var(--apple-bg) !important;
+  color: var(--apple-text) !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .page-item.active .page-link {
+  border-color: var(--accent, var(--apple-blue)) !important;
+  background-color: var(--accent, var(--apple-blue)) !important;
+  color: #ffffff !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .page-item.disabled .page-link {
+  border-color: var(--apple-separator) !important;
+  background-color: var(--apple-bg) !important;
+  color: var(--apple-text-tertiary) !important;
+  opacity: 1 !important;
+}
+
+/* ---------- Select2 ---------- */
+/* Se usa html body para superar los <style> de contenido que llevan
+   !important y se renderizan después de esta hoja. */
+html body .select2-container {
+  width: 100% !important;
+  max-width: 100%;
+  font-family: var(--apple-font);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+html body .select2-container:not(.select2-container--disabled) .select2-selection--single {
+  display: block;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--comp-input-border) !important;
+  border-radius: 12px !important;
+  background-color: var(--apple-surface) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: var(--apple-text) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+html body .select2-container:not(.select2-container--disabled) .select2-selection--single:hover {
+  border-color: var(--comp-accent) !important;
+}
+
+html body .select2-container.select2-container--disabled .select2-selection--single {
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+html body .select2-container .select2-selection--single .select2-selection__rendered {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0 44px 0 0 !important;
+  overflow: hidden;
+  color: var(--apple-text) !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  line-height: 42px !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body .select2-container .select2-selection--single .select2-selection__placeholder {
+  color: var(--apple-text-tertiary) !important;
+  font-weight: 400 !important;
+}
+
+html body .select2-container .select2-selection .select2-selection__arrow {
+  top: 50% !important;
+  right: 14px !important;
+  left: auto !important;
+  display: block !important;
+  width: 10px !important;
+  height: 10px !important;
+  margin-top: -5px !important;
+  pointer-events: none;
+}
+
+html body .select2-container .select2-selection .select2-selection__arrow b {
+  display: none !important;
+}
+
+html body .select2-container .select2-selection .select2-selection__arrow::before {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 7px;
+  height: 7px;
+  border-right: 1.7px solid var(--apple-text-secondary);
+  border-bottom: 1.7px solid var(--apple-text-secondary);
+  content: "";
+  transform: rotate(45deg);
+  transform-origin: center;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+html body .select2-container--open .select2-selection .select2-selection__arrow::before {
+  transform: rotate(225deg);
+}
+
+html body .select2-container .select2-selection__clear {
+  position: absolute !important;
+  top: 50% !important;
+  right: 34px !important;
+  z-index: 2;
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--apple-text-secondary) !important;
+  font-size: 17px !important;
+  font-weight: 500 !important;
+  line-height: 18px !important;
+  text-align: center;
+  text-indent: 0 !important;
+  white-space: normal !important;
+  cursor: pointer;
+  opacity: 0.75;
+  transform: translateY(-50%);
+}
+
+html body .select2-container .select2-selection__clear:hover {
+  color: var(--apple-text) !important;
+  opacity: 1;
+}
+
+html body .select2-container .select2-selection__clear > span {
+  display: inline !important;
+}
+
+/* Select2 múltiple: etiquetas discretas, mismas medidas y foco. */
+html body .select2-container .select2-selection--multiple {
+  display: block;
+  width: 100%;
+  min-height: 44px !important;
+  height: auto !important;
+  padding: 5px 8px !important;
+  border: 1px solid var(--apple-separator) !important;
+  border-radius: 12px !important;
+  background-color: var(--apple-surface) !important;
+  box-shadow: none !important;
+  color: var(--apple-text) !important;
+  cursor: text;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+html body .select2-container .select2-selection--multiple:hover {
+  border-color: #d1d1d6 !important;
+}
+
+html body .select2-container .select2-selection--multiple .select2-selection__rendered {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin: 0;
+  padding: 0 20px 0 0 !important;
+  list-style: none;
+}
+
+html body .select2-container .select2-selection--multiple .select2-selection__choice {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 !important;
+  padding: 3px 7px !important;
+  border: 1px solid var(--apple-separator) !important;
+  border-radius: 7px !important;
+  background-color: var(--apple-bg) !important;
+  color: var(--apple-text) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  cursor: default;
+}
+
+html body .select2-container .select2-selection__choice__display {
+  padding: 0 !important;
+  color: var(--apple-text) !important;
+  font-size: 12.5px !important;
+  line-height: 1.4 !important;
+}
+
+html body .select2-container .select2-selection__choice__remove {
+  position: relative;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  order: -1;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 4px 0 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--apple-text-secondary) !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  line-height: 16px !important;
+  text-indent: 0 !important;
+  white-space: normal !important;
+  cursor: pointer;
+}
+
+html body .select2-container .select2-selection__choice__remove > span {
+  display: inline !important;
+}
+
+html body .select2-container .select2-selection__choice__remove:hover {
+  color: var(--apple-red) !important;
+}
+
+html body .select2-container .select2-selection--multiple .select2-search--inline {
+  display: inline-block;
+  flex: 1 1 40px;
+  float: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html body .select2-container .select2-selection--multiple .select2-search__field {
+  width: 100% !important;
+  min-width: 30px;
+  height: 26px !important;
+  margin: 0 !important;
+  padding: 2px 4px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--apple-text) !important;
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+  text-transform: none !important;
+}
+
+html body .select2-container .select2-selection--multiple .select2-search__field:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+html body .select2-container .select2-selection--multiple .select2-selection__clear {
+  right: 10px !important;
+}
+
+/* Foco abierto o activo: borde de acento y halo suave del tema. */
+html body .select2-container--focus .select2-selection--single,
+html body .select2-container--open .select2-selection--single,
+html body .select2-container--focus .select2-selection--multiple,
+html body .select2-container--open .select2-selection--multiple {
+  border-color: var(--accent, var(--apple-blue)) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.16) !important;
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--accent, var(--apple-blue)) 18%, transparent) !important;
+}
+
+html body .select2-container--focus .select2-selection .select2-selection__arrow::before,
+html body .select2-container--open .select2-selection .select2-selection__arrow::before {
+  border-color: var(--accent, var(--apple-blue));
+}
+
+html body .select2-container--disabled .select2-selection,
+html body .select2-container--disabled .select2-selection--single,
+html body .select2-container--disabled .select2-selection--multiple {
+  border-color: var(--apple-separator) !important;
+  background-color: var(--apple-bg) !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+}
+
+html body .select2-container--disabled .select2-selection__rendered,
+html body .select2-container--disabled .select2-selection__placeholder {
+  color: var(--apple-text-tertiary) !important;
+}
+
+html body .select2-container--disabled .select2-selection .select2-selection__arrow::before {
+  border-color: var(--apple-text-tertiary);
+}
+
+html body .select2-container--disabled .select2-selection__clear {
+  display: none !important;
+}
+
+/* Menú desplegable: tarjeta flotante con la misma profundidad del sistema. */
+html body .select2-container .select2-dropdown {
+  overflow: hidden !important;
+  border: 1px solid var(--apple-separator) !important;
+  border-radius: 14px !important;
+  background-color: var(--apple-surface) !important;
+  box-shadow: var(--apple-shadow-raised) !important;
+  color: var(--apple-text) !important;
+  font-family: var(--apple-font);
+}
+
+html body .select2-container--open .select2-dropdown--below {
+  margin-top: 6px;
+}
+
+html body .select2-container--open .select2-dropdown--above {
+  margin-top: -6px;
+}
+
+html body .select2-container .select2-search--dropdown {
+  padding: 8px !important;
+}
+
+html body .select2-container .select2-search--dropdown .select2-search__field {
+  width: 100% !important;
+  height: 38px !important;
+  padding: 0 12px 0 36px !important;
+  border: 1px solid var(--apple-separator) !important;
+  border-radius: var(--apple-radius-control) !important;
+  background-color: var(--apple-bg) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: 12px center !important;
+  background-size: 15px 15px !important;
+  box-shadow: none !important;
+  color: var(--apple-text) !important;
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+  text-transform: none !important;
+  outline: none !important;
+}
+
+html body .select2-container .select2-search--dropdown .select2-search__field::placeholder {
+  color: var(--apple-text-tertiary) !important;
+  text-transform: none !important;
+}
+
+html body .select2-container .select2-search--dropdown .select2-search__field:focus {
+  border-color: var(--accent, var(--apple-blue)) !important;
+  background-color: var(--apple-surface) !important;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.16) !important;
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--accent, var(--apple-blue)) 18%, transparent) !important;
+}
+
+html body .select2-container .select2-results {
+  padding: 4px;
+}
+
+html body .select2-container .select2-results__options {
+  max-height: 280px;
+}
+
+html body .select2-container .select2-results__option {
+  padding: 9px 10px !important;
+  border-radius: 8px !important;
+  color: var(--apple-text) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.35 !important;
+}
+
+html body .select2-container .select2-results__option--highlighted {
+  background-color: var(--accent, var(--apple-blue)) !important;
+  color: #ffffff !important;
+}
+
+html body .select2-container .select2-results__option[aria-selected="true"] {
+  background-color: var(--apple-bg) !important;
+  color: var(--apple-text) !important;
+  font-weight: 600 !important;
+}
+
+html body .select2-container .select2-results__option[aria-selected="true"]::after {
+  float: right;
+  margin-left: 8px;
+  color: var(--accent, var(--apple-blue));
+  content: "\2713";
+  font-weight: 700;
+}
+
+html body .select2-container .select2-results__option[aria-selected="true"].select2-results__option--highlighted {
+  background-color: var(--accent, var(--apple-blue)) !important;
+  color: #ffffff !important;
+}
+
+html body .select2-container .select2-results__option[aria-selected="true"].select2-results__option--highlighted::after {
+  color: #ffffff;
+}
+
+html body .select2-container .select2-results__option--disabled,
+html body .select2-container .select2-results__option[aria-disabled="true"] {
+  background-color: transparent !important;
+  color: var(--apple-text-tertiary) !important;
+  cursor: not-allowed;
+}
+
+html body .select2-container .select2-results__group {
+  padding: 8px 10px 4px !important;
+  color: var(--apple-text-secondary) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+  line-height: 1.35 !important;
+  text-transform: uppercase !important;
+}
+
+html body .select2-container .select2-results__message {
+  padding: 14px 10px !important;
+  color: var(--apple-text-secondary) !important;
+  font-size: 13px !important;
+  text-align: center !important;
+}
+
+html body .select2-container .select2-results__option--load-more {
+  color: var(--accent, var(--apple-blue)) !important;
+  font-weight: 600 !important;
+  text-align: center;
+}
+
+/* Ajustes móviles de la barra y el pie de DataTables. */
+@media (max-width: 575.98px) {
+  .dataTables_wrapper > .dataTables_length,
+  .dataTables_wrapper > .dataTables_filter {
+    float: none !important;
+    width: 100% !important;
+    margin: 0 0 12px !important;
+    text-align: left !important;
+  }
+
+  .dataTables_wrapper .dataTables_length label,
+  .dataTables_wrapper .dataTables_filter label {
+    justify-content: flex-start !important;
+    width: 100%;
+  }
+
+  .dataTables_wrapper .dataTables_filter input {
+    width: 100% !important;
+  }
+
+  .dataTables_wrapper > .d-flex {
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+    row-gap: 10px;
+  }
+
+  .dataTables_wrapper > .d-flex > .dataTables_length,
+  .dataTables_wrapper > .d-flex > .dataTables_filter,
+  .dataTables_wrapper > .d-flex > .dataTables_info,
+  .dataTables_wrapper > .d-flex > .dataTables_paginate {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .dataTables_wrapper > .dataTables_info,
+  .dataTables_wrapper > .dataTables_paginate,
+  .dataTables_wrapper > .d-flex > .dataTables_info,
+  .dataTables_wrapper > .d-flex > .dataTables_paginate {
+    float: none !important;
+    width: 100% !important;
+    padding-top: 0 !important;
+    text-align: center !important;
+  }
+
+  .dataTables_wrapper > .dataTables_info {
+    padding-top: 16px !important;
+  }
+
+  .dataTables_wrapper > .dataTables_paginate {
+    padding-top: 10px !important;
+  }
+
+  .dataTables_wrapper .dataTables_paginate .pagination {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+
+  .dataTables_wrapper .dataTables_paginate a.paginate_button {
+    margin: 2px !important;
+  }
+
+  .dataTables_wrapper table.dataTable > thead > tr > th {
+    padding: 10px 11px !important;
+    font-size: 10.5px !important;
+  }
+
+  .dataTables_wrapper table.dataTable > thead > tr > th[class*="sorting"]:not(.sorting_disabled) {
+    padding-right: 25px !important;
+  }
+
+  .dataTables_wrapper table.dataTable > tbody > tr > td {
+    padding: 11px 11px !important;
+    font-size: 13.5px;
+  }
+
+  .dataTables_wrapper table.dataTable > thead > tr > th[class*="sorting"]:not(.sorting_disabled)::before,
+  .dataTables_wrapper table.dataTable > thead > tr > th[class*="sorting"]:not(.sorting_disabled)::after {
+    right: 10px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dataTables_wrapper .dataTables_processing::before {
+    animation: none;
+  }
+
+  html body .select2-container .select2-selection .select2-selection__arrow::before {
+    transition: none;
+  }
+}
+
+/* ---------- Pestañas ---------- */
+.nav-tabs {
+  gap: 4px;
+  border-bottom: 1px solid var(--apple-separator);
+}
+
+.nav-tabs .nav-link {
+  margin-bottom: -1px;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 10px 10px 0 0;
+  color: var(--apple-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.nav-tabs .nav-link:hover {
+  border-color: transparent;
+  background-color: var(--apple-bg);
+  color: var(--apple-text);
+}
+
+.nav-tabs .nav-link.active {
+  border-color: var(--apple-separator) var(--apple-separator)
+    var(--apple-surface);
+  background-color: var(--apple-surface);
+  color: var(--accent, var(--apple-blue));
+}
+
+.nav-pills {
+  gap: 4px;
+}
+
+.nav-pills .nav-link {
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  color: var(--apple-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.nav-pills .nav-link:hover {
+  background-color: var(--apple-bg);
+  color: var(--apple-text);
+}
+
+.nav-pills .nav-link.active {
+  background-color: var(--accent, var(--apple-blue));
+  color: #ffffff;
+}
+
+.nav-tabs .nav-link:focus-visible,
+.nav-pills .nav-link:focus-visible {
+  outline: 3px solid var(--accent, var(--apple-blue));
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* Pestañas segmentadas usadas en Pendientes. La plantilla las define con
+   estilos propios; se alinean al acento del tema sin tocar su estructura. */
+.nav.nav-tabs.nav-tabs-premium .nav-link {
+  border-color: transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--apple-text-secondary);
+}
+
+.nav.nav-tabs.nav-tabs-premium .nav-link:hover {
+  border-color: transparent;
+  background: var(--apple-bg);
+  color: var(--apple-text);
+}
+
+.nav.nav-tabs.nav-tabs-premium .nav-link.active {
+  border-color: var(--accent, var(--apple-blue));
+  background: var(--accent, var(--apple-blue));
+  color: #ffffff;
+}
+
+/* ---------- Dropdowns fuera del shell ---------- */
+.dropdown-menu {
+  padding: 6px;
+  border: 1px solid var(--apple-separator);
+  border-radius: 12px;
+  background-color: var(--apple-surface);
+  box-shadow: var(--apple-shadow-raised);
+}
+
+.dropdown-item {
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--apple-text);
+  font-size: 14px;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  padding-left: 12px;
+  background-color: var(--apple-bg);
+  color: var(--apple-text);
+}
+
+.dropdown-item.active,
+.dropdown-item:active {
+  background-color: var(--accent, var(--apple-blue));
+  color: #ffffff;
+}
+
+.dropdown-header {
+  padding: 6px 12px;
+  color: var(--apple-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dropdown-divider {
+  margin: 5px 0;
+  border-color: var(--apple-separator);
+}
+
+/* ---------- List groups ---------- */
+.list-group {
+  border-radius: 12px;
+}
+
+.list-group-item {
+  padding: 0.75rem 1rem;
+  border-color: var(--apple-separator);
+  background-color: var(--apple-surface);
+  color: var(--apple-text);
+  font-size: 14.5px;
+}
+
+.list-group-item:first-child {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.list-group-item:last-child {
+  border-bottom-right-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.list-group-item-action:hover,
+.list-group-item-action:focus {
+  background-color: var(--apple-bg);
+  color: var(--apple-text);
+}
+
+.list-group-item.active {
+  border-color: var(--accent, var(--apple-blue));
+  background-color: var(--accent, var(--apple-blue));
+  color: #ffffff;
+}
+
+/* ---------- Progreso, toasts y migas ---------- */
+.progress {
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--apple-fill);
+  overflow: hidden;
+}
+
+.progress-bar {
+  border-radius: 999px;
+  background-color: var(--accent, var(--apple-blue));
+}
+
+.toast {
+  border: 1px solid var(--apple-separator);
+  border-radius: 12px;
+  background-color: var(--apple-surface);
+  box-shadow: var(--apple-shadow-raised);
+}
+
+.toast-header {
+  border-bottom-color: var(--apple-separator);
+  background-color: transparent;
+  color: var(--apple-text);
+}
+
+.breadcrumb {
+  margin-bottom: 1rem;
+  font-size: 13px;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  color: var(--apple-text-tertiary);
+}
+
+.breadcrumb-item.active {
+  color: var(--apple-text-secondary);
+}
+
+/* ---------- Acordeones ---------- */
+.accordion {
+  --bs-accordion-border-color: var(--apple-separator);
+  --bs-accordion-border-radius: var(--apple-radius-card);
+  --bs-accordion-inner-border-radius: 15px;
+}
+
+.accordion-item {
+  border-color: var(--apple-separator);
+  background-color: var(--apple-surface);
+}
+
+.accordion-button {
+  padding: 1rem 1.25rem;
+  background-color: var(--apple-surface);
+  color: var(--apple-text);
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: color-mix(
+    in srgb,
+    var(--accent, var(--apple-blue)) 7%,
+    var(--apple-surface)
+  );
+  color: var(--accent, var(--apple-blue));
+  box-shadow: inset 0 -1px 0 var(--apple-separator);
+}
+
+.accordion-button:focus-visible {
+  outline: 3px solid var(--accent, var(--apple-blue));
+  outline-offset: -3px;
+  box-shadow: none;
+}
+
+/* ---------- Spinner ---------- */
+.spinner-border {
+  border-width: 0.18em;
+}
+
+.spinner-border.text-primary,
+.spinner-grow.text-primary {
+  color: var(--accent, var(--apple-blue)) !important;
+}
+
+/* ---------- Movimiento reducido ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .card,
+  .page-link,
+  .nav-link,
+  .dropdown-item,
+  .accordion-button {
+    transition: none;
+  }
+
+  .btn:active {
+    transform: none;
+  }
+}
+
+/* ---------- Ajustes móviles ---------- */
+@media (max-width: 575.98px) {
+  .modal-dialog {
+    margin: 0.75rem;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .modal-footer > * {
+    width: 100%;
+  }
+
+  .toast {
+    width: calc(100vw - 1.5rem);
+  }
+}

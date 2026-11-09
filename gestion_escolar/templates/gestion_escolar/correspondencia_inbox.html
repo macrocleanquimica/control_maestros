@@ -1,241 +1,228 @@
 {% extends "gestion_escolar/base.html" %}
 {% load static %}
 
-{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+{% block title %}Bandeja de Entrada | Control de Maestros{% endblock %}
 
 {% block content %}
 <style>
-    .inbox-container {
-        max-width: 900px;
-        margin: 0 auto;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .premium-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .header-info h2 {
-        font-size: clamp(22px, 3.4vw, 30px);
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: var(--text, #1d1d1f);
-        margin: 0;
-    }
-
-    .btn-compose {
-        background: var(--accent, #0071e3);
-        color: white;
-        border: none;
-        padding: 0 22px;
-        min-height: 44px;
-        border-radius: var(--r-pill, 999px);
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        text-decoration: none;
-    }
-
-    .btn-compose:hover {
-        opacity: 0.92;
-        color: white;
-    }
-
     .inbox-list {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
+        list-style: none;
+        margin: 0;
+        padding: 0;
     }
 
-    .message-item {
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    .inbox-item {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        text-decoration: none !important;
-        position: relative;
+        gap: 0.25rem;
+        padding-right: 0.75rem;
+        border-bottom: 1px solid var(--comp-hairline);
     }
 
-    .message-item:last-child {
+    .inbox-item:last-child {
         border-bottom: none;
     }
 
-    .message-item:hover {
-        background-color: var(--hover, #fbfbfd);
-    }
-
-    .message-item.unread {
-        background-color: var(--surface, #fff);
-    }
-
-    .avatar-circle {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: rgba(0,0,0,0.05);
+    .inbox-main {
+        flex: 1;
+        min-width: 0;
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        flex-shrink: 0;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        text-decoration: none;
+        color: inherit;
     }
 
-    .message-content {
-        flex-grow: 1;
+    .inbox-main:hover {
+        background: var(--comp-hover);
+    }
+
+    .inbox-item.is-unread .inbox-main {
+        background: rgba(255, 117, 24, 0.04);
+    }
+
+    .inbox-item.is-unread .inbox-main:hover {
+        background: rgba(255, 117, 24, 0.07);
+    }
+
+    .inbox-avatar {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 auto;
+        font-size: 1rem;
+        font-weight: 700;
+        background: rgba(255, 117, 24, 0.10);
+        color: var(--comp-accent);
+    }
+
+    .inbox-text {
+        flex: 1;
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
     }
 
-    .message-subject {
+    .inbox-subject {
         font-size: 0.95rem;
         font-weight: 500;
-        color: var(--text, #1d1d1f);
-        margin-bottom: 0.25rem;
+        color: var(--comp-text);
+        letter-spacing: -0.01em;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        letter-spacing: -0.01em;
     }
 
-    .unread .message-subject {
+    .inbox-item.is-unread .inbox-subject {
         font-weight: 700;
     }
 
-    .unread .message-subject::before {
+    .inbox-item.is-unread .inbox-subject::before {
         content: '';
         display: inline-block;
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: var(--accent, #0071e3);
-        margin-right: 8px;
+        background: var(--comp-accent);
+        margin-right: 0.5rem;
         vertical-align: 1px;
     }
 
-    .message-sender {
-        font-size: 0.85rem;
-        color: var(--text-2, #6e6e73);
+    .inbox-sender {
+        font-size: 0.82rem;
+        color: var(--comp-text-2);
     }
 
-    .message-meta {
-        text-align: right;
-        flex-shrink: 0;
+    .inbox-meta {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.3rem;
     }
 
-    .message-date {
-        font-size: 0.75rem;
-        color: var(--text-3, #86868b);
-        display: block;
-        margin-bottom: 0.5rem;
+    .inbox-date {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--comp-text-2);
         font-variant-numeric: tabular-nums;
     }
 
-    .btn-delete-msg {
-        width: 32px;
-        height: 32px;
+    .inbox-time {
+        font-size: 0.72rem;
+        color: var(--comp-text-3);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .inbox-new {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 2rem;
+        font-weight: 700;
+        background: rgba(255, 117, 24, 0.12);
+        color: var(--comp-accent);
+    }
+
+    .inbox-delete-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
         border-radius: 50%;
-        display: flex;
+        background: transparent;
+        color: var(--comp-text-3);
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: var(--text-3, #86868b);
-        background: transparent;
-        border: none;
+        transition: background var(--comp-speed), color var(--comp-speed);
     }
 
-    .btn-delete-msg:hover {
-        background: rgba(0,0,0,0.05);
-        color: #e02424;
+    .inbox-delete-btn:hover {
+        background: rgba(192, 57, 43, 0.08);
+        color: #c0392b;
     }
 
-    .empty-state {
-        padding: 5rem 2rem;
-        text-align: center;
-    }
+    @media (max-width: 576px) {
+        .inbox-main {
+            gap: 0.75rem;
+            padding: 0.9rem 1rem;
+        }
 
-    .empty-state i {
-        font-size: 3rem;
-        color: rgba(0,0,0,0.12);
-        margin-bottom: 1.5rem;
-    }
+        .inbox-meta {
+            flex-direction: row;
+            align-items: center;
+            gap: 0.4rem;
+        }
 
-    .badge-unread {
-        background: rgba(0,113,227,0.08);
-        color: var(--accent-link, #0066cc);
-        font-size: 0.65rem;
-        font-weight: 700;
-        padding: 0.25rem 0.5rem;
-        border-radius: 2rem;
-        margin-left: 0.75rem;
-        vertical-align: middle;
+        .inbox-new,
+        .inbox-time {
+            display: none;
+        }
+
+        .inbox-subject {
+            font-size: 0.9rem;
+        }
     }
 </style>
 
-<div class="inbox-container py-4">
-    <!-- Header -->
-    <div class="premium-header">
-        <div class="header-info">
-            <h2 class="apple-title" style="font-size: clamp(20px, 3vw, 26px);">{{ titulo }}</h2>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Bandeja de Entrada</h1>
+            <p class="comp-subtitle">Mensajes internos dirigidos a tu cuenta.</p>
         </div>
-        <a href="{% url 'correspondencia_crear' %}" class="btn-compose">
-            <i class="fas fa-pen-to-square"></i>
-            Redactar
-        </a>
+        <div class="comp-actions">
+            <a href="{% url 'correspondencia_crear' %}" class="comp-btn comp-btn-primary">
+                <i class="fas fa-pen-to-square"></i> Redactar
+            </a>
+        </div>
     </div>
 
-    <!-- Lista de Mensajes -->
-    <div class="inbox-list">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="comp-alert {% if message.tags == 'error' %}comp-alert-danger{% elif message.tags == 'success' %}comp-alert-success{% else %}comp-alert-info{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="comp-panel">
         {% if mensajes %}
-            {% for mensaje in mensajes %}
-                <div class="position-relative">
-                    <a href="{% url 'correspondencia_detail' mensaje.pk %}" class="message-item {% if not mensaje.leido %}unread{% endif %}">
-                        <div class="avatar-circle">
-                            {{ mensaje.remitente.username|slice:":1"|upper }}
-                        </div>
-                        <div class="message-content">
-                            <h5 class="message-subject">
-                                {{ mensaje.asunto }}
+            <ul class="inbox-list">
+                {% for mensaje in mensajes %}
+                    <li class="inbox-item {% if not mensaje.leido %}is-unread{% endif %}">
+                        <a href="{% url 'correspondencia_detail' mensaje.pk %}" class="inbox-main">
+                            <span class="comp-avatar inbox-avatar">{{ mensaje.remitente.username|slice:":1"|upper }}</span>
+                            <span class="inbox-text">
+                                <span class="inbox-subject">{{ mensaje.asunto }}</span>
+                                <span class="inbox-sender">
+                                    De: <strong>{{ mensaje.remitente.get_full_name|default:mensaje.remitente.username }}</strong>
+                                </span>
+                            </span>
+                            <span class="inbox-meta">
                                 {% if not mensaje.leido %}
-                                    <span class="badge-unread">Nuevo</span>
+                                    <span class="inbox-new">Nuevo</span>
                                 {% endif %}
-                            </h5>
-                            <p class="message-sender mb-0">
-                                De: <strong>{{ mensaje.remitente.get_full_name|default:mensaje.remitente.username }}</strong>
-                            </p>
-                        </div>
-                        <div class="message-meta">
-                            <span class="message-date">{{ mensaje.fecha_creacion|date:"d/m/Y" }}</span>
-                            <span class="message-date small opacity-75">{{ mensaje.fecha_creacion|date:"H:i" }}</span>
-                        </div>
-                    </a>
-                    <!-- Botón de eliminar separado para no interferir con el link del mensaje -->
-                    <div style="position: absolute; right: 2rem; bottom: 1.25rem; z-index: 10;">
+                                <span class="inbox-date">{{ mensaje.fecha_creacion|date:"d/m/Y" }}</span>
+                                <span class="inbox-time">{{ mensaje.fecha_creacion|date:"H:i" }}</span>
+                            </span>
+                        </a>
                         <form method="post" action="{% url 'correspondencia_eliminar' mensaje.pk %}" class="d-inline">
                             {% csrf_token %}
-                            <button type="submit" class="btn-delete-msg" onclick="return confirm('¿Eliminar este mensaje permanentemente?');" title="Eliminar mensaje">
-                                <i class="fas fa-trash-alt smaller"></i>
+                            <button type="submit" class="inbox-delete-btn" onclick="return confirm('¿Eliminar este mensaje permanentemente?');" title="Eliminar mensaje" aria-label="Eliminar mensaje">
+                                <i class="fas fa-trash-alt"></i>
                             </button>
                         </form>
-                    </div>
-                </div>
-            {% endfor %}
+                    </li>
+                {% endfor %}
+            </ul>
         {% else %}
-            <div class="empty-state">
+            <div class="comp-empty-state">
                 <i class="fas fa-envelope-open"></i>
-                <h4 class="text-dark fw-bold">Bandeja Vacía</h4>
-                <p class="text-muted">No tienes mensajes nuevos en este momento.</p>
+                <p class="fw-bold mb-1" style="color: var(--comp-text); font-size: 1rem;">Bandeja vacía</p>
+                <p class="mb-0">No tienes mensajes en este momento.</p>
             </div>
         {% endif %}
     </div>

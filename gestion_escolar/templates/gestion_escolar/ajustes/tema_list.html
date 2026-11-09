@@ -4,120 +4,89 @@
 {% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3">
-            <div class="header-info">
-                <h2 class="apple-title">{{ titulo }}</h2>
-                <p class="apple-subtitle mb-0">Apariencia y vigencia del sistema.</p>
-            </div>
-            <div class="header-actions">
-                <a href="{% url 'tema_create' %}" class="apple-btn">
-                    <i class="fas fa-plus me-2"></i>
-                    <span>Nuevo Tema</span>
-                </a>
-            </div>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ titulo }}</h1>
+            <p class="comp-subtitle">Apariencia y vigencia del sistema.</p>
+        </div>
+        <div class="comp-actions">
+            <a href="{% url 'tema_create' %}" class="comp-btn comp-btn-primary">
+                <i class="fas fa-plus"></i> Nuevo Tema
+            </a>
         </div>
     </div>
 
-    <!-- Alert Messages -->
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-premium fade show shadow-sm mb-4" role="alert">
-                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
-                {{ message }}
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="comp-alert {% if message.tags == 'error' %}comp-alert-danger{% elif message.tags == 'success' %}comp-alert-success{% else %}comp-alert-info{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {% endfor %}
     {% endif %}
 
-    <!-- Temas Table Card -->
-    <div class="card apple-panel border-0 overflow-hidden">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="themesTable">
-                    <thead>
-                        <tr>
-                            <th class="ps-4 py-3">Nombre</th>
-                            <th class="py-3">Estado</th>
-                            <th class="py-3 text-center">Vigencia</th>
-                            <th class="pe-4 py-3 text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="border-top-0">
-                        {% for tema in temas %}
-                        <tr>
-                            <td class="ps-4 py-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="me-2" style="background: {{ tema.color_principal }}; width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;" title="Color del menú"></div>
-                                    <div class="me-3" style="background: {{ tema.color_boton }}; width: 36px; height: 36px; border-radius: 999px; flex-shrink: 0;" title="Color del botón"></div>
-                                    <span class="fw-bold">{{ tema.nombre }}</span>
+    <div class="comp-panel">
+        <div class="table-responsive">
+            <table class="comp-table" id="themesTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Nombre</th>
+                        <th>Estado</th>
+                        <th class="text-center">Vigencia</th>
+                        <th class="pe-4 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tema in temas %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="comp-color-pair">
+                                    <span class="comp-color-dot" style="background: {{ tema.color_principal }};" title="Color del menú"></span>
+                                    <span class="comp-color-pill" style="background: {{ tema.color_boton }};" title="Color del botón"></span>
                                 </div>
-                            </td>
-                            <td class="py-3">
-                                {% if tema.activo %}
-                                    <span class="apple-tag">
-                                        Activo
-                                    </span>
-                                {% else %}
-                                    <span class="apple-tag">
-                                        Inactivo
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td class="py-3 text-center">
-                                <div class="d-flex flex-column align-items-center">
-                                    <div class="small fw-semibold text-muted mb-1">
-                                        <i class="far fa-calendar-alt me-1"></i>{{ tema.fecha_inicio|date:"d M Y" }}
-                                    </div>
-                                    <div class="small text-muted opacity-75">
-                                        <i class="fas fa-arrow-right fs-xs px-2"></i>
-                                        {{ tema.fecha_fin|date:"d M Y" }}
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="pe-4 py-3">
-                                <div class="d-flex gap-2 justify-content-center">
-                                    <a href="{% url 'tema_update' tema.pk %}" class="apple-btn-ghost" style="min-height: 34px; padding: 0 12px; font-size: 13px;" title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'tema_delete' tema.pk %}" class="apple-btn-ghost" style="min-height: 34px; padding: 0 12px; font-size: 13px;" title="Eliminar">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% if not temas %}
-            <div class="text-center py-5">
-                <p class="fw-bold" style="color: var(--text-2, #6e6e73);">Sin temas todavía.</p>
-                <a href="{% url 'tema_create' %}" class="apple-btn mt-2">Crear el primero</a>
-            </div>
-            {% endif %}
+                                <span class="comp-theme-name">{{ tema.nombre }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if tema.activo %}
+                            <span class="comp-badge comp-badge-success">Activo</span>
+                            {% else %}
+                            <span class="comp-badge comp-badge-danger">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="comp-date-stack mx-auto">
+                                <span><i class="far fa-calendar-alt me-1"></i>{{ tema.fecha_inicio|date:"d M Y" }}</span>
+                                <span class="comp-date-end"><i class="fas fa-arrow-right fs-xs me-1"></i>{{ tema.fecha_fin|date:"d M Y" }}</span>
+                            </div>
+                        </td>
+                        <td class="pe-4">
+                            <div class="comp-action-group">
+                                <a href="{% url 'tema_update' tema.pk %}" class="comp-action comp-action-edit" title="Editar" aria-label="Editar tema {{ tema.nombre }}">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'tema_delete' tema.pk %}" class="comp-action comp-action-delete" title="Eliminar" aria-label="Eliminar tema {{ tema.nombre }}">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+        {% if not temas %}
+        <div class="comp-empty-state">
+            <i class="fas fa-palette"></i>
+            <p>Sin temas todavía.</p>
+            <a href="{% url 'tema_create' %}" class="comp-btn comp-btn-primary comp-btn-sm mt-3">Crear el primero</a>
+        </div>
+        {% endif %}
     </div>
 </div>
-
-<style>
-    thead th {
-        background: var(--surface, #fff);
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        color: var(--text-2, #6e6e73);
-    }
-    tbody td {
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-    tbody tr:last-child td {
-        border-bottom: none;
-    }
-    .fs-xs { font-size: 0.7rem; }
-</style>
 {% endblock %}
 
 {% block extra_js %}

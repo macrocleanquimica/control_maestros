@@ -6,167 +6,107 @@
 
 {% block content %}
 <style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .header-section {
-        margin-bottom: 1.5rem;
-    }
-
-    /* Tabla en panel único */
-    .table-container-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    .table thead th {
-        background: var(--surface, #fff);
-        color: var(--text-2, #6e6e73);
-        font-weight: 600;
-        font-size: 0.72rem;
-        letter-spacing: 0.04em;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        padding: 0.9rem 1rem;
-    }
-
-    .table tbody td {
-        padding: 0.9rem 1rem;
-        vertical-align: middle;
-        font-size: 0.85rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Etiquetas neutras (mismos nombres) */
-    .badge-soft {
-        font-size: 0.7rem;
-        padding: 0.3rem 0.6rem;
-        border-radius: 2rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        background: rgba(0,0,0,0.05);
-        color: var(--text-2, #6e6e73);
-    }
-
-    /* Observaciones editables */
+    /* Observaciones editables en línea */
     .observacion-cell {
-        min-width: 200px;
-        position: relative;
+        min-width: 220px;
     }
 
     .observacion-display {
-        border-radius: 0.5rem;
-        padding: 0.5rem;
+        border-radius: 8px;
+        padding: 0.4rem 0.5rem;
         cursor: pointer;
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
+        gap: 0.5rem;
     }
 
     .observacion-display:hover {
-        background: var(--hover, #fbfbfd);
+        background: var(--comp-hover);
     }
 
     .btn-edit-observacion {
         opacity: 0;
         transition: opacity 0.2s;
-        color: var(--text-2, #6e6e73);
+        color: var(--comp-text-3);
         padding: 0;
+        line-height: 1;
     }
 
     .observacion-display:hover .btn-edit-observacion {
         opacity: 1;
     }
 
-    /* Claves */
-    .text-code {
-        font-family: var(--mono, monospace);
-        background: rgba(0,0,0,0.05);
-        padding: 0.2rem 0.4rem;
-        border-radius: 0.3rem;
-        font-weight: 600;
-        color: var(--text, #1d1d1f);
-        font-variant-numeric: tabular-nums;
+    @media (hover: none) {
+        .btn-edit-observacion { opacity: 1; }
     }
 
-    /* Botones de acción sin saltos */
-    .btn-action-custom {
-        width: 32px;
-        height: 32px;
-        padding: 0;
+    .observacion-edit .btn {
+        border-radius: 8px;
+        line-height: 1;
+    }
+
+    /* El tipo de documento baja de renglón si no cabe, igual que Fecha y Hora. */
+    #historialTable tbody tr td:nth-child(3) {
+        white-space: normal;
+    }
+    #historialTable tbody tr td:nth-child(3) .comp-badge {
         display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 0.5rem;
-        transition: background 0.2s;
-        background: white;
-        border: 1px solid rgba(0,0,0,0.08);
+        align-items: flex-start;
+        max-width: 100%;
+        white-space: normal;
+        text-align: left;
+        line-height: 1.3;
+        padding: 0.35rem 0.55rem;
+    }
+    #historialTable tbody tr td:nth-child(3) .comp-badge i {
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+    #historialTable tbody tr td:nth-child(4) {
+        white-space: normal;
+        word-break: break-word;
     }
 
-    .btn-action-custom:hover {
-        background: var(--hover, #fbfbfd);
-    }
 </style>
 
-<div class="page-container">
-    <!-- Header -->
-    <div class="header-section">
-        <div class="header-title">
-            <h1 class="apple-title mb-1">{{ titulo }}</h1>
-            <p class="apple-subtitle mb-0">Documentos y reportes generados en el sistema.</p>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ titulo }}</h1>
+            <p class="comp-subtitle">Documentos y reportes generados en el sistema.</p>
         </div>
     </div>
 
-    <!-- Table Container -->
-    <div class="table-container-card">
-        <div class="p-4">
+    <div class="comp-panel">
+        <div class="comp-panel-body">
             <div class="table-responsive">
-                <table id="historialTable" class="table table-hover align-middle w-100">
+                <table id="historialTable" class="comp-table w-100" style="table-layout: fixed;">
                     <thead>
                         <tr>
-                            <th>Usuario</th>
-                            <th>Fecha y Hora</th>
-                            <th>Documento</th>
-                            <th>Maestro / Titular</th>
-                            <th>Dato Clave</th>
-                            <th>Motivo</th>
-                            <th>Observaciones</th>
-                            <th class="text-end">Acciones</th>
+                            <th class="ps-4" style="width: 88px;">Usuario</th>
+                            <th style="width: 110px;">Fecha y Hora</th>
+                            <th style="width: 140px;">Documento</th>
+                            <th style="width: 242px;">Maestro / Titular</th>
+                            <th style="width: 120px;">Dato Clave</th>
+                            <th style="width: 120px;">Motivo</th>
+                            <th style="width: 180px;">Observaciones</th>
+                            <th class="text-end pe-4" style="width: 90px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in historial_items %}
                         <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-light rounded-circle p-2 me-2 text-center d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem;">
-                                        {{ item.usuario.username|slice:":1"|upper }}
-                                    </div>
-                                    <span class="fw-bold">{{ item.usuario.username|default:"N/A" }}</span>
-                                </div>
+                            <td class="ps-4">
+                                <span class="fw-bold comp-text-dark">{{ item.usuario.username|default:"N/A" }}</span>
                             </td>
-                            <td data-sort="{{ item.fecha_creacion|date:'YmdHis' }}">
-                                <div class="fw-bold text-dark">{{ item.fecha_creacion|date:"d/m/Y" }}</div>
-                                <div class="text-muted small">{{ item.fecha_creacion|date:"H:i" }} hrs.</div>
+                            <td data-sort="{{ item.fecha_creacion|date:'YmdHis' }}" class="text-nowrap">
+                                <div class="fw-bold comp-text-dark">{{ item.fecha_creacion|date:"d/m/Y" }}</div>
+                                <div class="comp-text-muted smaller">{{ item.fecha_creacion|date:"H:i" }} hrs.</div>
                             </td>
                             <td>
                                 {% with tipo=item.tipo_documento %}
-                                <span class="badge-soft {% if 'Oficio' in tipo %}badge-soft-primary{% elif 'Trámite' in tipo %}badge-soft-info{% elif 'Vacancia' in tipo %}badge-soft-success{% else %}badge-soft-secondary{% endif %}">
+                                <span class="comp-badge {% if 'Oficio' in tipo %}comp-badge-accent{% elif 'Trámite' in tipo %}comp-badge-soft{% elif 'Vacancia' in tipo %}comp-badge-success{% else %}comp-badge-soft{% endif %}">
                                     <i class="fas {% if 'Vacancia' in tipo %}fa-clipboard-check{% elif 'Oficio' in tipo %}fa-file-signature{% else %}fa-file-alt{% endif %} me-1"></i>
                                     {{ tipo }}
                                 </span>
@@ -174,61 +114,61 @@
                             </td>
                             <td>
                                 {% if item.tipo_documento == "Reporte de Vacancia" %}
-                                    <span class="text-muted italic">Múltiples registros</span>
+                                    <span class="comp-text-muted fst-italic">Múltiples registros</span>
                                 {% else %}
-                                    <div class="fw-bold text-dark">{{ item.maestro|default:"N/A" }}</div>
+                                    <div class="fw-bold comp-text-dark">{{ item.maestro|default:"N/A" }}</div>
                                     {% if item.maestro_secundario_nombre %}
-                                    <div class="text-muted small">Interino: {{ item.maestro_secundario_nombre }}</div>
+                                    <div class="comp-text-muted smaller">Interino: {{ item.maestro_secundario_nombre }}</div>
                                     {% endif %}
                                 {% endif %}
                             </td>
                             <td>
                                 {% if item.tipo_documento == "Reporte de Vacancia" %}
-                                    <span class="text-muted">-</span>
+                                    <span class="comp-text-muted">-</span>
                                 {% else %}
-                                    <span class="text-code">{{ item.maestro.clave_presupuestal|default:"N/A" }}</span>
+                                    <span class="comp-code">{{ item.maestro.clave_presupuestal|default:"N/A" }}</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <div class="text-muted small text-truncate" style="max-width: 150px;" title="{{ item.motivo }}">
+                                <div class="comp-text-muted smaller text-truncate" style="max-width: 150px;" title="{{ item.motivo }}">
                                     {{ item.motivo|default:"N/A" }}
                                 </div>
                             </td>
                             <td class="observacion-cell" data-item-id="{{ item.id }}">
                                 <div class="observacion-display" title="Haz clic para editar">
-                                    <div class="obs-text text-muted small">
+                                    <div class="obs-text comp-text-muted smaller">
                                         {{ item.observaciones|default:"Sin observaciones" }}
                                     </div>
-                                    <button class="btn btn-link btn-edit-observacion"><i class="fas fa-pencil-alt"></i></button>
+                                    <button type="button" class="btn btn-link btn-edit-observacion" aria-label="Editar observaciones"><i class="fas fa-pencil-alt"></i></button>
                                 </div>
                                 <div class="observacion-edit" style="display: none;">
                                     <textarea class="form-control form-control-sm mb-2" rows="2">{{ item.observaciones|default:"" }}</textarea>
-                                    <div class="d-flex gap-1 justify-content-end">
-                                        <button class="btn btn-success btn-xs px-2 btn-save-observacion"><i class="fas fa-check"></i></button>
-                                        <button class="btn btn-light border btn-xs px-2 btn-cancel-observacion"><i class="fas fa-times"></i></button>
+                                    <div class="d-flex gap-1 justify-content-end observacion-edit-actions">
+                                        <button type="button" class="btn btn-success btn-sm btn-save-observacion" title="Guardar" aria-label="Guardar observaciones"><i class="fas fa-check"></i></button>
+                                        <button type="button" class="btn btn-light border btn-sm btn-cancel-observacion" title="Cancelar" aria-label="Cancelar edición"><i class="fas fa-times"></i></button>
                                     </div>
                                 </div>
                             </td>
-                            <td>
-                                <div class="d-flex gap-1 justify-content-end">
+                            <td class="text-end pe-4">
+                                <div class="comp-action-group justify-content-end">
                                     {% if item.tipo_documento == "Reporte de Vacancia" and item.lote_reporte or item.tipo_documento == "Asignación de Vacancia" and item.lote_reporte %}
-                                        <a href="{% url 'historial_detalle_lote' item.id %}" class="btn btn-action-custom" title="Ver Detalles">
-                                            <i class="fas fa-eye text-info"></i>
+                                        <a href="{% url 'historial_detalle_lote' item.id %}" class="comp-action comp-action-view" title="Ver detalles" aria-label="Ver detalles del registro">
+                                            <i class="fas fa-eye"></i>
                                         </a>
-                                    {% elif item.tipo_documento|startswith:"Trámite -" or item.tipo_documento|startswith:"Oficio -" %}
-                                        <a href="{% url 'historial_detalle_tramite' item.id %}" class="btn btn-action-custom" title="Ver Detalles">
-                                            <i class="fas fa-eye text-info"></i>
+                                    {% else %}
+                                        <a href="{% url 'historial_detalle_tramite' item.id %}" class="comp-action comp-action-view" title="Ver detalles" aria-label="Ver detalles del registro">
+                                            <i class="fas fa-eye"></i>
                                         </a>
                                     {% endif %}
-                                    
+
                                     {% if item.ruta_archivo or item.lote_reporte.archivo_generado %}
-                                        <a href="{% url 'descargar_archivo_historial' item.id %}" class="btn btn-action-custom" target="_blank" title="Descargar Documento">
-                                            <i class="fas fa-download text-primary"></i>
+                                        <a href="{% url 'descargar_archivo_historial' item.id %}" class="comp-action comp-action-view" target="_blank" rel="noopener" title="Descargar documento" aria-label="Descargar documento">
+                                            <i class="fas fa-download"></i>
                                         </a>
                                     {% endif %}
-                                    
-                                    <button class="btn btn-action-custom btn-delete-historial" data-item-id="{{ item.id }}" title="Eliminar Registro">
-                                        <i class="fas fa-trash text-danger"></i>
+
+                                    <button type="button" class="comp-action comp-action-delete btn-delete-historial" data-item-id="{{ item.id }}" title="Eliminar registro" aria-label="Eliminar registro">
+                                        <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             </td>
@@ -254,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
             search: "_INPUT_",
             searchPlaceholder: "Buscar en historial..."
         },
-        dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>',
+        dom: '<"d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"lf>rt<"d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3"ip>',
         drawCallback: function() {
             $('.dataTables_paginate > .pagination').addClass('pagination-sm');
         }
@@ -281,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
     $('#historialTable tbody').on('click', '.btn-delete-historial', function() {
         const button = this;
         const itemId = $(this).data('item-id');
-        
+
         if (confirm('¿Eliminar definitivamente este registro del historial?')) {
             fetch(`/historial/eliminar/${itemId}/`, {
                 method: 'POST',

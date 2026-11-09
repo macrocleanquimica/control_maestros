@@ -19,11 +19,11 @@ def is_admin_user(user):
     """
     Verifica si el usuario es administrador:
     - Superusuario, O
-    - Staff que pertenece al grupo 'Administrador'
+    - Staff que pertenece al grupo 'ADMINISTRADOR'
     """
     if user.is_superuser:
         return True
-    if user.is_staff and user.groups.filter(name='Administrador').exists():
+    if user.is_staff and user.groups.filter(name='ADMINISTRADOR').exists():
         return True
     return False
 
@@ -93,6 +93,11 @@ class UserCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView):
     template_name = 'gestion_escolar/usuarios/user_form.html'
     success_url = reverse_lazy('user_list')
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['puede_dar_superusuario'] = self.request.user.is_superuser
+        return kwargs
+
     def form_valid(self, form):
         response = super().form_valid(form)
         messages.success(
@@ -126,6 +131,7 @@ class UserUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
+        kwargs['puede_dar_superusuario'] = self.request.user.is_superuser
         return kwargs
 
     def form_valid(self, form):
@@ -305,22 +311,25 @@ def user_datatable_ajax(request):
         ultimo_login = user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Nunca'
         
         # Acciones
+        toggle_class = 'comp-action-delete' if user.is_active else 'comp-action-success'
+        toggle_icon = 'ban' if user.is_active else 'check'
         acciones = f'''
-            <div class="d-flex gap-1 justify-content-center">
-                <a href="/ajustes/usuarios/{user.pk}/detalle/" class="btn btn-sm btn-light border btn-action-custom" title="Ver Detalles">
-                    <i class="fas fa-eye text-info"></i>
+            <div class="comp-action-group">
+                <a href="/ajustes/usuarios/{user.pk}/detalle/" class="comp-action comp-action-view" title="Ver detalles" aria-label="Ver detalles de {user.username}">
+                    <i class="fas fa-eye"></i>
                 </a>
-                <a href="/ajustes/usuarios/{user.pk}/editar/" class="btn btn-sm btn-light border btn-action-custom" title="Editar">
-                    <i class="fas fa-edit text-primary"></i>
+                <a href="/ajustes/usuarios/{user.pk}/editar/" class="comp-action comp-action-edit" title="Editar" aria-label="Editar a {user.username}">
+                    <i class="fas fa-edit"></i>
                 </a>
-                <a href="/ajustes/usuarios/{user.pk}/password/" class="btn btn-sm btn-light border btn-action-custom" title="Cambiar Contraseña">
-                    <i class="fas fa-key text-warning"></i>
+                <a href="/ajustes/usuarios/{user.pk}/password/" class="comp-action comp-action-warning" title="Cambiar contraseña" aria-label="Cambiar contraseña de {user.username}">
+                    <i class="fas fa-key"></i>
                 </a>
-                <button class="btn btn-sm btn-light border btn-action-custom toggle-active" 
+                <button class="comp-action {toggle_class} toggle-active" 
                         data-user-id="{user.pk}" 
                         data-current-state="{'active' if user.is_active else 'inactive'}"
-                        title="{'Desactivar' if user.is_active else 'Activar'}">
-                    <i class="fas fa-{'ban text-danger' if user.is_active else 'check text-success'}"></i>
+                        title="{'Desactivar' if user.is_active else 'Activar'}"
+                        aria-label="{'Desactivar' if user.is_active else 'Activar'} a {user.username}">
+                    <i class="fas fa-{toggle_icon}"></i>
                 </button>
             </div>
         '''

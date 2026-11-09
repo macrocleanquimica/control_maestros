@@ -4,240 +4,112 @@
 {% block title %}{{ zona.etiqueta }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .premium-header {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    /* Tarjeta única */
-    .premium-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-        margin-bottom: 1.5rem;
-    }
-
-    .card-section {
-        padding: 1.75rem clamp(17px, 3vw, 2.5rem);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .card-section:last-child {
-        border-bottom: none;
-    }
-
-    .section-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.25rem;
-    }
-
-    .section-header h5 {
-        font-size: 0.95rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--text, #1d1d1f);
-        margin: 0;
-    }
-
-    .section-icon {
-        display: none;
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .info-item {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .info-label {
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        letter-spacing: 0.025em;
-    }
-
-    .info-value {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--text, #1d1d1f);
-    }
-
-    /* Tabla interna */
-    .table-container {
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .table thead th {
-        background: var(--surface, #fff);
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        color: var(--text-2, #6e6e73);
-        padding: 0.9rem 1.5rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .table tbody td {
-        padding: 0.9rem 1.5rem;
-        font-size: 0.9rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    .table tbody tr:hover td {
-        background: var(--hover, #fbfbfd);
-    }
-
-    /* Etiquetas neutras */
-    .badge-soft, .bg-soft-info {
-        background: rgba(0,0,0,0.05) !important;
-        color: var(--text-2, #6e6e73) !important;
-        font-weight: 600;
-        padding: 0.4em 1em;
-        border-radius: 2rem;
-    }
-
-    @media print {
-        .premium-header, .btn, footer, .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate {
-            display: none !important;
-        }
-        .page-container { padding: 0; }
-        .premium-card { border: none; box-shadow: none; }
-        .card-section { padding: 1.5rem 0; }
-    }
-</style>
-
-<div class="page-container">
-    <!-- Header -->
-    <div class="premium-header">
-        <div class="header-info">
-            <h1 class="apple-title">{{ zona.etiqueta }}</h1>
-            <p class="apple-subtitle mb-0">Centros de trabajo y supervisión.</p>
+<div class="comp-page-container comp-detail">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ zona.etiqueta }}</h1>
+            <p class="comp-subtitle">Centros de trabajo y supervisión de la zona.</p>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <button onclick="window.print();" class="apple-btn-ghost">
-                <i class="fas fa-print me-2"></i> Imprimir
+        <div class="comp-actions">
+            <button type="button" onclick="window.print();" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-print"></i> Imprimir
             </button>
-            <a href="{% url 'lista_zonas' %}" class="apple-btn-ghost">
-                <i class="fas fa-arrow-left me-2"></i> Regresar
+            <a href="{% url 'lista_zonas' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> Regresar
             </a>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="premium-card">
-        <!-- Section 1: Supervisor Information -->
-        <div class="card-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="fas fa-user-tie"></i></div>
-                <h5>Supervisión de Zona</h5>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="comp-alert {% if message.tags == 'error' %}comp-alert-danger{% elif message.tags == 'success' %}comp-alert-success{% else %}comp-alert-info{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
             </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="comp-panel">
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h4>Supervisión de Zona</h4>
+            </div>
+
             {% if zona.supervisor %}
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">Nombre del Supervisor</span>
-                    <span class="info-value fw-bold">{{ zona.supervisor.nombres }} {{ zona.supervisor.a_paterno }} {{ zona.supervisor.a_materno }}</span>
+                <div class="comp-info-grid">
+                    <div class="comp-info-item">
+                        <span class="comp-info-label">Nombre del Supervisor</span>
+                        <span class="comp-info-value">{{ zona.supervisor.nombres }} {{ zona.supervisor.a_paterno }} {{ zona.supervisor.a_materno }}</span>
+                    </div>
+                    <div class="comp-info-item">
+                        <span class="comp-info-label">Correo Electrónico</span>
+                        <span class="comp-info-value">
+                            <i class="fas fa-envelope me-2 comp-text-muted"></i>{{ zona.supervisor.email|default:"---" }}
+                        </span>
+                    </div>
+                    <div class="comp-info-item">
+                        <span class="comp-info-label">Teléfono de Contacto</span>
+                        <span class="comp-info-value">
+                            <i class="fas fa-phone me-2 comp-text-muted"></i>{{ zona.supervisor.telefono|default:"---" }}
+                        </span>
+                    </div>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Correo Electrónico</span>
-                    <span class="info-value"><i class="fas fa-envelope me-2 text-muted"></i>{{ zona.supervisor.email|default:"---" }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Teléfono de Contacto</span>
-                    <span class="info-value"><i class="fas fa-phone me-2 text-muted"></i>{{ zona.supervisor.telefono|default:"---" }}</span>
-                </div>
-            </div>
             {% else %}
-            <div class="text-center py-4 bg-light rounded-4">
-                <i class="fas fa-user-slash text-muted mb-2 opacity-50"></i>
-                <p class="text-muted small mb-0 fw-bold">No hay un supervisor asignado actualmente a esta zona.</p>
-            </div>
+                <div class="comp-empty-state comp-empty-state-sm">
+                    <i class="fas fa-user-slash"></i>
+                    <p>No hay un supervisor asignado actualmente a esta zona.</p>
+                </div>
             {% endif %}
         </div>
 
-        <!-- Section 2: Zone Remarks -->
-        <div class="card-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="fas fa-sticky-note"></i></div>
-                <h5>Observaciones Generales</h5>
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h4>Observaciones Generales</h4>
             </div>
-            <div class="p-0">
-                <p class="mb-0 text-muted small fw-medium">{{ zona.observaciones|default:"Sin observaciones adicionales registradas para esta zona."|linebreaksbr }}</p>
-            </div>
+            <p class="mb-0 comp-text-muted small">{{ zona.observaciones|default:"Sin observaciones adicionales registradas para esta zona."|linebreaksbr }}</p>
         </div>
 
-        <!-- Section 3: Schools in Zone -->
-        <div class="card-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="fas fa-school"></i></div>
-                <h5>Centros de Trabajo Adscritos ({{ escuelas.count }})</h5>
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h4>Centros de Trabajo Adscritos</h4>
+                <span class="comp-badge comp-badge-soft ms-auto">{{ escuelas.count }}</span>
             </div>
-            
+
             {% if escuelas %}
-            <div class="table-responsive table-container shadow-sm mt-2">
-                <table id="tablaEscuelas" class="table table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th class="ps-4">C.C.T.</th>
-                            <th>Nombre del Centro de Trabajo</th>
-                            <th>Turno</th>
-                            <th>Domicilio</th>
-                            <th class="text-end pe-4">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for escuela in escuelas %}
-                        <tr>
-                            <td class="ps-4">
-                                <span class="badge bg-soft-info text-info rounded-pill px-3">{{ escuela.id_escuela }}</span>
-                            </td>
-                            <td><span class="fw-bold">{{ escuela.nombre_ct }}</span></td>
-                            <td>{{ escuela.get_turno_display }}</td>
-                            <td class="small">{{ escuela.domicilio|truncatechars:50 }}</td>
-                            <td class="text-end pe-4">
-                                <a href="{% url 'detalle_escuela' escuela.pk %}" class="apple-btn-ghost" style="min-height: 38px; font-size: 13px;" title="Ver Detalles">
-                                    <i class="fas fa-eye me-1"></i> Detalles
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                <div class="table-responsive">
+                    <table id="tablaEscuelas" class="comp-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>C.C.T.</th>
+                                <th>Nombre del Centro de Trabajo</th>
+                                <th>Turno</th>
+                                <th>Domicilio</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for escuela in escuelas %}
+                                <tr>
+                                    <td><span class="comp-code">{{ escuela.id_escuela }}</span></td>
+                                    <td><span class="fw-semibold">{{ escuela.nombre_ct }}</span></td>
+                                    <td>{{ escuela.get_turno_display }}</td>
+                                    <td class="small">{{ escuela.domicilio|truncatechars:50 }}</td>
+                                    <td class="text-end">
+                                        <a href="{% url 'detalle_escuela' escuela.pk %}" class="comp-action comp-action-view" title="Ver detalles" aria-label="Ver detalles de {{ escuela.nombre_ct }}">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
-            <div class="text-center py-5 bg-white rounded-4 border border-dashed">
-                <i class="fas fa-school fa-3x text-muted opacity-25 mb-3"></i>
-                <p class="text-muted fw-bold mb-0">No hay centros de trabajo registrados en esta zona.</p>
-            </div>
+                <div class="comp-empty-state">
+                    <i class="fas fa-school"></i>
+                    <p>No hay centros de trabajo registrados en esta zona.</p>
+                </div>
             {% endif %}
         </div>
     </div>
@@ -259,4 +131,14 @@
         });
     });
 </script>
+<style>
+    @media print {
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            display: none !important;
+        }
+    }
+</style>
 {% endblock %}

@@ -6,6 +6,16 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     path('', views.index, name='index'),
     
+    # URLs para Plantillas (diseñador de plantillas Word)
+    path('plantillas/', views.lista_plantillas, name='lista_plantillas'),
+    path('plantillas/nueva/', views.crear_plantilla, name='crear_plantilla'),
+    path('plantillas/<int:pk>/editar/', views.editar_plantilla, name='editar_plantilla'),
+    path('plantillas/<int:pk>/duplicar/', views.duplicar_plantilla, name='duplicar_plantilla'),
+    path('plantillas/<int:pk>/activar/', views.alternar_activa, name='alternar_plantilla'),
+    path('plantillas/<int:pk>/eliminar/', views.eliminar_plantilla, name='eliminar_plantilla'),
+    path('plantillas/<int:pk>/probar/', views.probar_plantilla, name='probar_plantilla'),
+    path('plantillas/<int:pk>/analizar/', views.analizar_variables, name='analizar_variables_plantilla'),
+
     # URLs para Zonas
     path('zonas/', views.lista_zonas, name='lista_zonas'),
     path('zonas/agregar/', views.agregar_zona, name='agregar_zona'),
@@ -60,6 +70,7 @@ urlpatterns = [
     path('tramites/get_motivos_tramite/', views.get_motivos_tramite_ajax, name='get_motivos_tramite_ajax'),
     path('tramites/get_maestro_data/', views.get_maestro_data_ajax, name='get_maestro_data'),
     path('buscar_maestros/', views.buscar_maestros_ajax, name='buscar_maestros_ajax'),
+    path('maestros/verificar-curp/', views.verificar_curp_ajax, name='verificar_curp_ajax'),
     path('buscar_escuelas/', views.buscar_escuelas_ajax, name='buscar_escuelas_ajax'),
 
     # URLs para Reporte de Vacancia
@@ -75,6 +86,7 @@ urlpatterns = [
     path('vacancias/eliminar/<int:pk>/', views.eliminar_vacancia_lote, name='eliminar_vacancia_lote'),
     path('vacancias/lotes/', views.lista_lotes_vacancia, name='lista_lotes_vacancia'),
     path('vacancias/lotes/<int:lote_id>/cancelar/', views.cancelar_lote_vacancia, name='cancelar_lote_vacancia'),
+    path('vacancias/lotes/<int:lote_id>/retomar/', views.retomar_lote_vacancia, name='retomar_lote_vacancia'),
     path('reportes/vacancias/', views.reporte_vacancias_fecha, name='reporte_vacancias_fecha'),
     path('reportes/vacancias/exportar/', views.exportar_reporte_vacancias_excel, name='exportar_reporte_vacancias_excel'),
     path('tramites/get_prelacion_data/', views.get_prelacion_data_ajax, name='get_prelacion_data_ajax'),
@@ -86,6 +98,7 @@ urlpatterns = [
     path('historial/guardar_observacion/<int:item_id>/', views.guardar_observacion_historial, name='guardar_observacion_historial'),
     path('historial/detalle_lote/<int:historial_id>/', views.historial_detalle_lote, name='historial_detalle_lote'),
     path('historial/detalle_tramite/<int:historial_id>/', views.historial_detalle_tramite, name='historial_detalle_tramite'),
+    path('historial/corregir_vacancia/<int:historial_id>/', views.corregir_vacancia_historial, name='corregir_vacancia_historial'),
     path('historial/corregir/<int:item_id>/', views.corregir_tramite, name='corregir_tramite'),
 
     # URLs para Reportes
@@ -97,6 +110,14 @@ urlpatterns = [
     path('reportes/reporteador/', views.reporteador_datos, name='reporteador_datos'),
     path('reportes/reporteador/exportar/', views.exportar_datos_dinamicos_excel, name='exportar_datos_dinamicos_excel'),
     path('reportes/centros_trabajo/pdf/', views.reporte_centros_trabajo_pdf, name='reporte_centros_trabajo_pdf'),
+    path('reportes/control_basificacion/', views.reporte_control_basificacion, name='reporte_control_basificacion'),
+    path('reportes/control_basificacion/export/excel/', views.export_control_basificacion_excel, name='export_control_basificacion_excel'),
+    # Catalogo de Apreciaciones
+    path('reportes/apreciaciones/', views.reporte_apreciaciones, name='reporte_apreciaciones'),
+    path('reportes/apreciaciones/export/excel/', views.export_apreciaciones_excel, name='export_apreciaciones_excel'),
+    path('reportes/apreciaciones/crear/', views.apreciacion_crear, name='apreciacion_crear'),
+    path('reportes/apreciaciones/<int:pk>/editar/', views.apreciacion_editar, name='apreciacion_editar'),
+    path('reportes/apreciaciones/<int:pk>/eliminar/', views.apreciacion_eliminar, name='apreciacion_eliminar'),
 
     # URLs para Pendientes y Correspondencia
     path('pendientes/', views.PendienteActiveListView.as_view(), name='pendientes_activos'),

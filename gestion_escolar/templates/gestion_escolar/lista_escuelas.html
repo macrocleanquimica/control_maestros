@@ -4,112 +4,40 @@
 {% block title %}Gestión de Escuelas | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .header-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    /* Tabla en panel único */
-    .table-container-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    thead th {
-        background: var(--surface, #fff) !important;
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        color: var(--text-2, #6e6e73);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important;
-        padding: 0.9rem 1rem !important;
-    }
-
-    tbody td {
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    tbody tr:hover td {
-        background: var(--hover, #fbfbfd);
-    }
-
-    .cct-badge {
-        background: rgba(0,0,0,0.05);
-        color: var(--text, #1d1d1f);
-        padding: 0.3rem 0.6rem;
-        border-radius: 0.4rem;
-        font-family: var(--mono, monospace);
-        font-weight: 600;
-        font-size: 0.85rem;
-        font-variant-numeric: tabular-nums;
-    }
-
-    /* Botones de acción sin saltos */
-    .btn-action-custom {
-        transition: background 0.2s;
-    }
-
-</style>
-
-<div class="page-container">
-    <!-- Header Section -->
-    <div class="header-section">
-        <div class="header-title">
-            <h1 class="apple-title mb-0">Escuelas</h1>
-            <p class="apple-subtitle mb-0">Centros de trabajo, zonas y sostenimientos.</p>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Escuelas</h1>
+            <p class="comp-subtitle">Centros de trabajo, zonas y sostenimientos.</p>
         </div>
-        <div class="header-actions d-flex gap-2 flex-wrap">
-            <a href="{% url 'mapa_zonas' %}" class="apple-btn-ghost">
+        <div class="comp-actions">
+            <a href="{% url 'mapa_zonas' %}" class="btn btn-outline-secondary">
                 <i class="fas fa-map-marked-alt me-2"></i> Mapa
             </a>
-            <button id="export-excel-escuelas-btn" class="apple-btn-ghost">
+            <button type="button" id="export-excel-escuelas-btn" class="btn btn-outline-secondary">
                 <i class="fas fa-file-excel me-2"></i> Exportar
             </button>
-            <a href="{% url 'agregar_escuela' %}" class="apple-btn">
+            <a href="{% url 'agregar_escuela' %}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i> Agregar
             </a>
         </div>
     </div>
 
     {% if messages %}
-    <div class="mb-4">
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
-                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="comp-alert comp-alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
             </div>
         {% endfor %}
-    </div>
     {% endif %}
 
     <!-- Table Section -->
-    <div class="table-container-card">
-        <div class="card-body p-0">
+    <div class="comp-panel">
+        <div class="comp-panel-body">
             <div class="table-responsive">
-                <table id="tablaEscuelasPremium" class="table table-hover align-middle mb-0 w-100">
+                <table id="tablaEscuelasPremium" class="comp-table comp-table-sm align-middle w-100">
                     <thead>
                         <tr>
                             <th>CCT</th>
@@ -124,32 +52,32 @@
                     <tbody>
                         {% for escuela in escuelas %}
                         <tr>
-                            <td><span class="cct-badge">{{ escuela.id_escuela }}</span></td>
+                            <td><span class="comp-badge comp-badge-soft comp-font-mono comp-tabular-nums">{{ escuela.id_escuela }}</span></td>
                             <td>
                                 <div class="fw-bold text-dark">{{ escuela.nombre_ct }}</div>
                                 <div class="text-muted small">U.D: {{ escuela.u_d }}</div>
                             </td>
                             <td>
-                                <span class="apple-tag">
+                                <span class="comp-badge comp-badge-soft">
                                     <i class="fas fa-map-marker-alt me-1"></i> {{ escuela.zona_esc.etiqueta }}
                                 </span>
                             </td>
                             <td><span class="text-muted small">{{ escuela.get_turno_display }}</span></td>
                             <td><span class="text-muted small">{{ escuela.zona_economica }}</span></td>
-                            <td><span class="apple-tag">{{ escuela.get_sostenimiento_display }}</span></td>
+                            <td><span class="comp-badge comp-badge-soft">{{ escuela.get_sostenimiento_display }}</span></td>
                             <td class="text-center">
-                                <div class="d-flex gap-1 justify-content-center">
-                                    <a href="{% url 'detalle_escuela' escuela.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Ver Detalle">
-                                        <i class="fas fa-eye text-info"></i>
+                                <div class="comp-action-group">
+                                    <a href="{% url 'detalle_escuela' escuela.pk %}" class="comp-action comp-action-view" title="Ver detalle" aria-label="Ver detalle de la escuela {{ escuela.id_escuela }}">
+                                        <i class="fas fa-eye"></i>
                                     </a>
                                     {% if perms.gestion_escolar.change_escuela %}
-                                    <a href="{% url 'editar_escuela' escuela.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Editar">
-                                        <i class="fas fa-edit text-primary"></i>
+                                    <a href="{% url 'editar_escuela' escuela.pk %}" class="comp-action comp-action-edit" title="Editar" aria-label="Editar escuela {{ escuela.id_escuela }}">
+                                        <i class="fas fa-edit"></i>
                                     </a>
                                     {% endif %}
                                     {% if perms.gestion_escolar.delete_escuela %}
-                                    <a href="{% url 'eliminar_escuela' escuela.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Eliminar">
-                                        <i class="fas fa-trash text-danger"></i>
+                                    <a href="{% url 'eliminar_escuela' escuela.pk %}" class="comp-action comp-action-delete" title="Eliminar" aria-label="Eliminar escuela {{ escuela.id_escuela }}">
+                                        <i class="fas fa-trash"></i>
                                     </a>
                                     {% endif %}
                                 </div>
@@ -157,9 +85,11 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center py-5 text-muted">
-                                <i class="fas fa-school fa-3x mb-3 opacity-25"></i>
-                                <p class="mb-0">No se encontraron escuelas registradas.</p>
+                            <td colspan="7">
+                                <div class="comp-empty-state">
+                                    <i class="fas fa-school"></i>
+                                    <p>No se encontraron escuelas registradas.</p>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -202,8 +132,10 @@ $(document).ready(function() {
         }
     });
 
-    // Filtro personalizado para búsqueda insensible a acentos
-    $('.dataTables_filter input').off().on('keyup', function() {
+    // Filtro personalizado para búsqueda insensible a acentos.
+    // Se escucha también "input" y "search" para que al borrar con la X
+    // del campo se limpie el filtro (antes solo se atendía keyup).
+    $('.dataTables_filter input').off().on('input search keyup', function() {
         table.search(accent_normalize(this.value)).draw();
     });
 

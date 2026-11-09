@@ -5,211 +5,123 @@
 
 {% block content %}
 <style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-        max-width: 900px;
+    .pendientes-page {
+        max-width: 1000px;
         margin: 0 auto;
     }
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .premium-header {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    /* Lista única con líneas finas */
-    .task-list-container {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    .task-card {
-        padding: 1.1rem 1.5rem;
+    .pendiente-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 1rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
+        padding: 1.1rem 1.5rem;
+        border-bottom: 1px solid var(--comp-hairline);
     }
 
-    .task-card:last-child {
+    .pendiente-item:last-child {
         border-bottom: none;
     }
 
-    .task-card:hover {
-        background: var(--hover, #fbfbfd);
+    .pendiente-item:hover {
+        background: var(--comp-hover);
     }
 
-    .task-card.completed {
+    .pendiente-item.is-completed {
         opacity: 0.65;
     }
 
-    .task-card.completed .task-title {
+    .pendiente-item.is-completed .pendiente-title {
         text-decoration: line-through;
-        color: var(--text-2, #6e6e73);
+        color: var(--comp-text-2);
     }
 
-    .task-title {
+    .pendiente-title {
         font-weight: 600;
         letter-spacing: -0.01em;
-        color: var(--text, #1d1d1f);
+        color: var(--comp-text);
         margin-bottom: 0.25rem;
         font-size: 1rem;
     }
 
-    .task-desc {
-        color: var(--text-2, #6e6e73);
+    .pendiente-desc {
+        color: var(--comp-text-2);
         font-size: 0.9rem;
         margin-bottom: 0.5rem;
         line-height: 1.5;
     }
 
-    .task-meta {
+    .pendiente-meta {
         font-size: 0.75rem;
         font-weight: 500;
-        color: var(--text-3, #86868b);
+        color: var(--comp-text-3);
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 0.5rem;
         font-variant-numeric: tabular-nums;
     }
-
-    /* Botón completar */
-    .btn-complete {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        border: 1px solid rgba(0,0,0,0.15);
-        background: white;
-        color: transparent;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        flex-shrink: 0;
-    }
-
-    .btn-complete:hover {
-        border-color: var(--text, #1d1d1f);
-        color: var(--text, #1d1d1f);
-    }
-
-    .badge-completed {
-        background: rgba(0,0,0,0.05);
-        color: var(--text-2, #6e6e73);
-        padding: 0.5rem 1rem;
-        border-radius: 2rem;
-        font-weight: 600;
-        font-size: 0.7rem;
-    }
-
-    /* Pestañas segmentadas */
-    .nav-tabs-premium {
-        border-bottom: none;
-        margin-bottom: 1.5rem;
-        gap: 0.5rem;
-    }
-
-    .nav-tabs-premium .nav-link {
-        border: 1px solid transparent;
-        border-radius: 2rem;
-        padding: 0.6rem 1.2rem;
-        color: var(--text-2, #6e6e73);
-        font-weight: 600;
-        background: transparent;
-    }
-
-    .nav-tabs-premium .nav-link:hover {
-        background: rgba(0,0,0,0.05);
-        color: var(--text, #1d1d1f);
-    }
-
-    .nav-tabs-premium .nav-link.active {
-        background: var(--text, #1d1d1f);
-        color: white;
-        border-color: var(--text, #1d1d1f);
-    }
 </style>
 
-<div class="page-container">
-    <!-- Header -->
-    <div class="premium-header">
-        <div class="header-info">
-            <h1 class="apple-title" style="font-size: clamp(20px, 3vw, 26px);">Pendientes</h1>
-            <p class="apple-subtitle mb-0">Tus actividades por hacer.</p>
+<div class="comp-page-container pendientes-page">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Pendientes</h1>
+            <p class="comp-subtitle">Tus actividades por hacer.</p>
         </div>
-        <a href="{% url 'pendientes_crear' %}" class="apple-btn">
-            <i class="fas fa-plus me-2"></i> Nuevo
+        <div class="comp-actions">
+            <a href="{% url 'pendientes_crear' %}" class="comp-btn comp-btn-primary">
+                <i class="fas fa-plus"></i> Nuevo
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="comp-alert comp-alert-success" role="alert">
+                <i class="fas fa-check-circle"></i>
+                <div class="fw-bold">{{ message }}</div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="comp-segmented mb-4">
+        <a class="btn {% if not vista_todos %}active{% endif %}" href="{% url 'pendientes_activos' %}">
+            <i class="fas fa-clock me-2"></i> Activos
+        </a>
+        <a class="btn {% if vista_todos %}active{% endif %}" href="{% url 'pendientes_todos' %}">
+            <i class="fas fa-history me-2"></i> Historial Completo
         </a>
     </div>
 
-    <!-- Messages -->
-    {% if messages %}
-    <div class="mb-4">
-        {% for message in messages %}
-        <div class="alert alert-success rounded-4 border-0 shadow-sm d-flex align-items-center gap-2 py-3" role="alert">
-            <i class="fas fa-check-circle fa-lg"></i>
-            <span class="fw-bold">{{ message }}</span>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- Tabs -->
-    <ul class="nav nav-tabs nav-tabs-premium">
-        <li class="nav-item">
-            <a class="nav-link {% if not vista_todos %}active{% endif %}" href="{% url 'pendientes_activos' %}">
-                <i class="fas fa-clock me-2"></i> Activos
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {% if vista_todos %}active{% endif %}" href="{% url 'pendientes_todos' %}">
-                <i class="fas fa-history me-2"></i> Historial Completo
-            </a>
-        </li>
-    </ul>
-
-    <!-- Task List -->
-    <div class="task-list-container">
+    <div class="comp-panel">
         {% if pendientes %}
             {% for pendiente in pendientes %}
-                <div class="task-card {% if pendiente.completado %}completed{% endif %}">
+                <div class="pendiente-item {% if pendiente.completado %}is-completed{% endif %}">
                     <div class="d-flex align-items-start gap-3">
                         {% if not pendiente.completado %}
-                            <form method="post" action="{% url 'pendiente_marcar_completado' pendiente.pk %}">
+                            <form method="post" action="{% url 'pendiente_marcar_completado' pendiente.pk %}" class="m-0">
                                 {% csrf_token %}
-                                <button type="submit" class="btn-complete" title="Marcar como completado">
+                                <button type="submit" class="comp-action comp-action-success" title="Marcar como completado" aria-label="Marcar como completado">
                                     <i class="fas fa-check"></i>
                                 </button>
                             </form>
                         {% else %}
-                            <div class="btn-complete bg-success text-white border-success">
+                            <span class="comp-action comp-action-success disabled" role="img" aria-label="Completado">
                                 <i class="fas fa-check"></i>
-                            </div>
+                            </span>
                         {% endif %}
-                        
+
                         <div>
-                            <h5 class="task-title">{{ pendiente.titulo }}</h5>
+                            <h5 class="pendiente-title">{{ pendiente.titulo }}</h5>
                             {% if pendiente.descripcion %}
-                                <p class="task-desc">{{ pendiente.descripcion }}</p>
+                                <p class="pendiente-desc">{{ pendiente.descripcion }}</p>
                             {% endif %}
-                            <div class="task-meta">
+                            <div class="pendiente-meta">
                                 <i class="far fa-calendar-alt"></i>
                                 <span>Programado: {{ pendiente.fecha_programada|date:"d M Y" }}</span>
                                 {% if not pendiente.completado and pendiente.fecha_programada < today %}
-                                    <span class="text-danger fw-bold ms-2"><i class="fas fa-exclamation-circle me-1"></i>Vencido</span>
+                                    <span class="comp-badge comp-badge-danger"><i class="fas fa-exclamation-circle me-1"></i>Vencido</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -217,20 +129,18 @@
 
                     <div class="d-flex align-items-center">
                         {% if pendiente.completado %}
-                            <span class="badge-completed"><i class="fas fa-medal me-1"></i> Completado</span>
+                            <span class="comp-badge comp-badge-soft"><i class="fas fa-medal me-1"></i> Completado</span>
                         {% endif %}
                     </div>
                 </div>
             {% endfor %}
         {% else %}
-            <div class="text-center py-5 bg-white rounded-5 border border-dashed">
-                <div class="mb-3">
-                    <i class="fas fa-clipboard-check fa-4x text-muted opacity-25"></i>
-                </div>
-                <h5 class="fw-bold text-muted">No tienes tareas para mostrar</h5>
-                <p class="text-muted small">¡Excelente! Estás al día con tus pendientes.</p>
-                <a href="{% url 'pendientes_crear' %}" class="apple-btn mt-2">
-                    Crear tarea
+            <div class="comp-empty-state">
+                <i class="fas fa-clipboard-check"></i>
+                <p>No tienes tareas para mostrar</p>
+                <span class="comp-text-muted small mt-1">¡Excelente! Estás al día con tus pendientes.</span>
+                <a href="{% url 'pendientes_crear' %}" class="comp-btn comp-btn-primary mt-3">
+                    <i class="fas fa-plus"></i> Crear tarea
                 </a>
             </div>
         {% endif %}

@@ -1,56 +1,91 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
+{% block title %}Agregar Escuela | Control de Maestros{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>Agregar Nueva Escuela</h2>
-    
-    <div class="card">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.id_escuela.id_for_label }}">CCT:</label>
-                            {{ form.id_escuela }}
-                            <small class="form-text text-muted">Formato: 10DML0013Q</small>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ form.nombre_ct.id_for_label }}">Nombre:</label>
-                            {{ form.nombre_ct }}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="{{ form.zona_esc.id_for_label }}">Zona:</label>
-                            {{ form.zona_esc }}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="{{ form.turno.id_for_label }}">Turno:</label>
-                            {{ form.turno }}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="{{ form.zona_economica.id_for_label }}">Zona Económica:</label>
-                            {{ form.zona_economica }}
-                        </div>
-                    </div>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">Guardar Escuela</button>
-                <a href="{% url 'lista_escuelas' %}" class="btn btn-secondary">Cancelar</a>
-            </form>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Agregar Nueva Escuela</h1>
+            <p class="comp-subtitle">Datos del centro de trabajo.</p>
+        </div>
+        <div class="comp-actions">
+            <a href="{% url 'lista_escuelas' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
         </div>
     </div>
+
+    <form method="post" class="comp-form needs-validation">
+        {% csrf_token %}
+
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="comp-form-group">
+                            <label for="{{ form.id_escuela.id_for_label }}" class="comp-form-label">Clave (CCT)</label>
+                            {{ form.id_escuela }}
+                            {% if form.id_escuela.errors %}
+                                <div class="comp-form-error">{% for error in form.id_escuela.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                            <div class="comp-form-text">Formato: 10DML0013Q</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="comp-form-group">
+                            <label for="{{ form.nombre_ct.id_for_label }}" class="comp-form-label">Nombre Oficial del Centro de Trabajo</label>
+                            {{ form.nombre_ct }}
+                            {% if form.nombre_ct.errors %}
+                                <div class="comp-form-error">{% for error in form.nombre_ct.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="comp-form-group">
+                            <label for="{{ form.zona_esc.id_for_label }}" class="comp-form-label">Zona Escolar</label>
+                            {{ form.zona_esc }}
+                            {% if form.zona_esc.errors %}
+                                <div class="comp-form-error">{% for error in form.zona_esc.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="comp-form-group">
+                            <label for="{{ form.turno.id_for_label }}" class="comp-form-label">Turno</label>
+                            {{ form.turno }}
+                            {% if form.turno.errors %}
+                                <div class="comp-form-error">{% for error in form.turno.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="comp-form-group">
+                            <label for="{{ form.zona_economica.id_for_label }}" class="comp-form-label">Zona Económica</label>
+                            {{ form.zona_economica }}
+                            {% if form.zona_economica.errors %}
+                                <div class="comp-form-error">{% for error in form.zona_economica.errors %}{{ error }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="comp-form-actions">
+                    <button type="submit" class="comp-btn comp-btn-primary">
+                        <i class="fas fa-save"></i>
+                        <span>Guardar Escuela</span>
+                    </button>
+                    <a href="{% url 'lista_escuelas' %}" class="comp-btn comp-btn-ghost">
+                        <i class="fas fa-times"></i>
+                        <span>Cancelar</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
 {% endblock %}

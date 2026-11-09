@@ -9,7 +9,7 @@ from google.oauth2 import service_account
 # Asegúrate de que los modelos necesarios estén disponibles.
 # A veces es mejor pasar los objetos como argumentos en lugar de importarlos directamente
 # para evitar dependencias circulares, pero por ahora los importamos.
-from ..models import Maestro, Escuela
+from ..models import Maestro, Escuela, Historial, Vacancia
 
 # Carpeta canónica única de plantillas: todo el sistema debe jalar de aquí.
 # Word: gestion_escolar/templates/tramites/Plantillas/Word
@@ -80,6 +80,28 @@ def es_status_activo(status):
     return (status or '').strip().upper().startswith('ACTIV')
 
 
+def es_director(user):
+    """True si el usuario pertenece al grupo Directores."""
+    try:
+        return bool(user.is_authenticated and user.groups.filter(name='Directores').exists())
+    except Exception:
+        return False
+
+
+def escuela_de_director(user):
+    """Escuela del director (via su perfil de maestro vinculado).
+
+    Devuelve None si no es director, no tiene perfil o no tiene escuela.
+    """
+    if not es_director(user):
+        return None
+    try:
+        perfil = user.maestro_profile
+    except AttributeError:
+        return None
+    return getattr(perfil, 'id_escuela', None)
+
+
 def contar_personal(queryset=None):
     """Cuenta PERSONAS únicas (por CURP), no registros/plazas.
 
@@ -140,7 +162,9 @@ def elegir_director_activo(escuela):
     """Elige al director de un centro de trabajo con lógica priorizada:
     1) Maestro con función DIRECTOR y status ACTIVO y categoría E0629 (director formal).
     2) Maestro con función DIRECTOR y status ACTIVO (responsable de dirección sin categoría).
-    Se excluye siempre a los INACTIVO. Devuelve el maestro o None.
+    Se excluye siempre a los INACTIVO y LICENCIA, y a registros fantasma
+    sin nombre (evita que un duplicado vacío gane por ordenamiento NULL-first).
+    Devuelve el maestro o None.
     """
     if not escuela:
         return None
@@ -151,11 +175,19 @@ def elegir_director_activo(escuela):
     activos = [m for m in candidatos if es_status_activo(m.status)]
     if not activos:
         return None
+    # Blindaje: ignorar registros sin nombre (fantasmas de captura).
+    con_nombre = [
+        m for m in activos
+        if ((m.nombres or '').strip() or (m.a_paterno or '').strip()
+            or (m.a_materno or '').strip())
+    ]
+    if not con_nombre:
+        return None
     # Preferir categoría E0629 (director de educación especial)
-    for m in activos:
+    for m in con_nombre:
         if m.categog and m.categog.id_categoria == 'E0629':
             return m
-    return activos[0]
+    return con_nombre[0]
 
 def get_director_info(escuela):
     if not escuela:
@@ -166,9 +198,55 @@ def get_director_info(escuela):
     return {'nombre': 'DIRECTOR NO ENCONTRADO', 'nivel': ''}
 
 # Helper function to get supervisor
+def elegir_supervisor_activo(zona):
+    """Elige al supervisor de una zona con la misma lógica blindada que el director:
+    función SUPERVISOR(A) + status ACTIVO + con nombre. Excluye INACTIVO,
+    LICENCIA y registros fantasma sin nombre. Entre varios, prefiere categoría
+    E0633 (supervisor formal) sobre comisionados con otra categoría.
+    Si no hay nadie por función, usa la FK manual (ver get_supervisor_info).
+    Devuelve el maestro o None.
+    """
+    if not zona:
+        return None
+    candidatos = Maestro.objects.filter(
+        id_escuela__zona_esc=zona,
+        funcion__in=['SUPERVISOR(A)'],
+    )
+    activos = [m for m in candidatos if es_status_activo(m.status)]
+    if not activos:
+        return None
+    con_nombre = [
+        m for m in activos
+        if ((m.nombres or '').strip() or (m.a_paterno or '').strip()
+            or (m.a_materno or '').strip())
+    ]
+    if not con_nombre:
+        return None
+    # Preferir categoría E0633 (supervisor formal) sobre comisionados con
+    # otra categoría (ej. E0629 de dirección).
+    for m in con_nombre:
+        if m.categog and m.categog.id_categoria == 'E0633':
+            return m
+    return con_nombre[0]
+
+def _supervisor_fk_valido(supervisor):
+    """La FK Zona.supervisor puede apuntar a cualquiera; solo vale si está
+    activa y tiene nombre."""
+    if not supervisor:
+        return False
+    return bool(es_status_activo(supervisor.status)) and bool(
+        ((supervisor.nombres or '').strip() or (supervisor.a_paterno or '').strip()
+         or (supervisor.a_materno or '').strip())
+    )
+
 def get_supervisor_info(zona):
     if not zona: return {'nombre': 'SUPERVISOR NO ENCONTRADO', 'nivel': ''}
-    supervisor = Maestro.objects.filter(id_escuela__zona_esc=zona, funcion__in=['SUPERVISOR(A)']).first()
+    supervisor = elegir_supervisor_activo(zona)
+    if supervisor is None and getattr(zona, 'supervisor', None) is not None:
+        # Respaldo: FK manual de la zona, solo si está activa y con nombre.
+        fk = zona.supervisor
+        if _supervisor_fk_valido(fk):
+            supervisor = fk
     if supervisor:
         return {'nombre': get_full_name(supervisor), 'nivel': supervisor.nivel_estudio or ''}
     return {'nombre': 'SUPERVISOR NO ENCONTRADO', 'nivel': ''}
@@ -586,7 +664,7 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'Poblacion': escuela_adscripcion_info['region'],
             'U_D': escuela_adscripcion_info['u_d'],
             'Sostenimiento': escuela_adscripcion_info['sostenimiento'],
-            'Nom_CTCompleto': escuela_adscripcion_info['nombre_ct'],
+            'Nom_CTCompleto': (nombre_interino or nombre_titular) if template_name_upper == 'JUSTIFICACION DE RETROACTIVIDAD' else escuela_adscripcion_info['nombre_ct'],
             'Supervisor': supervisor_adscripcion_info['nombre'],
             'P_Sup': supervisor_adscripcion_info['nivel'],
             'Director': director_adscripcion_info['nombre'],
@@ -678,7 +756,43 @@ def generate_word_document(form_data, plantilla_tramite, user):
             'Presupuestal_Interino_Propio': maestro_interino.clave_presupuestal if maestro_interino else '',
             # Techo financiero del interino (CCT donde se paga al interino)
             'Techo_Financiero_Interino': maestro_interino.techo_f if maestro_interino else '',
+            # --- Variables para JUSTIFICACION DE RETROACTIVIDAD ---
+            'opcionjustificacion': form_data.get('opcionjustificacion') or form_data.get('Razon_Retroactividad', ''),
+            'Razon_Retroactividad': form_data.get('opcionjustificacion') or form_data.get('Razon_Retroactividad', ''),
+            'Nombre_Interino_Retro': form_data.get('Nombre_Interino_Retro', nombre_interino),
+            'Fecha_USICAMM': form_data.get('Fecha_USICAMM') or (form_data.get('fecha_usicamm').strftime('%d/%m/%Y') if hasattr(form_data.get('fecha_usicamm'), 'strftime') else str(form_data.get('fecha_usicamm') or '')),
+            'fecha_usicamm': form_data.get('fecha_usicamm') or form_data.get('Fecha_USICAMM', ''),
+            'Fecha_USICAMM_Letra': form_data.get('Fecha_USICAMM_Letra', ''),
         }
+
+        # --- Campos personalizados y opciones configuradas en el diseñador ---
+        from ..campos_plantilla import config_de_plantilla, nombre_campo_personalizado
+        config_plantilla = getattr(plantilla_tramite, 'configuracion', None) or {}
+        if not isinstance(config_plantilla, dict) or not config_plantilla.get('campos'):
+            config_plantilla = config_de_plantilla(plantilla_tramite)
+
+        for definicion in config_plantilla.get('campos_personalizados') or []:
+            variable = (definicion.get('variable') or '').strip()
+            if not variable:
+                continue
+            nombre_campo = nombre_campo_personalizado(
+                getattr(plantilla_tramite, 'id', 0), variable)
+            valor = form_data.get(nombre_campo) if nombre_campo else None
+            if hasattr(valor, 'strftime'):
+                valor = valor.strftime('%d/%m/%Y')
+            context[variable] = '' if valor is None else valor
+
+        # Cálculo de antigüedad configurable (para plantillas nuevas o que lo
+        # activen desde el diseñador). Si el usuario ya capturó el valor, se
+        # respeta.
+        if config_plantilla.get('calcular_antiguedad'):
+            fecha_corte = form_data.get('fecha_al_corte')
+            fecha_calculo = form_data.get('fecha_del_calculo')
+            if fecha_corte and fecha_calculo and not context.get('antiguedad_funcion'):
+                antiguedad = calculate_time_difference(fecha_corte, fecha_calculo)
+                context['antiguedad_funcion'] = antiguedad
+                if not context.get('antiguedad_categoria'):
+                    context['antiguedad_categoria'] = antiguedad
 
         # Sobrescribir contexto con escuela destino para PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION
         dest_escuela = form_data.get('_dest_escuela')
@@ -723,6 +837,7 @@ def generate_word_document(form_data, plantilla_tramite, user):
             "CAPTURA_DE_GRAVIDEZ": "captura_gravidez",
             "CAMBIO_DE_EFECTOS": "cambio_efectos",
             "ALTA_INICIAL_09": "alta_inicial",
+            "JUSTIFICACION_DE_RETROACTIVIDAD": "justificacion_retroactividad",
         }
         subfolder = subfolder_map.get(template_name_clean, "otros_tramites")
         output_dir = os.path.join(output_base_dir, subfolder)
@@ -735,3 +850,47 @@ def generate_word_document(form_data, plantilla_tramite, user):
     except Exception as e:
         print(f"Error generating Word document: {e}")
         return False, str(e)
+
+def vacancias_candidatas_historial(historial_item):
+    """Vacancias del lote que pueden corresponder a un registro del historial."""
+    if not getattr(historial_item, 'lote_reporte_id', None):
+        return Vacancia.objects.none()
+    qs = Vacancia.objects.filter(lote_id=historial_item.lote_reporte_id)
+    if historial_item.maestro_id:
+        qs = qs.filter(maestro_titular_id=historial_item.maestro_id)
+    return qs.select_related('maestro_titular', 'maestro_interino', 'apreciacion')
+
+
+def vacancia_de_historial(historial_item):
+    """Resuelve la vacancia asociada; devuelve None si hay ambigüedad real."""
+    candidatas = list(vacancias_candidatas_historial(historial_item))
+    if len(candidatas) == 1:
+        return candidatas[0]
+
+    datos = historial_item.datos_tramite or {}
+    if len(candidatas) > 1 and datos:
+        inicio = datos.get('fecha_inicio') or ''
+        final = datos.get('fecha_final') or ''
+        motivo = (datos.get('tipo_movimiento') or '').strip()
+        clave = (datos.get('clave_presupuestal') or '').strip()
+
+        coincidencias = []
+        for vacancia in candidatas:
+            v_inicio = vacancia.fecha_inicio.strftime('%Y-%m-%d') if vacancia.fecha_inicio else ''
+            v_final = vacancia.fecha_final.strftime('%Y-%m-%d') if vacancia.fecha_final else ''
+            v_motivo = (vacancia.tipo_movimiento_reporte or vacancia.tipo_movimiento_original or '').strip()
+            v_clave = (vacancia.clave_presupuestal or '').strip()
+            if inicio and v_inicio != inicio:
+                continue
+            if final and v_final != final:
+                continue
+            if motivo and v_motivo != motivo:
+                continue
+            if clave and v_clave != clave:
+                continue
+            coincidencias.append(vacancia)
+
+        if len(coincidencias) == 1:
+            return coincidencias[0]
+
+    return None

@@ -1,4 +1,6 @@
+import io
 import os
+import zipfile
 import openpyxl
 from datetime import datetime, date
 
@@ -11,10 +13,33 @@ from django.urls import reverse
 from django.conf import settings
 
 from django.db.models import Q
-from ..models import LoteReporteVacancia, Vacancia, Prelacion, MotivoTramite, PlantillaTramite, Historial, Interinato
+from ..models import LoteReporteVacancia, Vacancia, Prelacion, MotivoTramite, PlantillaTramite, Historial, Interinato, KardexMovimiento, Maestro, Escuela
 from ..forms import VacanciaForm
 
 from .helpers import get_month_diff, get_full_name, send_to_google_sheet, generate_word_document, serialize_form_data, format_date_for_solicitud_asignacion
+import re
+
+
+def _zona_a_numero(valor):
+    """Convierte 'Zona II'/'Zona III' (o 'II'/'III', con espacios/mayúsculas) a 'Zona 2'/'Zona 3'.
+
+    El Excel USICAMM (columna F) no acepta romano.
+    """
+    if not valor:
+        return ''
+    texto = str(valor).strip()
+    if not texto:
+        return ''
+    t = texto.upper()
+    # Si ya viene en número ("Zona 2", "2"), normalizar a "Zona 2".
+    m_num = re.search(r'(\d+)\s*$', t)
+    m_rom = re.search(r'(IV|V|III|II|I)\s*$', t)
+    if m_num and (not m_rom or m_num.start() >= m_rom.start()):
+        return f"Zona {m_num.group(1)}"
+    mapa = {'I': '1', 'II': '2', 'III': '3', 'IV': '4', 'V': '5'}
+    if m_rom:
+        return f"Zona {mapa[m_rom.group(1)]}"
+    return texto
 
 @permission_required('gestion_escolar.acceder_vacancias', raise_exception=True)
 def gestionar_lote_vacancia(request, lote_id=None):
@@ -23,11 +48,20 @@ def gestionar_lote_vacancia(request, lote_id=None):
         if lote.estado == 'GENERADO':
             messages.warning(request, "Este lote ya ha sido procesado y no puede ser modificado.")
             return redirect('lista_lotes_vacancia')
+        if lote.estado == 'CANCELADO':
+            messages.error(request, "Este lote está cancelado y no admite más vacancias. Cree uno nuevo.")
+            return redirect('lista_lotes_vacancia')
         # Cancel any other EN_PROCESO lotes if this one is being explicitly edited
-        LoteReporteVacancia.objects.filter(
+        n_cancelados = LoteReporteVacancia.objects.filter(
             usuario_generador=request.user,
             estado='EN_PROCESO'
         ).exclude(id=lote.id).update(estado='CANCELADO')
+        if n_cancelados:
+            messages.warning(
+                request,
+                f"Se canceló automáticamente {n_cancelados} otro(s) lote(s) en proceso "
+                "para continuar solo con este."
+            )
     else:
         lotes_en_proceso = LoteReporteVacancia.objects.filter(
             usuario_generador=request.user,
@@ -40,6 +74,11 @@ def gestionar_lote_vacancia(request, lote_id=None):
                 for old_lote in lotes_en_proceso[1:]:
                     old_lote.estado = 'CANCELADO'
                     old_lote.save()
+                messages.warning(
+                    request,
+                    "Se cancelaron automáticamente sus lotes en proceso más antiguos "
+                    "para continuar solo con el más reciente."
+                )
         else:
             lote = LoteReporteVacancia.objects.create(
                 usuario_generador=request.user,
@@ -117,7 +156,7 @@ def gestionar_lote_vacancia(request, lote_id=None):
                         vacancia=vacancia,
                     )
                 except Exception as e:
-                    print(f"DEBUG: ❌ Error al registrar interinato en historial: {e}")
+                    print(f"DEBUG: [ERROR] Error al registrar interinato en historial: {e}")
 
             # Se elimina la creación de Historial inmediata por petición del usuario (se hará al exportar USICAMM)
             messages.success(request, "Vacancia agregada al lote actual.")
@@ -153,6 +192,467 @@ def _get_lote_y_vacancias(request, lote_id):
     lote.estado = 'PROCESANDO'
     lote.save()
     return lote, vacancias
+
+
+CAMPOS_EXCEL_VACANCIA = [
+    'nivel', 'entidad', 'municipio', 'direccion', 'region', 'zona_economica', 'destino', 'apreciacion',
+    'tipo_vacante', 'tipo_plaza', 'horas', 'sostenimiento', 'fecha_inicio', 'fecha_final', 'categoria',
+    'pseudoplaza', 'clave_presupuestal', 'techo_financiero', 'clave_ct', 'turno', 'tipo_movimiento_reporte',
+    'observaciones', 'posicion_orden', 'folio_prelacion', 'curp_interino', 'nombre_interino'
+]
+
+MESES_ES = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+]
+
+
+def _ruta_plantilla_excel(nombre):
+    """Devuelve la ruta existente de una plantilla Excel (canónica o legacy)."""
+    rutas = [
+        os.path.join(settings.BASE_DIR, 'gestion_escolar', 'templates', 'tramites', 'Plantillas', 'Excel', nombre),
+        os.path.join(settings.BASE_DIR, 'tramites', 'Plantillas', 'Excel', nombre),
+    ]
+    for ruta in rutas:
+        if os.path.exists(ruta):
+            return ruta
+    raise FileNotFoundError(
+        f"No se encontró la plantilla Excel '{nombre}' en la ruta canónica ni en la legacy."
+    )
+
+
+def _ruta_salida_unica(output_dir, filename):
+    """Evita sobrescribir archivos si dos generaciones caen en el mismo segundo."""
+    base, ext = os.path.splitext(filename)
+    candidato = os.path.join(output_dir, filename)
+    contador = 1
+    while os.path.exists(candidato):
+        candidato = os.path.join(output_dir, f"{base}_{contador}{ext}")
+        contador += 1
+    return candidato
+
+
+def _valor_campo_excel_vacancia(vacancia, field_name):
+    if field_name == 'curp_interino':
+        return vacancia.maestro_interino.curp if vacancia.maestro_interino else vacancia.curp_interino or ''
+    if field_name == 'nombre_interino':
+        return get_full_name(vacancia.maestro_interino) if vacancia.maestro_interino else vacancia.nombre_interino or ''
+    if field_name == 'apreciacion':
+        return vacancia.apreciacion.descripcion if vacancia.apreciacion else ''
+    if field_name == 'tipo_vacante':
+        return vacancia.get_tipo_vacante_display().capitalize() if vacancia.tipo_vacante else ''
+    if field_name == 'zona_economica':
+        return _zona_a_numero(getattr(vacancia, field_name, '') or '')
+
+    valor = getattr(vacancia, field_name, '') or ''
+    if field_name in ['fecha_inicio', 'fecha_final'] and valor and isinstance(valor, (datetime, date)):
+        if field_name == 'fecha_final' and vacancia.tipo_vacante == 'DEFINITIVA':
+            return ''
+        return valor.strftime("%Y-%m-%d")
+    return valor
+
+
+def _construir_excel_reporte(vacancias):
+    """Genera en memoria el Excel USICAMM del lote (todas sus vacancias)."""
+    template_path = _ruta_plantilla_excel('FORMATOVACANCIAUSICAMM.xlsx')
+    workbook = openpyxl.load_workbook(template_path)
+    sheet = workbook.active
+
+    row_num = 2
+    for vacancia in vacancias:
+        for i, field_name in enumerate(CAMPOS_EXCEL_VACANCIA):
+            cell = sheet.cell(row=row_num, column=i + 1)
+            try:
+                valor = _valor_campo_excel_vacancia(vacancia, field_name)
+            except Exception as field_error:
+                valor = f"Error: {field_error}"
+            cell.value = valor
+        row_num += 1
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
+
+
+def _guardar_reporte_lote(lote, vacancias):
+    """Escribe el Excel USICAMM corregido y devuelve (ruta_absoluta, ruta_relativa, nombre)."""
+    contenido = _construir_excel_reporte(vacancias)
+    output_dir = os.path.join(settings.MEDIA_ROOT, 'reportes_vacancias')
+    os.makedirs(output_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"VACANCIA_{timestamp}.xlsx"
+    output_path = _ruta_salida_unica(output_dir, filename)
+    with open(output_path, 'wb') as fh:
+        fh.write(contenido)
+    return output_path, os.path.join('reportes_vacancias', os.path.basename(output_path)), os.path.basename(output_path)
+
+
+def _clean_ze(ze):
+    if not ze:
+        return ""
+    mapa = {'I': '1', 'II': '2', 'III': '3', 'IV': '4', 'V': '5'}
+    ze_clean = str(ze).strip().upper()
+    return mapa.get(ze_clean, ze_clean)
+
+
+def _get_esc_val(esc, attr, default=""):
+    if not esc:
+        return default
+    return getattr(esc, attr, default) or default
+
+
+def _get_esc_turno(esc):
+    return (esc.get_turno_display() or "").upper() if hasattr(esc, 'get_turno_display') else ""
+
+
+def _rich_val(label, val):
+    try:
+        from openpyxl.cell.rich_text import CellRichText, TextBlock
+        from openpyxl.cell.text import InlineFont
+        return CellRichText([TextBlock(InlineFont(b=True), label), str(val)])
+    except ImportError:
+        return f"{label}{val}"
+
+
+def _construir_excel_eo(vacancia, fecha_texto):
+    """Genera en memoria el formato de Validación EO de una vacancia."""
+    maestro = vacancia.maestro_titular
+    if not maestro:
+        return None
+
+    template_path = _ruta_plantilla_excel('formatovalidacionEO.xlsx')
+    workbook = openpyxl.load_workbook(template_path)
+    sheet = workbook.active
+
+    escuela_labora = maestro.id_escuela
+    escuela_cobra = Escuela.objects.filter(id_escuela=maestro.techo_f).first() if maestro.techo_f else escuela_labora
+    if not escuela_cobra:
+        escuela_cobra = escuela_labora
+
+    sheet["C8"] = (vacancia.get_tipo_vacante_display() or "").upper()
+    sheet["C9"] = "FEDERAL" if _get_esc_val(escuela_labora, 'sostenimiento') == 'FEDERAL' else "ESTATAL"
+    sheet["B16"] = "DURANGO"
+    sheet["D44"] = fecha_texto
+
+    mun_cobra = _get_esc_val(escuela_cobra, 'region')
+    if mun_cobra and "DGO" not in mun_cobra.upper():
+        mun_cobra += " , DGO."
+    sheet["C15"] = _rich_val("C.C.T ", _get_esc_val(escuela_cobra, 'id_escuela'))
+    sheet["C16"] = _rich_val("NOMBRE DEL C.T.: ", _get_esc_val(escuela_cobra, 'nombre_ct'))
+    sheet["C17"] = _rich_val("TURNO: ", _get_esc_turno(escuela_cobra))
+    sheet["C18"] = _rich_val("MUNICIPIO: ", mun_cobra)
+    sheet["C19"] = _rich_val("LOCALIDAD: ", _get_esc_val(escuela_cobra, 'region'))
+    sheet["C20"] = _rich_val("DOMICILIO: ", _get_esc_val(escuela_cobra, 'domicilio'))
+    sheet["C21"] = _rich_val("ZONA ECONOMICA: ", _clean_ze(_get_esc_val(escuela_cobra, 'zona_economica')))
+
+    mun_labora = _get_esc_val(escuela_labora, 'region')
+    if mun_labora and "DGO" not in mun_labora.upper():
+        mun_labora += " , DGO."
+    sheet["D15"] = _rich_val("C.C.T. ", _get_esc_val(escuela_labora, 'id_escuela'))
+    sheet["D16"] = _rich_val("NOMBRE DEL C.T. ", _get_esc_val(escuela_labora, 'nombre_ct'))
+    sheet["D17"] = _rich_val("TURNO: ", _get_esc_turno(escuela_labora))
+    sheet["D18"] = _rich_val("MUNICIPIO: ", mun_labora)
+    sheet["D19"] = _rich_val("LOCALIDAD: ", _get_esc_val(escuela_labora, 'region'))
+    sheet["D20"] = _rich_val("DOMICILIO: ", _get_esc_val(escuela_labora, 'domicilio'))
+    sheet["D21"] = _rich_val("ZONA ECONOMICA: ", _clean_ze(_get_esc_val(escuela_labora, 'zona_economica')))
+
+    sheet["E16"] = (vacancia.destino or "ADMISIÓN").upper()
+    f_init = vacancia.fecha_inicio.strftime('%d/%m/%Y') if vacancia.fecha_inicio else ""
+    f_end = vacancia.fecha_final.strftime('%d/%m/%Y') if vacancia.fecha_final else ""
+    sheet["F16"] = f"{f_init} AL {f_end}" if f_end else f_init
+    sheet["G16"] = vacancia.clave_presupuestal or ""
+    sheet["H16"] = (vacancia.tipo_movimiento_reporte or vacancia.tipo_movimiento_original or "").upper()
+    sheet["I16"] = (vacancia.observaciones or "").upper()
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
+
+
+def _generar_archivos_eo(lote, vacancias):
+    """Regenera los Excel EO individuales y el ZIP del lote.
+
+    Devuelve (ruta_zip, {vacancia_id: ruta_individual}, nombre_zip).
+    """
+    vacancias = list(vacancias)
+    output_dir = os.path.join(settings.MEDIA_ROOT, 'reportes_vacancias_eo')
+    os.makedirs(output_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    hoy = datetime.now()
+    fecha_texto = f"{hoy.day} de {MESES_ES[hoy.month - 1]} del {hoy.year}"
+    zip_buffer = io.BytesIO()
+    individuales = {}
+
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+        for vacancia in vacancias:
+            try:
+                contenido = _construir_excel_eo(vacancia, fecha_texto)
+                if not contenido:
+                    continue
+                maestro = vacancia.maestro_titular
+                safe_name = "".join([c if c.isalnum() else "_" for c in get_full_name(maestro)])
+                individual_filename = f"EO_{safe_name}_{timestamp}.xlsx"
+                individual_path = _ruta_salida_unica(output_dir, individual_filename)
+                with open(individual_path, "wb") as fh:
+                    fh.write(contenido)
+                individuales[vacancia.id] = individual_path
+                zip_file.writestr(f"VALIDACION_EO_{safe_name}.xlsx", contenido)
+            except Exception as row_error:
+                print(f"DEBUG: [ERROR] Error regenerando EO para vacancia {vacancia.id}: {row_error}")
+                continue
+
+    if not individuales:
+        raise ValueError("No se pudo generar ningún archivo de Validación EO.")
+
+    zip_filename = f"VALIDACION_EO_LOTE_{lote.id}_{timestamp}.zip"
+    zip_path = _ruta_salida_unica(output_dir, zip_filename)
+    with open(zip_path, "wb") as fh:
+        fh.write(zip_buffer.getvalue())
+    return zip_path, individuales, os.path.basename(zip_path)
+
+
+def _datos_individuales_vacancia(vacancia):
+    return {
+        'tipo_vacante': vacancia.get_tipo_vacante_display(),
+        'tipo_movimiento': vacancia.tipo_movimiento_reporte or vacancia.tipo_movimiento_original,
+        'fecha_inicio': vacancia.fecha_inicio.strftime('%Y-%m-%d') if vacancia.fecha_inicio else '',
+        'fecha_final': vacancia.fecha_final.strftime('%Y-%m-%d') if vacancia.fecha_final else '',
+        'techo_financiero': vacancia.techo_financiero or '',
+        'clave_presupuestal': vacancia.clave_presupuestal or '',
+        'centro_trabajo': vacancia.clave_ct or ''
+    }
+
+
+def _aplicar_datos_derivados_vacancia(vacancia):
+    """Recalcula los campos que el alta de la vacancia deriva del maestro/escuela."""
+    maestro = vacancia.maestro_titular
+    escuela = maestro.id_escuela if maestro else None
+    if not maestro or not escuela:
+        return
+
+    interino = vacancia.maestro_interino
+    if interino:
+        vacancia.nombre_interino = f'{interino.nombres} {interino.a_paterno} {interino.a_materno}'
+        vacancia.curp_interino = interino.curp
+        prelacion = Prelacion.objects.filter(curp=interino.curp).first() if interino.curp else None
+        vacancia.posicion_orden = prelacion.pos_orden if prelacion else None
+        vacancia.folio_prelacion = prelacion.folio if prelacion else None
+    else:
+        vacancia.nombre_interino = None
+        vacancia.curp_interino = None
+        vacancia.posicion_orden = None
+        vacancia.folio_prelacion = None
+
+    vacancia.direccion = (
+        f"{escuela.nombre_ct}, {escuela.domicilio}, DURANGO, {escuela.region}, "
+        f"{escuela.get_turno_display()}, ZONA ECONOMICA:{escuela.zona_economica}"
+    )
+
+    apreciacion_desc = vacancia.apreciacion.descripcion if vacancia.apreciacion else ''
+    if apreciacion_desc.startswith("ADMISIÓN"):
+        vacancia.destino = "Admisión"
+    elif apreciacion_desc.startswith("PROMOCIÓN"):
+        vacancia.destino = "Promoción vertical"
+    else:
+        vacancia.destino = ""
+
+    vacancia.sostenimiento = "Federalizado" if escuela.sostenimiento == 'FEDERAL' else "Estatal"
+    vacancia.turno = escuela.get_turno_display()
+    vacancia.tipo_movimiento_reporte = vacancia.tipo_movimiento_original
+
+    hrs = maestro.hrs or "00.0"
+    vacancia.tipo_plaza = "JORNADA" if hrs == "00.0" else "HORA/SEMANA/MES"
+    if hrs == "00.0":
+        vacancia.horas = None
+    else:
+        try:
+            vacancia.horas = str(int(float(hrs)))
+        except (ValueError, TypeError):
+            vacancia.horas = None
+
+    vacancia.municipio = escuela.region
+    vacancia.zona_economica = f"Zona {escuela.zona_economica}"
+    vacancia.categoria = maestro.categog.id_categoria if maestro.categog else ''
+    vacancia.clave_presupuestal = maestro.clave_presupuestal
+    vacancia.techo_financiero = maestro.techo_f
+    vacancia.clave_ct = escuela.id_escuela
+    vacancia.nombre_titular_reporte = f'{maestro.nombres} {maestro.a_paterno} {maestro.a_materno}'
+
+
+def _sincronizar_interinato_vacancia(vacancia):
+    """Mantiene el interinato ligado a la vacancia cuando se corrige."""
+    interinato = Interinato.objects.filter(vacancia=vacancia).first()
+    if not vacancia.maestro_interino:
+        if interinato:
+            interinato.delete()
+        return
+
+    datos = {
+        'maestro_interino': vacancia.maestro_interino,
+        'maestro_titular': vacancia.maestro_titular,
+        'clave_presupuestal': vacancia.clave_presupuestal,
+        'escuela': vacancia.maestro_titular.id_escuela if vacancia.maestro_titular else None,
+        'techo_financiero': vacancia.techo_financiero,
+        'fecha_inicio': vacancia.fecha_inicio,
+        'fecha_final': vacancia.fecha_final,
+        'motivo': vacancia.tipo_movimiento_original,
+        'observaciones': vacancia.observaciones,
+    }
+    if interinato:
+        for campo, valor in datos.items():
+            setattr(interinato, campo, valor)
+        interinato.save()
+        return
+
+    Interinato.objects.create(
+        vacancia=vacancia,
+        tipo='INTERINO',
+        estatus='ACTIVO',
+        **datos,
+    )
+
+
+def _regenerar_documentos_lote(lote):
+    """Regenera los documentos ya generados del lote tras corregir una vacancia."""
+    vacancias = list(
+        lote.vacancias.select_related(
+            'maestro_titular', 'maestro_titular__id_escuela', 'maestro_titular__categog',
+            'maestro_interino', 'apreciacion'
+        )
+    )
+    if not vacancias:
+        return
+
+    tipos = set(
+        Historial.objects.filter(lote_reporte=lote).values_list('tipo_documento', flat=True)
+    )
+
+    if {'Reporte de Vacancia', 'Reporte de Vacancia (Individual)'} & tipos:
+        reporte_path, reporte_rel, _ = _guardar_reporte_lote(lote, vacancias)
+        lote.archivo_generado = reporte_rel
+        lote.save(update_fields=['archivo_generado'])
+
+        Historial.objects.filter(
+            lote_reporte=lote,
+            tipo_documento__in=['Reporte de Vacancia', 'Reporte de Vacancia (Individual)'],
+        ).update(ruta_archivo=reporte_path)
+
+        for vacancia in vacancias:
+            if vacancia.maestro_titular_id:
+                Historial.objects.filter(
+                    lote_reporte=lote,
+                    tipo_documento='Reporte de Vacancia (Individual)',
+                    maestro_id=vacancia.maestro_titular_id,
+                ).update(datos_tramite=_datos_individuales_vacancia(vacancia))
+
+    if {'Validación EO (Individual)', 'Paquete Validación EO (ZIP)'} & tipos:
+        zip_path, individuales, _ = _generar_archivos_eo(lote, vacancias)
+
+        Historial.objects.filter(
+            lote_reporte=lote,
+            tipo_documento='Paquete Validación EO (ZIP)',
+        ).update(ruta_archivo=zip_path)
+
+        for historial_item in Historial.objects.filter(
+            lote_reporte=lote,
+            tipo_documento='Validación EO (Individual)',
+        ):
+            candidatas = list(
+                Vacancia.objects.filter(
+                    lote=lote,
+                    maestro_titular_id=historial_item.maestro_id,
+                )
+            )
+            if len(candidatas) == 1:
+                ruta = individuales.get(candidatas[0].id)
+                if ruta:
+                    historial_item.ruta_archivo = ruta
+                    historial_item.save(update_fields=['ruta_archivo'])
+
+
+@login_required
+@transaction.atomic
+def corregir_vacancia_historial(request, historial_id):
+    """Corrige la vacancia que originó un movimiento y regenera sus documentos."""
+    from .helpers import vacancia_de_historial, vacancias_candidatas_historial
+
+    historial_item = get_object_or_404(Historial, id=historial_id)
+
+    if not historial_item.lote_reporte_id or not historial_item.maestro_id:
+        messages.error(request, "Este registro no está ligado a una vacancia corregible.")
+        return redirect('historial_detalle_tramite', historial_id=historial_item.id)
+
+    es_autor = historial_item.usuario_id == request.user.id
+    es_admin = request.user.is_superuser or request.user.groups.filter(name='ADMINISTRADOR').exists()
+    if not (es_autor or es_admin) or not request.user.has_perm('gestion_escolar.change_vacancia'):
+        messages.error(request, "No tienes permiso para corregir esta vacancia.")
+        return redirect('historial_detalle_tramite', historial_id=historial_item.id)
+
+    from_param = request.POST.get('from') or request.GET.get('from')
+    candidatas = list(vacancias_candidatas_historial(historial_item))
+    if not candidatas:
+        messages.error(request, "No se encontró la vacancia asociada a este movimiento.")
+        return redirect('historial_detalle_tramite', historial_id=historial_item.id)
+
+    vacancia_id = request.POST.get('vacancia_id') or request.GET.get('vacancia')
+    vacancia = None
+    if vacancia_id:
+        vacancia = next((v for v in candidatas if str(v.id) == str(vacancia_id)), None)
+    elif len(candidatas) == 1:
+        vacancia = candidatas[0]
+    else:
+        vacancia = vacancia_de_historial(historial_item)
+
+    volver_url = reverse('historial_detalle_tramite', args=[historial_item.id])
+    if from_param:
+        volver_url += f"?from={from_param}"
+
+    if vacancia is None:
+        return render(request, 'gestion_escolar/corregir_vacancia_historial.html', {
+            'historial_item': historial_item,
+            'candidatas': candidatas,
+            'from': from_param or '',
+            'volver_url': volver_url,
+            'titulo': 'Elegir vacancia a corregir',
+        })
+
+    form = VacanciaForm(request.POST or None, instance=vacancia)
+    form.fields['maestro_titular'].disabled = True
+
+    if request.method == 'POST' and form.is_valid():
+        try:
+            with transaction.atomic():
+                tipo_anterior = vacancia.tipo_vacante
+                vacancia = form.save(commit=False)
+                _aplicar_datos_derivados_vacancia(vacancia)
+                vacancia.save()
+                _sincronizar_interinato_vacancia(vacancia)
+
+                if tipo_anterior != vacancia.tipo_vacante:
+                    estatus_anterior = 'INACTIVO' if tipo_anterior == 'DEFINITIVA' else 'LICENCIA'
+                    estatus_nuevo = 'INACTIVO' if vacancia.tipo_vacante == 'DEFINITIVA' else 'LICENCIA'
+                    maestro = vacancia.maestro_titular
+                    if maestro and maestro.status == estatus_anterior:
+                        Maestro.objects.filter(pk=maestro.pk).update(status=estatus_nuevo)
+
+                _regenerar_documentos_lote(historial_item.lote_reporte)
+        except Exception as error:
+            vacancia.refresh_from_db()
+            form.add_error(None, f"No se pudieron regenerar los documentos: {error}")
+            messages.error(request, "No se guardó la corrección porque falló la regeneración de archivos.")
+        else:
+            messages.success(request, "Datos corregidos y documentos regenerados correctamente.")
+            return redirect(volver_url)
+
+    return render(request, 'gestion_escolar/corregir_vacancia_historial.html', {
+        'historial_item': historial_item,
+        'vacancia': vacancia,
+        'form': form,
+        'candidatas': [],
+        'from': from_param or '',
+        'volver_url': volver_url,
+        'titulo': f'Corregir datos de {historial_item.tipo_documento}',
+    })
 
 @login_required
 @transaction.atomic
@@ -204,7 +704,7 @@ def exportar_paso_word(request, lote_id):
                     # Fallback if the specific template object doesn't exist, try to clone and adapt path
                     # but ideally the user should create it in the database.
                     # For now, let's assume it should exist or we can try to find it.
-                    print("DEBUG: ⚠️ Plantilla 'SOLICITUD DE ASIGNACION 36' no encontrada en BD. Usando normal.")
+                    print("DEBUG: [AVISO] Plantilla 'SOLICITUD DE ASIGNACION 36' no encontrada en BD. Usando normal.")
 
             success, doc_path = generate_word_document(form_data_for_word, plantilla_actual, request.user)
             if success:
@@ -225,7 +725,7 @@ def exportar_paso_word(request, lote_id):
                     })
                     documentos_word_generados += 1
                 except Exception as e:
-                    print(f"DEBUG: ❌ Error creando historial para Word: {e}")
+                    print(f"DEBUG: [ERROR] Error creando historial para Word: {e}")
     
     return JsonResponse({
         'status': 'success',
@@ -255,7 +755,7 @@ def exportar_paso_gsheets(request, lote_id):
                 vacancia.municipio or '',
                 vacancia.direccion or '',
                 vacancia.region or '',
-                vacancia.zona_economica or '',
+                _zona_a_numero(vacancia.zona_economica or ''),
                 vacancia.destino or '',
                 vacancia.apreciacion.descripcion if vacancia.apreciacion else '',
                 vacancia.get_tipo_vacante_display() or '',
@@ -309,7 +809,7 @@ def exportar_paso_gsheets(request, lote_id):
 
     except Exception as e:
         import traceback
-        print(f"DEBUG: ❌ Error en exportar_paso_gsheets: {str(e)}")
+        print(f"DEBUG: [ERROR] Error en exportar_paso_gsheets: {str(e)}")
         print(f"DEBUG: Traceback completo: {traceback.format_exc()}")
         # Si ocurre un error, revertir el estado del lote para que se pueda reintentar
         lote.estado = 'EN_PROCESO'
@@ -322,101 +822,55 @@ def exportar_paso_excel(request, lote_id):
     try:
         lote, vacancias = _get_lote_y_vacancias(request, lote_id)
         
-        template_path = os.path.join(settings.BASE_DIR, 'gestion_escolar', 'templates', 'tramites', 'Plantillas', 'Excel', 'FORMATOVACANCIAUSICAMM.xlsx')
-        if not os.path.exists(template_path):
-            # Respaldo temporal: antigua carpeta raíz
-            template_path = os.path.join(settings.BASE_DIR, 'tramites', 'Plantillas', 'Excel', 'FORMATOVACANCIAUSICAMM.xlsx')
-        
-        if not os.path.exists(template_path):
-            raise FileNotFoundError(f"No se encontró el template en la ruta canónica ni en la legacy: {template_path}")
-
-        workbook = openpyxl.load_workbook(template_path)
-        sheet = workbook.active
-        
-        row_num = 2
-        campos_excel = [
-            'nivel', 'entidad', 'municipio', 'direccion', 'region', 'zona_economica', 'destino', 'apreciacion',
-            'tipo_vacante', 'tipo_plaza', 'horas', 'sostenimiento', 'fecha_inicio', 'fecha_final', 'categoria',
-            'pseudoplaza', 'clave_presupuestal', 'techo_financiero', 'clave_ct', 'turno', 'tipo_movimiento_reporte', 'observaciones',
-            'posicion_orden', 'folio_prelacion', 'curp_interino', 'nombre_interino'
-        ]
-        
-        for vacancia in vacancias:
-            for i, field_name in enumerate(campos_excel):
-                cell = sheet.cell(row=row_num, column=i + 1)
-                valor = ''
-                
-                try:
-                    if field_name == 'curp_interino': 
-                        valor = vacancia.maestro_interino.curp if vacancia.maestro_interino else vacancia.curp_interino or ''
-                    elif field_name == 'nombre_interino': 
-                        valor = get_full_name(vacancia.maestro_interino) if vacancia.maestro_interino else vacancia.nombre_interino or ''
-                    elif field_name == 'apreciacion': 
-                        valor = vacancia.apreciacion.descripcion if vacancia.apreciacion else ''
-                    elif field_name == 'tipo_vacante': 
-                        valor = vacancia.get_tipo_vacante_display().capitalize() if vacancia.tipo_vacante else ''
-                    elif field_name == 'zona_economica':
-                        valor = getattr(vacancia, field_name, '') or ''
-                        if valor == 'Zona II':
-                            valor = 'Zona 2'
-                        elif valor == 'Zona III':
-                            valor = 'Zona 3'
-                    else: 
-                        valor = getattr(vacancia, field_name, '') or ''
-                        
-                    if field_name in ['fecha_inicio', 'fecha_final'] and valor and isinstance(valor, (datetime, date)):
-                        if field_name == 'fecha_final' and vacancia.tipo_vacante == 'DEFINITIVA':
-                            valor = ''
-                        else:
-                            valor = valor.strftime("%Y-%m-%d")
-                            
-                except Exception as field_error:
-                    valor = f"Error: {field_error}"
-                
-                cell.value = valor
-                
-            row_num += 1
-
-        output_dir = os.path.join(settings.MEDIA_ROOT, 'reportes_vacancias')
-        os.makedirs(output_dir, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_filename = f"VACANCIA_{timestamp}.xlsx"
-        output_path_server = os.path.join(output_dir, output_filename)
-        
-        workbook.save(output_path_server)
+        reporte_path, reporte_rel, reporte_filename = _guardar_reporte_lote(lote, vacancias)
 
         historial_excel = Historial.objects.create(
-            usuario=request.user, 
-            tipo_documento="Reporte de Vacancia", 
+            usuario=request.user,
+            tipo_documento="Reporte de Vacancia",
             maestro=None,
-            ruta_archivo=output_path_server, 
-            motivo="Reporte de Vacancia", 
+            ruta_archivo=reporte_path,
+            motivo="Reporte de Vacancia",
             lote_reporte=lote
         )
         
         # Crear registros individuales para el Kardex de cada maestro (Oficialización del reporte)
+        # y actualizar el status de la plaza del titular:
+        # TEMPORAL (con o sin interino) -> LICENCIA | DEFINITIVA -> INACTIVO (a espera de ALTA INICIAL 09).
         for v in vacancias:
             if v.maestro_titular:
-                datos_v = {
-                    'tipo_vacante': v.get_tipo_vacante_display(),
-                    'tipo_movimiento': v.tipo_movimiento_reporte or v.tipo_movimiento_original,
-                    'fecha_inicio': v.fecha_inicio.strftime('%Y-%m-%d') if v.fecha_inicio else '',
-                    'fecha_final': v.fecha_final.strftime('%Y-%m-%d') if v.fecha_final else '',
-                    'techo_financiero': v.techo_financiero or '',
-                    'clave_presupuestal': v.clave_presupuestal or '',
-                    'centro_trabajo': v.clave_ct or ''
-                }
+                datos_v = _datos_individuales_vacancia(v)
                 Historial.objects.create(
                     usuario=request.user,
                     tipo_documento="Reporte de Vacancia (Individual)",
                     maestro=v.maestro_titular,
-                    ruta_archivo=output_path_server,
+                    ruta_archivo=reporte_path,
                     motivo="Reporte de Vacancia Oficializado",
                     lote_reporte=lote,
                     datos_tramite=datos_v
                 )
+
+                nuevo_status = 'INACTIVO' if v.tipo_vacante == 'DEFINITIVA' else 'LICENCIA'
+                Maestro.objects.filter(pk=v.maestro_titular_id).exclude(status=nuevo_status).update(status=nuevo_status)
+                if nuevo_status == 'LICENCIA':
+                    desc_kardex = (
+                        f"Pasa a LICENCIA por Vacancia TEMPORAL Lote #{lote.id} "
+                        f"({v.tipo_movimiento_reporte or v.tipo_movimiento_original or 's/motivo'}, "
+                        f"{datos_v['fecha_inicio'] or '?'} al {datos_v['fecha_final'] or 'vigente'}). "
+                        f"Clave {v.clave_presupuestal or 's/clave'}."
+                    )
+                else:
+                    desc_kardex = (
+                        f"Pasa a INACTIVO por Vacante DEFINITIVA Lote #{lote.id}. "
+                        f"Clave {v.clave_presupuestal or 's/clave'} liberada, "
+                        f"a espera de ALTA INICIAL (09)."
+                    )
+                KardexMovimiento.objects.create(
+                    maestro_id=v.maestro_titular_id,
+                    usuario=request.user,
+                    descripcion=desc_kardex,
+                )
         
-        lote.archivo_generado = os.path.join('reportes_vacancias', output_filename)
+        lote.archivo_generado = reporte_rel
         lote.estado = 'GENERADO'
         lote.fecha_generado = datetime.now()
         lote.save()
@@ -424,18 +878,22 @@ def exportar_paso_excel(request, lote_id):
             'status': 'success',
             'message': '¡Lote procesado satisfactoriamente!',
             'excel_url': reverse('descargar_archivo_historial', args=[historial_excel.id]),
-            'excel_name': output_filename
+            'excel_name': reporte_filename
         }
         return JsonResponse(response_data)
 
     except Exception as e:
         import traceback
-        print(f"DEBUG: ❌ Error generando Excel: {str(e)}")
+        print(f"DEBUG: [ERROR] Error generando Excel: {str(e)}")
         print(f"DEBUG: Traceback completo: {traceback.format_exc()}")
         
         messages.error(request, f"Error al generar el archivo Excel: {str(e)}")
-        lote.estado = 'EN_PROCESO'
-        lote.save()
+        try:
+            if 'lote' in locals() and lote:
+                lote.estado = 'EN_PROCESO'
+                lote.save()
+        except Exception:
+            pass
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
@@ -447,165 +905,47 @@ def exportar_paso_excel_eo(request, lote_id):
     Labora: Escuela asociada a maestro.id_escuela
     """
     try:
-        import io
-        import zipfile
-        from ..models import Escuela
         lote = get_object_or_404(LoteReporteVacancia, id=lote_id, usuario_generador=request.user)
         vacancias = lote.vacancias.all()
-        
+
         if not vacancias.exists():
             return JsonResponse({'status': 'error', 'message': "No hay vacancias en este lote."}, status=400)
-        
-        template_path = os.path.join(settings.BASE_DIR, 'gestion_escolar', 'templates', 'tramites', 'Plantillas', 'Excel', 'formatovalidacionEO.xlsx')
-        if not os.path.exists(template_path):
-            # Respaldo temporal: antigua carpeta raíz (sin rutas absolutas C:\).
-            template_path = os.path.join(settings.BASE_DIR, 'tramites', 'Plantillas', 'Excel', 'formatovalidacionEO.xlsx')
-            if not os.path.exists(template_path):
-                raise FileNotFoundError(f"No se encontró el template EO en la ruta canónica ni en la legacy.")
 
-        # Preparar el buffer para el ZIP y directorios de salida
-        output_dir = os.path.join(settings.MEDIA_ROOT, 'reportes_vacancias_eo')
-        os.makedirs(output_dir, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        zip_buffer = io.BytesIO()
-        
-        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-            # Mapeo de Zona Económica
-            map_ze = {'I': '1', 'II': '2', 'III': '3', 'IV': '4', 'V': '5'}
-            def clean_ze(ze):
-                if not ze: return ""
-                ze_clean = str(ze).strip().upper()
-                return map_ze.get(ze_clean, ze_clean)
+        zip_path, individuales, zip_filename = _generar_archivos_eo(lote, vacancias)
 
-            # Fecha de Elaboración en D44
-            meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
-            hoy = datetime.now()
-            fecha_texto = f"{hoy.day} de {meses[hoy.month-1]} del {hoy.year}"
-
-            for idx, vacancia in enumerate(vacancias):
-                try:
-                    maestro = vacancia.maestro_titular
-                    if not maestro: continue
-                    
-                    # Cargar un workbook "limpio" de la plantilla para cada maestro
-                    workbook = openpyxl.load_workbook(template_path)
-                    sheet = workbook.active
-                    
-                    escuela_labora = maestro.id_escuela
-                    escuela_cobra = Escuela.objects.filter(id_escuela=maestro.techo_f).first() if maestro.techo_f else escuela_labora
-                    if not escuela_cobra: escuela_cobra = escuela_labora
-
-                    def get_esc_val(esc, attr, default=""):
-                        if not esc: return default
-                        return getattr(esc, attr, default) or default
-
-                    def get_esc_turno(esc):
-                        return (esc.get_turno_display() or "").upper() if hasattr(esc, 'get_turno_display') else ""
-
-                    # RichText Bold
-                    try:
-                        from openpyxl.cell.rich_text import CellRichText, TextBlock
-                        from openpyxl.cell.text import InlineFont
-                        bold_f = InlineFont(b=True)
-                        def rich_val(label, val):
-                            return CellRichText([TextBlock(bold_f, label), str(val)])
-                    except ImportError:
-                        def rich_val(label, val):
-                            return f"{label}{val}"
-
-                    # Llenar datos (siempre en filas fijas 8, 9, 15-21, 44)
-                    sheet["C8"] = (vacancia.get_tipo_vacante_display() or "").upper()
-                    sheet["C9"] = "FEDERAL" if get_esc_val(escuela_labora, 'sostenimiento') == 'FEDERAL' else "ESTATAL"
-                    sheet["B16"] = "DURANGO"
-                    sheet["D44"] = fecha_texto
-                    
-                    # COBRA (C15-C21)
-                    mun_cobra = get_esc_val(escuela_cobra, 'region')
-                    if mun_cobra and "DGO" not in mun_cobra.upper(): mun_cobra += " , DGO."
-                    sheet["C15"] = rich_val("C.C.T ", get_esc_val(escuela_cobra, 'id_escuela'))
-                    sheet["C16"] = rich_val("NOMBRE DEL C.T.: ", get_esc_val(escuela_cobra, 'nombre_ct'))
-                    sheet["C17"] = rich_val("TURNO: ", get_esc_turno(escuela_cobra))
-                    sheet["C18"] = rich_val("MUNICIPIO: ", mun_cobra)
-                    sheet["C19"] = rich_val("LOCALIDAD: ", get_esc_val(escuela_cobra, 'region'))
-                    sheet["C20"] = rich_val("DOMICILIO: ", get_esc_val(escuela_cobra, 'domicilio'))
-                    sheet["C21"] = rich_val("ZONA ECONOMICA: ", clean_ze(get_esc_val(escuela_cobra, 'zona_economica')))
-                    
-                    # LABORA (D15-D21)
-                    mun_labora = get_esc_val(escuela_labora, 'region')
-                    if mun_labora and "DGO" not in mun_labora.upper(): mun_labora += " , DGO."
-                    sheet["D15"] = rich_val("C.C.T. ", get_esc_val(escuela_labora, 'id_escuela'))
-                    sheet["D16"] = rich_val("NOMBRE DEL C.T. ", get_esc_val(escuela_labora, 'nombre_ct'))
-                    sheet["D17"] = rich_val("TURNO: ", get_esc_turno(escuela_labora))
-                    sheet["D18"] = rich_val("MUNICIPIO: ", mun_labora)
-                    sheet["D19"] = rich_val("LOCALIDAD: ", get_esc_val(escuela_labora, 'region'))
-                    sheet["D20"] = rich_val("DOMICILIO: ", get_esc_val(escuela_labora, 'domicilio'))
-                    sheet["D21"] = rich_val("ZONA ECONOMICA: ", clean_ze(get_esc_val(escuela_labora, 'zona_economica')))
-                    
-                    # Otros
-                    sheet["E16"] = (vacancia.destino or "ADMISIÓN").upper()
-                    f_init = vacancia.fecha_inicio.strftime('%d/%m/%Y') if vacancia.fecha_inicio else ""
-                    f_end = vacancia.fecha_final.strftime('%d/%m/%Y') if vacancia.fecha_final else ""
-                    sheet["F16"] = f"{f_init} AL {f_end}" if f_end else f_init
-                    sheet["G16"] = vacancia.clave_presupuestal or ""
-                    sheet["H16"] = (vacancia.tipo_movimiento_reporte or vacancia.tipo_movimiento_original or "").upper()
-                    sheet["I16"] = (vacancia.observaciones or "").upper()
-                    
-                    # Guardar excel a buffer para el ZIP
-                    excel_buffer = io.BytesIO()
-                    workbook.save(excel_buffer)
-                    
-                    # Guardar excel a disco de forma individual para el Kardex
-                    safe_name = "".join([c if c.isalnum() else "_" for c in get_full_name(maestro)])
-                    individual_filename = f"EO_{safe_name}_{timestamp}.xlsx"
-                    individual_path = os.path.join(output_dir, individual_filename)
-                    
-                    with open(individual_path, "wb") as f:
-                        f.write(excel_buffer.getvalue())
-
-                    # Crear registro individual en Historial para el Kardex
-                    Historial.objects.create(
-                        usuario=request.user,
-                        tipo_documento="Validación EO (Individual)",
-                        maestro=maestro,
-                        ruta_archivo=individual_path,
-                        motivo="Generación de Formato EO",
-                        lote_reporte=lote
-                    )
-                    
-                    # Añadir al ZIP
-                    zip_file.writestr(f"VALIDACION_EO_{safe_name}.xlsx", excel_buffer.getvalue())
-                    
-                except Exception as row_e:
-                    print(f"DEBUG: ❌ Error procesando maestro {idx}: {str(row_e)}")
-                    continue
-
-        # Guardar ZIP consolidado
-        output_filename = f"VALIDACION_EO_LOTE_{lote.id}_{timestamp}.zip"
-        output_path_server = os.path.join(output_dir, output_filename)
-        
-        with open(output_path_server, "wb") as f:
-            f.write(zip_buffer.getvalue())
+        for vacancia in vacancias:
+            ruta_individual = individuales.get(vacancia.id)
+            if not ruta_individual:
+                continue
+            Historial.objects.create(
+                usuario=request.user,
+                tipo_documento="Validación EO (Individual)",
+                maestro=vacancia.maestro_titular,
+                ruta_archivo=ruta_individual,
+                motivo="Generación de Formato EO",
+                lote_reporte=lote
+            )
 
         historial_zip = Historial.objects.create(
-            usuario=request.user, 
-            tipo_documento="Paquete Validación EO (ZIP)", 
+            usuario=request.user,
+            tipo_documento="Paquete Validación EO (ZIP)",
             maestro=None,
-            ruta_archivo=output_path_server, 
-            motivo="Exportación Formato EO Individual", 
+            ruta_archivo=zip_path,
+            motivo="Exportación Formato EO Individual",
             lote_reporte=lote
         )
-        
+
         return JsonResponse({
             'status': 'success',
-            'message': f'Se generaron archivos para {vacancias.count()} maestros en un ZIP.',
+            'message': f'Se generaron archivos para {len(individuales)} maestros en un ZIP.',
             'excel_url': reverse('descargar_archivo_historial', args=[historial_zip.id]),
-            'excel_name': output_filename
+            'excel_name': zip_filename
         })
 
     except Exception as e:
         import traceback
         error_msg = traceback.format_exc()
-        print(f"DEBUG: ❌ Error generando ZIP EO: {str(e)}")
+        print(f"DEBUG: [ERROR] Error generando ZIP EO: {str(e)}")
         print(f"DEBUG: Traceback completo: {error_msg}")
         
         try:
@@ -808,6 +1148,30 @@ def lista_lotes_vacancia(request):
         'titulo': 'Histórico de Lotes de Vacancia'
     }
     return render(request, 'gestion_escolar/lista_lotes_vacancia.html', context)
+
+@login_required
+@permission_required('gestion_escolar.acceder_vacancias', raise_exception=True)
+@transaction.atomic
+def retomar_lote_vacancia(request, lote_id):
+    """Devuelve un lote atorado en PROCESANDO a EN_PROCESO para continuar.
+
+    Solo cambia el estado; no toca vacancias ni historiales, por lo que no
+    hay riesgo de pérdida de datos.
+    """
+    if request.method == 'POST':
+        try:
+            lote = get_object_or_404(LoteReporteVacancia, id=lote_id, usuario_generador=request.user)
+            if lote.estado == 'PROCESANDO':
+                lote.estado = 'EN_PROCESO'
+                lote.save()
+                messages.success(request, f"Lote #{lote.id} retomado: vuelve a estar en proceso.")
+                return JsonResponse({'status': 'success', 'message': f"Lote #{lote.id} retomado exitosamente."})
+            else:
+                return JsonResponse({'status': 'error', 'message': f"El lote #{lote.id} no está atorado (estado actual: {lote.estado})."}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f"Error al retomar el lote: {str(e)}"}, status=500)
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido.'}, status=405)
+
 
 @login_required
 @permission_required('gestion_escolar.acceder_vacancias', raise_exception=True)

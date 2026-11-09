@@ -1,0 +1,110 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
+{% block content %}
+<div class="comp-page-container comp-form-narrow">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Nueva plantilla</h1>
+            <p class="comp-subtitle">
+                Sube el documento de Word y después elige qué datos debe pedir
+                el formulario.
+            </p>
+        </div>
+        <div class="comp-actions">
+            <a href="{% url 'lista_plantillas' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="comp-alert {% if message.tags == 'error' %}comp-alert-danger{% elif message.tags == 'success' %}comp-alert-success{% elif message.tags == 'warning' %}comp-alert-warning{% else %}comp-alert-info{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="comp-form needs-validation">
+        {% csrf_token %}
+
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <div class="comp-section-title">
+                    <h4>Identificación</h4>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-8">
+                        <div class="comp-form-group">
+                            <label for="nombre" class="comp-form-label">Nombre de la plantilla</label>
+                            <input type="text" class="comp-form-control" id="nombre" name="nombre"
+                                   value="{{ valores.nombre|default:'' }}" maxlength="100" required
+                                   placeholder="Ej. SOLICITUD DE CONSTANCIA DE ESTUDIOS">
+                            <div class="comp-form-text">
+                                Es el nombre que verá el usuario en el formulario. Se guarda en mayúsculas.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="comp-form-group">
+                            <label for="tipo_documento" class="comp-form-label">Tipo de documento</label>
+                            <select class="comp-form-select" id="tipo_documento" name="tipo_documento">
+                                <option value="TRAMITE" {% if valores.tipo_documento != 'OFICIO' %}selected{% endif %}>Trámite</option>
+                                <option value="OFICIO" {% if valores.tipo_documento == 'OFICIO' %}selected{% endif %}>Oficio</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="comp-form-group mb-0">
+                            <label for="descripcion" class="comp-form-label">Descripción (opcional)</label>
+                            <input type="text" class="comp-form-control" id="descripcion" name="descripcion"
+                                   value="{{ valores.descripcion|default:'' }}" maxlength="255"
+                                   placeholder="Para qué sirve esta plantilla">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="comp-section-title mt-4">
+                    <h4>Documento de Word</h4>
+                </div>
+
+                <div class="comp-form-group">
+                    <label for="archivo_docx" class="comp-form-label">Archivo .docx</label>
+                    <input type="file" class="comp-form-control" id="archivo_docx" name="archivo_docx"
+                           accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+                    <div class="comp-form-text">
+                        El documento se sigue diseñando en Word. Usa variables como
+                        <code>{% verbatim %}{{ Nombre_Titular }}{% endverbatim %}</code>,
+                        <code>{% verbatim %}{{ CURP_Titular }}{% endverbatim %}</code> o
+                        <code>{% verbatim %}{{ F_OfPres }}{% endverbatim %}</code>.
+                        Al subirlo, el sistema detectará las variables automáticamente.
+                    </div>
+                </div>
+
+                <div class="comp-alert comp-alert-info mt-4 mb-0">
+                    <i class="fas fa-lightbulb"></i>
+                    <div>
+                        Después de crear la plantilla podrás marcar qué datos pedir,
+                        qué motivos aceptar y agregar campos personalizados. Las
+                        plantillas del sistema no se modifican: si necesitas una
+                        variante, usa <strong>Duplicar</strong>.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-form-actions">
+            <a href="{% url 'lista_plantillas' %}" class="comp-btn comp-btn-ghost">Cancelar</a>
+            <button type="submit" class="comp-btn comp-btn-primary">
+                <i class="fas fa-arrow-right"></i> Crear y configurar
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

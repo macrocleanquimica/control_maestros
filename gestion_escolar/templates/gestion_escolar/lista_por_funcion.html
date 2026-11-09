@@ -4,157 +4,103 @@
 {% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .header-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    /* Tabla en panel único */
-    .table-container-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    thead th {
-        background: var(--surface, #fff) !important;
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        color: var(--text-2, #6e6e73);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important;
-        padding: 0.9rem 1rem !important;
-    }
-
-    tbody td {
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Avatar neutro */
-    .avatar-circle {
-        width: 36px;
-        height: 36px;
-        background: rgba(0,0,0,0.05);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        font-size: 0.85rem;
-        flex-shrink: 0;
-    }
-
-    /* Botones de acción sin saltos */
-    .btn-action-custom {
-        width: 32px;
-        height: 32px;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 0.5rem;
-        transition: background 0.2s;
-    }
-
-    .empty-state {
-        padding: 4rem 2rem;
-        text-align: center;
-    }
-
-</style>
-
-<div class="page-container">
-    <!-- Header Section -->
-    <div class="header-section">
-        <div class="header-title">
-            <h1 class="apple-title mb-0">{{ titulo }}</h1>
-            <p class="apple-subtitle mb-0">Personal con función de {{ funcion_display|lower }}.</p>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ titulo }}</h1>
+            <p class="comp-subtitle">Personal con función de {{ funcion_display|lower }}.</p>
+            <div class="d-flex gap-2 mt-3 flex-wrap">
+                <a href="?status=ACTIVO" class="btn btn-sm rounded-pill {% if status_filtro == 'ACTIVO' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                    Activos ({{ conteo_status.ACTIVO }})
+                </a>
+                <a href="?status=LICENCIA" class="btn btn-sm rounded-pill {% if status_filtro == 'LICENCIA' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                    Licencias ({{ conteo_status.LICENCIA }})
+                </a>
+                <a href="?status=INACTIVO" class="btn btn-sm rounded-pill {% if status_filtro == 'INACTIVO' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                    Inactivos ({{ conteo_status.INACTIVO }})
+                </a>
+                <a href="?status=TODOS" class="btn btn-sm rounded-pill {% if status_filtro == 'TODOS' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                    Todos ({{ conteo_status.TODOS }})
+                </a>
+            </div>
         </div>
-        <div class="header-actions d-flex gap-2 flex-wrap">
-            <button id="exportarExcelBtn" class="apple-btn-ghost">
+        <div class="comp-actions">
+            <button type="button" id="exportarExcelBtn" class="btn btn-outline-secondary">
                 <i class="fas fa-file-excel me-2"></i>Exportar
             </button>
-            <a href="{% url 'agregar_maestro' %}" class="apple-btn">
+            {% if perms.gestion_escolar.add_maestro %}
+            <a href="{% url 'agregar_maestro' %}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i> Agregar
             </a>
+            {% endif %}
         </div>
     </div>
 
     {% if messages %}
-    <div class="mb-4">
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="comp-alert comp-alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
             </div>
         {% endfor %}
-    </div>
     {% endif %}
 
-    <!-- Table Section -->
-    <div class="table-container-card">
-        <div class="card-body p-0">
-            {% if trabajadores %}
+    {% if trabajadores %}
+    <div class="comp-panel comp-personal-list">
+        <div class="comp-panel-body">
             <div class="table-responsive">
-                <table id="tablaFunciones" class="table table-hover align-middle datatable-search mb-0 w-100">
+                <table id="tablaFunciones" class="comp-table comp-table-sm align-middle w-100" style="table-layout: fixed;">
                     <thead>
                         <tr>
-                            <th style="width: 100px;">ID</th>
-                            <th>Personal</th>
-                            <th>CCT</th>
-                            <th>Clave Presupuestal</th>
-                            <th class="text-center">Acciones</th>
+                            <th style="width: 40px;">ID</th>
+                            <th style="width: 330px;">Personal</th>
+                            <th style="width: 100px;">CCT</th>
+                            <th style="width: 180px;">Clave Presupuestal</th>
+                            <th style="width: 85px;">Status</th>
+                            <th class="text-center" style="width: 120px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for trabajador in trabajadores %}
                         <tr>
-                            <td class="text-muted small fw-bold">{{ trabajador.id_maestro }}</td>
+                            <td>
+                                <span class="comp-badge comp-badge-soft comp-font-mono comp-tabular-nums">{{ trabajador.id_maestro }}</span>
+                            </td>
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <div class="avatar-circle me-3">
-                                        {{ trabajador.nombres|slice:":1"|upper }}
-                                    </div>
-                                    <span class="fw-bold text-dark">{{ trabajador.a_paterno }} {{ trabajador.a_materno }} {{ trabajador.nombres }}</span>
+
+                                    <div class="fw-bold text-dark">{{ trabajador.a_paterno }} {{ trabajador.a_materno }} {{ trabajador.nombres }}</div>
                                 </div>
                             </td>
-                            <td><span class="fw-bold apple-num">{{ trabajador.id_escuela.id_escuela|default:"N/A" }}</span></td>
-                            <td><span class="small text-muted">{{ trabajador.clave_presupuestal|default:"-" }}</span></td>
+                            <td>
+                                <span class="comp-badge comp-badge-soft comp-font-mono">{{ trabajador.id_escuela.id_escuela|default:"N/A" }}</span>
+                            </td>
+                            <td>
+                                <span class="text-muted small comp-font-mono">{{ trabajador.clave_presupuestal|default:"-" }}</span>
+                            </td>
+                            <td>
+                                {% if trabajador.status == 'ACTIVO' %}
+                                    <span class="badge-soft-success">{{ trabajador.get_status_display|default:"Activo" }}</span>
+                                {% elif trabajador.status == 'INACTIVO' %}
+                                    <span class="badge-soft-danger">{{ trabajador.get_status_display|default:"Inactivo" }}</span>
+                                {% else %}
+                                    <span class="comp-badge comp-badge-warning">{{ trabajador.get_status_display|default:trabajador.status }}</span>
+                                {% endif %}
+                            </td>
                             <td class="text-center">
-                                <div class="d-flex gap-1 justify-content-center">
-                                    <a href="{% url 'detalle_maestro' trabajador.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Ver detalle">
-                                        <i class="fas fa-eye text-info"></i>
+                                <div class="comp-action-group">
+                                    <a href="{% url 'detalle_maestro' trabajador.pk %}" class="comp-action comp-action-view" title="Ver detalle" aria-label="Ver detalle de {{ trabajador.a_paterno }} {{ trabajador.a_materno }} {{ trabajador.nombres }}">
+                                        <i class="fas fa-eye"></i>
                                     </a>
                                     {% if perms.gestion_escolar.change_maestro %}
-                                    <a href="{% url 'editar_maestro' trabajador.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Editar">
-                                        <i class="fas fa-edit text-primary"></i>
+                                    <a href="{% url 'editar_maestro' trabajador.pk %}" class="comp-action comp-action-edit" title="Editar" aria-label="Editar a {{ trabajador.a_paterno }} {{ trabajador.a_materno }} {{ trabajador.nombres }}">
+                                        <i class="fas fa-edit"></i>
                                     </a>
                                     {% endif %}
                                     {% if perms.gestion_escolar.delete_maestro %}
-                                    <a href="{% url 'eliminar_maestro' trabajador.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Eliminar">
-                                        <i class="fas fa-trash text-danger"></i>
+                                    <a href="{% url 'eliminar_maestro' trabajador.pk %}" class="comp-action comp-action-delete" title="Eliminar" aria-label="Eliminar a {{ trabajador.a_paterno }} {{ trabajador.a_materno }} {{ trabajador.nombres }}">
+                                        <i class="fas fa-trash"></i>
                                     </a>
                                     {% endif %}
                                 </div>
@@ -164,38 +110,56 @@
                     </tbody>
                 </table>
             </div>
-            {% else %}
-            <div class="empty-state">
-                <h5 class="fw-bold" style="color: var(--text-2, #6e6e73);">Sin registros</h5>
-                <p class="small" style="color: var(--text-3, #86868b);">Agregue el primero para esta función.</p>
-                <a href="{% url 'agregar_maestro' %}" class="apple-btn mt-2">
-                    <i class="fas fa-plus me-1"></i> Agregar
-                </a>
-            </div>
-            {% endif %}
         </div>
     </div>
+    {% else %}
+    <div class="comp-panel">
+        <div class="comp-empty-state">
+            <i class="fas fa-user-slash"></i>
+            <p>No se encontraron registros para esta función.</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const tabla = document.getElementById('tablaFunciones');
+        if (!tabla) return;
+
+        const table = $(tabla).DataTable({
+            responsive: true,
+            autoWidth: false,
+            language: {
+                ...window.SpanishDataTable,
+                search: "_INPUT_",
+                searchPlaceholder: "Buscar personal..."
+            },
+            pageLength: 15,
+            lengthMenu: [10, 15, 25, 50, 100],
+            order: [[0, 'asc']],
+            columnDefs: [
+                { targets: 5, orderable: false, searchable: false },
+                { type: 'html-accent-neutral', targets: '_all' }
+            ],
+            drawCallback: function () {
+                $('.dataTables_paginate > .pagination').addClass('pagination-sm justify-content-end px-3 py-2');
+                $('.dataTables_info').addClass('px-3 small text-muted');
+            }
+        });
+
         const exportBtn = document.getElementById('exportarExcelBtn');
         if (exportBtn) {
             exportBtn.addEventListener('click', function () {
                 const funcion = '{{ funcion|escapejs }}';
-                let url = `{% url 'exportar_maestros_excel' %}?funcion=${funcion}`;
+                const statusTab = '{{ status_filtro|escapejs }}';
+                let url = `{% url 'exportar_maestros_excel' %}?funcion=${funcion}&status=${statusTab}`;
 
-                try {
-                    const dataTable = $('#tablaFunciones').DataTable();
-                    const filtro = dataTable.search();
-                    if (filtro) {
-                        url += `&filtro=${encodeURIComponent(filtro)}`;
-                    }
-                } catch (e) {
-                    console.error("Could not get DataTable search filter:", e);
+                const filtro = table.search();
+                if (filtro) {
+                    url += `&filtro=${encodeURIComponent(filtro)}`;
                 }
                 window.location.href = url;
             });

@@ -4,246 +4,81 @@
 {% block title %}Detalle de la Escuela | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .premium-header {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    /* Tarjeta consolidada */
-    .premium-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-        margin-bottom: 1.5rem;
-    }
-
-    .card-section {
-        padding: 1.75rem clamp(17px, 3vw, 2.5rem);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .card-section:last-child {
-        border-bottom: none;
-    }
-
-    .section-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.25rem;
-    }
-
-    .section-header h5 {
-        font-size: 0.95rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--text, #1d1d1f);
-        margin: 0;
-    }
-
-    .section-icon {
-        display: none;
-    }
-
-    .section-icon {
-        display: none;
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .info-item {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .info-label {
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        letter-spacing: 0.025em;
-    }
-
-    .info-value {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--text, #1d1d1f);
-    }
-
-    /* Tablas internas */
-    .table-responsive {
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .table thead th {
-        background: var(--surface, #fff);
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        color: var(--text-2, #6e6e73);
-        padding: 0.9rem 1.5rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .table tbody td {
-        padding: 0.9rem 1.5rem;
-        font-size: 0.85rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Etiquetas neutras */
-    .badge-soft {
-        font-weight: 600;
-        padding: 0.4em 1em;
-        border-radius: 2rem;
-        background: rgba(0,0,0,0.05);
-        color: var(--text-2, #6e6e73);
-    }
-
-    /* Etiquetas neutras */
-    .badge-soft, .bg-soft-info, .bg-soft-success {
-        background: rgba(0,0,0,0.05) !important;
-        color: var(--text-2, #6e6e73) !important;
-    }
-
-    /* Directorio ancho */
-    .directorio-table thead th {
-        font-size: 0.65rem;
-        white-space: nowrap;
-    }
-    .directorio-table tbody td {
-        font-size: 0.78rem;
-        white-space: nowrap;
-    }
-    .table-responsive-directorio {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        border-radius: 14px;
-    }
-    .table-responsive-directorio .table {
-        min-width: 1400px;
-        margin-bottom: 0;
-    }
-    .directorio-table thead th {
-        position: sticky;
-        top: 0;
-        background: var(--surface, #fff);
-        z-index: 1;
-    }
-
-    @media print {
-        .premium-header, .btn, footer, .d-flex.justify-content-between {
-            display: none !important;
-        }
-        .page-container { padding: 0; }
-        .premium-card { border: none; box-shadow: none; }
-        .card-section { padding: 1.5rem 0; background: transparent !important; }
-        .info-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-    }
-</style>
-
-<div class="page-container">
+<div class="comp-page-container comp-detail">
     <!-- Header -->
-    <div class="premium-header">
-        <div class="header-info">
-            <h1 class="apple-title">{{ escuela.nombre_ct }}</h1>
-            <p class="mb-0" style="font-size: 0.85rem; color: var(--text-2, #6e6e73);">CCT <span class="fw-bold apple-num">{{ escuela.id_escuela }}</span> · {{ escuela.zona_esc.etiqueta }}</p>
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ escuela.nombre_ct }}</h1>
+            <p class="comp-subtitle">CCT <strong class="comp-font-mono">{{ escuela.id_escuela }}</strong> · {{ escuela.zona_esc.etiqueta }}</p>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
+        <div class="comp-actions">
             {% if es_fua %}
-            <button type="button" class="apple-btn-ghost" onclick="toggleDirectorio()" id="btn-directorio">
+            <button type="button" class="btn btn-outline-secondary" onclick="toggleDirectorio()" id="btn-directorio">
                 <i class="fas fa-building me-2"></i> Directorio
-                <span class="apple-tag apple-num ms-2">{{ escuelas_regulares|length }}</span>
+                <span class="comp-badge comp-badge-soft ms-2">{{ escuelas_regulares|length }}</span>
             </button>
             {% endif %}
-            <button onclick="window.print();" class="apple-btn-ghost">
+            <button type="button" onclick="window.print();" class="btn btn-outline-secondary">
                 <i class="fas fa-print me-2"></i> Imprimir
             </button>
             {% if perms.gestion_escolar.change_escuela %}
-            <a href="{% url 'editar_escuela' escuela.pk %}" class="apple-btn">
+            <a href="{% url 'editar_escuela' escuela.pk %}" class="btn btn-primary">
                 <i class="fas fa-edit me-2"></i> Editar
             </a>
             {% endif %}
-            <a href="{% url 'lista_escuelas' %}" class="apple-btn-ghost">
+            <a href="{% url 'lista_escuelas' %}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-2"></i> Volver
             </a>
         </div>
     </div>
 
     <!-- Main Card -->
-    <div class="premium-card">
+    <div class="comp-panel">
         <!-- Section 1: General Data -->
-        <div class="card-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="fas fa-info-circle"></i></div>
+        <div class="comp-section">
+            <div class="comp-section-title">
                 <h5>Información General del Centro de Trabajo</h5>
             </div>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">Clave (CCT)</span>
-                    <span class="info-value font-monospace">{{ escuela.id_escuela }}</span>
+            <div class="comp-info-grid">
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Clave (CCT)</span>
+                    <span class="comp-info-value comp-font-mono">{{ escuela.id_escuela }}</span>
                 </div>
-                <div class="info-item" style="grid-column: span 2;">
-                    <span class="info-label">Nombre Oficial</span>
-                    <span class="info-value text-primary">{{ escuela.nombre_ct }}</span>
+                <div class="comp-info-item comp-info-item-span-2">
+                    <span class="comp-info-label">Nombre Oficial</span>
+                    <span class="comp-info-value text-primary">{{ escuela.nombre_ct }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Zona Escolar</span>
-                    <span class="info-value">{{ escuela.zona_esc.etiqueta }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Zona Escolar</span>
+                    <span class="comp-info-value">{{ escuela.zona_esc.etiqueta }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Supervisor Asignado</span>
-                    <span class="info-value">
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Supervisor Asignado</span>
+                    <span class="comp-info-value">
                         {% with supervisor=escuela.zona_esc.supervisor %}
-                            {% if supervisor %}{{ supervisor.nombres }} {{ supervisor.a_paterno }} {{ supervisor.a_materno }}{% else %}<span class="text-muted italic">No asignado</span>{% endif %}
+                            {% if supervisor %}{{ supervisor.nombres }} {{ supervisor.a_paterno }} {{ supervisor.a_materno }}{% else %}<span class="comp-text-muted fst-italic">No asignado</span>{% endif %}
                         {% endwith %}
                     </span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Director(a) de la Escuela</span>
-                    <span class="info-value">
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Director(a) de la Escuela</span>
+                    <span class="comp-info-value">
                         {% if director_escuela %}
                             {{ director_escuela.nombres }} {{ director_escuela.a_paterno }} {{ director_escuela.a_materno }}
                         {% else %}
-                            <span class="text-muted italic">No asignado(a)</span>
+                            <span class="comp-text-muted fst-italic">No asignado(a)</span>
                         {% endif %}
                     </span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Turno</span>
-                    <span class="info-value">
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Turno</span>
+                    <span class="comp-info-value">
                         {% if escuela.turno == 'MATUTINO' %}
-                            <span class="badge bg-primary rounded-pill px-4 py-2" style="font-size:0.95rem; letter-spacing:0.3px;">{{ escuela.get_turno_display }}</span>
+                            <span class="comp-badge comp-badge-accent comp-badge-lg">{{ escuela.get_turno_display }}</span>
                         {% elif escuela.turno == 'VESPERTINO' %}
-                            <span class="badge bg-danger rounded-pill px-4 py-2" style="font-size:0.95rem; letter-spacing:0.3px;">{{ escuela.get_turno_display }}</span>
+                            <span class="comp-badge comp-badge-danger comp-badge-lg">{{ escuela.get_turno_display }}</span>
                         {% else %}
-                            <span class="badge bg-secondary rounded-pill px-4 py-2" style="font-size:0.95rem; letter-spacing:0.3px;">{{ escuela.get_turno_display }}</span>
+                            <span class="comp-badge comp-badge-soft comp-badge-lg">{{ escuela.get_turno_display }}</span>
                         {% endif %}
                     </span>
                 </div>
@@ -251,103 +86,102 @@
         </div>
 
         <!-- Section 2: Technical Profile -->
-        <div class="card-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="fas fa-cog"></i></div>
+        <div class="comp-section">
+            <div class="comp-section-title">
                 <h5>Perfil Técnico y Administrativo</h5>
             </div>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">Zona Económica</span>
-                    <span class="info-value">{{ escuela.get_zona_economica_display }}</span>
+            <div class="comp-info-grid">
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Zona Económica</span>
+                    <span class="comp-info-value">{{ escuela.get_zona_economica_display }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Región</span>
-                    <span class="info-value">{{ escuela.region|default:"N/A" }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Región</span>
+                    <span class="comp-info-value">{{ escuela.region|default:"N/A" }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Unidad de Dependencia (U.D.)</span>
-                    <span class="info-value">{{ escuela.get_u_d_display }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Unidad de Dependencia (U.D.)</span>
+                    <span class="comp-info-value">{{ escuela.get_u_d_display }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Sostenimiento</span>
-                    <span class="info-value">{{ escuela.get_sostenimiento_display }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Sostenimiento</span>
+                    <span class="comp-info-value">{{ escuela.get_sostenimiento_display }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Registro Inicial</span>
-                    <span class="info-value small text-muted">{{ escuela.fecha_registro|date:"d/m/Y H:i" }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Registro Inicial</span>
+                    <span class="comp-info-value small comp-text-muted">{{ escuela.fecha_registro|date:"d/m/Y H:i" }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Última Actualización</span>
-                    <span class="info-value small text-muted">{{ escuela.fecha_actualizacion|date:"d/m/Y H:i" }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Última Actualización</span>
+                    <span class="comp-info-value small comp-text-muted">{{ escuela.fecha_actualizacion|date:"d/m/Y H:i" }}</span>
                 </div>
             </div>
         </div>
 
         <!-- Section 3: Contact and Location -->
-        <div class="card-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="fas fa-map-marker-alt"></i></div>
+        <div class="comp-section">
+            <div class="comp-section-title">
                 <h5>Ubicación y Contacto</h5>
             </div>
-            <div class="info-grid">
-                <div class="info-item" style="grid-column: span 2;">
-                    <span class="info-label">Domicilio del C.T.</span>
-                    <span class="info-value fw-medium">{{ escuela.domicilio }}</span>
+            <div class="comp-info-grid">
+                <div class="comp-info-item comp-info-item-span-2">
+                    <span class="comp-info-label">Domicilio del C.T.</span>
+                    <span class="comp-info-value fw-medium">{{ escuela.domicilio }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Teléfono Oficial</span>
-                    <span class="info-value"><i class="fas fa-phone me-2 text-muted"></i>{{ escuela.telefono_ct|default:"---" }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Teléfono Oficial</span>
+                    <span class="comp-info-value"><i class="fas fa-phone me-2 text-muted"></i>{{ escuela.telefono_ct|default:"---" }}</span>
                 </div>
             </div>
         </div>
 
         <!-- Section 4: Personnel Table -->
         {% if perms.gestion_escolar.view_maestro %}
-        <div class="card-section">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div class="section-header mb-0">
-                    <div class="section-icon bg-white text-success shadow-sm"><i class="fas fa-users"></i></div>
-                    <h5>Plantilla de Personal ({{ personal.count }})</h5>
-                </div>
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h5>Plantilla de Personal ({{ personal.count }})</h5>
                 {% if perms.gestion_escolar.add_maestro %}
-                <a href="{% url 'agregar_maestro' %}?escuela_id={{ escuela.pk }}" class="btn btn-success btn-sm rounded-pill px-3 fw-bold shadow-sm btn-hover-animate">
+                <a href="{% url 'agregar_maestro' %}?escuela_id={{ escuela.pk }}" class="btn btn-sm btn-primary ms-auto">
                     <i class="fas fa-plus-circle me-1"></i> Alta de Personal
                 </a>
                 {% endif %}
             </div>
-            
+
             {% if personal %}
-            <div class="table-responsive shadow-sm">
-                <table class="table table-hover align-middle mb-0">
+            <div class="table-responsive border rounded-4">
+                <table class="comp-table comp-table-sm align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="ps-4">Nombre Completo</th>
+                            <th>Nombre Completo</th>
                             <th>RFC / CURP</th>
                             <th>Función Oficial</th>
-                            <th class="text-end pe-4">Acciones</th>
+                            <th>Status</th>
+                            <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for maestro in personal %}
                         <tr>
-                            <td class="ps-4">
+                            <td>
                                 <div class="fw-bold text-dark">{{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</div>
                             </td>
                             <td>
                                 <div class="small fw-bold">{{ maestro.rfc|default:"N/A" }}</div>
-                                <div class="smaller text-muted">{{ maestro.curp|default:"N/A" }}</div>
+                                <div class="small comp-text-muted">{{ maestro.curp|default:"N/A" }}</div>
                             </td>
                             <td>
-                                <span class="badge bg-soft-info text-info rounded-pill px-3 small">{{ maestro.get_funcion_display|default:"No asignada" }}</span>
+                                <span class="comp-badge comp-badge-accent comp-badge-wrap">{{ maestro.get_funcion_display|default:"No asignada" }}</span>
                             </td>
-                            <td class="text-end pe-4">
-                                <div class="btn-group gap-1">
-                                    <a href="{% url 'detalle_maestro' maestro.pk %}" class="btn btn-sm btn-light border rounded-pill px-3 fw-bold btn-hover-animate" title="Detalle">
-                                        <i class="fas fa-eye me-1"></i> Perfil
+                            <td>
+                                <span class="small fw-bold">{{ maestro.get_status_display|default:maestro.status }}</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="comp-action-group">
+                                    <a href="{% url 'detalle_maestro' maestro.pk %}" class="comp-action comp-action-view" title="Ver perfil" aria-label="Ver perfil de {{ maestro.nombres }} {{ maestro.a_paterno }}">
+                                        <i class="fas fa-eye"></i>
                                     </a>
                                     {% if perms.gestion_escolar.change_maestro %}
-                                    <a href="{% url 'editar_maestro' maestro.pk %}" class="btn btn-sm btn-outline-primary border-0 rounded-circle p-2" title="Editar">
+                                    <a href="{% url 'editar_maestro' maestro.pk %}" class="comp-action comp-action-edit" title="Editar" aria-label="Editar a {{ maestro.nombres }} {{ maestro.a_paterno }}">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     {% endif %}
@@ -359,9 +193,9 @@
                 </table>
             </div>
             {% else %}
-            <div class="text-center py-5 bg-white rounded-4 border border-dashed">
-                <i class="fas fa-id-badge fa-3x text-muted opacity-25 mb-3"></i>
-                <p class="text-muted fw-bold mb-0">No se ha registrado personal en este centro de trabajo.</p>
+            <div class="comp-empty-state">
+                <i class="fas fa-id-badge"></i>
+                <p>No se ha registrado personal en este centro de trabajo.</p>
             </div>
             {% endif %}
         </div>
@@ -369,18 +203,17 @@
 
         <!-- Section 5: Directorio de Escuelas Regulares (solo CCTs FUA) -->
         {% if es_fua %}
-        <div class="card-section" id="directorio-section" style="display: none;">
-            <div class="section-header">
-                <div class="section-icon bg-warning text-dark"><i class="fas fa-building"></i></div>
+        <div class="comp-section" id="directorio-section" style="display: none;">
+            <div class="comp-section-title">
                 <h5>Directorio de Escuelas Regulares ({{ escuelas_regulares|length }})</h5>
             </div>
 
             {% if escuelas_regulares %}
-            <div class="table-responsive-directorio">
-                <table class="table table-hover align-middle mb-0 directorio-table">
+            <div class="table-responsive-directorio border rounded-4">
+                <table class="comp-table comp-table-sm directorio-table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="ps-3">Nombre de la Escuela</th>
+                            <th>Nombre de la Escuela</th>
                             <th>Nivel</th>
                             <th>Subsistema</th>
                             <th>Calle y Núm.</th>
@@ -398,15 +231,15 @@
                     <tbody>
                         {% for esc in escuelas_regulares %}
                         <tr>
-                            <td class="ps-3 fw-bold text-dark">{{ esc.nombre_escuela }}</td>
-                            <td><span class="badge bg-soft-info text-info rounded-pill px-2">{{ esc.nivel }}</span></td>
-                            <td><span class="badge bg-soft-success text-success rounded-pill px-2">{{ esc.subsistema }}</span></td>
+                            <td class="fw-bold text-dark">{{ esc.nombre_escuela }}</td>
+                            <td><span class="comp-badge comp-badge-soft">{{ esc.nivel }}</span></td>
+                            <td><span class="comp-badge comp-badge-soft">{{ esc.subsistema }}</span></td>
                             <td class="small">{{ esc.calle_num|default:"---" }}</td>
                             <td class="small">{{ esc.colonia|default:"---" }}</td>
-                            <td class="small font-monospace">{{ esc.cp|default:"---" }}</td>
+                            <td class="small comp-font-mono">{{ esc.cp|default:"---" }}</td>
                             <td class="small">{{ esc.localidad|default:"---" }}</td>
                             <td class="small">{{ esc.municipio|default:"---" }}</td>
-                            <td><span class="badge bg-secondary rounded-pill px-2">{{ esc.turno|default:"---" }}</span></td>
+                            <td><span class="comp-badge comp-badge-soft">{{ esc.turno|default:"---" }}</span></td>
                             <td class="small">{{ esc.supervisor|default:"---" }}</td>
                             <td class="small fw-bold">{{ esc.director|default:"---" }}</td>
                             <td class="small">{{ esc.maestro_apoyo|default:"---" }}</td>
@@ -417,10 +250,10 @@
                 </table>
             </div>
             {% else %}
-            <div class="text-center py-5 bg-white rounded-4 border border-dashed">
-                <i class="fas fa-building fa-3x text-muted opacity-25 mb-3"></i>
-                <p class="text-muted fw-bold mb-0">No se ha registrado el directorio de escuelas regulares para este CCT.</p>
-                <p class="text-muted small">Use el comando de importación para cargar los datos desde el CSV.</p>
+            <div class="comp-empty-state">
+                <i class="fas fa-building"></i>
+                <p>No se ha registrado el directorio de escuelas regulares para este CCT.</p>
+                <small class="comp-text-muted d-block mt-1">Use el comando de importación para cargar los datos desde el CSV.</small>
             </div>
             {% endif %}
         </div>
@@ -434,11 +267,11 @@ function toggleDirectorio() {
     const btn = document.getElementById('btn-directorio');
     if (section.style.display === 'none' || section.style.display === '') {
         section.style.display = 'block';
-        btn.innerHTML = '<i class="fas fa-building me-2"></i> Ocultar Directorio <span class="badge bg-dark ms-2">{{ escuelas_regulares|length }}</span>';
+        btn.innerHTML = '<i class="fas fa-building me-2"></i> Ocultar Directorio <span class="comp-badge comp-badge-soft ms-2">{{ escuelas_regulares|length }}</span>';
         section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
         section.style.display = 'none';
-        btn.innerHTML = '<i class="fas fa-building me-2"></i> Directorio de Escuelas <span class="badge bg-dark ms-2">{{ escuelas_regulares|length }}</span>';
+        btn.innerHTML = '<i class="fas fa-building me-2"></i> Directorio de Escuelas <span class="comp-badge comp-badge-soft ms-2">{{ escuelas_regulares|length }}</span>';
     }
 }
 </script>

@@ -65,7 +65,11 @@ class UserCreationFormCustom(UserCreationForm):
         }
 
     def __init__(self, *args, **kwargs):
+        # Solo un superusuario puede otorgar superusuario a otros.
+        puede_dar_superusuario = kwargs.pop('puede_dar_superusuario', False)
         super().__init__(*args, **kwargs)
+        if not puede_dar_superusuario:
+            self.fields.pop('is_superuser', None)
         self.fields['password1'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Contraseña'})
         self.fields['password2'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Confirmar contraseña'})
         
@@ -88,7 +92,7 @@ class UserCreationFormCustom(UserCreationForm):
         user.last_name = self.cleaned_data['last_name']
         user.is_active = self.cleaned_data['is_active']
         user.is_staff = self.cleaned_data['is_staff']
-        user.is_superuser = self.cleaned_data['is_superuser']
+        user.is_superuser = self.cleaned_data.get('is_superuser', False)
         
         if commit:
             user.save()
@@ -161,7 +165,11 @@ class UserUpdateFormCustom(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        # Solo un superusuario puede otorgar superusuario a otros.
+        puede_dar_superusuario = kwargs.pop('puede_dar_superusuario', False)
         super().__init__(*args, **kwargs)
+        if not puede_dar_superusuario:
+            self.fields.pop('is_superuser', None)
         
         # Personalizar labels
         self.fields['username'].label = 'Nombre de Usuario'

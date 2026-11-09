@@ -1,24 +1,99 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
-{% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-6 mx-auto">
-            <div class="card apple-panel border-0">
-                <div class="card-body p-4">
-                    <h4 class="mb-3" style="font-weight: 700; letter-spacing: -0.01em;">Eliminar Maestro</h4>
-                    <p>¿Eliminar al maestro <strong>{{ maestro.a_paterno }} {{ maestro.a_materno }} {{ maestro.nombres }}</strong> (ID: {{ maestro.id_maestro }})?</p>
-                    <p style="color: var(--heat, #ff6b00);">Esta acción no se puede deshacer.</p>
+{% block title %}Eliminar Maestro | Control de Maestros{% endblock %}
 
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'lista_maestros' %}" class="apple-btn-ghost">Cancelar</a>
-                            <button type="submit" class="btn btn-danger">Eliminar</button>
-                        </div>
-                    </form>
+{% block content %}
+<div class="comp-page-container">
+    <div class="comp-form-narrow">
+        <div class="comp-page-header">
+            <div class="comp-title-group">
+                <h1 class="comp-title">Eliminar Maestro</h1>
+                <p class="comp-subtitle">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="comp-actions">
+                <a href="{% url 'lista_maestros' %}" class="comp-btn comp-btn-ghost">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <p class="mb-3">
+                    ¿Eliminar al maestro
+                    <strong>{{ maestro.a_paterno }} {{ maestro.a_materno }} {{ maestro.nombres }}</strong>
+                    <span class="comp-code ms-1">ID {{ maestro.id_maestro }}</span>?
+                </p>
+
+                <div class="comp-alert comp-alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>El registro se eliminará de forma permanente del sistema.</div>
                 </div>
+
+                {% if impacto %}
+                    <div class="comp-info-grid mb-3">
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Plazas secundarias vinculadas</span>
+                            <span class="comp-info-value">{{ impacto.secundarias|length }}</span>
+                        </div>
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Vacancias donde es titular</span>
+                            <span class="comp-info-value">{{ impacto.vacancias_titular }}</span>
+                        </div>
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Interinatos que cubrió</span>
+                            <span class="comp-info-value">{{ impacto.interinatos_cubiertos }}</span>
+                        </div>
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">FUPs</span>
+                            <span class="comp-info-value">{{ impacto.fups }}</span>
+                        </div>
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Documentos</span>
+                            <span class="comp-info-value">{{ impacto.documentos }}</span>
+                        </div>
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Kardex</span>
+                            <span class="comp-info-value">{{ impacto.kardex }}</span>
+                        </div>
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Historiales</span>
+                            <span class="comp-info-value">{{ impacto.historiales }}</span>
+                        </div>
+                    </div>
+
+                    {% if impacto.secundarias and not maestro.maestro_principal %}
+                        <p class="small comp-text-muted">Es plaza raíz: al eliminar, la secundaria más antigua pasará a ser la nueva raíz.</p>
+                    {% endif %}
+
+                    {% if impacto.bloqueado %}
+                        <div class="comp-alert comp-alert-danger">
+                            <i class="fas fa-ban"></i>
+                            <div>
+                                No se puede eliminar porque tiene movimientos ligados. En su lugar póngala en
+                                <strong>INACTIVO</strong> desde
+                                <a href="{% url 'editar_maestro' maestro.id_maestro %}">Editar</a>.
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="comp-form-actions">
+                        {% if impacto and impacto.bloqueado %}
+                            <button type="submit" class="comp-btn comp-btn-danger" disabled>
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        {% else %}
+                            <button type="submit" class="comp-btn comp-btn-danger">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        {% endif %}
+                        <a href="{% url 'lista_maestros' %}" class="comp-btn comp-btn-ghost">Cancelar</a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

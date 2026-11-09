@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 from .models import (
     Zona, Escuela, Maestro, Categoria, MotivoTramite, Tema,
     PlantillaTramite, Prelacion, TipoApreciacion, Vacancia, 
@@ -6,6 +7,15 @@ from .models import (
 )
 from django.contrib.auth.models import User, Group, Permission
 import re
+
+from .validators import (
+    es_curp_valida,
+    es_rfc_valido,
+    normalizar_curp,
+    normalizar_rfc,
+    validar_curp,
+    validar_rfc,
+)
 
 class UppercaseFormMixin(object):
     """
@@ -44,7 +54,7 @@ class PendienteForm(UppercaseFormMixin, forms.ModelForm):
         widgets = {
             'titulo': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'fecha_programada': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'fecha_programada': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
         }
         labels = {
             'titulo': 'Título del Pendiente',
@@ -61,8 +71,8 @@ class RegistroCorrespondenciaForm(UppercaseFormMixin, forms.ModelForm):
             'archivo_adjunto', 'quien_recibio'
         ]
         widgets = {
-            'fecha_recibido': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'fecha_oficio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'fecha_recibido': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
+            'fecha_oficio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
             'maestro': forms.Select(attrs={'class': 'form-control select2'}),
             'tipo_documento': forms.Select(attrs={'class': 'form-control'}),
             'folio_documento': forms.TextInput(attrs={'class': 'form-control'}),
@@ -111,8 +121,8 @@ class VacanciaForm(UppercaseFormMixin, forms.ModelForm):
             'apreciacion': forms.Select(attrs={'class': 'form-control select2'}),
             'tipo_vacante': forms.Select(attrs={'class': 'form-control'}),
             'tipo_movimiento_original': forms.Select(attrs={'class': 'form-control'}),
-            'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'fecha_final': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
+            'fecha_final': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
             'observaciones': forms.Textarea(attrs={'rows': 3}),
             'pseudoplaza': forms.TextInput(attrs={'class': 'form-control', 'maxlength': 1}),
         }
@@ -159,6 +169,16 @@ class VacanciaForm(UppercaseFormMixin, forms.ModelForm):
         elif not cleaned_data.get('fecha_final'):
             # Si es temporal, la fecha final es obligatoria.
             self.add_error('fecha_final', 'Este campo es requerido para vacantes temporales.')
+
+        # La fecha inicial no puede ser mayor a la final; final vacía = sin fin.
+        fi = cleaned_data.get('fecha_inicio')
+        ff = cleaned_data.get('fecha_final')
+        if fi and ff and fi > ff:
+            self.add_error(
+                'fecha_final',
+                'La fecha inicial no puede ser mayor a la fecha final. '
+                'Deje la fecha final vacía si no tiene fin.'
+            )
 
         if apreciacion_desc == "ADMISIÓN.EDUCACIÓN BÁSICA.DOCENTE.EDUCACIÓN ESPECIAL.PSICOLOGÍA EDUCATIVA":
             funcion = (maestro.funcion or '').upper().replace('Ó', 'O')
@@ -267,6 +287,18 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         request = kwargs.pop('request', None)
+        # En "agregar otra plaza" se comparte CURP a propósito (misma persona,
+        # clave nueva): ahí el candado no aplica.
+        self.permitir_curp_duplicada = kwargs.pop('permitir_curp_duplicada', False)
+        # La validación de CURP/RFC solo se activa en alta, edición y "agregar
+        # otra plaza" (no en admin ni en otros formularios que reutilicen esta
+        # clase).
+        self.validar_curp_rfc = kwargs.pop('validar_curp_rfc', False)
+        # Valores heredados de un registro existente (usado por "agregar otra
+        # plaza"). Si la CURP/RFC vieja es inválida y no se modifica, se permite
+        # guardar y solo se advierte.
+        legacy_curp = kwargs.pop('legacy_curp', None)
+        legacy_rfc = kwargs.pop('legacy_rfc', None)
         super().__init__(*args, **kwargs)
         # Cargamos el catálogo completo para estabilidad (solo 127 registros)
         self.fields['id_escuela'].queryset = Escuela.objects.all().order_by('nombre_ct')
@@ -280,10 +312,51 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
         self.fields['est_civil'].widget.attrs.update({'class': 'form-control'})
         self.fields['nivel_estudio'].widget.attrs.update({'class': 'form-control'})
         self.fields['status'].widget.attrs.update({'class': 'form-control'})
-        
+
+        if self.instance and self.instance.pk:
+            self._curp_guardada = normalizar_curp(self.instance.curp)
+            self._rfc_guardado = normalizar_rfc(self.instance.rfc)
+        else:
+            self._curp_guardada = normalizar_curp(legacy_curp)
+            self._rfc_guardado = normalizar_rfc(legacy_rfc)
+        # Avisos para datos heredados que no pasan la validación actual. Se
+        # recalculan en clean_curp/clean_rfc si el usuario corrige el valor.
+        self.curp_aviso_legacy = bool(self._curp_guardada) and not es_curp_valida(self._curp_guardada)
+        self.rfc_aviso_legacy = bool(self._rfc_guardado) and not es_rfc_valido(self._rfc_guardado)
+
         if request and not request.user.is_superuser:
             if 'user' in self.fields:
                 self.fields.pop('user')
+
+    def clean_curp(self):
+        valor = normalizar_curp(self.cleaned_data.get('curp'))
+        self.curp_aviso_legacy = False
+        if not valor:
+            return ''
+        if not self.validar_curp_rfc:
+            return valor
+        # Dato viejo sin cambios: se conserva tal cual y solo se advierte.
+        if valor == self._curp_guardada:
+            if not es_curp_valida(valor):
+                self.curp_aviso_legacy = True
+            return valor
+        validar_curp(valor)
+        return valor
+
+    def clean_rfc(self):
+        valor = normalizar_rfc(self.cleaned_data.get('rfc'))
+        self.rfc_aviso_legacy = False
+        if not valor:
+            return ''
+        if not self.validar_curp_rfc:
+            return valor
+        # Dato viejo sin cambios: se conserva tal cual y solo se advierte.
+        if valor == self._rfc_guardado:
+            if not es_rfc_valido(valor):
+                self.rfc_aviso_legacy = True
+            return valor
+        validar_rfc(valor)
+        return valor
 
     def clean(self):
         cleaned_data = super().clean()
@@ -293,18 +366,23 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
         curp = cleaned_data.get('curp')
         rfc = cleaned_data.get('rfc')
         id_escuela = cleaned_data.get('id_escuela')
+        num_plaza = cleaned_data.get('num_plaza')
 
+        # El duplicado es la COMBINACION persona + escuela + plaza. Sin el numero
+        # de plaza, todo maestro con varias plazas (77 personas / 193 filas) se
+        # marcaba como duplicado de si mismo, y ni siquiera se podia editar.
         if all(v is not None for v in [a_paterno, a_materno, nombres, curp, rfc]) and id_escuela:
             qs = Maestro.objects.filter(
                 a_paterno=a_paterno, a_materno=a_materno, nombres=nombres,
                 curp=curp, rfc=rfc, id_escuela=id_escuela,
+                num_plaza=num_plaza,
             )
             if self.instance.pk:
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.exists():
                 raise forms.ValidationError(
-                    'Ya existe un maestro registrado con esos mismos datos '
-                    '(nombre, CURP, RFC, escuela, clave presupuestal). '
+                    'Ya existe otro maestro con esos mismos datos '
+                    '(nombre, CURP, RFC, escuela y número de plaza). '
                     'Verifique antes de crear un duplicado.'
                 )
 
@@ -322,6 +400,42 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
             valor = cleaned_data.get(campo)
             if valor and not _re.match(patron, str(valor)):
                 self.add_error(campo, mensaje)
+
+        # Candado CURP exacta: si ya existe otro registro con la misma CURP, el
+        # trabajador ya está registrado. No se crea persona nueva: la clave debe
+        # agregarse como otra plaza desde su Detalle. Aplica en alta, edición y
+        # admin (ver MaestroAdmin); "agregar otra plaza" lo desactiva a propósito.
+        if not self.permitir_curp_duplicada:
+            curp_val = (curp or '').strip()
+            if curp_val:
+                qs_curp = Maestro.objects.filter(curp__iexact=curp_val)
+                if self.instance.pk:
+                    # Excluir a toda la persona (raíz + plazas secundarias): la
+                    # misma CURP en sus otras plazas no es duplicado.
+                    raiz = self.instance
+                    vistos = set()
+                    while getattr(raiz, 'maestro_principal_id', None):
+                        if raiz.maestro_principal_id in vistos:
+                            break
+                        vistos.add(raiz.maestro_principal_id)
+                        padre = Maestro.objects.filter(pk=raiz.maestro_principal_id).first()
+                        if not padre:
+                            break
+                        raiz = padre
+                    propios = {raiz.pk} | set(
+                        Maestro.objects.filter(maestro_principal_id=raiz.pk).values_list('pk', flat=True)
+                    )
+                    qs_curp = qs_curp.exclude(pk__in=propios)
+                duplicado = qs_curp.first()
+                if duplicado:
+                    cct_dup = duplicado.id_escuela.id_escuela if duplicado.id_escuela else 's/CCT'
+                    self.add_error(
+                        'curp',
+                        f'Esta CURP ya existe: {duplicado.nombres or ""} {duplicado.a_paterno or ""} '
+                        f'{duplicado.a_materno or ""} (ID {duplicado.id_maestro}, CCT {cct_dup}). '
+                        'El maestro ya está registrado: agréguele la clave presupuestal como '
+                        'otra plaza desde su Detalle, no lo cree de nuevo.'
+                    )
         return cleaned_data
 
     def clean_techo_f(self):
@@ -337,14 +451,26 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
         widgets = {
             'domicilio_part': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
             'observaciones': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'fecha_ingreso': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'fecha_promocion': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'fecha_nacimiento': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
+            'fecha_ingreso': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
+            'fecha_promocion': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
             'a_paterno': forms.TextInput(attrs={'class': 'form-control'}),
             'a_materno': forms.TextInput(attrs={'class': 'form-control'}),
             'nombres': forms.TextInput(attrs={'class': 'form-control'}),
-            'curp': forms.TextInput(attrs={'class': 'form-control'}),
-            'rfc': forms.TextInput(attrs={'class': 'form-control'}),
+            'curp': forms.TextInput(attrs={
+                'class': 'form-control',
+                'maxlength': '18',
+                'autocomplete': 'off',
+                'spellcheck': 'false',
+                'placeholder': '18 caracteres',
+            }),
+            'rfc': forms.TextInput(attrs={
+                'class': 'form-control',
+                'maxlength': '13',
+                'autocomplete': 'off',
+                'spellcheck': 'false',
+                'placeholder': '13 caracteres',
+            }),
             'codigo': forms.TextInput(attrs={'class': 'form-control'}),
             'form_academica': forms.TextInput(attrs={'class': 'form-control'}),
             'horario': forms.TextInput(attrs={'class': 'form-control'}),
@@ -409,18 +535,142 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
     )
     def __init__(self, *args, **kwargs):
         form_type = kwargs.pop('form_type', None)
+        plantilla_id = kwargs.pop('plantilla_id', None)
         super().__init__(*args, **kwargs)
 
+        # La plantilla puede venir del POST, del initial o de la URL (?plantilla=).
+        if plantilla_id is None:
+            if self.is_bound:
+                plantilla_id = self.data.get('plantilla')
+            else:
+                plantilla_id = self.initial.get('plantilla')
+        plantilla_id = self._normalizar_pk(plantilla_id)
+
+        queryset = PlantillaTramite.objects.all()
         if form_type == 'oficios':
-            self.fields['plantilla'].queryset = PlantillaTramite.objects.filter(
-                tipo_documento='OFICIO'
-            ).exclude(nombre__icontains="36").order_by('nombre')
+            queryset = queryset.filter(tipo_documento='OFICIO')
         elif form_type == 'tramites':
-            self.fields['plantilla'].queryset = PlantillaTramite.objects.filter(
-                tipo_documento='TRAMITE'
-            ).exclude(nombre__icontains="36").order_by('nombre')
+            queryset = queryset.filter(tipo_documento='TRAMITE')
+        queryset = queryset.exclude(nombre__icontains="36")
+        # Las plantillas desactivadas no se ofrecen, salvo que sea la que se
+        # está corrigiendo (para no romper un historial viejo).
+        if plantilla_id:
+            queryset = queryset.filter(Q(activa=True) | Q(pk=plantilla_id))
         else:
-            self.fields['plantilla'].queryset = PlantillaTramite.objects.all().exclude(nombre__icontains="36").order_by('nombre')
+            queryset = queryset.filter(activa=True)
+        self.fields['plantilla'].queryset = queryset.order_by('nombre')
+
+        self.plantilla_id = plantilla_id
+        self.plantilla_seleccionada = None
+        if plantilla_id:
+            self.plantilla_seleccionada = PlantillaTramite.objects.filter(pk=plantilla_id).first()
+
+        from .campos_plantilla import (
+            CAMPOS_SOLO_LECTURA, CATALOGO_CAMPOS, config_de_plantilla,
+            nombre_campo_personalizado,
+        )
+        self.configuracion_plantilla = config_de_plantilla(self.plantilla_seleccionada)
+        self.campos_visibles = set(self.configuracion_plantilla.get('campos') or [])
+        self.campos_requeridos = set(self.configuracion_plantilla.get('requeridos') or [])
+
+        # El formulario conserva todos los campos declarados (así no se rompe la
+        # plantilla HTML), pero solo los configurados pueden ser obligatorios.
+        for nombre_campo, campo in self.fields.items():
+            if nombre_campo == 'plantilla':
+                continue
+            campo.required = False
+
+        for clave in self.campos_requeridos:
+            if clave in CAMPOS_SOLO_LECTURA:
+                continue
+            info = CATALOGO_CAMPOS.get(clave) or {}
+            form_field = info.get('form_field', clave)
+            if form_field in self.fields:
+                self.fields[form_field].required = True
+                if form_field == 'maestro_titular':
+                    self.fields[form_field].error_messages['required'] = (
+                        'El maestro titular es obligatorio.')
+                elif form_field == 'maestro_interino':
+                    self.fields[form_field].error_messages['required'] = (
+                        'El maestro interino es obligatorio.')
+                elif info.get('label'):
+                    self.fields[form_field].error_messages['required'] = (
+                        f"{info['label']} es obligatorio.")
+
+        # Campos personalizados de esta plantilla (texto, fecha, número, lista).
+        self.campos_personalizados = []
+        if self.plantilla_seleccionada:
+            for definicion in self.configuracion_plantilla.get('campos_personalizados') or []:
+                variable = (definicion.get('variable') or '').strip()
+                nombre_campo = nombre_campo_personalizado(self.plantilla_seleccionada.id, variable)
+                if not nombre_campo:
+                    continue
+                campo = self._construir_campo_personalizado(definicion)
+                self.fields[nombre_campo] = campo
+                self.campos_personalizados.append({
+                    'name': nombre_campo,
+                    'label': campo.label,
+                    'variable': variable,
+                    'tipo': definicion.get('tipo') or 'texto',
+                    'ayuda': definicion.get('ayuda') or '',
+                    'requerido': bool(definicion.get('requerido')),
+                    'bound': self[nombre_campo],
+                })
+
+    @staticmethod
+    def _normalizar_pk(valor):
+        if valor is None or valor == '':
+            return None
+        if hasattr(valor, 'pk'):
+            return valor.pk
+        try:
+            return int(valor)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _construir_campo_personalizado(definicion):
+        from django import forms as django_forms
+        etiqueta = definicion.get('etiqueta') or definicion.get('variable') or 'Dato adicional'
+        requerido = bool(definicion.get('requerido'))
+        tipo = definicion.get('tipo') or 'texto'
+        attrs = {'class': 'form-control'}
+        if tipo == 'fecha':
+            campo = django_forms.DateField(
+                label=etiqueta, required=requerido,
+                widget=django_forms.DateInput(
+                    attrs={**attrs, 'type': 'date'}, format='%Y-%m-%d'),
+            )
+        elif tipo == 'numero':
+            campo = django_forms.DecimalField(
+                label=etiqueta, required=requerido,
+                widget=django_forms.NumberInput(attrs={**attrs, 'step': 'any'}),
+            )
+        elif tipo == 'opciones':
+            opciones = [
+                (str(opcion), str(opcion))
+                for opcion in (definicion.get('opciones') or [])
+                if str(opcion).strip()
+            ]
+            campo = django_forms.ChoiceField(
+                label=etiqueta, required=requerido,
+                choices=[('', '--- Seleccione ---')] + opciones,
+                widget=django_forms.Select(attrs=attrs),
+            )
+        elif tipo == 'texto_largo':
+            campo = django_forms.CharField(
+                label=etiqueta, required=requerido,
+                widget=django_forms.Textarea(
+                    attrs={**attrs, 'rows': 3, 'style': 'text-transform: uppercase;'}),
+            )
+        else:
+            campo = django_forms.CharField(
+                label=etiqueta, required=requerido,
+                widget=django_forms.TextInput(
+                    attrs={**attrs, 'style': 'text-transform: uppercase;'}),
+            )
+        campo.help_text = definicion.get('ayuda') or ''
+        return campo
 
     tipo_cambio = forms.ChoiceField(
         choices=[('', '--- Seleccione ---'), ('sustitucion', 'Sustitución'), ('incremento', 'Incremento')],
@@ -455,6 +705,7 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
     maestro_titular = forms.ModelChoiceField(
         queryset=Maestro.objects.all().order_by('a_paterno', 'a_materno', 'nombres'),
         label="Maestro Titular",
+        required=False,
         widget=forms.Select(attrs={'class': 'form-control select2'})
     )
     maestro_interino = forms.ModelChoiceField(
@@ -568,6 +819,90 @@ class TramiteForm(UppercaseFormMixin, forms.Form):
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
 
+    # --- Campos para JUSTIFICACION DE RETROACTIVIDAD ---
+    RAZON_RETRO_CHOICES = [
+        ('', '--- Seleccione una opción ---'),
+        ('firmas', 'Los tiempos que implicó la recabación de las firmas correspondientes'),
+        ('presentacion', 'Que el maestro se presentó en esta fecha con su asignación'),
+        ('usicamm', 'USICAMM asignó el (fecha) con lo cual apenas se presentó la asignación por parte del implicado en el oficio'),
+        ('otro', 'Otro (especificar)'),
+    ]
+    opcionjustificacion = forms.ChoiceField(
+        choices=RAZON_RETRO_CHOICES,
+        label="Opción de Justificación",
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control', 'id': 'id_opcionjustificacion'})
+    )
+    razon_retroactividad = forms.ChoiceField(
+        choices=RAZON_RETRO_CHOICES,
+        label="Opción de Justificación",
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control', 'id': 'id_razon_retroactividad'})
+    )
+    fecha_usicamm = forms.DateField(
+        label="Fecha de asignación USICAMM",
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d')
+    )
+    texto_razon_otro = forms.CharField(
+        label="Especifique la razón",
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 3, 'class': 'form-control',
+                                     'placeholder': 'Escriba aquí la razón de la justificación...'})
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        f1 = cleaned_data.get('fecha_efecto1')
+        f2 = cleaned_data.get('fecha_efecto2')
+        f3 = cleaned_data.get('fecha_efecto3')
+        f4 = cleaned_data.get('fecha_efecto4')
+        # La fecha inicial no puede ser mayor a la final; final vacía = sin fin.
+        if f1 and f2 and f1 > f2:
+            self.add_error(
+                'fecha_efecto2',
+                'La fecha inicial del titular no puede ser mayor a la fecha final. '
+                'Deje la fecha final vacía si no tiene fin.'
+            )
+        if f3 and f4 and f3 > f4:
+            self.add_error(
+                'fecha_efecto4',
+                'La fecha inicial del interino no puede ser mayor a la fecha final. '
+                'Deje la fecha final vacía si no tiene fin.'
+            )
+        # El motivo debe pertenecer a la lista de la plantilla; las plantillas
+        # sin motivo (lista vacía) no aceptan ninguno.
+        plantilla = cleaned_data.get('plantilla')
+        motivo = cleaned_data.get('motivo_tramite')
+        plantilla_nombre = plantilla.nombre.upper().strip() if plantilla else ''
+
+        if plantilla is not None and motivo:
+            from gestion_escolar.motivos_plantilla import ids_permitidos
+            permitidos = ids_permitidos(plantilla.nombre)
+            if permitidos is not None and motivo.id not in permitidos:
+                if not permitidos:
+                    self.add_error(
+                        'motivo_tramite',
+                        f"La plantilla '{plantilla.nombre}' no lleva motivo de movimiento."
+                    )
+                else:
+                    self.add_error(
+                        'motivo_tramite',
+                        f"El motivo '{motivo.motivo_tramite}' no corresponde a la plantilla '{plantilla.nombre}'."
+                    )
+
+        # Validación según la plantilla
+        if plantilla_nombre == 'JUSTIFICACION DE RETROACTIVIDAD':
+            opcion = (cleaned_data.get('opcionjustificacion') or cleaned_data.get('razon_retroactividad') or '').lower()
+            if opcion == 'usicamm' and not cleaned_data.get('fecha_usicamm'):
+                self.add_error('fecha_usicamm', 'Debe indicar la fecha de asignación USICAMM.')
+            elif opcion == 'otro' and not (cleaned_data.get('texto_razon_otro') or '').strip():
+                self.add_error('texto_razon_otro', 'Debe especificar la razón de la justificación.')
+        # Los campos obligatorios se validan con la configuración de la
+        # plantilla (campo.required), no con una regla fija en el código.
+
+        return cleaned_data
+
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 
 class SignUpForm(UppercaseFormMixin, UserCreationForm):
@@ -639,20 +974,41 @@ class RolePermissionForm(UppercaseFormMixin, forms.ModelForm):
     def save(self, *args, **kwargs):
         group = super(RolePermissionForm, self).save(commit=False)
         group.save()
-        group.permissions.set(self.cleaned_data['permissions'])
+        elegidos = set(self.cleaned_data['permissions'].values_list('pk', flat=True))
+        # No quitar en silencio lo que la matriz no administra: conservar los
+        # permisos actuales que no aparecen en ella (otras apps, permisos
+        # residuales, etc.). Solo se agregan/quitan los visibles.
+        from gestion_escolar.views.roles import get_permissions_matrix
+        en_matriz = set()
+        for seccion in get_permissions_matrix():
+            for item in seccion['items']:
+                if item['type'] == 'custom':
+                    if item.get('permission'):
+                        en_matriz.add(item['permission'].id)
+                else:
+                    for clave in ('view', 'add', 'change', 'delete'):
+                        if item.get(clave):
+                            en_matriz.add(item[clave].id)
+        actuales = set(group.permissions.values_list('pk', flat=True))
+        conservar = actuales - en_matriz
+        group.permissions.set(list(elegidos | conservar))
         return group
 
 class TemaForm(UppercaseFormMixin, forms.ModelForm):
     class Meta:
         model = Tema
-        fields = ['nombre', 'activo', 'fecha_inicio', 'fecha_fin', 'color_principal', 'color_secundario', 'color_texto', 'color_dropdown', 'color_boton', 'imagen_fondo', 'usar_filtro_oscuro']
+        # 'usar_filtro_oscuro' ya no se expone: el velo se controla con
+        # color_velo / opacidad_velo y la legibilidad la resuelven la sombra
+        # en capas del texto y el chip translucido del menu.
+        fields = ['nombre', 'activo', 'fecha_inicio', 'fecha_fin', 'color_principal', 'color_secundario', 'color_texto', 'color_dropdown', 'color_boton', 'imagen_fondo', 'color_velo', 'opacidad_velo']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'usar_filtro_oscuro': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'fecha_fin': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'fecha_inicio': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
+            'fecha_fin': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}, format='%Y-%m-%d'),
             'imagen_fondo': forms.FileInput(attrs={'class': 'form-control'}),
+            'opacidad_velo': forms.NumberInput(attrs={
+                'class': 'form-control', 'step': '0.05', 'min': '0', 'max': '1'}),
         }
 
     def clean(self):

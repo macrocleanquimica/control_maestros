@@ -4,286 +4,181 @@
 {% block title %}Detalle del FUP: {{ fup.folio }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .header-section {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    /* Tarjeta única */
-    .detail-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    .card-banner {
-        padding: 1.25rem clamp(17px, 3vw, 2.5rem);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
-
-    .card-body-custom {
-        padding: clamp(17px, 3vw, 2.5rem);
-    }
-
-    /* Info Grid */
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .info-item label {
-        display: block;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        margin-bottom: 0.5rem;
-        letter-spacing: 0.025em;
-    }
-
-    .info-item p {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--text, #1d1d1f);
-        margin-bottom: 0;
-        letter-spacing: -0.01em;
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .data-table td {
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .data-table tr:last-child td { border-bottom: none; }
-
-    .label-cell {
-        width: 35%;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        font-size: 0.85rem;
-    }
-
-    .value-cell {
-        color: var(--text, #1d1d1f);
-        font-weight: 600;
-        font-size: 1rem;
-    }
-
-    /* Observaciones */
-    .observation-box {
-        background: rgba(0,0,0,0.03);
-        border: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        border-radius: 14px;
-        padding: 1.25rem 1.5rem;
-        margin-top: 2rem;
-    }
-
-    /* Laterales */
-    .side-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-card, 18px);
-        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .btn-action-side {
-        border-radius: var(--r-pill, 999px);
-        padding: 0.6rem 1rem;
-        font-weight: 600;
-        width: 100%;
-        margin-bottom: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-
-    @media print {
-        .header-section, .print-hide, .btn-action-side, .side-card-container { display: none !important; }
-        .page-container { padding: 0; }
-        .detail-card { border: none; box-shadow: none; width: 100% !important; }
-        .col-lg-8 { width: 100% !important; flex: 0 0 100%; max-width: 100%; }
-    }
-</style>
-
-<div class="page-container">
-    <!-- Header -->
-    <div class="header-section d-print-none">
-        <div>
-            <h1 class="apple-title">FUP <span class="apple-num">#{{ fup.folio }}</span></h1>
-            <p class="apple-subtitle mb-0">Detalle del formato.</p>
+<div class="comp-page-container comp-detail">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">FUP <span class="comp-tabular-nums">#{{ fup.folio }}</span></h1>
+            <p class="comp-subtitle">Detalle del Formato Único de Personal.</p>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{% url 'lista_fup' %}" class="apple-btn-ghost">
-                <i class="fas fa-arrow-left me-2"></i> Volver
-            </a>
-            <button onclick="window.print();" class="apple-btn-ghost">
-                <i class="fas fa-print me-2"></i> Imprimir
+        <div class="comp-actions">
+            <button type="button" onclick="window.print();" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-print"></i> Imprimir
             </button>
+            <a href="{% url 'lista_fup' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
         </div>
     </div>
 
-    <div class="row">
-        <!-- Main Column -->
-        <div class="col-lg-8">
-            <div class="detail-card">
-                <div class="card-banner">
-                    <h5 class="mb-0 fw-bold">Formato Único</h5>
-                    <span class="apple-tag apple-num">ID: {{ fup.pk }}</span>
-                </div>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="comp-alert {% if message.tags == 'error' %}comp-alert-danger{% elif message.tags == 'success' %}comp-alert-success{% else %}comp-alert-info{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
 
-                <div class="card-body-custom">
-                    <!-- Top Info Grid -->
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <label>Folio del Documento</label>
-                            <p class="font-monospace apple-num">#{{ fup.folio }}</p>
-                        </div>
-                        <div class="info-item">
-                            <label>Fecha de Emisión</label>
-                            <p><i class="far fa-calendar-alt text-muted me-2"></i>{{ fup.fecha|date:"d F Y" }}</p>
-                        </div>
-                        <div class="info-item">
-                            <label>Sostenimiento</label>
-                            <p><span class="apple-tag">{{ fup.get_sostenimiento_display }}</span></p>
-                        </div>
+    <div class="row g-4">
+        <div class="col-lg-8 comp-detail-main">
+            <div class="comp-panel">
+                <div class="comp-section">
+                    <div class="comp-section-title">
+                        <h4>Formato Único</h4>
+                        <span class="comp-badge comp-badge-soft ms-auto">ID {{ fup.pk }}</span>
                     </div>
 
-                    <h6 class="fw-bold pb-2 mb-4 mt-5" style="font-size: 0.85rem; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));">
-                        Datos del maestro
-                    </h6>
-
-                    <table class="data-table">
-                        <tbody>
-                            <tr>
-                                <td class="label-cell">Nombre Completo</td>
-                                <td class="value-cell">{{ fup.nombre_completo }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label-cell">RFC</td>
-                                <td class="value-cell font-monospace">{{ fup.rfc }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label-cell">CURP</td>
-                                <td class="value-cell font-monospace">{{ fup.curp }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label-cell">Clave Presupuestal</td>
-                                <td class="value-cell font-monospace text-primary">{{ fup.clave_presupuestal }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <h6 class="fw-bold pb-2 mb-4 mt-5" style="font-size: 0.85rem; border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));">
-                        Adscripción y efectos
-                    </h6>
-
-                    <table class="data-table">
-                        <tbody>
-                            <tr>
-                                <td class="label-cell">CCT Techo Financiero</td>
-                                <td class="value-cell">{{ fup.techo_financiero }}</td>
-                            </tr>
-                            {% if zona_techo_financiero %}
-                            <tr>
-                                <td class="label-cell">Zona del Techo Financiero</td>
-                                <td class="value-cell">{{ zona_techo_financiero }}</td>
-                            </tr>
-                            {% endif %}
-                            <tr>
-                                <td class="label-cell">Efectos del Movimiento</td>
-                                <td class="value-cell">{{ fup.efectos }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    {% if fup.observaciones %}
-                    <div class="observation-box">
-                        <label class="form-label fw-bold mb-2">Observaciones</label>
-                        <p class="mb-0 small" style="color: var(--text-2, #6e6e73); white-space: pre-wrap;">{{ fup.observaciones }}</p>
+                    <div class="comp-info-grid">
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Folio del Documento</span>
+                            <span class="comp-info-value comp-font-mono">#{{ fup.folio }}</span>
+                        </div>
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Fecha de Emisión</span>
+                            <span class="comp-info-value">
+                                <i class="far fa-calendar-alt comp-text-muted me-2"></i>{{ fup.fecha|date:"d F Y" }}
+                            </span>
+                        </div>
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Sostenimiento</span>
+                            <span class="comp-info-value">{{ fup.get_sostenimiento_display }}</span>
+                        </div>
                     </div>
-                    {% endif %}
                 </div>
+
+                <div class="comp-section">
+                    <div class="comp-section-title">
+                        <h4>Datos del maestro</h4>
+                    </div>
+
+                    <div class="comp-info-grid">
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Nombre Completo</span>
+                            <span class="comp-info-value">{{ fup.nombre_completo }}</span>
+                        </div>
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">RFC</span>
+                            <span class="comp-info-value comp-font-mono">{{ fup.rfc }}</span>
+                        </div>
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">CURP</span>
+                            <span class="comp-info-value comp-font-mono">{{ fup.curp }}</span>
+                        </div>
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Clave Presupuestal</span>
+                            <span class="comp-info-value comp-font-mono">{{ fup.clave_presupuestal }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="comp-section">
+                    <div class="comp-section-title">
+                        <h4>Adscripción y efectos</h4>
+                    </div>
+
+                    <div class="comp-info-grid">
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">CCT Techo Financiero</span>
+                            <span class="comp-info-value comp-font-mono">{{ fup.techo_financiero }}</span>
+                        </div>
+                        {% if zona_techo_financiero %}
+                            <div class="comp-info-item">
+                                <span class="comp-info-label">Zona del Techo Financiero</span>
+                                <span class="comp-info-value">{{ zona_techo_financiero }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="comp-info-item">
+                            <span class="comp-info-label">Efectos del Movimiento</span>
+                            <span class="comp-info-value">{{ fup.efectos }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if fup.observaciones %}
+                    <div class="comp-section">
+                        <div class="comp-section-title">
+                            <h4>Observaciones</h4>
+                        </div>
+                        <p class="mb-0 comp-text-muted small" style="white-space: pre-wrap;">{{ fup.observaciones }}</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
 
-        <!-- Sidebar -->
-        <div class="col-lg-4 side-card-container">
-            <!-- PDF Card -->
-            <div class="side-card text-center">
-                <h6 class="fw-bold text-dark mb-4 border-bottom pb-2">Expediente Digital</h6>
-                {% if fup.archivo %}
-                <div class="mb-4">
-                    <i class="fas fa-file-pdf fa-5x text-danger opacity-75"></i>
-                </div>
-                <a href="{{ fup.archivo.url }}" target="_blank" class="apple-btn w-100 justify-content-center">
-                    <i class="fas fa-download me-2"></i> Descargar PDF
-                </a>
-                <p class="text-muted small mt-3 mb-0">Archivo verificado y guardado en servidor.</p>
-                {% else %}
-                <div class="py-4">
-                    <i class="fas fa-file-upload fa-3x text-muted mb-3"></i>
-                    <p class="text-muted small">No se adjuntó archivo digital para este folio.</p>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Actions Card -->
-            <div class="side-card">
-                <h6 class="fw-bold text-dark mb-4 border-bottom pb-2">Control de Registro</h6>
-                <a href="{% url 'editar_fup' fup.pk %}" class="apple-btn-ghost btn-action-side">
-                    <i class="fas fa-edit me-2"></i> Modificar
-                </a>
-                <a href="{% url 'eliminar_fup' fup.pk %}" class="apple-btn-ghost btn-action-side">
-                    <i class="fas fa-trash me-2"></i> Eliminar
-                </a>
-            </div>
-
-            <!-- Quick Info -->
-            <div class="side-card bg-light border-0 shadow-none">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="bg-white p-2 rounded-circle shadow-sm">
-                        <i class="fas fa-history text-muted"></i>
+        <div class="col-lg-4 comp-detail-side">
+            <div class="comp-panel">
+                <div class="comp-section">
+                    <div class="comp-section-title">
+                        <h4>Expediente Digital</h4>
                     </div>
-                    <div>
-                        <span class="d-block small text-muted">Última actualización</span>
-                        <span class="fw-bold small text-dark">Recientemente consultado</span>
+
+                    {% if fup.archivo %}
+                        <div class="text-center mb-3">
+                            <i class="fas fa-file-pdf fa-4x" style="color: #c0392b; opacity: 0.8;"></i>
+                        </div>
+                        <a href="{{ fup.archivo.url }}" target="_blank" rel="noopener" class="comp-btn comp-btn-primary w-100">
+                            <i class="fas fa-download"></i> Descargar PDF
+                        </a>
+                        <p class="comp-form-text text-center mt-3 mb-0">Archivo verificado y guardado en el servidor.</p>
+                    {% else %}
+                        <div class="comp-empty-state comp-empty-state-sm">
+                            <i class="fas fa-file-upload"></i>
+                            <p>No se adjuntó archivo digital para este folio.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="comp-section">
+                    <div class="comp-section-title">
+                        <h4>Control de Registro</h4>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'editar_fup' fup.pk %}" class="comp-btn comp-btn-primary">
+                            <i class="fas fa-edit"></i> Modificar
+                        </a>
+                        <a href="{% url 'eliminar_fup' fup.pk %}" class="comp-btn comp-btn-ghost">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+
+                <div class="comp-section">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="comp-avatar"><i class="fas fa-history"></i></span>
+                        <div>
+                            <span class="comp-info-label d-block">Última actualización</span>
+                            <span class="comp-info-value small">Recientemente consultado</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    @media print {
+        .comp-detail-side {
+            display: none !important;
+        }
+
+        .comp-detail-main {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+        }
+    }
+</style>
 {% endblock %}

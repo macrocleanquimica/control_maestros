@@ -7,213 +7,177 @@
 
 {% block content %}
 <style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .header-section {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    /* Tarjeta única */
-    .detail-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    .card-banner {
-        padding: 1.25rem clamp(17px, 3vw, 2rem);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
-
-    .card-body-custom {
-        padding: clamp(17px, 3vw, 2rem);
-    }
-
-    /* Resumen */
-    .summary-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .info-box label {
-        display: block;
-        font-size: 0.75rem;
+    .tramite-label-cell {
+        width: 38%;
+        font-size: 0.78rem;
         font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        margin-bottom: 0.5rem;
-        letter-spacing: 0.025em;
+        color: var(--comp-text-2);
     }
 
-    .info-box p {
-        font-size: 1rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--text, #1d1d1f);
-        margin-bottom: 0;
-    }
-
-    /* Tablas de datos */
-    .details-section {
-        margin-top: 2rem;
-    }
-
-    .section-title {
-        font-size: 0.9rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--text, #1d1d1f);
-        margin-bottom: 1.25rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .data-table td {
-        padding: 0.9rem 1.25rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .data-table tr:last-child td { border-bottom: none; }
-
-    .label-cell {
-        width: 35%;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        font-size: 0.85rem;
-    }
-
-    .value-cell {
-        color: var(--text, #1d1d1f);
-        font-weight: 600;
-        font-size: 0.95rem;
-    }
-
-    @media print {
-        .header-section, .print-hide, .btn-print-action { display: none !important; }
-        .page-container { padding: 0; }
-        .detail-card { border: none; box-shadow: none; }
-        .card-body-custom { padding: 2rem 0; }
+    @media (max-width: 576px) {
+        .tramite-label-cell { width: 45%; }
     }
 </style>
 
-<div class="page-container">
-    <div class="header-section d-print-none">
-        <div>
-            <h1 class="apple-title">{{ titulo }}</h1>
-            <p class="apple-subtitle mb-0">Datos guardados al generar el documento.</p>
+<div class="comp-page-container comp-detail">
+    <div class="comp-page-header d-print-none">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ titulo }}</h1>
+            <p class="comp-subtitle">Datos guardados al generar el documento.</p>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{% url 'historial' %}" class="apple-btn-ghost">
-                <i class="fas fa-arrow-left me-2"></i> Volver
+        <div class="comp-actions">
+            <a href="{{ volver_url }}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> {{ volver_label }}
             </a>
-            <button onclick="window.print();" class="apple-btn-ghost btn-print-action">
-                <i class="fas fa-print me-2"></i> Imprimir
+            <button type="button" onclick="window.print();" class="comp-btn comp-btn-ghost btn-print-action">
+                <i class="fas fa-print"></i> Imprimir
             </button>
         </div>
     </div>
 
     {% if messages %}
-    <div class="mb-4">
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
-                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="comp-alert {% if message.tags == 'error' %}comp-alert-danger{% else %}comp-alert-success{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
             </div>
         {% endfor %}
-    </div>
     {% endif %}
 
-    <div class="detail-card">
-        <div class="card-banner">
-            <h5 class="mb-0 fw-bold">Registro</h5>
-            {% if historial_item.ruta_archivo %}
-            <div class="d-flex gap-2 flex-wrap">
-                {% if user == historial_item.usuario or user.is_superuser or user|has_group:"ADMINISTRATIVO" %}
-                <a href="{% url 'corregir_tramite' historial_item.id %}" class="apple-btn-ghost d-print-none" style="min-height: 38px; font-size: 13px;">
-                    <i class="fas fa-edit me-1"></i> Corregir y regenerar
+    <div class="comp-panel">
+        <div class="comp-section d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="comp-section-title mb-0 pb-0 border-0">
+                <h4>Registro</h4>
+            </div>
+            {% if puede_corregir or tiene_archivo %}
+            <div class="comp-actions d-print-none">
+                {% if puede_corregir %}
+                <a href="{{ corregir_url }}" class="comp-btn comp-btn-ghost comp-btn-sm">
+                    <i class="fas fa-edit"></i> Corregir datos
                 </a>
                 {% endif %}
-                <a href="{% url 'descargar_archivo_historial' historial_item.id %}" target="_blank" class="apple-btn d-print-none" style="min-height: 38px; font-size: 13px;">
-                    <i class="fas fa-download me-1"></i> Descargar
+                {% if es_tramite and historial_item.ruta_archivo %}
+                    {% if user == historial_item.usuario or user.is_superuser or user|has_group:"ADMINISTRADOR" %}
+                    <a href="{% url 'corregir_tramite' historial_item.id %}" class="comp-btn comp-btn-ghost comp-btn-sm">
+                        <i class="fas fa-edit"></i> Corregir y regenerar
+                    </a>
+                    {% endif %}
+                {% endif %}
+                {% if tiene_archivo %}
+                <a href="{% url 'descargar_archivo_historial' historial_item.id %}" target="_blank" class="comp-btn comp-btn-primary comp-btn-sm">
+                    <i class="fas fa-download"></i> Descargar
                 </a>
+                {% endif %}
             </div>
             {% endif %}
         </div>
 
-        <div class="card-body-custom">
-            <div class="summary-grid">
-                <div class="info-box">
-                    <label>Tipo de documento</label>
-                    <p><span class="apple-tag">{{ historial_item.get_tipo_documento_display|default:historial_item.tipo_documento }}</span></p>
+        <div class="comp-panel-body">
+            <div class="comp-info-grid">
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Tipo de documento</span>
+                    <span class="comp-info-value">
+                        <span class="comp-badge comp-badge-soft">{{ historial_item.get_tipo_documento_display|default:historial_item.tipo_documento }}</span>
+                    </span>
                 </div>
-                <div class="info-box">
-                    <label>Generado</label>
-                    <p class="apple-num">{{ historial_item.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Generado</span>
+                    <span class="comp-info-value comp-tabular-nums">{{ historial_item.fecha_creacion|date:"d/m/Y H:i" }}</span>
                 </div>
-                <div class="info-box">
-                    <label>Operador</label>
-                    <p>{{ historial_item.usuario.username|default:"N/A" }}</p>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Operador</span>
+                    <span class="comp-info-value">{{ historial_item.usuario.username|default:"N/A" }}</span>
                 </div>
+                {% if historial_item.motivo %}
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Motivo</span>
+                    <span class="comp-info-value">{{ historial_item.motivo }}</span>
+                </div>
+                {% endif %}
+                {% if historial_item.lote_reporte %}
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Lote relacionado</span>
+                    <span class="comp-info-value">
+                        <a href="{% url 'historial_detalle_lote' historial_item.id %}">Lote #{{ historial_item.lote_reporte.id }}</a>
+                    </span>
+                </div>
+                {% endif %}
             </div>
 
             {% if historial_item.maestro %}
-            <div class="details-section">
-                <h6 class="section-title">Titular</h6>
-                <div class="summary-grid mt-4">
-                    <div class="info-box">
-                        <label>Nombre Completo</label>
-                        <p>{{ historial_item.maestro }}</p>
-                    </div>
-                    <div class="info-box">
-                        <label>Clave presupuestal</label>
-                        <p class="font-monospace apple-num">{{ historial_item.maestro.clave_presupuestal }}</p>
-                    </div>
+            <div class="comp-section-title mt-4">
+                <h5>Titular</h5>
+            </div>
+            <div class="comp-info-grid">
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Nombre Completo</span>
+                    <span class="comp-info-value">{{ historial_item.maestro }}</span>
+                </div>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Clave presupuestal</span>
+                    <span class="comp-info-value comp-font-mono">{{ historial_item.maestro.clave_presupuestal }}</span>
                 </div>
             </div>
             {% endif %}
 
-            <div class="row g-5">
-                <!-- Centro de Trabajo -->
+            {% if vacancia_relacionada and not datos_tramite %}
+            <div class="comp-subpanel mt-4">
+                <div class="comp-subpanel-title d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <span><i class="fas fa-clipboard-list"></i> Datos de la vacancia</span>
+                    {% if puede_corregir %}
+                    <a href="{{ corregir_url }}" class="comp-btn comp-btn-ghost comp-btn-sm d-print-none">
+                        <i class="fas fa-edit"></i> Corregir datos
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="comp-info-grid">
+                    <div class="comp-info-item">
+                        <span class="comp-info-label">Tipo de vacante</span>
+                        <span class="comp-info-value">{{ vacancia_relacionada.get_tipo_vacante_display }}</span>
+                    </div>
+                    <div class="comp-info-item">
+                        <span class="comp-info-label">Motivo del movimiento</span>
+                        <span class="comp-info-value">{{ vacancia_relacionada.tipo_movimiento_reporte|default:vacancia_relacionada.tipo_movimiento_original|default:"N/A" }}</span>
+                    </div>
+                    <div class="comp-info-item">
+                        <span class="comp-info-label">Periodo</span>
+                        <span class="comp-info-value">
+                            {{ vacancia_relacionada.fecha_inicio|date:"d/m/Y" }}
+                            al {{ vacancia_relacionada.fecha_final|date:"d/m/Y"|default:"vigente" }}
+                        </span>
+                    </div>
+                    <div class="comp-info-item">
+                        <span class="comp-info-label">Interino</span>
+                        <span class="comp-info-value">{{ vacancia_relacionada.maestro_interino|default:"Sin interino" }}</span>
+                    </div>
+                    {% if vacancia_relacionada.observaciones %}
+                    <div class="comp-info-item">
+                        <span class="comp-info-label">Observaciones de la vacancia</span>
+                        <span class="comp-info-value">{{ vacancia_relacionada.observaciones }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <p class="mb-0 mt-2 small comp-text-muted">
+                    Estos datos alimentan el documento. Si hubo un error de captura, usa <strong>Corregir datos</strong>.
+                </p>
+            </div>
+            {% endif %}
+
+            {% if datos_tramite %}
+            <div class="row g-4 mt-1">
                 <div class="col-lg-6">
-                    <div class="details-section">
-                        <h6 class="section-title">Centro de trabajo</h6>
-                        <table class="data-table">
+                    <div class="comp-section-title">
+                        <h5>Centro de trabajo</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="comp-table comp-table-sm">
                             <tbody>
                                 {% for key in ct_keys_list %}
                                 {% if key in datos_tramite %}
                                 <tr>
-                                    <td class="label-cell">{{ key|title|replace:"_ | " }}</td>
-                                    <td class="value-cell">{{ datos_tramite|get_item:key|default:"N/A" }}</td>
+                                    <td class="tramite-label-cell">{{ key|title|replace:"_ | " }}</td>
+                                    <td class="fw-semibold">{{ datos_tramite|get_item:key|default:"N/A" }}</td>
                                 </tr>
                                 {% endif %}
                                 {% endfor %}
@@ -222,17 +186,18 @@
                     </div>
                 </div>
 
-                <!-- Datos del Formulario -->
                 <div class="col-lg-6">
-                    <div class="details-section">
-                        <h6 class="section-title">Otros datos</h6>
-                        <table class="data-table">
+                    <div class="comp-section-title">
+                        <h5>Otros datos</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="comp-table comp-table-sm">
                             <tbody>
                                 {% for key, value in datos_tramite.items %}
                                 {% if key not in ct_keys_list %}
                                 <tr>
-                                    <td class="label-cell">{{ key|title|replace:"_ | " }}</td>
-                                    <td class="value-cell">
+                                    <td class="tramite-label-cell">{{ key|title|replace:"_ | " }}</td>
+                                    <td class="fw-semibold">
                                         {% if key == "detalles_vacancia" %}
                                             <div class="small">
                                                 <strong>ID:</strong> {{ value.id_vacancia }}<br>
@@ -264,13 +229,34 @@
                     </div>
                 </div>
             </div>
-
-            {% if historial_item.observaciones %}
-            <div class="details-section mt-4 p-4" style="border: 1px solid var(--hairline, rgba(0,0,0,0.07)); border-radius: 14px;">
-                <h6 class="fw-bold mb-3">Observaciones</h6>
-                <p class="mb-0 small" style="color: var(--text-2, #6e6e73); white-space: pre-wrap;">{{ historial_item.observaciones }}</p>
+            {% elif tiene_archivo %}
+            <div class="comp-subpanel mt-4">
+                <div class="comp-subpanel-title"><i class="fas fa-file-alt"></i> Documento generado</div>
+                <p class="mb-0 small comp-text-muted">
+                    Este movimiento no tiene datos de captura de trámite. Puedes descargar el documento generado con el botón <strong>Descargar</strong>.
+                </p>
             </div>
             {% endif %}
+
+            <div class="comp-subpanel mt-4" id="obs-panel" data-url="{% url 'guardar_observacion_historial' historial_item.id %}">
+                <div class="comp-subpanel-title d-flex justify-content-between align-items-center gap-2">
+                    <span><i class="fas fa-comment-dots"></i> Observaciones</span>
+                    {% if perms.gestion_escolar.change_historial %}
+                    <button type="button" class="comp-btn comp-btn-ghost comp-btn-sm d-print-none" id="btn-edit-obs">
+                        <i class="fas fa-pencil-alt"></i> Editar
+                    </button>
+                    {% endif %}
+                </div>
+                <p class="mb-0 small comp-text-muted" id="obs-text" style="white-space: pre-wrap;">{{ historial_item.observaciones|default:"Sin observaciones" }}</p>
+                <div id="obs-edit" style="display: none;">
+                    <textarea class="form-control form-control-sm mt-2" rows="3" id="obs-input">{{ historial_item.observaciones|default:"" }}</textarea>
+                    <div class="d-flex flex-wrap gap-2 justify-content-end align-items-center mt-2">
+                        <span class="small me-auto" id="obs-msg"></span>
+                        <button type="button" class="comp-btn comp-btn-ghost comp-btn-sm" id="btn-cancel-obs">Cancelar</button>
+                        <button type="button" class="comp-btn comp-btn-primary comp-btn-sm" id="btn-save-obs"><i class="fas fa-check"></i> Guardar</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -287,6 +273,63 @@
             a.click();
             a.remove();
         }
+
+        var panel = document.getElementById('obs-panel');
+        var btnEdit = document.getElementById('btn-edit-obs');
+        if (!panel || !btnEdit) return;
+
+        var texto = document.getElementById('obs-text');
+        var editor = document.getElementById('obs-edit');
+        var input = document.getElementById('obs-input');
+        var mensaje = document.getElementById('obs-msg');
+        var btnSave = document.getElementById('btn-save-obs');
+        var btnCancel = document.getElementById('btn-cancel-obs');
+        var original = input.value;
+
+        btnEdit.addEventListener('click', function () {
+            mensaje.textContent = '';
+            editor.style.display = 'block';
+            btnEdit.style.display = 'none';
+            input.focus();
+        });
+
+        btnCancel.addEventListener('click', function () {
+            input.value = original;
+            editor.style.display = 'none';
+            btnEdit.style.display = '';
+            mensaje.textContent = '';
+        });
+
+        btnSave.addEventListener('click', function () {
+            btnSave.disabled = true;
+            mensaje.textContent = 'Guardando...';
+            fetch(panel.dataset.url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ observaciones: input.value })
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.status === 'success') {
+                        original = input.value;
+                        texto.textContent = input.value.trim() || 'Sin observaciones';
+                        editor.style.display = 'none';
+                        btnEdit.style.display = '';
+                        mensaje.textContent = '';
+                    } else {
+                        mensaje.textContent = data.message || 'No se pudo guardar.';
+                    }
+                })
+                .catch(function () {
+                    mensaje.textContent = 'No se pudo guardar.';
+                })
+                .finally(function () {
+                    btnSave.disabled = false;
+                });
+        });
     })();
 </script>
 {% endblock %}

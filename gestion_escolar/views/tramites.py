@@ -7,9 +7,46 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import HttpResponse, JsonResponse, FileResponse
 from django.conf import settings
+from django.urls import reverse
 
 from ..forms import TramiteForm
 from ..models import PlantillaTramite, Historial, MotivoTramite
+from .helpers import vacancia_de_historial, vacancias_candidatas_historial
+
+
+def _contexto_configuracion_plantillas(form):
+    """Datos que el formulario de generación usa para mostrarse dinámicamente."""
+    from ..campos_plantilla import configuraciones_para_js, plantillas_sin_motivo_js
+    from ..plantillas_utils import json_para_js
+
+    queryset = PlantillaTramite.objects.filter(activa=True)
+    return {
+        'configuraciones_json': json_para_js(configuraciones_para_js(queryset)),
+        'plantillas_sin_motivo_json': json_para_js(plantillas_sin_motivo_js(queryset)),
+        'campos_personalizados': getattr(form, 'campos_personalizados', []),
+        'plantilla_seleccionada': getattr(form, 'plantilla_seleccionada', None),
+        'configuracion_plantilla': getattr(form, 'configuracion_plantilla', {}),
+    }
+
+# Trámites cuyo motivo de movimiento es fijo: el formulario lo oculta y aquí se
+# fuerza, para que el motivo quede grabado en el historial sin que el usuario lo elija.
+MOTIVOS_FIJOS = {
+    'ALTA PROVISIONAL EN VACANTE DEFINITIVA (99)': 'ALTA PROVISIONAL EN VACANTE DEFINITIVA (99)',
+}
+
+
+def _forzar_motivo_fijo(plantilla_nombre, datos):
+    """Fija el motivo cuando la plantilla lo tiene predetermined.
+
+    Devuelve el nombre del motivo aplicado, o None si la plantilla no lo tiene.
+    """
+    motivo_texto = MOTIVOS_FIJOS.get((plantilla_nombre or '').strip().upper())
+    if not motivo_texto:
+        return None
+
+    motivo_obj = MotivoTramite.objects.filter(motivo_tramite=motivo_texto).first()
+    datos['motivo_tramite'] = motivo_obj
+    return motivo_texto
 
 # Import helpers from the new module
 from .helpers import (
@@ -27,6 +64,10 @@ def generar_tramites_generales(request):
         if form.is_valid():
             plantilla_id = form.cleaned_data['plantilla'].id
             plantilla_tramite = PlantillaTramite.objects.get(id=plantilla_id)
+
+            # El motivo va fijado ANTES de generar el documento para que
+            # T_Movimiento salga con el valor correcto en el .docx.
+            _forzar_motivo_fijo(plantilla_tramite.nombre, form.cleaned_data)
 
             success, message = generate_word_document(form.cleaned_data, plantilla_tramite, request.user)
 
@@ -75,12 +116,15 @@ def generar_tramites_generales(request):
         else:
             messages.error(request, 'Por favor corrige los errores en el formulario.')
     else:
-        form = TramiteForm(form_type='tramites')
+        plantilla_id = request.GET.get('plantilla')
+        initial = {'plantilla': plantilla_id} if plantilla_id else None
+        form = TramiteForm(initial=initial, form_type='tramites', plantilla_id=plantilla_id)
 
     context = {
         'form': form,
         'titulo': 'Generar Trámite'
     }
+    context.update(_contexto_configuracion_plantillas(form))
     return render(request, 'gestion_escolar/generar_tramite.html', context)
 
 @permission_required('gestion_escolar.acceder_oficios', raise_exception=True)
@@ -139,8 +183,7 @@ def generar_oficios(request):
                 if fecha_al_corte and fecha_del_calculo:
                     antiguedad = calculate_time_difference(fecha_al_corte, fecha_del_calculo)
                     data_for_document['antiguedad_funcion'] = antiguedad
-            
-            # Lógica para "PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION"
+              # Lógica para "PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION"
             if plantilla_tramite.nombre.upper().strip() == 'PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION':
                 tipo_cambio = form.cleaned_data.get('tipo_cambio')
                 maestro_sustituido_obj = form.cleaned_data.get('maestro_sustituido')
@@ -163,11 +206,48 @@ def generar_oficios(request):
                     maestro_titular_obj.techo_f = techo_f_destino
                     maestro_titular_obj.save()
 
+            # Lógica para "JUSTIFICACION DE RETROACTIVIDAD"
+            if plantilla_tramite.nombre.upper().strip() == 'JUSTIFICACION DE RETROACTIVIDAD':
+                razon = (form.cleaned_data.get('opcionjustificacion', '') or form.cleaned_data.get('razon_retroactividad', '') or '').lower()
+                fecha_usicamm = form.cleaned_data.get('fecha_usicamm')
+                texto_otro = form.cleaned_data.get('texto_razon_otro', '')
+
+                meses_nombre = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+                if razon == 'firmas':
+                    razon_texto = 'los tiempos que implicó la recabación de las firmas correspondientes'
+                    fecha_usicamm_letra = ''
+                elif razon == 'presentacion':
+                    razon_texto = 'que el maestro se presentó en esta fecha con su asignación'
+                    fecha_usicamm_letra = ''
+                elif razon == 'usicamm':
+                    razon_texto = 'que USICAMM asignó con la siguiente fecha: '
+                    if fecha_usicamm:
+                        fecha_usicamm_letra = f"{fecha_usicamm.day} de {meses_nombre[fecha_usicamm.month - 1]} de {fecha_usicamm.year}"
+                    else:
+                        fecha_usicamm_letra = ''
+                elif razon == 'otro':
+                    razon_texto = (texto_otro or '').strip()
+                    fecha_usicamm_letra = ''
+                else:
+                    razon_texto = razon or ''
+                    fecha_usicamm_letra = ''
+
+                data_for_document['opcionjustificacion'] = razon_texto
+                data_for_document['Razon_Retroactividad'] = razon_texto
+                data_for_document['Fecha_USICAMM_Letra'] = fecha_usicamm_letra
+                data_for_document['fecha_usicamm_letra'] = fecha_usicamm_letra
+                data_for_document['Fecha_USICAMM'] = fecha_usicamm.strftime('%d/%m/%Y') if fecha_usicamm else ''
+                data_for_document['fecha_usicamm'] = fecha_usicamm.strftime('%d/%m/%Y') if fecha_usicamm else ''
+                interino_obj = form.cleaned_data.get('maestro_interino')
+                if interino_obj:
+                    data_for_document['Nombre_Interino'] = get_full_name(interino_obj)
+                    data_for_document['Nombre_Interino_Retro'] = get_full_name(interino_obj)
+
             # Sobrescribir el archivo de la plantilla si se seleccionó uno específico
             archivo_especifico = form.cleaned_data.get('archivo_plantilla_especifico')
             if archivo_especifico:
                 # Construir la ruta al archivo específico dentro de la carpeta canónica
-                # (antes asumía la carpeta del registro, que podía ser la raíz legacy o un C:\ absoluto).
+                # (antes asumía la carpeta del registro, que podía ser la raíz legacy o un C:\\ absoluto).
                 resuelta = resolver_ruta_plantilla(plantilla_tramite.ruta_archivo)
                 base_dir = os.path.dirname(resuelta) if resuelta else PLANTILLAS_WORD_DIR
                 plantilla_tramite.ruta_archivo = os.path.join(base_dir, archivo_especifico)
@@ -178,14 +258,15 @@ def generar_oficios(request):
                 try:
                     datos_para_historial = data_for_document.copy()
                     
-                    escuela_titular = maestro_titular_obj.id_escuela if maestro_titular_obj else None
+                    maestro_para_historial = maestro_titular_obj or form.cleaned_data.get('maestro_interino')
+                    escuela_titular = maestro_para_historial.id_escuela if maestro_para_historial else None
                     zona_esc = escuela_titular.zona_esc if escuela_titular else None
 
                     escuela_info = get_school_info(escuela_titular)
                     director_info = get_director_info(escuela_titular)
                     supervisor_info = get_supervisor_info(zona_esc)
 
-                    datos_para_historial['techo_financiero_titular'] = maestro_titular_obj.techo_f if maestro_titular_obj else ''
+                    datos_para_historial['techo_financiero_titular'] = maestro_para_historial.techo_f if maestro_para_historial else ''
                     datos_para_historial['clave_ct'] = escuela_info.get('id_escuela', '')
                     datos_para_historial['nombre_ct'] = escuela_info.get('nombre_ct', '')
                     datos_para_historial['turno'] = escuela_info.get('turno', '')
@@ -198,13 +279,13 @@ def generar_oficios(request):
 
                     historial_motivo = form.cleaned_data.get('motivo_tramite')
                     historial_motivo_text = historial_motivo.motivo_tramite if historial_motivo else ''
-                    if plantilla_tramite.nombre.upper().strip() == 'PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION':
+                    if plantilla_tramite.nombre.upper().strip() in ['PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION', 'JUSTIFICACION DE RETROACTIVIDAD']:
                         historial_motivo_text = ''
 
                     Historial.objects.create(
                         usuario=request.user,
                         tipo_documento=f"Oficio - {plantilla_tramite.nombre}",
-                        maestro=maestro_titular_obj,
+                        maestro=maestro_para_historial,
                         ruta_archivo=message,
                         motivo=historial_motivo_text,
                         observaciones=data_for_document.get('observaciones', ''),
@@ -225,12 +306,15 @@ def generar_oficios(request):
         else:
             messages.error(request, 'Por favor corrige los errores en el formulario.')
     else:
-        form = TramiteForm(form_type='oficios')
+        plantilla_id = request.GET.get('plantilla')
+        initial = {'plantilla': plantilla_id} if plantilla_id else None
+        form = TramiteForm(initial=initial, form_type='oficios', plantilla_id=plantilla_id)
 
     context = {
         'form': form,
         'titulo': 'Generar Oficio'
     }
+    context.update(_contexto_configuracion_plantillas(form))
     return render(request, 'gestion_escolar/generar_tramite.html', context)
 
 @permission_required('gestion_escolar.acceder_historial', raise_exception=True)
@@ -243,6 +327,7 @@ def historial(request):
     return render(request, 'gestion_escolar/historial.html', context)
 
 @login_required
+@permission_required('gestion_escolar.acceder_historial', raise_exception=True)
 def historial_detalle_lote(request, historial_id):
     historial_item = get_object_or_404(Historial, id=historial_id)
     if historial_item.lote_reporte:
@@ -260,27 +345,55 @@ def historial_detalle_lote(request, historial_id):
         return redirect('historial')
 
 @login_required
+@permission_required('gestion_escolar.acceder_historial', raise_exception=True)
 def historial_detalle_tramite(request, historial_id):
     historial_item = get_object_or_404(Historial, id=historial_id)
-    if historial_item.datos_tramite:
-        ct_keys_list = [
-            'techo_financiero_titular', 'clave_ct', 'nombre_ct', 'turno', 
-            'domicilio_ct', 'z_escolar', 'region', 'sostenimiento', 
-            'supervisor', 'director'
-        ]
+    ct_keys_list = [
+        'techo_financiero_titular', 'clave_ct', 'nombre_ct', 'turno',
+        'domicilio_ct', 'z_escolar', 'region', 'sostenimiento',
+        'supervisor', 'director'
+    ]
+    datos_tramite = historial_item.datos_tramite or {}
+    tipo_documento = (historial_item.tipo_documento or '').strip()
+    es_tramite = tipo_documento.startswith('Trámite -') or tipo_documento.startswith('Oficio -')
+    tiene_archivo = bool(historial_item.ruta_archivo) or bool(
+        historial_item.lote_reporte and historial_item.lote_reporte.archivo_generado
+    )
 
-        context = {
-            'historial_item': historial_item,
-            'datos_tramite': historial_item.datos_tramite,
-            'titulo': f'Detalle de {historial_item.tipo_documento}',
-            'ct_keys_list': ct_keys_list,
-        }
-        return render(request, 'gestion_escolar/historial_detalle_tramite.html', context)
-    else:
-        messages.error(request, "Este registro de historial no contiene datos de trámite/oficio.")
-        return redirect('historial')
+    volver_url = reverse('historial')
+    volver_label = 'Volver'
+    if request.GET.get('from') == 'kardex' and historial_item.maestro_id:
+        volver_url = reverse('kardex_maestro_detail', args=[historial_item.maestro_id])
+        volver_label = 'Volver al kardex'
+
+    vacancia_relacionada = vacancia_de_historial(historial_item)
+    puede_corregir = False
+    if vacancias_candidatas_historial(historial_item).exists():
+        es_autor = historial_item.usuario_id == request.user.id
+        es_admin = request.user.is_superuser or request.user.groups.filter(name='ADMINISTRADOR').exists()
+        puede_corregir = (es_autor or es_admin) and request.user.has_perm('gestion_escolar.change_vacancia')
+
+    corregir_url = reverse('corregir_vacancia_historial', args=[historial_item.id])
+    if request.GET.get('from') == 'kardex':
+        corregir_url += '?from=kardex'
+
+    context = {
+        'historial_item': historial_item,
+        'datos_tramite': datos_tramite,
+        'titulo': f'Detalle de {historial_item.tipo_documento}',
+        'ct_keys_list': ct_keys_list,
+        'es_tramite': es_tramite,
+        'tiene_archivo': tiene_archivo,
+        'volver_url': volver_url,
+        'volver_label': volver_label,
+        'vacancia_relacionada': vacancia_relacionada,
+        'puede_corregir': puede_corregir,
+        'corregir_url': corregir_url,
+    }
+    return render(request, 'gestion_escolar/historial_detalle_tramite.html', context)
 
 @login_required
+@permission_required('gestion_escolar.acceder_historial', raise_exception=True)
 def descargar_archivo_historial(request, item_id):
     item = get_object_or_404(Historial, id=item_id)
     
@@ -307,6 +420,7 @@ def descargar_archivo_historial(request, item_id):
         return redirect('historial')
 
 @login_required
+@permission_required('gestion_escolar.delete_historial', raise_exception=True)
 def eliminar_historial_item(request, item_id):
     if request.method == 'POST':
         item = get_object_or_404(Historial, id=item_id)
@@ -318,6 +432,7 @@ def eliminar_historial_item(request, item_id):
     return JsonResponse({'status': 'error', 'message': 'Método no permitido.'}, status=405)
 
 @login_required
+@permission_required('gestion_escolar.change_historial', raise_exception=True)
 def guardar_observacion_historial(request, item_id):
     if request.method == 'POST':
         item = get_object_or_404(Historial, id=item_id)
@@ -334,9 +449,9 @@ def guardar_observacion_historial(request, item_id):
 def corregir_tramite(request, item_id):
     historial_item = get_object_or_404(Historial, id=item_id)
     
-    # Validación de seguridad: Solo el autor, superusuario o ADMINISTRATIVO
+    # Validación de seguridad: Solo el autor, superusuario o ADMINISTRADOR
     es_autor = historial_item.usuario == request.user
-    es_admin = request.user.is_superuser or request.user.groups.filter(name='ADMINISTRATIVO').exists()
+    es_admin = request.user.is_superuser or request.user.groups.filter(name='ADMINISTRADOR').exists()
     
     if not (es_autor or es_admin):
         messages.error(request, "No tienes permiso para corregir este documento. Solo el autor original o un administrador pueden hacerlo.")
@@ -374,6 +489,43 @@ def corregir_tramite(request, item_id):
                 else:
                     data_for_document['ZONA_ECONOMICA_TECHO_FINANCIERO_TITULAR'] = ''
                     data_for_document['SOSTENIMIENTO_TITULAR'] = ''
+
+            # Lógica para "JUSTIFICACION DE RETROACTIVIDAD"
+            if plantilla_tramite.nombre.upper().strip() == 'JUSTIFICACION DE RETROACTIVIDAD':
+                razon = (form.cleaned_data.get('opcionjustificacion', '') or form.cleaned_data.get('razon_retroactividad', '') or '').lower()
+                fecha_usicamm = form.cleaned_data.get('fecha_usicamm')
+                texto_otro = form.cleaned_data.get('texto_razon_otro', '')
+
+                meses_nombre = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+                if razon == 'firmas':
+                    razon_texto = 'los tiempos que implicó la recabación de las firmas correspondientes'
+                    fecha_usicamm_letra = ''
+                elif razon == 'presentacion':
+                    razon_texto = 'que el maestro se presentó en esta fecha con su asignación'
+                    fecha_usicamm_letra = ''
+                elif razon == 'usicamm':
+                    razon_texto = 'que USICAMM asignó con la siguiente fecha: '
+                    if fecha_usicamm:
+                        fecha_usicamm_letra = f"{fecha_usicamm.day} de {meses_nombre[fecha_usicamm.month - 1]} de {fecha_usicamm.year}"
+                    else:
+                        fecha_usicamm_letra = ''
+                elif razon == 'otro':
+                    razon_texto = (texto_otro or '').strip()
+                    fecha_usicamm_letra = ''
+                else:
+                    razon_texto = razon or ''
+                    fecha_usicamm_letra = ''
+
+                data_for_document['opcionjustificacion'] = razon_texto
+                data_for_document['Razon_Retroactividad'] = razon_texto
+                data_for_document['Fecha_USICAMM_Letra'] = fecha_usicamm_letra
+                data_for_document['fecha_usicamm_letra'] = fecha_usicamm_letra
+                data_for_document['Fecha_USICAMM'] = fecha_usicamm.strftime('%d/%m/%Y') if fecha_usicamm else ''
+                data_for_document['fecha_usicamm'] = fecha_usicamm.strftime('%d/%m/%Y') if fecha_usicamm else ''
+                interino_obj = form.cleaned_data.get('maestro_interino')
+                if interino_obj:
+                    data_for_document['Nombre_Interino'] = get_full_name(interino_obj)
+                    data_for_document['Nombre_Interino_Retro'] = get_full_name(interino_obj)
 
             # Lógica para calcular antigüedad si aplica
             if plantilla_tramite.nombre.upper().strip() == 'CONSTANCIA DE CAMBIO':
@@ -423,8 +575,9 @@ def corregir_tramite(request, item_id):
                     datos_para_historial['supervisor'] = supervisor_info.get('nombre', '')
                     datos_para_historial['director'] = director_info.get('nombre', '')
 
+                    maestro_para_historial = maestro_titular_obj or form.cleaned_data.get('maestro_interino')
                     historial_item.tipo_documento = f"{'Oficio' if form_type == 'oficios' else 'Trámite'} - {plantilla_tramite.nombre}"
-                    historial_item.maestro = maestro_titular_obj
+                    historial_item.maestro = maestro_para_historial
                     historial_item.ruta_archivo = message
                     historial_item.motivo = form.cleaned_data.get('motivo_tramite').motivo_tramite if form.cleaned_data.get('motivo_tramite') else ''
                     historial_item.maestro_secundario_nombre = get_full_name(form.cleaned_data.get('maestro_interino'))
@@ -494,4 +647,5 @@ def corregir_tramite(request, item_id):
         'historial_item': historial_item,
         'is_edit': True
     }
+    context.update(_contexto_configuracion_plantillas(form))
     return render(request, 'gestion_escolar/generar_tramite.html', context)

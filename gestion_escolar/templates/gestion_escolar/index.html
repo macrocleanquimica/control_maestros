@@ -4,395 +4,49 @@
 {% block title %}Dashboard | Sistema de Control de Personal{% endblock %}
 
 {% block content %}
-<style>
-    .dashboard-wrapper {
-        padding: 1.5rem;
-        animation: fadeIn 0.6s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* KPI: panel blanco, sin saltos ni bordes de color */
-    .kpi-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-card, 18px);
-        padding: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1.25rem;
-        transition: background 0.2s ease;
-        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
-        height: 100%;
-        position: relative;
-        overflow: hidden;
-    }
-
-    a.kpi-card-link:hover .kpi-card {
-        background: var(--hover, #fbfbfd);
-    }
-
-    .kpi-icon-container {
-        width: 52px;
-        height: 52px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-        flex-shrink: 0;
-        background: rgba(0,0,0,0.05);
-        color: var(--text-2, #6e6e73);
-    }
-
-    .bg-soft-primary, .bg-soft-success, .bg-soft-info, .bg-soft-warning {
-        background: rgba(0,0,0,0.05) !important;
-        color: var(--text-2, #6e6e73) !important;
-    }
-
-    .kpi-value {
-        font-size: 1.75rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        font-variant-numeric: tabular-nums;
-        line-height: 1.2;
-        color: var(--text, #1d1d1f);
-    }
-
-    .kpi-label {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        letter-spacing: 0.025em;
-    }
-
-    /* Section Headers */
-    .section-title {
-        font-size: 1.05rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--text, #1d1d1f);
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    /* Widgets: panel único */
-    .widget-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-card, 18px);
-        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    .widget-header {
-        padding: 1.25rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .widget-body {
-        padding: 1.25rem;
-        flex-grow: 1;
-    }
-
-    .feed-item {
-        padding: 0.75rem 0;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        display: flex;
-        gap: 1rem;
-    }
-
-    .feed-item:last-child {
-        border-bottom: none;
-    }
-
-    .feed-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        font-size: 1rem;
-        background: rgba(0,0,0,0.05);
-        color: var(--text-2, #6e6e73);
-    }
-
-    .feed-content {
-        flex-grow: 1;
-        min-width: 0;
-    }
-
-    .feed-title {
-        font-weight: 600;
-        font-size: 0.9rem;
-        margin-bottom: 0.15rem;
-        color: var(--text, #1d1d1f);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .feed-subtitle {
-        font-size: 0.75rem;
-        color: var(--text-2, #6e6e73);
-    }
-
-    .feed-date {
-        font-size: 0.7rem;
-        color: var(--text-3, #86868b);
-        font-weight: 500;
-        font-variant-numeric: tabular-nums;
-    }
-
-    /* Action buttons in lists */
-    .btn-list-action {
-        padding: 0.25rem 0.75rem;
-        border-radius: 2rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-
-    /* Chart Container */
-    .chart-container-modern {
-        padding: 1rem;
-        background: white;
-    }
-
-    /* Calendario Escolar */
-    .calendar-carousel {
-        position: relative;
-        border-radius: 14px;
-        overflow: hidden;
-        border: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        background: rgba(0,0,0,0.03);
-    }
-
-    .calendar-carousel-track {
-        position: relative;
-        width: 100%;
-        overflow: hidden;
-    }
-
-    .calendar-slides {
-        display: flex;
-        transition: transform 0.4s ease;
-    }
-
-    .calendar-slide {
-        flex: 0 0 100%;
-        min-width: 100%;
-    }
-
-    .calendar-slide img {
-        width: 100%;
-        height: auto;
-        display: block;
-    }
-
-    .calendar-slide {
-        position: relative;
-        cursor: pointer;
-    }
-
-    .calendar-slide:hover img {
-        filter: brightness(0.97);
-    }
-
-    .calendar-slide::after {
-        content: "\f065";
-        font-family: "Font Awesome 5 Free";
-        font-weight: 900;
-        position: absolute;
-        top: 0.6rem;
-        right: 0.6rem;
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        background: rgba(29,29,31,0.85);
-        color: white;
-        font-size: 0.85rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        pointer-events: none;
-    }
-
-    .calendar-slide:hover::after {
-        opacity: 1;
-    }
-
-    .calendar-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 40px;
-        height: 40px;
-        border: none;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.95);
-        color: var(--text, #1d1d1f);
-        font-size: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-        cursor: pointer;
-        z-index: 2;
-        transition: opacity 0.2s ease;
-        opacity: 0.85;
-    }
-
-    .calendar-nav:hover {
-        opacity: 1;
-    }
-
-    .calendar-nav.prev { left: 0.75rem; }
-    .calendar-nav.next { right: 0.75rem; }
-
-    .calendar-dots {
-        display: flex;
-        justify-content: center;
-        gap: 0.4rem;
-        margin-top: 0.6rem;
-    }
-
-    .calendar-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        border: none;
-        background: rgba(0,0,0,0.15);
-        cursor: pointer;
-        padding: 0;
-    }
-
-    .calendar-dot.active {
-        background: var(--text, #1d1d1f);
-        width: 22px;
-        border-radius: 2rem;
-    }
-
-    .calendar-summary {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem 1.25rem;
-        justify-content: center;
-    }
-
-    .calendar-summary-item {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        font-size: 0.78rem;
-        color: var(--db-text-main);
-    }
-
-    .calendar-summary-item i {
-        font-size: 0.85rem;
-    }
-
-    @media (max-width: 768px) {
-        .calendar-summary { flex-direction: column; align-items: center; }
-        .calendar-nav { width: 34px; height: 34px; font-size: 0.85rem; }
-    }
-</style>
-
-<div class="dashboard-wrapper">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-end mb-4">
-        <div>
-            <h1 class="apple-title">Bienvenido</h1>
-            <p class="apple-subtitle mb-0">Resumen y pendientes de hoy.</p>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Bienvenido</h1>
+            <p class="comp-subtitle">Resumen y pendientes de hoy.</p>
         </div>
-        <div class="text-end">
-            <span class="apple-tag apple-num">
-                <i class="far fa-calendar-alt me-1"></i> {% now "j \d\e F, Y" %}
+        <div class="comp-actions">
+            <span class="comp-badge comp-badge-soft comp-tabular-nums">
+                <i class="far fa-calendar-alt me-1"></i>{% now "j \d\e F, Y" %}
             </span>
         </div>
     </div>
 
-    <!-- KPIs Section -->
     {% if perms.gestion_escolar.ver_estadisticas_generales %}
-    <div class="row g-4 mb-5">
-        <div class="col-md-3">
-            <a href="{% url 'lista_zonas' %}" class="text-decoration-none kpi-card-link">
-                <div class="kpi-card">
-                    <div class="kpi-icon-container bg-soft-primary">
-                        <i class="fas fa-map-marked"></i>
-                    </div>
-                    <div>
-                        <p class="kpi-label mb-0">Zonas</p>
-                        <h2 class="kpi-value mb-0">{{ total_zonas }}</h2>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a href="{% url 'lista_escuelas' %}" class="text-decoration-none kpi-card-link">
-                <div class="kpi-card">
-                    <div class="kpi-icon-container bg-soft-success">
-                        <i class="fas fa-school"></i>
-                    </div>
-                    <div>
-                        <p class="kpi-label mb-0">Centros C.T.</p>
-                        <h2 class="kpi-value mb-0">{{ total_escuelas }}</h2>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a href="{% url 'lista_maestros' %}" class="text-decoration-none kpi-card-link">
-                <div class="kpi-card">
-                    <div class="kpi-icon-container bg-soft-info">
-                        <i class="fas fa-users-cog"></i>
-                    </div>
-                    <div>
-                        <p class="kpi-label mb-0">Personal</p>
-                        <h2 class="kpi-value mb-0">{{ total_maestros }}</h2>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a href="{% url 'lista_directores' %}" class="text-decoration-none kpi-card-link">
-                <div class="kpi-card">
-                    <div class="kpi-icon-container bg-soft-warning">
-                        <i class="fas fa-user-tie"></i>
-                    </div>
-                    <div>
-                        <p class="kpi-label mb-0">Directores</p>
-                        <h2 class="kpi-value mb-0">{{ total_directores }}</h2>
-                    </div>
-                </div>
-            </a>
-        </div>
+    <div class="comp-kpi-grid">
+        <a href="{% url 'lista_zonas' %}" class="comp-kpi-card is-clickable">
+            <div class="comp-kpi-value">{{ total_zonas }}</div>
+            <div class="comp-kpi-label">Zonas</div>
+        </a>
+        <a href="{% url 'lista_escuelas' %}" class="comp-kpi-card is-clickable">
+            <div class="comp-kpi-value">{{ total_escuelas }}</div>
+            <div class="comp-kpi-label">Centros C.T.</div>
+        </a>
+        <a href="{% url 'lista_maestros' %}" class="comp-kpi-card is-clickable">
+            <div class="comp-kpi-value">{{ total_maestros }}</div>
+            <div class="comp-kpi-label">Personal</div>
+        </a>
+        <a href="{% url 'lista_directores' %}" class="comp-kpi-card is-clickable">
+            <div class="comp-kpi-value">{{ total_directores }}</div>
+            <div class="comp-kpi-label">Directores</div>
+        </a>
     </div>
     {% endif %}
 
-    <div class="row g-4 d-flex align-items-stretch">
-        <!-- Chart Column -->
-        <div class="col-lg-6">
-            <div class="widget-card h-100">
-                <div class="widget-header">
-                    <h5 class="mb-0 fw-bold">Calendario Escolar 2026-2027</h5>
-                    <span class="apple-tag" style="font-size:0.7rem;">CICLO ESCOLAR</span>
+    <div class="comp-dashboard-split">
+        <div class="comp-panel">
+            <div class="comp-section">
+                <div class="comp-section-title">
+                    <h5>Calendario Escolar 2026-2027</h5>
+                    <span class="comp-badge comp-badge-soft ms-auto">Ciclo escolar</span>
                 </div>
-                <div class="widget-body">
+
+                <div class="comp-calendar">
                     <div class="calendar-carousel" id="calendarCarousel">
                         <div class="calendar-carousel-track" id="calendarTrack">
                             <div class="calendar-slides" id="calendarSlides">
@@ -430,106 +84,106 @@
                         </div>
                     </div>
                     <div class="text-center mt-3">
-                        <a href="https://educacionbasica.sep.gob.mx/publica-sep-calendario-escolar-2026-2027-para-educacion-basica-y-normal/" target="_blank" class="apple-btn-ghost">
-                            <i class="fas fa-external-link-alt me-1"></i> Publicación oficial SEP
+                        <a href="https://educacionbasica.sep.gob.mx/publica-sep-calendario-escolar-2026-2027-para-educacion-basica-y-normal/" target="_blank" rel="noopener" class="comp-btn comp-btn-ghost comp-btn-sm">
+                            <i class="fas fa-external-link-alt"></i> Publicación oficial SEP
                         </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Activity Feed Column -->
-        <div class="col-lg-6">
-            <div class="row g-4 h-100">
-                {% if perms.gestion_escolar.ver_lista_pendientes %}
-                <div class="col-md-6">
-                    <div class="widget-card">
-                        <div class="widget-header">
-                            <h6 class="mb-0 fw-bold">Pendientes</h6>
-                            <a href="{% url 'pendientes_activos' %}" class="small text-decoration-none">Ver todo</a>
-                        </div>
-                        <div class="widget-body p-0">
-                            <div class="px-3">
-                                {% for pendiente in ultimos_pendientes %}
-                                <div class="feed-item">
-                                    <div class="feed-icon bg-soft-warning">
-                                        <i class="fas fa-clock shadow-sm"></i>
-                                    </div>
-                                    <div class="feed-content">
-                                        <div class="feed-title">{{ pendiente.titulo }}</div>
-                                        <div class="feed-date">{{ pendiente.fecha_programada|date:"d/m/Y" }}</div>
-                                    </div>
-                                </div>
-                                {% empty %}
-                                <div class="p-4 text-center">
-                                    <p class="text-muted small mb-0">Sin pendientes próximos.</p>
-                                </div>
-                                {% endfor %}
+        {% if perms.gestion_escolar.ver_lista_pendientes or perms.gestion_escolar.ver_lista_ultimo_personal %}
+        <div class="comp-dashboard-feed-grid">
+            {% if perms.gestion_escolar.ver_lista_pendientes %}
+            <div class="comp-panel">
+                <div class="comp-section">
+                    <div class="comp-section-title">
+                        <h5>Pendientes</h5>
+                        <a href="{% url 'pendientes_activos' %}" class="comp-feed-link ms-auto">Ver todo</a>
+                    </div>
+                    <div class="comp-feed">
+                        {% for pendiente in ultimos_pendientes %}
+                        <div class="comp-feed-item">
+                            <div class="comp-feed-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="comp-feed-main">
+                                <div class="comp-feed-title">{{ pendiente.titulo }}</div>
+                                <div class="comp-feed-date">{{ pendiente.fecha_programada|date:"d/m/Y" }}</div>
                             </div>
                         </div>
+                        {% empty %}
+                        <div class="comp-empty-state comp-empty-state-sm">
+                            <i class="fas fa-check-circle"></i>
+                            <p>Sin pendientes próximos.</p>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
-                {% endif %}
+            </div>
+            {% endif %}
 
-                {% if perms.gestion_escolar.ver_lista_ultimo_personal %}
-                <div class="col-md-6">
-                    <div class="widget-card">
-                        <div class="widget-header">
-                            <h6 class="mb-0 fw-bold">Recientes</h6>
-                        </div>
-                        <div class="widget-body p-0">
-                            <div class="px-3">
-                                {% for maestro in ultimo_personal %}
-                                <a href="{% url 'detalle_maestro' maestro.id_maestro %}" class="feed-item text-decoration-none">
-                                    <div class="feed-icon bg-soft-success">
-                                        {{ maestro.nombres|slice:":1"|upper }}
-                                    </div>
-                                    <div class="feed-content">
-                                        <div class="feed-title">{{ maestro.nombres }} {{ maestro.a_paterno }}</div>
-                                        <div class="feed-subtitle">{{ maestro.get_funcion_display }}</div>
-                                    </div>
-                                </a>
-                                {% empty %}
-                                <div class="p-4 text-center">
-                                    <p class="text-muted small mb-0">No hay registros recientes.</p>
-                                </div>
-                                {% endfor %}
+            {% if perms.gestion_escolar.ver_lista_ultimo_personal %}
+            <div class="comp-panel">
+                <div class="comp-section">
+                    <div class="comp-section-title">
+                        <h5>Recientes</h5>
+                    </div>
+                    <div class="comp-feed">
+                        {% for maestro in ultimo_personal %}
+                        <a href="{% url 'detalle_maestro' maestro.id_maestro %}" class="comp-feed-item">
+                            <div class="comp-feed-icon">
+                                {{ maestro.nombres|slice:":1"|upper }}
                             </div>
+                            <div class="comp-feed-main">
+                                <div class="comp-feed-title">{{ maestro.nombres }} {{ maestro.a_paterno }}</div>
+                                <div class="comp-feed-meta">{{ maestro.get_funcion_display }}</div>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="comp-empty-state comp-empty-state-sm">
+                            <i class="fas fa-user-clock"></i>
+                            <p>No hay registros recientes.</p>
                         </div>
+                        {% endfor %}
                     </div>
                 </div>
-                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
 
-                {% if perms.gestion_escolar.ver_ultima_correspondencia %}
-                <div class="col-12 mt-4">
-                    <div class="widget-card">
-                        <div class="widget-header">
-                            <h6 class="mb-0 fw-bold">Correspondencia Reciente</h6>
+    {% if perms.gestion_escolar.ver_ultima_correspondencia %}
+    <div class="comp-panel mt-4">
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h5>Correspondencia Reciente</h5>
+            </div>
+            <div class="comp-feed">
+                {% for registro in ultima_correspondencia %}
+                <div class="comp-feed-item is-stacked">
+                    <div class="comp-feed-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="comp-feed-main">
+                        <div class="comp-feed-head">
+                            <div class="comp-feed-title">{{ registro.fecha_recibido|date:"d/m/Y" }}</div>
+                            <span class="comp-badge comp-badge-accent">Recibido</span>
                         </div>
-                        <div class="widget-body p-0">
-                            <div class="px-3">
-                                {% for registro in ultima_correspondencia %}
-                                <div class="feed-item py-3">
-                                    <div class="feed-icon bg-soft-info">
-                                        <i class="fas fa-file-alt"></i>
-                                    </div>
-                                    <div class="feed-content">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <div class="feed-title fw-bold">{{ registro.fecha_recibido|date:"d/m/Y" }}</div>
-                                            <span class="badge-soft badge-soft-info">Recibido</span>
-                                        </div>
-                                        <p class="mb-0 text-muted small lh-sm">{{ registro.contenido|truncatechars:120 }}</p>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
+                        <p class="comp-feed-text">{{ registro.contenido|truncatechars:120 }}</p>
                     </div>
                 </div>
-                {% endif %}
+                {% empty %}
+                <div class="comp-empty-state comp-empty-state-sm">
+                    <i class="fas fa-inbox"></i>
+                    <p>Sin correspondencia reciente.</p>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}
 
@@ -581,4 +235,3 @@
     });
 </script>
 {% endblock %}
-

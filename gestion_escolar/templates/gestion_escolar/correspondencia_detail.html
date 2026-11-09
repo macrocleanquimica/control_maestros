@@ -1,167 +1,122 @@
 {% extends "gestion_escolar/base.html" %}
 {% load static %}
 
-{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+{% block title %}{{ mensaje.asunto }} | Control de Maestros{% endblock %}
 
 {% block content %}
 <style>
-    .message-reader-container {
-        max-width: 800px;
-        margin: 0 auto;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .reader-header {
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .btn-back-inbox {
-        background: transparent;
-        color: var(--text-2, #6e6e73);
-        border: none;
-        padding: 0.65rem 1.25rem;
-        border-radius: var(--r-pill, 999px);
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .btn-back-inbox:hover {
-        background: rgba(0,0,0,0.05);
-        color: var(--text, #1d1d1f);
-    }
-
-    .reader-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    .message-meta-section {
-        padding: 2rem clamp(17px, 3vw, 2.5rem);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .message-subject-title {
-        font-size: 1.4rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: var(--text, #1d1d1f);
-        margin-bottom: 1.25rem;
-        line-height: 1.3;
-    }
-
-    .sender-profile {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .avatar-large {
+    .reader-avatar {
         width: 48px;
         height: 48px;
-        border-radius: 50%;
-        background: rgba(0,0,0,0.05);
-        color: var(--text-2, #6e6e73);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        font-weight: 600;
-        flex-shrink: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        flex: 0 0 auto;
+        background: rgba(255, 117, 24, 0.10);
+        color: var(--comp-accent);
     }
 
-    .sender-info-text {
-        flex-grow: 1;
-    }
-
-    .sender-name {
-        font-weight: 600;
-        color: var(--text, #1d1d1f);
-        margin: 0;
+    .reader-name {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--comp-text);
         display: block;
+        letter-spacing: -0.01em;
     }
 
-    .message-timestamp {
-        font-size: 0.8rem;
-        color: var(--text-3, #86868b);
+    .reader-time {
+        font-size: 0.82rem;
+        color: var(--comp-text-3);
         display: block;
         font-variant-numeric: tabular-nums;
     }
 
-    .message-body-section {
-        padding: 2rem clamp(17px, 3vw, 2.5rem);
+    .message-text {
         font-size: 1rem;
         line-height: 1.8;
-        color: var(--text-body, #424245);
-        min-height: 300px;
+        color: var(--comp-text-body);
         white-space: pre-wrap;
+        overflow-wrap: anywhere;
     }
 
-    .reader-actions {
-        padding: 1.25rem clamp(17px, 3vw, 2.5rem);
-        border-top: 1px solid var(--hairline, rgba(0,0,0,0.07));
+    .message-note {
         display: flex;
-        justify-content: flex-end;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--comp-text-3);
+    }
+
+    @media (max-width: 576px) {
+        .reader-time {
+            font-size: 0.78rem;
+        }
     }
 </style>
 
-<div class="message-reader-container py-4">
-    <div class="reader-header">
-        <a href="{% url 'correspondencia_inbox' %}" class="btn-back-inbox">
-            <i class="fas fa-arrow-left"></i>
-            Bandeja de Entrada
-        </a>
-        <div class="d-flex gap-2">
-            <form method="post" action="{% url 'correspondencia_eliminar' mensaje.pk %}">
+<div class="comp-page-container comp-detail">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title" style="overflow-wrap: anywhere;">{{ mensaje.asunto }}</h1>
+            <p class="comp-subtitle">Mensaje interno · {{ mensaje.fecha_creacion|date:"d/m/Y H:i" }}</p>
+        </div>
+        <div class="comp-actions">
+            <a href="{% url 'correspondencia_inbox' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> Bandeja
+            </a>
+            <form method="post" action="{% url 'correspondencia_eliminar' mensaje.pk %}" class="d-inline">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger border-0 rounded-pill px-3 btn-hover-animate" onclick="return confirm('¿Eliminar este mensaje?');">
-                    <i class="fas fa-trash-alt me-2"></i>Eliminar
+                <button type="submit" class="comp-btn comp-btn-ghost" onclick="return confirm('¿Eliminar este mensaje?');">
+                    <i class="fas fa-trash-alt"></i> Eliminar
                 </button>
             </form>
         </div>
     </div>
 
-    <div class="reader-card">
-        <div class="message-meta-section">
-            <h1 class="message-subject-title">{{ mensaje.asunto }}</h1>
-            
-            <div class="sender-profile">
-                <div class="avatar-large">
-                    {{ mensaje.remitente.username|slice:":1"|upper }}
-                </div>
-                <div class="sender-info-text">
-                    <span class="sender-name">{{ mensaje.remitente.get_full_name|default:mensaje.remitente.username }}</span>
-                    <span class="message-timestamp">
+    <div class="comp-panel">
+        <div class="comp-section">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="comp-avatar reader-avatar">{{ mensaje.remitente.username|slice:":1"|upper }}</span>
+                <div>
+                    <span class="reader-name">{{ mensaje.remitente.get_full_name|default:mensaje.remitente.username }}</span>
+                    <span class="reader-time">
                         <i class="far fa-clock me-1"></i>
                         {{ mensaje.fecha_creacion|date:"l, d \d\e F \d\e Y" }} a las {{ mensaje.fecha_creacion|date:"H:i" }}
                     </span>
                 </div>
             </div>
+
+            <div class="comp-info-grid mb-0">
+                <div class="comp-info-item">
+                    <span class="comp-info-label">De</span>
+                    <span class="comp-info-value">{{ mensaje.remitente.get_full_name|default:mensaje.remitente.username }}</span>
+                </div>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Para</span>
+                    <span class="comp-info-value">{{ mensaje.destinatario.get_full_name|default:mensaje.destinatario.username }}</span>
+                </div>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Estado</span>
+                    <span class="comp-info-value">
+                        <span class="comp-badge comp-badge-soft">
+                            <i class="fas fa-envelope-open me-1"></i> Leído
+                        </span>
+                    </span>
+                </div>
+            </div>
         </div>
 
-        <div class="message-body-section">
-            {{ mensaje.cuerpo|linebreaksbr }}
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h4>Mensaje</h4>
+            </div>
+            <div class="message-text">{{ mensaje.cuerpo|linebreaksbr }}</div>
         </div>
 
-        <div class="reader-actions">
-            <p class="text-muted smaller mb-0">
-                <i class="fas fa-shield-halved me-1 opacity-50"></i>
-                Mensajería interna cifrada del sistema.
-            </p>
+        <div class="comp-section">
+            <div class="message-note">
+                <i class="fas fa-shield-halved"></i>
+                Mensajería interna del sistema de Control de Maestros.
+            </div>
         </div>
     </div>
 </div>

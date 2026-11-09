@@ -5,9 +5,13 @@ from django.urls import reverse
 from django.db.models import Q
 from django.http import JsonResponse
 
-from ..models import Maestro, Escuela, DocumentoExpediente
+from django.db import transaction
+from django.db.models.deletion import ProtectedError
+
+from ..models import Maestro, Escuela, DocumentoExpediente, Vacancia, Interinato, FUP, Historial, KardexMovimiento
 from ..forms import MaestroForm, DocumentoExpedienteForm
-from .helpers import es_status_activo, FUNCION_MAPPING
+from .helpers import es_status_activo, FUNCION_MAPPING, es_director, escuela_de_director
+from django.core.exceptions import PermissionDenied
 
 # Vistas para Maestros
 from unidecode import unidecode
@@ -77,6 +81,32 @@ def buscar_persona_existente(datos):
     return None
 
 
+def _verificar_supervisores_duplicados(request, maestro_guardado):
+    """Aviso análogo al de directores: si este quedó con función SUPERVISOR(A)
+    y su zona ya tiene otro supervisor ACTIVO, avisa para revisión manual."""
+    if (maestro_guardado.funcion or '') != 'SUPERVISOR(A)':
+        return
+    escuela = maestro_guardado.id_escuela
+    zona = escuela.zona_esc if escuela else None
+    if not zona:
+        return
+    otros = Maestro.objects.filter(
+        id_escuela__zona_esc=zona,
+        funcion='SUPERVISOR(A)',
+    ).exclude(id_maestro=maestro_guardado.id_maestro)
+    activos = [m for m in otros if es_status_activo(m.status)]
+    extra = activos or list(otros)
+    if not extra:
+        return
+    nombres = ', '.join(f"{m.nombres} {m.a_paterno} (ID {m.id_maestro})" for m in extra)
+    messages.warning(
+        request,
+        f"Advertencia: la zona {zona.numero} ya tiene a otro maestro con "
+        f"función SUPERVISOR(A): {nombres}. Revisa manualmente cuál es el supervisor real "
+        "para evitar duplicados."
+    )
+
+
 def _verificar_directores_duplicados(request, maestro_guardado):
     """Tras guardar un maestro, si este quedó con función DIRECTOR(A) y su C.T.
     ya tiene otro maestro ACTIVO también marcado como director, emite un aviso
@@ -103,11 +133,13 @@ def _verificar_directores_duplicados(request, maestro_guardado):
     )
 
 @login_required
+@permission_required('gestion_escolar.view_maestro', raise_exception=True)
 def lista_maestros(request):
     user = request.user
     return render(request, 'gestion_escolar/lista_maestros.html')
 
 @login_required
+@permission_required('gestion_escolar.view_maestro', raise_exception=True)
 def lista_maestros_ajax(request):
     draw = int(request.GET.get('draw', 0))
     start = int(request.GET.get('start', 0))
@@ -122,19 +154,25 @@ def lista_maestros_ajax(request):
         order_column = f'-{order_column}'
 
     user = request.user
-    if user.groups.filter(name='Directores').exists():
-        try:
-            maestro_director = user.maestro_profile
-            queryset = Maestro.objects.filter(id_escuela=maestro_director.id_escuela)
-        except AttributeError:
+    if es_director(user):
+        # El director solo ve los registros de su propia escuela, a nivel
+        # plaza (sin agrupar: así ninguna búsqueda puede colar la ficha
+        # completa de personal de otra escuela vía plazas secundarias).
+        escuela_dir = escuela_de_director(user)
+        if escuela_dir is None:
             queryset = Maestro.objects.none()
+        else:
+            queryset = Maestro.objects.filter(id_escuela=escuela_dir)
     else:
         queryset = Maestro.objects.all()
 
     # Agrupar por persona: si 'agrupar' está activo, solo se muestran los
-    # registros raíz (maestro_principal NULL). Las plazas adicionales siguen
-    # visibles como badge "+N" y en la vista de detalle.
+    # registros raíz (maestro_principal NULL) con badge "+N". La búsqueda también
+    # rastrea las plazas secundarias para que una clave de secundaria encuentre
+    # a la persona raíz. Con 'agrupar=0' se muestran todas las plazas sueltas.
     agrupar = request.GET.get('agrupar', '1') != '0'
+    if es_director(user):
+        agrupar = False
     if agrupar:
         from django.db.models import Count
         queryset = queryset.filter(maestro_principal__isnull=True).annotate(
@@ -159,22 +197,34 @@ def lista_maestros_ajax(request):
                 Q(id_escuela__id_escuela__icontains=search_value) | \
                 Q(nombre_completo_unaccented__icontains=search_unaccented)
 
-        queryset = queryset.filter(query)
+        if agrupar:
+            # En vista agrupada, una clave/CURP de una plaza secundaria también
+            # debe encontrar a la persona raíz (que muestra el badge +N).
+            query = query | \
+                    Q(plazas_secundarias__id_maestro__icontains=search_value) | \
+                    Q(plazas_secundarias__curp__icontains=search_value) | \
+                    Q(plazas_secundarias__rfc__icontains=search_value) | \
+                    Q(plazas_secundarias__clave_presupuestal__icontains=search_value) | \
+                    Q(plazas_secundarias__id_escuela__id_escuela__icontains=search_value) | \
+                    Q(plazas_secundarias__nombre_completo_unaccented__icontains=search_unaccented)
+            queryset = queryset.filter(query).distinct()
+        else:
+            queryset = queryset.filter(query)
 
     records_filtered = queryset.count()
     queryset = queryset.order_by(order_column)[start:start + length]
 
     data = []
     for maestro in queryset:
-        actions = '<div class="d-flex gap-1 justify-content-center">'
-        actions += f'<a href="{reverse("detalle_maestro", args=[maestro.pk])}" class="btn btn-sm btn-light border btn-action-custom" title="Ver Detalle"><i class="fas fa-eye text-info"></i></a>'
-        
+        actions = '<div class="comp-action-group">'
+        actions += f'<a href="{reverse("detalle_maestro", args=[maestro.pk])}" class="comp-action comp-action-view" title="Ver detalle" aria-label="Ver detalle de {maestro.nombres} {maestro.a_paterno} {maestro.a_materno}"><i class="fas fa-eye"></i></a>'
+
         if request.user.has_perm('gestion_escolar.change_maestro'):
-            actions += f'<a href="{reverse("editar_maestro", args=[maestro.pk])}" class="btn btn-sm btn-light border btn-action-custom" title="Editar"><i class="fas fa-edit text-primary"></i></a>'
+            actions += f'<a href="{reverse("editar_maestro", args=[maestro.pk])}" class="comp-action comp-action-edit" title="Editar" aria-label="Editar a {maestro.nombres} {maestro.a_paterno} {maestro.a_materno}"><i class="fas fa-edit"></i></a>'
 
         if request.user.has_perm('gestion_escolar.delete_maestro'):
-            actions += f'<a href="{reverse("eliminar_maestro", args=[maestro.pk])}" class="btn btn-sm btn-light border btn-action-custom" title="Eliminar"><i class="fas fa-trash text-danger"></i></a>'
-        
+            actions += f'<a href="{reverse("eliminar_maestro", args=[maestro.pk])}" class="comp-action comp-action-delete" title="Eliminar" aria-label="Eliminar a {maestro.nombres} {maestro.a_paterno} {maestro.a_materno}"><i class="fas fa-trash"></i></a>'
+
         actions += '</div>'
         status_map = {'ACTIVO': 'success', 'INACTIVO': 'danger'}
         status_class = status_map.get(maestro.status, 'secondary')
@@ -211,6 +261,24 @@ def lista_maestros_ajax(request):
     }
     return JsonResponse(response)
 
+def _advertir_curp_rfc_legacy(request, form):
+    """Avisa cuando se guardó un registro conservando CURP/RFC heredados que no
+    pasan la validación actual. No bloquea: solo advierte."""
+    campos = []
+    if getattr(form, 'curp_aviso_legacy', False):
+        campos.append('CURP')
+    if getattr(form, 'rfc_aviso_legacy', False):
+        campos.append('RFC')
+    if campos:
+        messages.warning(
+            request,
+            f'El registro se guardó, pero conserva {" y ".join(campos)} con un formato '
+            'que no pasa la validación actual (dato heredado). Corrígelo cuando sea posible.'
+        )
+
+
+@login_required
+@permission_required('gestion_escolar.add_maestro', raise_exception=True)
 def agregar_maestro(request):
     all_escuelas = Escuela.objects.all()
     initial_data = {}
@@ -223,7 +291,7 @@ def agregar_maestro(request):
             pass
 
     if request.method == 'POST':
-        form = MaestroForm(request.POST, request=request)
+        form = MaestroForm(request.POST, request=request, validar_curp_rfc=True)
         if form.is_valid():
             maestro = form.save(commit=False)
             maestro.clave_presupuestal = maestro.generar_clave_presupuestal()
@@ -269,14 +337,16 @@ def agregar_maestro(request):
                 maestro.save()
                 messages.success(request, 'Maestro agregado correctamente.')
 
+            _advertir_curp_rfc_legacy(request, form)
             _verificar_directores_duplicados(request, maestro)
+            _verificar_supervisores_duplicados(request, maestro)
             if escuela_id:
                 return redirect('detalle_escuela', pk=escuela_id)
             return redirect('lista_maestros')
         else:
             messages.error(request, 'Por favor corrige los errores.')
     else:
-        form = MaestroForm(initial=initial_data, request=request)
+        form = MaestroForm(initial=initial_data, request=request, validar_curp_rfc=True)
     return render(request, 'gestion_escolar/form_maestro.html', {
         'form': form,
         'titulo': 'Agregar Maestro',
@@ -284,6 +354,7 @@ def agregar_maestro(request):
     })
 
 @login_required
+@permission_required('gestion_escolar.change_maestro', raise_exception=True)
 def editar_maestro(request, pk):
     maestro = get_object_or_404(Maestro, id_maestro=pk)
     documentos = maestro.documentos_expediente.all()
@@ -300,20 +371,22 @@ def editar_maestro(request, pk):
                 return redirect('editar_maestro', pk=maestro.id_maestro)
             else:
                 messages.error(request, 'Error al subir el documento.')
-            form = MaestroForm(instance=maestro, request=request)
+            form = MaestroForm(instance=maestro, request=request, validar_curp_rfc=True)
         else:
-            form = MaestroForm(request.POST, instance=maestro, request=request)
+            form = MaestroForm(request.POST, instance=maestro, request=request, validar_curp_rfc=True)
             if form.is_valid():
                 form.save()
                 messages.success(request, 'Maestro actualizado correctamente.')
+                _advertir_curp_rfc_legacy(request, form)
                 _verificar_directores_duplicados(request, maestro)
+                _verificar_supervisores_duplicados(request, maestro)
                 return redirect('lista_maestros')
             else:
                 print(form.errors.as_json())
                 messages.error(request, 'Por favor corrige los errores.')
             doc_form = DocumentoExpedienteForm()
     else:
-        form = MaestroForm(instance=maestro, request=request)
+        form = MaestroForm(instance=maestro, request=request, validar_curp_rfc=True)
         doc_form = DocumentoExpedienteForm()
 
     context = {
@@ -325,16 +398,84 @@ def editar_maestro(request, pk):
     }
     return render(request, 'gestion_escolar/form_maestro.html', context)
 
+def _impacto_borrado_maestro(maestro):
+    """Cuenta lo que depende de esta plaza para mostrarlo antes de borrar.
+
+    Lo que se PERDERÍA (bloquea el borrado vía PROTECT): vacancias donde es
+    titular, interinatos que cubrió, FUPs, documentos y movimientos de kardex.
+    Lo que SOBREVIVE (solo informativo): historiales y vacancias donde es
+    interino (quedan huérfanos con el nombre congelado).
+    """
+    secundarias = list(maestro.plazas_secundarias.all().order_by('id_maestro'))
+    impacto = {
+        'secundarias': secundarias,
+        'vacancias_titular': Vacancia.objects.filter(maestro_titular=maestro).count(),
+        'interinatos_cubiertos': Interinato.objects.filter(maestro_interino=maestro).count(),
+        'fups': FUP.objects.filter(maestro=maestro).count(),
+        'documentos': DocumentoExpediente.objects.filter(maestro=maestro).count(),
+        'kardex': KardexMovimiento.objects.filter(maestro=maestro).count(),
+        'historiales': Historial.objects.filter(maestro=maestro).count(),
+        'vacancias_interino': Vacancia.objects.filter(maestro_interino=maestro).count(),
+    }
+    impacto['bloqueado'] = bool(
+        impacto['vacancias_titular'] or impacto['interinatos_cubiertos']
+        or impacto['fups'] or impacto['documentos'] or impacto['kardex']
+    )
+    return impacto
+
+
+@login_required
+@permission_required('gestion_escolar.delete_maestro', raise_exception=True)
 def eliminar_maestro(request, pk):
     maestro = get_object_or_404(Maestro, id_maestro=pk)
+    impacto = _impacto_borrado_maestro(maestro)
     if request.method == 'POST':
-        maestro.delete()
-        messages.success(request, 'Maestro eliminada correctamente.')
+        if impacto['bloqueado']:
+            messages.error(
+                request,
+                'No se puede eliminar: esta plaza tiene movimientos ligados '
+                '(vacancias, interinatos, FUPs, documentos o kardex). '
+                'En su lugar póngala en INACTIVO desde Editar.'
+            )
+            return redirect('detalle_maestro', pk=maestro.id_maestro)
+        try:
+            with transaction.atomic():
+                if impacto['secundarias'] and maestro.maestro_principal is None:
+                    # Era raíz con plazas secundarias: promover la más antigua
+                    # a raíz y re-vincular a las demás para no dejar huérfanas
+                    # que se convertirían en "personas nuevas".
+                    nueva_raiz = impacto['secundarias'][0]
+                    nueva_raiz.maestro_principal = None
+                    nueva_raiz.save(update_fields=['maestro_principal'])
+                    for hermana in impacto['secundarias'][1:]:
+                        hermana.maestro_principal = nueva_raiz
+                        hermana.save(update_fields=['maestro_principal'])
+                maestro.delete()
+            messages.success(request, 'Maestro eliminado correctamente.')
+        except ProtectedError:
+            messages.error(
+                request,
+                'No se puede eliminar: aparecieron movimientos ligados a esta plaza. '
+                'En su lugar póngala en INACTIVO desde Editar.'
+            )
+            return redirect('detalle_maestro', pk=maestro.id_maestro)
         return redirect('lista_maestros')
-    return render(request, 'gestion_escolar/eliminar_maestro.html', {'maestro': maestro})
+    return render(request, 'gestion_escolar/eliminar_maestro.html', {'maestro': maestro, 'impacto': impacto})
 
+@login_required
+@permission_required('gestion_escolar.view_maestro', raise_exception=True)
 def detalle_maestro(request, pk):
     maestro = get_object_or_404(Maestro, id_maestro=pk)
+    if es_director(request.user):
+        # El director solo ve el personal de su escuela (comparación por CCT).
+        escuela_dir = escuela_de_director(request.user)
+        cct_dir = (escuela_dir.id_escuela or '').strip().upper() if escuela_dir else ''
+        cct_mtro = (maestro.id_escuela.id_escuela or '').strip().upper() if maestro.id_escuela and maestro.id_escuela.id_escuela else ''
+        if not cct_dir or cct_mtro != cct_dir:
+            raise PermissionDenied
+        if request.method == 'POST':
+            # Solo lectura: no puede anexar documentos de expediente.
+            raise PermissionDenied
     documentos = maestro.documentos_expediente.all()
     
     if request.method == 'POST':
@@ -351,8 +492,14 @@ def detalle_maestro(request, pk):
     else:
         form = DocumentoExpedienteForm()
 
-    # Navegación anterior / siguiente (ordenado por id_maestro)
+    # Navegación anterior / siguiente (ordenado por id_maestro).
+    # Los Directores solo navegan dentro de su escuela, igual que en la lista.
     qs_base = Maestro.objects.exclude(id_maestro__isnull=True).exclude(id_maestro='').order_by('id_maestro')
+    if request.user.groups.filter(name='Directores').exists():
+        try:
+            qs_base = qs_base.filter(id_escuela=request.user.maestro_profile.id_escuela)
+        except AttributeError:
+            qs_base = Maestro.objects.none()
     maestro_anterior = qs_base.filter(id_maestro__lt=pk).last()
     maestro_siguiente = qs_base.filter(id_maestro__gt=pk).first()
 
@@ -424,12 +571,20 @@ def agregar_otra_plaza(request, pk):
     maestro_raiz = maestro_original.maestro_principal if maestro_original.maestro_principal else maestro_original
 
     if request.method == 'POST':
-        form = MaestroForm(request.POST, request=request)
+        form = MaestroForm(
+            request.POST,
+            request=request,
+            permitir_curp_duplicada=True,
+            validar_curp_rfc=True,
+            legacy_curp=maestro_original.curp,
+            legacy_rfc=maestro_original.rfc,
+        )
         if form.is_valid():
             nueva_plaza = form.save(commit=False)
             nueva_plaza.maestro_principal = maestro_raiz
             nueva_plaza.save()
             messages.success(request, f'Nueva plaza agregada correctamente para {maestro_original.nombres}.')
+            _advertir_curp_rfc_legacy(request, form)
             return redirect('detalle_maestro', pk=nueva_plaza.id_maestro)
     else:
         # Datos personales a clonar
@@ -451,7 +606,13 @@ def agregar_otra_plaza(request, pk):
             'form_academica': maestro_original.form_academica,
             'maestro_principal': maestro_raiz,
         }
-        form = MaestroForm(initial=initial_data, request=request)
+        form = MaestroForm(
+            initial=initial_data,
+            request=request,
+            validar_curp_rfc=True,
+            legacy_curp=maestro_original.curp,
+            legacy_rfc=maestro_original.rfc,
+        )
 
     return render(request, 'gestion_escolar/form_maestro.html', {
         'form': form,
@@ -462,6 +623,7 @@ def agregar_otra_plaza(request, pk):
 
 
 @login_required
+@permission_required('gestion_escolar.change_maestro', raise_exception=True)
 def eliminar_documento_expediente(request, doc_pk):
     documento = get_object_or_404(DocumentoExpediente, pk=doc_pk)
     maestro_id = documento.maestro.id_maestro
@@ -483,6 +645,8 @@ def eliminar_documento_expediente(request, doc_pk):
     return render(request, 'gestion_escolar/eliminar_documento_expediente.html', context)
 
 # Vistas para diferentes funciones
+@login_required
+@permission_required('gestion_escolar.view_maestro', raise_exception=True)
 def lista_por_funcion(request, funcion):
     funcion_info = FUNCION_MAPPING.get(funcion)
     if not funcion_info:
@@ -494,21 +658,56 @@ def lista_por_funcion(request, funcion):
 
     print(f"DEBUG: Buscando maestros con funcion__in: {funcion_values}")
 
-    trabajadores = Maestro.objects.filter(
+    # Filtro de status: por defecto solo ACTIVO para no mezclar licencias e
+    # inactivos con el personal disponible. ?status=TODOS muestra todo.
+    status_filtro = (request.GET.get('status') or 'ACTIVO').strip().upper()
+    if status_filtro not in ('ACTIVO', 'LICENCIA', 'INACTIVO', 'TODOS'):
+        status_filtro = 'ACTIVO'
+
+    base_qs = Maestro.objects.filter(
         funcion__in=funcion_values
     ).exclude(
         id_maestro__isnull=True
     ).exclude(
         id_maestro=''
-    ).order_by('a_paterno', 'a_materno', 'nombres')
+    )
+    if es_director(request.user):
+        # El director solo ve el personal de su escuela.
+        escuela_dir = escuela_de_director(request.user)
+        if escuela_dir is None:
+            base_qs = base_qs.none()
+        else:
+            base_qs = base_qs.filter(id_escuela=escuela_dir)
+    conteo = {
+        'ACTIVO': base_qs.filter(status='ACTIVO').count(),
+        'LICENCIA': base_qs.filter(status='LICENCIA').count(),
+        'INACTIVO': base_qs.filter(status='INACTIVO').count(),
+    }
+    conteo['TODOS'] = base_qs.count()
+    if status_filtro != 'TODOS':
+        trabajadores = base_qs.filter(status=status_filtro).order_by('a_paterno', 'a_materno', 'nombres')
+    else:
+        trabajadores = base_qs.order_by('a_paterno', 'a_materno', 'nombres')
 
     print(f"DEBUG: Se encontraron {trabajadores.count()} maestros.")
+
+    titulos_plurales = {
+        'DIRECTOR': 'Directores',
+        'SUPERVISOR': 'Supervisores',
+        'MAESTRO_GRUPO': 'Maestros de Grupo',
+        'DOCENTE_APOYO': 'Docentes de Apoyo',
+        'PSICOLOGO': 'Psicólogos',
+        'TRABAJADOR_SOCIAL': 'Trabajadores Sociales',
+        'NO_ESPECIFICADO': 'No Especificados',
+    }
 
     return render(request, 'gestion_escolar/lista_por_funcion.html', {
         'trabajadores': trabajadores,
         'funcion': funcion,
         'funcion_display': funcion_display,
-        'titulo': f'{funcion_display}es' if funcion.endswith('OR') else f'{funcion_display}s'
+        'status_filtro': status_filtro,
+        'conteo_status': conteo,
+        'titulo': titulos_plurales.get(funcion, f'{funcion_display}s')
     })
 
 def lista_directores(request):
@@ -532,6 +731,9 @@ def lista_docentes_apoyo(request):
 
 @login_required
 def reporte_personas_vs_plazas(request):
+    if es_director(request.user):
+        # Reporte global: fuera del alcance del director (solo su personal).
+        raise PermissionDenied
     from .helpers import contar_personal
     from django.db.models import Count
 

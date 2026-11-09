@@ -4,222 +4,107 @@
 {% block title %}Importar Lista de Prelación | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .import-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    .import-header {
-        padding: 1.5rem clamp(17px, 3vw, 2rem);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .body-section {
-        padding: clamp(17px, 3vw, 2rem);
-    }
-
-    /* Aviso serio: se conserva un tono cálido porque es irreversible */
-    .danger-zone {
-        background: rgba(255,107,0,0.07);
-        border: 1px solid rgba(255,107,0,0.25);
-        border-radius: 14px;
-        padding: 1.25rem 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    /* Instructions */
-    .instruction-list {
-        padding-left: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .instruction-list li {
-        color: var(--text-body, #424245);
-        margin-bottom: 0.75rem;
-        font-weight: 500;
-        position: relative;
-    }
-
-    .instruction-list li code {
-        background: rgba(0,0,0,0.05);
-        color: var(--text, #1d1d1f);
-        padding: 0.1rem 0.4rem;
-        border-radius: 0.3rem;
-        font-weight: 600;
-    }
-
-    /* Format table */
-    .format-preview {
-        background: rgba(0,0,0,0.03);
-        border-radius: 14px;
-        padding: 1.25rem;
-        border: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        margin-bottom: 2rem;
-    }
-
-    .format-preview th {
-        font-size: 0.7rem;
-        color: var(--text-2, #6e6e73);
-        letter-spacing: 0.04em;
-        background: var(--surface, #fff) !important;
-    }
-
-    /* Custom File Input */
-    .file-drop-area {
-        border: 1px dashed rgba(0,0,0,0.2);
-        border-radius: 14px;
-        padding: 2.5rem;
-        text-align: center;
-        cursor: pointer;
-        background: rgba(0,0,0,0.02);
-        margin-bottom: 2rem;
-    }
-
-    .file-drop-area:hover {
-        border-color: var(--accent, #0071e3);
-    }
-
-    .file-drop-area i {
-        font-size: 2.5rem;
-        color: var(--text-3, #86868b);
-        margin-bottom: 1rem;
-    }
-
-    .file-drop-area.has-file {
-        border-color: var(--accent, #0071e3);
-    }
-
-    .file-drop-area.has-file i { color: var(--accent, #0071e3); }
-
-    /* Buttons */
-    .btn-import-confirm {
-        background: var(--accent, #0071e3);
-        color: white;
-        border-radius: var(--r-pill, 999px);
-        padding: 0 2.5rem;
-        min-height: 48px;
-        font-weight: 600;
-        border: none;
-    }
-
-    .btn-import-confirm:disabled {
-        background: rgba(0,0,0,0.12);
-        color: rgba(0,0,0,0.35);
-        cursor: not-allowed;
-    }
-
-    .btn-import-confirm:not(:disabled):hover {
-        opacity: 0.92;
-        color: white;
-    }
-</style>
-
-<div class="page-container">
-    <div class="import-card">
-        <div class="import-header">
-            <div>
-                <h4 class="apple-title mb-0" style="font-size: clamp(19px, 2.6vw, 24px);">Importar prelación</h4>
-                <p class="apple-subtitle mb-0">Reemplaza la lista anual con un Excel.</p>
-            </div>
-            <a href="{% url 'lista_prelacion' %}" class="apple-btn-ghost">
-                <i class="fas fa-arrow-left me-2"></i> Volver
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Importar prelación</h1>
+            <p class="comp-subtitle">Reemplaza la lista anual con un archivo de Excel.</p>
+        </div>
+        <div class="comp-actions">
+            <a href="{% url 'lista_prelacion' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> Volver
             </a>
         </div>
+    </div>
 
-        <div class="body-section">
-            <!-- Alert Section -->
-            <div class="danger-zone">
-                <div class="d-flex align-items-start gap-3">
-                    <div>
-                        <h6 class="fw-bold mb-1">Esto borra la lista actual</h6>
-                        <p class="mb-0 small" style="color: var(--text-2, #6e6e73);">
-                            Al importar, el sistema <strong>elimina todos los registros actuales</strong> de prelación y los reemplaza.
-                        </p>
-                    </div>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="comp-alert {% if message.tags == 'error' %}comp-alert-danger{% elif message.tags == 'success' %}comp-alert-success{% else %}comp-alert-info{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="comp-panel">
+        <div class="comp-section">
+            <div class="comp-alert comp-alert-danger mb-0">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong>Esto borra la lista actual.</strong>
+                    Al importar, el sistema elimina todos los registros actuales de prelación y los reemplaza.
                 </div>
             </div>
+        </div>
 
-            <!-- Instructions -->
-            <h6 class="fw-bold mb-3" style="font-size: 0.85rem;">
-                Formato del archivo
-            </h6>
-            <ul class="instruction-list small">
-                <li>Formatos aceptados: <code>.xlsx</code> o <code>.xls</code> únicamente.</li>
-                <li>Columnas obligatorias (en la primera fila): <code>pos_orden</code>, <code>folio</code>, <code>curp</code>, <code>nombre</code>, <code>tipo_val</code>, <code>telefonos</code>.</li>
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h4>Formato del archivo</h4>
+            </div>
+
+            <ul class="small comp-text-muted mb-3">
+                <li>Formatos aceptados: <span class="comp-code">.xlsx</span> o <span class="comp-code">.xls</span> únicamente.</li>
+                <li>Columnas obligatorias en la primera fila: <span class="comp-code">pos_orden</span>, <span class="comp-code">folio</span>, <span class="comp-code">curp</span>, <span class="comp-code">nombre</span>, <span class="comp-code">tipo_val</span>, <span class="comp-code">telefonos</span>.</li>
                 <li>No incluya filas vacías ni formatos complejos; mantenga los datos limpios y planos.</li>
             </ul>
 
-            <!-- Table Preview -->
-            <div class="format-preview shadow-sm">
-                <p class="small fw-bold text-muted mb-3">Estructura esperada por el sistema:</p>
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered mb-0" style="font-size: 0.75rem;">
-                        <thead class="bg-light">
-                            <tr>
-                                <th>pos_orden</th>
-                                <th>folio</th>
-                                <th>curp</th>
-                                <th>nombre</th>
-                                <th>tipo_val</th>
-                                <th>telefonos</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="text-primary fw-bold">1</td>
-                                <td>001-VAL-25</td>
-                                <td class="font-monospace">ABCD123...</td>
-                                <td class="fw-bold">GARCÍA PÉREZ JUAN</td>
-                                <td>BÁSICA</td>
-                                <td>618-123-4567</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <p class="comp-info-label mb-2">Estructura esperada por el sistema</p>
+            <div class="table-responsive">
+                <table class="comp-table comp-table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>pos_orden</th>
+                            <th>folio</th>
+                            <th>curp</th>
+                            <th>nombre</th>
+                            <th>tipo_val</th>
+                            <th>telefonos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="comp-tabular-nums">1</td>
+                            <td>001-VAL-25</td>
+                            <td class="comp-font-mono">ABCD123...</td>
+                            <td class="fw-semibold">GARCÍA PÉREZ JUAN</td>
+                            <td>BÁSICA</td>
+                            <td>618-123-4567</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h4>Archivo Excel</h4>
             </div>
 
-            <!-- Upload Form -->
             <form method="post" enctype="multipart/form-data" id="formImportar">
                 {% csrf_token %}
-                
-                <div class="file-drop-area" id="dropArea">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    <h5 class="fw-bold mb-1">Archivo Excel</h5>
-                    <p class="small mb-0" style="color: var(--text-2, #6e6e73);" id="fileName">Arrastre aquí o haga clic para buscar</p>
+
+                <div class="comp-file-drop" id="dropArea" role="button" tabindex="0">
+                    <i class="fas fa-cloud-upload-alt d-block"></i>
+                    <p class="fw-semibold mb-1" style="color: var(--comp-text);">Arrastre aquí o haga clic para buscar</p>
+                    <p class="small mb-0" id="fileName">Ningún archivo seleccionado</p>
                     <input type="file" name="archivo_excel" id="id_archivo_excel" accept=".xlsx,.xls" hidden required>
                 </div>
 
-                <div class="form-check p-3 rounded-4 mt-4 mb-4" style="border: 1px solid var(--hairline, rgba(0,0,0,0.07));">
-                    <input class="form-check-input ms-0" type="checkbox" id="confirmar" required>
-                    <label class="form-check-label ms-2 small fw-bold" for="confirmar">
-                        Entiendo que esto reemplaza toda la lista de prelación.
-                    </label>
+                <div class="comp-subpanel mt-3">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" id="confirmar" required>
+                        <label class="form-check-label small fw-semibold" for="confirmar">
+                            Entiendo que esto reemplaza toda la lista de prelación.
+                        </label>
+                    </div>
                 </div>
 
-                <div class="d-flex justify-content-end gap-3 mt-4">
-                    <button type="submit" class="btn-import-confirm" id="btnImportar" disabled>
-                        <i class="fas fa-check-circle me-2"></i> Importar
+                <div class="comp-form-actions">
+                    <button type="submit" class="comp-btn comp-btn-primary" id="btnImportar" disabled>
+                        <i class="fas fa-check-circle"></i> Importar
                     </button>
+                    <a href="{% url 'lista_prelacion' %}" class="comp-btn comp-btn-ghost">Cancelar</a>
                 </div>
             </form>
         </div>
@@ -234,13 +119,17 @@
         const fileInput = $('#id_archivo_excel');
         const fileNameDisplay = $('#fileName');
 
-        // Trigger input al hacer clic en el area
-        dropArea.on('click', function() {
+        // Trigger input al hacer clic en el área
+        dropArea.on('click keydown', function (e) {
+            if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') {
+                return;
+            }
+            e.preventDefault();
             fileInput.click();
         });
 
         // Mostrar nombre del archivo seleccionado
-        fileInput.on('change', function() {
+        fileInput.on('change', function () {
             if (this.files && this.files.length > 0) {
                 const name = this.files[0].name;
                 fileNameDisplay.text("Archivo listo: " + name).addClass('text-primary fw-bold');
@@ -248,27 +137,21 @@
             }
         });
 
-        // Drag & Drop visual feedback
-        dropArea.on('dragover', function(e) {
+        // Retroalimentación visual al arrastrar
+        dropArea.on('dragover dragenter', function (e) {
             e.preventDefault();
             e.stopPropagation();
             $(this).addClass('bg-light border-primary');
         });
 
-        dropArea.on('dragenter', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).addClass('bg-light border-primary');
-        });
-
-        dropArea.on('dragleave', function(e) {
+        dropArea.on('dragleave', function (e) {
             e.preventDefault();
             e.stopPropagation();
             $(this).removeClass('bg-light border-primary');
         });
 
         // Manejar el soltar del archivo
-        dropArea.on('drop', function(e) {
+        dropArea.on('drop', function (e) {
             e.preventDefault();
             e.stopPropagation();
             $(this).removeClass('bg-light border-primary');
@@ -285,13 +168,13 @@
             }
         });
 
-        // Prevenir que el navegador abra/descargue el archivo si se suelta fuera del area
-        $(document).on('dragover drop', function(e) {
+        // Prevenir que el navegador abra/descargue el archivo si se suelta fuera del área
+        $(document).on('dragover drop', function (e) {
             e.preventDefault();
             e.stopPropagation();
         });
 
-        // Habilitar botón solo cuando se confirma check
+        // Habilitar botón solo cuando se confirma el check
         $('#confirmar').on('change', function () {
             $('#btnImportar').prop('disabled', !this.checked);
         });

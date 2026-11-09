@@ -4,106 +4,29 @@
 {% block title %}Catálogo de Categorías | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .header-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    /* Tabla en panel único */
-    .table-container-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    thead th {
-        background: var(--surface, #fff) !important;
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        color: var(--text-2, #6e6e73);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important;
-        padding: 0.9rem 1rem !important;
-    }
-
-    tbody td {
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Botones de acción sin saltos */
-    .btn-action-custom {
-        width: 32px;
-        height: 32px;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 0.5rem;
-        transition: background 0.2s;
-    }
-
-    .category-id {
-        background: rgba(0,0,0,0.05);
-        padding: 0.25rem 0.6rem;
-        border-radius: 0.4rem;
-        font-family: var(--mono, monospace);
-        font-weight: 600;
-        color: var(--text, #1d1d1f);
-        font-size: 0.85rem;
-        font-variant-numeric: tabular-nums;
-    }
-
-</style>
-
-<div class="page-container">
-    <!-- Header Section -->
-    <div class="header-section">
-        <div class="header-title">
-            <h1 class="apple-title mb-0">Categorías</h1>
-            <p class="apple-subtitle mb-0">Claves salariales del personal.</p>
-        </div>
-        <div class="header-actions">
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Categorías</h1>
+            <p class="comp-subtitle">Claves salariales del personal.</p>
         </div>
     </div>
 
     {% if messages %}
-    <div class="mb-4">
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
-                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="comp-alert comp-alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
             </div>
         {% endfor %}
-    </div>
     {% endif %}
 
     <!-- Table Section -->
-    <div class="table-container-card">
-        <div class="card-body p-0">
+    <div class="comp-panel">
+        <div class="comp-panel-body">
             <div class="table-responsive">
-                <table id="tablaCategoriasPremium" class="table table-hover align-middle mb-0 w-100">
+                <table id="tablaCategoriasPremium" class="comp-table comp-table-sm w-100">
                     <thead>
                         <tr>
                             <th style="width: 200px;">Clave / ID</th>
@@ -115,16 +38,16 @@
                     <tbody>
                         {% for categoria in categorias %}
                         <tr>
-                            <td><span class="category-id">{{ categoria.id_categoria }}</span></td>
+                            <td><span class="comp-badge comp-badge-soft comp-font-mono comp-tabular-nums">{{ categoria.id_categoria }}</span></td>
                             <td><span class="fw-bold text-dark">{{ categoria.descripcion }}</span></td>
                             <td class="text-center"><span class="fw-semibold">{{ categoria.horas|default:"—" }}</span></td>
                             <td class="text-center">
-                                <div class="d-flex gap-1 justify-content-center">
-                                    <a href="{% url 'editar_categoria' categoria.id_categoria %}" class="btn btn-sm btn-light border btn-action-custom" title="Editar">
-                                        <i class="fas fa-edit text-primary"></i>
+                                <div class="comp-action-group">
+                                    <a href="{% url 'editar_categoria' categoria.id_categoria %}" class="comp-action comp-action-edit" title="Editar" aria-label="Editar categoría">
+                                        <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{% url 'eliminar_categoria' categoria.id_categoria %}" class="btn btn-sm btn-light border btn-action-custom" title="Eliminar">
-                                        <i class="fas fa-trash text-danger"></i>
+                                    <a href="{% url 'eliminar_categoria' categoria.id_categoria %}" class="comp-action comp-action-delete" title="Eliminar" aria-label="Eliminar categoría">
+                                        <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
                             </td>

@@ -4,105 +4,25 @@
 {% block title %}Gestión de Zonas Escolares | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .header-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    /* Tabla en panel único */
-    .table-container-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    thead th {
-        background: var(--surface, #fff) !important;
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        color: var(--text-2, #6e6e73);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07)) !important;
-        padding: 0.9rem 1rem !important;
-    }
-
-    tbody td {
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    tbody tr:hover td {
-        background: var(--hover, #fbfbfd);
-    }
-
-    /* Botones de acción sin saltos */
-    .btn-action-custom {
-        transition: background 0.2s;
-    }
-
-    .zona-number-badge {
-        background: rgba(0,0,0,0.05);
-        color: var(--text, #1d1d1f);
-        padding: 0.4rem 0.8rem;
-        border-radius: 0.5rem;
-        font-weight: 700;
-        font-size: 1rem;
-        font-variant-numeric: tabular-nums;
-    }
-
-</style>
-
-<div class="page-container">
-    <!-- Header Section -->
-    <div class="header-section">
-        <div class="header-title">
-            <h1 class="apple-title mb-0">Zonas</h1>
-            <p class="apple-subtitle mb-0">Zonas geográficas y supervisores.</p>
-        </div>
-        <div class="header-actions">
-            <a href="{% url 'agregar_zona' %}" class="apple-btn">
-                <i class="fas fa-plus me-2"></i> Agregar Zona
-            </a>
-        </div>
-    </div>
+<div class="comp-page-container">
+    {% url 'agregar_zona' as agregar_zona_url %}
+    {% include 'gestion_escolar/includes/page_header.html' with title="Zonas" subtitle="Zonas geográficas y supervisores." primary_url=agregar_zona_url primary_label="Agregar Zona" primary_icon="fa-plus" %}
 
     {% if messages %}
-    <div class="mb-4">
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
-                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="comp-alert comp-alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
             </div>
         {% endfor %}
-    </div>
     {% endif %}
 
     <!-- Table Section -->
-    <div class="table-container-card">
-        <div class="card-body p-0">
+    <div class="comp-panel">
+        <div class="comp-panel-body">
             <div class="table-responsive">
-                <table id="tablaZonasPremium" class="table table-hover align-middle mb-0 w-100">
+                <table id="tablaZonasPremium" class="comp-table comp-table-sm align-middle w-100">
                     <thead>
                         <tr>
                             <th style="width: 100px;">Número</th>
@@ -117,20 +37,18 @@
                         {% with zona=item.zona sup=item.supervisor %}
                         <tr>
                             <td>
-                                <div class="zona-number-badge">{{ zona.etiqueta }}</div>
+                                <span class="comp-badge comp-badge-soft comp-badge-lg comp-badge-wrap fw-bold comp-tabular-nums">{{ zona.etiqueta }}</span>
                             </td>
                             <td>
                                 {% if sup %}
                                     <div class="d-flex align-items-center">
-                                        <div class="avatar-sm rounded-circle p-2 me-2 text-center d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.75rem; background: rgba(0,0,0,0.05); color: var(--text, #1d1d1f);">
-                                            {{ item.nombre_supervisor|slice:":1"|upper }}
-                                        </div>
+
                                         <div class="fw-bold text-dark">
                                             {{ item.nombre_supervisor }}
                                         </div>
                                     </div>
                                 {% else %}
-                                    <span class="apple-tag"><i class="fas fa-user-slash me-1"></i> Sin Asignar</span>
+                                    <span class="comp-badge comp-badge-soft"><i class="fas fa-user-slash me-1"></i> Sin Asignar</span>
                                 {% endif %}
                             </td>
                             <td class="text-muted">
@@ -142,21 +60,21 @@
                             </td>
                             <td class="text-muted">
                                 {% if sup %}
-                                    <i class="fas fa-envelope me-1 opacity-50"></i> {{ sup.email|default:"-" }}
+                                    <i class="fas fa-envelope me-1 opacity-50"></i> <span class="comp-cell-truncate" title="{{ sup.email|default:'-' }}">{{ sup.email|default:"-" }}</span>
                                 {% else %}
                                     -
                                 {% endif %}
                             </td>
                             <td class="text-center">
-                                <div class="d-flex gap-1 justify-content-center">
-                                    <a href="{% url 'detalle_zona' zona.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Ver Centros de Trabajo">
-                                        <i class="fas fa-eye text-info"></i>
+                                <div class="comp-action-group">
+                                    <a href="{% url 'detalle_zona' zona.pk %}" class="comp-action comp-action-view" title="Ver Centros de Trabajo" aria-label="Ver centros de trabajo de la zona {{ zona.etiqueta }}">
+                                        <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{% url 'editar_zona' zona.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Editar Zona">
-                                        <i class="fas fa-edit text-primary"></i>
+                                    <a href="{% url 'editar_zona' zona.pk %}" class="comp-action comp-action-edit" title="Editar Zona" aria-label="Editar zona {{ zona.etiqueta }}">
+                                        <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{% url 'eliminar_zona' zona.pk %}" class="btn btn-sm btn-light border btn-action-custom" title="Eliminar Zona">
-                                        <i class="fas fa-trash text-danger"></i>
+                                    <a href="{% url 'eliminar_zona' zona.pk %}" class="comp-action comp-action-delete" title="Eliminar Zona" aria-label="Eliminar zona {{ zona.etiqueta }}">
+                                        <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
                             </td>
@@ -164,9 +82,11 @@
                         {% endwith %}
                         {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center py-5 text-muted">
-                                <i class="fas fa-map-marked fa-3x mb-3 opacity-25"></i>
-                                <p class="mb-0">No se encontraron zonas registradas.</p>
+                            <td colspan="5">
+                                <div class="comp-empty-state">
+                                    <i class="fas fa-map-marked"></i>
+                                    <p>No se encontraron zonas registradas.</p>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}

@@ -4,168 +4,72 @@
 {% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .premium-header {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    /* Formulario en panel único */
-    .form-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-container {
-        padding: 1.75rem clamp(17px, 3vw, 2.5rem);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .section-container:last-child {
-        border-bottom: none;
-    }
-
-    .section-title {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.25rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .section-title h4 {
-        font-size: 0.95rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--text, #1d1d1f);
-        margin: 0;
-    }
-
-    .section-icon {
-        display: none;
-    }
-
-    /* Campos */
-    .form-label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        letter-spacing: 0.025em;
-        margin-bottom: 0.5rem;
-    }
-
-    .form-control, .form-select {
-        border-radius: 12px;
-        border: 1px solid rgba(0,0,0,0.08);
-        padding: 0.6rem 1rem;
-        background-color: var(--surface, #fff);
-        font-weight: 500;
-    }
-
-    .form-control:focus, .form-select:focus {
-        background-color: white;
-        border-color: var(--accent, #0071e3);
-        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
-    }
-
-    /* Documentos */
-    .doc-item:hover {
-        background-color: var(--hover, #fbfbfd) !important;
-    }
-
-    .btn-save-personal {
-        background: var(--accent, #0071e3);
-        color: white;
-        border: none;
-        padding: 0 2.5rem;
-        min-height: 48px;
-        border-radius: var(--r-pill, 999px);
-        font-weight: 600;
-    }
-
-    .btn-save-personal:hover {
-        opacity: 0.92;
-        color: white;
-    }
-</style>
-
-<div class="page-container">
-    <!-- Header -->
-    <div class="premium-header">
-        <div class="header-info">
-            <h1 class="apple-title">{{ titulo }}</h1>
-            <p class="apple-subtitle mb-0">Ficha profesional del docente.</p>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-            {% if maestro and not es_clonado %}
-            <a href="{% url 'agregar_otra_plaza' maestro.id_maestro %}" class="apple-btn-ghost">
-                <i class="fas fa-plus me-2"></i> Otra Plaza
-            </a>
-            {% endif %}
-            <a href="{% url 'lista_maestros' %}" class="apple-btn-ghost">
-                <i class="fas fa-arrow-left me-2"></i> Regresar
-            </a>
-        </div>
-    </div>
+<div class="comp-page-container">
+    {% url 'lista_maestros' as lista_maestros_url %}
+    {% if maestro and not es_clonado %}
+        {% url 'agregar_otra_plaza' maestro.id_maestro as otra_plaza_url %}
+        {% include 'gestion_escolar/includes/page_header.html' with title=titulo subtitle="Ficha profesional del docente." secondary_url=lista_maestros_url secondary_label="Regresar" secondary_icon="fa-arrow-left" primary_url=otra_plaza_url primary_label="Otra Plaza" primary_icon="fa-plus" %}
+    {% else %}
+        {% include 'gestion_escolar/includes/page_header.html' with title=titulo subtitle="Ficha profesional del docente." secondary_url=lista_maestros_url secondary_label="Regresar" secondary_icon="fa-arrow-left" %}
+    {% endif %}
 
     {% if es_clonado %}
-    <div class="alert alert-info mb-4 d-flex align-items-center gap-3" role="alert">
-        <div>
-            <h5 class="fw-bold mb-1">Nueva plaza</h5>
-            <p class="mb-0 small">Datos de <strong>{{ maestro.nombres }} {{ maestro.a_paterno }}</strong> precargados. Capture solo la información de la nueva plaza.</p>
+        <div class="comp-alert comp-alert-info" role="alert">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong class="d-block">Nueva plaza</strong>
+                <span class="small">Datos de <strong>{{ maestro.nombres }} {{ maestro.a_paterno }}</strong> precargados. Capture solo la información de la nueva plaza.</span>
+            </div>
         </div>
-    </div>
     {% endif %}
 
     {% if messages %}
-    <div class="mb-4">
         {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show rounded-4 border-0 shadow-sm d-flex align-items-center gap-3" role="alert">
-            <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
-            <div>{{ message }}</div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+            <div class="comp-alert comp-alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
         {% endfor %}
-    </div>
     {% endif %}
 
-    <div class="form-card">
-        <form method="post" enctype="multipart/form-data">
+    <div class="comp-panel">
+        <form method="post" enctype="multipart/form-data" class="comp-form">
             {% csrf_token %}
 
             {% if form.errors %}
-            <div class="bg-danger bg-opacity-10 p-4 border-bottom border-danger border-opacity-20 text-danger">
-                <h5 class="fw-bold fs-6 mb-2"><i class="fas fa-exclamation-triangle me-2"></i> Errores Detectados:</h5>
-                <ul class="mb-0 small">
-                    {% for field, errors in form.errors.items %}
-                        <li><strong>{{ field|title }}:</strong> {{ errors.0 }}</li>
-                    {% endfor %}
-                </ul>
+            <div class="comp-alert comp-alert-danger m-3" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong class="d-block mb-1">Errores detectados</strong>
+                    <ul class="mb-0 small">
+                        {% for field, errors in form.errors.items %}
+                            <li><strong>{{ field|title }}:</strong> {{ errors.0 }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Aviso de datos heredados que no pasan la validación actual -->
+            {% if form.curp_aviso_legacy or form.rfc_aviso_legacy %}
+            <div class="comp-alert comp-alert-warning m-3" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong class="d-block mb-1">Dato heredado sin validar</strong>
+                    <span class="small">
+                        Este registro ya tenía
+                        {% if form.curp_aviso_legacy and form.rfc_aviso_legacy %}CURP y RFC{% elif form.curp_aviso_legacy %}CURP{% else %}RFC{% endif %}
+                        con un formato que no pasa la validación actual. Se conservará tal cual si no lo modificas;
+                        si lo cambias, deberá tener un formato válido.
+                    </span>
+                </div>
             </div>
             {% endif %}
 
             <!-- SECCIÓN 1: DATOS GENERALES -->
-            <div class="section-container">
-                <div class="section-title">
+            <div class="comp-section">
+                <div class="comp-section-title">
                     <h4>Identificación y Nombres</h4>
                 </div>
                 <div class="row g-3">
@@ -184,17 +88,28 @@
                     <div class="col-md-6">
                         <label class="form-label">CURP</label>
                         {{ form.curp }}
+                        {% if form.curp.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.curp.errors.0 }}</div>
+                        {% endif %}
+                        <div id="curp-validacion-aviso" class="text-danger small mt-1 fw-bold" style="display:none;" role="alert"></div>
+                        <div class="form-text small">Opcional. 18 caracteres. Al capturarla se llenan la fecha de nacimiento y la base del RFC.</div>
+                        <div id="curp-duplicada-aviso" class="alert alert-warning mt-2 mb-0 py-2 px-3 small" style="display:none;" role="alert"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">RFC</label>
                         {{ form.rfc }}
+                        {% if form.rfc.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.rfc.errors.0 }}</div>
+                        {% endif %}
+                        <div id="rfc-validacion-aviso" class="text-danger small mt-1 fw-bold" style="display:none;" role="alert"></div>
+                        <div class="form-text small">Opcional. 13 caracteres (persona física). Captura los 3 de homoclave.</div>
                     </div>
                 </div>
             </div>
 
             <!-- SECCIÓN 2: PERFIL LABORAL -->
-            <div class="section-container">
-                <div class="section-title">
+            <div class="comp-section">
+                <div class="comp-section-title">
                     <h4>Perfil y Adscripción Laboral</h4>
                 </div>
                 <div class="row g-3">
@@ -257,8 +172,8 @@
             </div>
 
             <!-- SECCIÓN 3: INFORMACIÓN BIOGRÁFICA -->
-            <div class="section-container">
-                <div class="section-title">
+            <div class="comp-section">
+                <div class="comp-section-title">
                     <h4>Información Personal y Académica</h4>
                 </div>
                 <div class="row g-3">
@@ -286,8 +201,8 @@
             </div>
 
             <!-- SECCIÓN 4: TRAYECTORIA -->
-            <div class="section-container">
-                <div class="section-title">
+            <div class="comp-section">
+                <div class="comp-section-title">
                     <h4>Fechas de Control</h4>
                 </div>
                 <div class="row g-3">
@@ -303,8 +218,8 @@
             </div>
 
             <!-- SECCIÓN 5: CONTACTO -->
-            <div class="section-container">
-                <div class="section-title">
+            <div class="comp-section">
+                <div class="comp-section-title">
                     <h4>Contacto y Localización</h4>
                 </div>
                 <div class="row g-3">
@@ -332,8 +247,8 @@
             </div>
 
             <!-- SECCIÓN 6: ESTADO -->
-            <div class="section-container">
-                <div class="section-title">
+            <div class="comp-section">
+                <div class="comp-section-title">
                     <h4>Observaciones y Estado</h4>
                 </div>
                 <div class="row g-3">
@@ -354,8 +269,8 @@
                 </div>
             </div>
 
-            <div class="section-container text-center py-4 border-top">
-                <button type="submit" class="btn-save-personal">
+            <div class="comp-section text-center border-top">
+                <button type="submit" class="btn btn-primary btn-lg px-4 btn-save-personal">
                     <i class="fas fa-save me-2"></i> Guardar Cambios en Ficha
                 </button>
             </div>
@@ -364,28 +279,28 @@
 
     <!-- SECCIÓN DOCUMENTOS -->
     {% if maestro %}
-    <div class="form-card mt-4">
-        <div class="section-container">
-            <div class="section-title">
+    <div class="comp-panel mt-4">
+        <div class="comp-section">
+            <div class="comp-section-title">
                 <h4>Expediente Digitalizado</h4>
             </div>
             
-            <form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded-4 shadow-sm border mb-4">
+            <form method="post" enctype="multipart/form-data" class="comp-form border rounded-4 p-4 mb-4 bg-white">
                 {% csrf_token %}
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-5">
+                    <div class="col-12 col-lg-5">
                         <label class="form-label">Tipo de Documento</label>
                         {{ doc_form.tipo_documento }}
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-12 col-lg-5">
                         <label class="form-label">Archivo PDF</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light"><i class="fas fa-file-pdf text-danger"></i></span>
                             {{ doc_form.archivo }}
                         </div>
                     </div>
-                    <div class="col-md-2">
-                        <button type="submit" name="submit_documento" class="apple-btn w-100 justify-content-center">
+                    <div class="col-12 col-lg-2">
+                        <button type="submit" name="submit_documento" class="btn btn-primary w-100">
                             <i class="fas fa-upload me-1"></i> Subir
                         </button>
                     </div>
@@ -393,9 +308,9 @@
             </form>
 
             {% if documentos %}
-            <div class="table-responsive bg-white rounded-4 border shadow-sm">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
+            <div class="table-responsive border rounded-4">
+                <table class="comp-table comp-table-sm table-hover align-middle mb-0">
+                    <thead>
                         <tr>
                             <th class="ps-4 py-3 border-0">Tipo de Documento</th>
                             <th class="py-3 border-0">Nombre del Archivo</th>
@@ -407,7 +322,7 @@
                         {% for documento in documentos %}
                         <tr class="doc-item">
                             <td class="ps-4">
-                                <span class="badge bg-soft-info text-info rounded-pill px-3">{{ documento.get_tipo_documento_display }}</span>
+                                <span class="comp-badge comp-badge-accent">{{ documento.get_tipo_documento_display }}</span>
                             </td>
                             <td>
                                 <a href="{{ documento.archivo.url }}" target="_blank" class="text-decoration-none fw-bold text-dark">
@@ -416,12 +331,12 @@
                             </td>
                             <td>
                                 <div class="small fw-bold">{{ documento.fecha_subida|date:"d/m/Y H:i" }}</div>
-                                <div class="text-muted smaller"><i class="fas fa-user-circle me-1"></i>{{ documento.subido_por.username }}</div>
+                                <div class="text-muted small"><i class="fas fa-user-circle me-1"></i>{{ documento.subido_por.username }}</div>
                             </td>
                             <td class="text-end pe-4">
                                 <form action="{% url 'eliminar_documento_expediente' documento.pk %}" method="post" class="d-inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0 rounded-circle p-2" onclick="return confirm('¿Estás seguro de que deseas eliminar este documento?');">
+                                    <button type="submit" class="comp-action comp-action-delete" onclick="return confirm('¿Estás seguro de que deseas eliminar este documento?');" title="Eliminar documento" aria-label="Eliminar documento {{ documento.get_tipo_documento_display }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -432,9 +347,9 @@
                 </table>
             </div>
             {% else %}
-            <div class="text-center py-5 bg-white rounded-4 border border-dashed">
-                <div class="text-muted mb-2"><i class="fas fa-cloud-upload-alt fa-3x opacity-25"></i></div>
-                <p class="text-muted mb-0 fw-bold">No hay documentos cargados en el expediente digital.</p>
+            <div class="comp-empty-state">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>No hay documentos cargados en el expediente digital.</p>
                 <small class="text-muted">Utiliza el formulario superior para añadir el primer archivo.</small>
             </div>
             {% endif %}
@@ -484,6 +399,213 @@
                 alert("Primero selecciona una escuela en el campo 'Centro de Trabajo'");
             }
         });
+        // Autorrelleno y validación en vivo de CURP/RFC.
+        // Nunca sobrescribe un valor capturado manualmente.
+        (function() {
+            var $curp = $('#id_curp');
+            var $fecha = $('#id_fecha_nacimiento');
+            var $rfc = $('#id_rfc');
+            if (!$curp.length) return;
+            var $avisoCurp = $('#curp-validacion-aviso');
+            var $avisoRfc = $('#rfc-validacion-aviso');
+            var DICCIONARIO = '0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ';
+            var ENTIDADES = ['AS','BC','BS','CC','CL','CM','CS','CH','DF','DG','GT','GR','HG','JC',
+                             'MC','MN','MS','NT','NL','OC','PL','QT','QR','SP','SL','SR','TC','TS',
+                             'TL','VZ','YN','ZS','NE'];
+            // Valor con el que se cargó la página: si no cambia, es un dato
+            // heredado y se permite guardarlo sin marcar error en vivo.
+            var curpInicial = normalizar($curp.val());
+            var rfcInicial = normalizar($rfc.val());
+
+            function normalizar(valor) {
+                return (valor || '').toString().toUpperCase().replace(/\s+/g, '');
+            }
+
+            function fechaValida(anio, mes, dia) {
+                var fecha = new Date(anio, mes - 1, dia);
+                return fecha.getFullYear() === anio && fecha.getMonth() === mes - 1 && fecha.getDate() === dia;
+            }
+
+            function fechaDesdeCurp(curp) {
+                var aa = parseInt(curp.substr(4, 2), 10);
+                var mm = parseInt(curp.substr(6, 2), 10);
+                var dd = parseInt(curp.substr(8, 2), 10);
+                if (isNaN(aa) || isNaN(mm) || isNaN(dd)) return null;
+                // Posición 17: dígito = 1900+, letra = 2000+.
+                var siglo = /[0-9]/.test(curp.charAt(16)) ? 1900 : 2000;
+                var anio = siglo + aa;
+                if (!fechaValida(anio, mm, dd)) return null;
+                return { fecha: new Date(anio, mm - 1, dd), anio: anio, aa: aa, mm: mm, dd: dd };
+            }
+
+            function digitoCurp(curp) {
+                var suma = 0;
+                for (var i = 0; i < 17; i++) {
+                    var valor = DICCIONARIO.indexOf(curp.charAt(i));
+                    if (valor < 0) return null;
+                    suma += valor * (18 - i);
+                }
+                return (10 - (suma % 10)) % 10;
+            }
+
+            function digitoRfc(rfc) {
+                var suma = 0;
+                for (var i = 0; i < 12; i++) {
+                    var valor = DICCIONARIO.indexOf(rfc.charAt(i));
+                    if (valor < 0) return null;
+                    suma += valor * (13 - i);
+                }
+                var residuo = 11 - (suma % 11);
+                if (residuo === 11) return '0';
+                if (residuo === 10) return 'A';
+                return String(residuo);
+            }
+
+            function validarCurp(curp) {
+                if (!curp) return { ok: true };
+                if (curp.length !== 18) {
+                    return { ok: false, message: 'La CURP debe tener exactamente 18 caracteres.' };
+                }
+                var m = curp.match(/^[A-ZÑ]{4}(\d{6})[HM]([A-Z]{2})([A-ZÑ]{3})([A-Z0-9])(\d)$/);
+                if (!m) {
+                    return { ok: false, message: 'La estructura de la CURP no es válida. Debe iniciar con 4 letras, seguir 6 dígitos de fecha, sexo H/M, 2 letras de entidad y 3 consonantes.' };
+                }
+                var fecha = fechaDesdeCurp(curp);
+                if (!fecha) {
+                    return { ok: false, message: 'La fecha de nacimiento contenida en la CURP no es válida.' };
+                }
+                var hoy = new Date();
+                if (fecha.fecha > hoy) {
+                    var sigloAlterno = fecha.anio >= 2000 ? 1900 : 2000;
+                    var anioAlterno = sigloAlterno + fecha.aa;
+                    if (fechaValida(anioAlterno, fecha.mm, fecha.dd) && new Date(anioAlterno, fecha.mm - 1, fecha.dd) <= hoy) {
+                        return { ok: false, message: 'La posición 17 de la CURP no corresponde al año de nacimiento.' };
+                    }
+                    return { ok: false, message: 'La fecha de nacimiento de la CURP no puede ser futura.' };
+                }
+                if (ENTIDADES.indexOf(m[2]) === -1) {
+                    return { ok: false, message: 'El código de entidad federativa de la CURP ("' + m[2] + '") no es válido.' };
+                }
+                if (/[AEIOU]/.test(m[3])) {
+                    return { ok: false, message: 'Las posiciones 14 a 16 de la CURP deben ser consonantes internas.' };
+                }
+                if (fecha.anio < 2000 && !/^\d$/.test(m[4])) {
+                    return { ok: false, message: 'La posición 17 de la CURP debe ser un dígito para nacidos antes de 2000.' };
+                }
+                if (fecha.anio >= 2000 && !/^[A-Z]$/.test(m[4])) {
+                    return { ok: false, message: 'La posición 17 de la CURP debe ser una letra para nacidos a partir de 2000.' };
+                }
+                var digito = digitoCurp(curp);
+                if (digito === null || String(digito) !== curp.charAt(17)) {
+                    return { ok: false, message: 'El dígito verificador de la CURP no es válido.' };
+                }
+                return { ok: true };
+            }
+
+            function validarRfc(rfc) {
+                if (!rfc) return { ok: true };
+                if (rfc.length !== 13) {
+                    return { ok: false, message: 'El RFC debe tener exactamente 13 caracteres (persona física).' };
+                }
+                var m = rfc.match(/^[A-ZÑ]{4}(\d{6})([A-Z0-9]{2})([A-Z0-9])$/);
+                if (!m) {
+                    return { ok: false, message: 'La estructura del RFC no es válida. Debe tener 4 letras, 6 dígitos de fecha y 3 caracteres de homoclave.' };
+                }
+                var aa = parseInt(m[1].substr(0, 2), 10);
+                var mm = parseInt(m[1].substr(2, 2), 10);
+                var dd = parseInt(m[1].substr(4, 2), 10);
+                if (!fechaValida(1900 + aa, mm, dd) && !fechaValida(2000 + aa, mm, dd)) {
+                    return { ok: false, message: 'La fecha de nacimiento contenida en el RFC no es válida.' };
+                }
+                var digito = digitoRfc(rfc);
+                if (digito === null || digito !== rfc.charAt(12)) {
+                    return { ok: false, message: 'El dígito verificador del RFC no es válido.' };
+                }
+                return { ok: true };
+            }
+
+            function revisarCurp() {
+                var valor = normalizar($curp.val());
+                if (!valor || valor === curpInicial) { $avisoCurp.hide().empty(); return; }
+                var resultado = validarCurp(valor);
+                if (resultado.ok) { $avisoCurp.hide().empty(); }
+                else { $avisoCurp.text(resultado.message).show(); }
+            }
+
+            function revisarRfc() {
+                var valor = normalizar($rfc.val());
+                if (!valor || valor === rfcInicial) { $avisoRfc.hide().empty(); return; }
+                var resultado = validarRfc(valor);
+                if (resultado.ok) { $avisoRfc.hide().empty(); }
+                else { $avisoRfc.text(resultado.message).show(); }
+            }
+
+            function autorrellenar() {
+                var curp = normalizar($curp.val());
+                if (curp.length !== 18) return;
+                // Solo se autorrellena desde una CURP que ya pasó la validación
+                // completa; así no se propagan datos de registros legacy inválidos.
+                if (!validarCurp(curp).ok) return;
+                var fecha = fechaDesdeCurp(curp);
+                if ($fecha.length && !$fecha.val() && fecha && fecha.fecha <= new Date()) {
+                    var anio = fecha.anio;
+                    function pad(n) { return n < 10 ? '0' + n : '' + n; }
+                    $fecha.val(anio + '-' + pad(fecha.mm) + '-' + pad(fecha.dd)).trigger('change');
+                }
+                if ($rfc.length && !normalizar($rfc.val())) {
+                    $rfc.val(curp.substr(0, 10));
+                }
+            }
+
+            $curp.on('input', function() {
+                $avisoCurp.hide().empty();
+            }).on('blur', function() {
+                revisarCurp();
+                autorrellenar();
+            });
+            $rfc.on('input', function() {
+                $avisoRfc.hide().empty();
+            }).on('blur', revisarRfc);
+            autorrellenar();
+        })();
+
+        // Candado CURP duplicada en vivo (no aplica al clonar plaza, que comparte CURP a propósito).
+        {% if not es_clonado %}
+        (function() {
+            var excludeId = '{{ maestro.id_maestro|default:"" }}';
+            var aviso = $('#curp-duplicada-aviso');
+            var submitBtn = $('.btn-save-personal');
+            var timer = null;
+            function revisarCurp() {
+                var curp = ($('#id_curp').val() || '').trim();
+                if (curp.length < 18) { aviso.hide().empty(); submitBtn.prop('disabled', false); return; }
+                $.ajax({
+                    url: '{% url "verificar_curp_ajax" %}',
+                    data: { 'curp': curp, 'exclude_id': excludeId },
+                    dataType: 'json',
+                    success: function(resp) {
+                        if (resp.existe && resp.coincidencias && resp.coincidencias.length) {
+                            var c = resp.coincidencias[0];
+                            var mas = resp.coincidencias.length > 1 ? ' (más coincidencias: ' + (resp.coincidencias.length - 1) + ')' : '';
+                            aviso.html('<i class="fas fa-exclamation-triangle me-1"></i><strong>Esta CURP ya existe:</strong> '
+                                + $('<div>').text(c.nombre).html() + ' (ID ' + $('<div>').text(c.id).html() + ', CCT ' + $('<div>').text(c.cct || 's/CCT').html() + ')' + mas
+                                + '. El maestro ya está registrado: <a href="' + c.detalle_url + '">ver Detalle</a> y agréguele la clave como <a href="' + c.agregar_plaza_url + '">otra plaza</a>. No se guardará como nuevo.').show();
+                            submitBtn.prop('disabled', true);
+                        } else {
+                            aviso.hide().empty();
+                            submitBtn.prop('disabled', false);
+                        }
+                    }
+                });
+            }
+            $('#id_curp').on('input', function() {
+                clearTimeout(timer);
+                timer = setTimeout(revisarCurp, 500);
+                submitBtn.prop('disabled', false);
+            }).on('blur', revisarCurp);
+            revisarCurp();
+        })();
+        {% endif %}
     });
 </script>
 {% endblock %}

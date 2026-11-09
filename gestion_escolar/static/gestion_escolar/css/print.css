@@ -55,4 +55,49 @@
     .card-header > div:last-child {
         display: none !important;
     }
+
+    /* Reportes unificados */
+    .comp-page-container {
+        padding: 0 !important;
+    }
+
+    .comp-panel {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .comp-panel-body {
+        padding: 0 !important;
+    }
+
+    .comp-section {
+        padding: 0.5rem 0 !important;
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+
+    .comp-report-filters,
+    .comp-report-footer {
+        display: none !important;
+    }
+
+    .comp-table {
+        width: 100% !important;
+        border: 1px solid #dee2e6;
+    }
+
+    .comp-table th,
+    .comp-table td {
+        padding: 4pt 5pt;
+        font-size: 9pt;
+    }
+
+    .table-responsive {
+        overflow: visible !important;
+    }
+
+    .comp-kpi-grid,
+    .comp-note,
+    .comp-table tr {
+        page-break-inside: avoid;
+    }
 }

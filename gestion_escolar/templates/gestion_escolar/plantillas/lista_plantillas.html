@@ -1,0 +1,174 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Plantillas | Control de Maestros{% endblock %}
+
+{% block content %}
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Plantillas</h1>
+            <p class="comp-subtitle">
+                Documentos de Word y los datos que pide cada formulario.
+                Las {{ total_sistema }} plantillas de base del sistema solo se
+                consultan; las {{ total_usuario }} propias se pueden editar.
+            </p>
+        </div>
+        <div class="comp-actions">
+            <a href="{% url 'crear_plantilla' %}" class="comp-btn comp-btn-primary">
+                <i class="fas fa-plus"></i> Nueva plantilla
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="comp-alert {% if message.tags == 'error' %}comp-alert-danger{% elif message.tags == 'success' %}comp-alert-success{% elif message.tags == 'warning' %}comp-alert-warning{% else %}comp-alert-info{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="comp-panel">
+        <div class="comp-panel-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="comp-form-label" for="q">Buscar</label>
+                    <input type="text" class="comp-form-control" id="q" name="q"
+                           value="{{ busqueda }}" placeholder="Nombre o descripción">
+                </div>
+                <div class="col-md-3">
+                    <label class="comp-form-label" for="tipo">Tipo</label>
+                    <select class="comp-form-select" id="tipo" name="tipo">
+                        <option value="">Todos</option>
+                        <option value="TRAMITE" {% if tipo == 'TRAMITE' %}selected{% endif %}>Trámite</option>
+                        <option value="OFICIO" {% if tipo == 'OFICIO' %}selected{% endif %}>Oficio</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="comp-form-label" for="estado">Estado</label>
+                    <select class="comp-form-select" id="estado" name="estado">
+                        <option value="">Todos</option>
+                        <option value="activas" {% if estado == 'activas' %}selected{% endif %}>Activas</option>
+                        <option value="inactivas" {% if estado == 'inactivas' %}selected{% endif %}>Inactivas</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="comp-btn comp-btn-primary">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'lista_plantillas' %}" class="comp-btn comp-btn-ghost">Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="comp-panel">
+        <div class="comp-panel-body">
+            {% if plantillas %}
+            <div class="table-responsive">
+                <table class="comp-table comp-table-sm w-100">
+                    <thead>
+                        <tr>
+                            <th>Plantilla</th>
+                            <th>Tipo</th>
+                            <th>Origen</th>
+                            <th>Estado</th>
+                            <th class="text-center">Variables</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plantilla in plantillas %}
+                        <tr>
+                            <td>
+                                <strong>{{ plantilla.nombre }}</strong>
+                                {% if plantilla.descripcion %}
+                                <div class="comp-form-text">{{ plantilla.descripcion }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="comp-badge comp-badge-soft">
+                                    {% if plantilla.tipo_documento == 'OFICIO' %}Oficio{% else %}Trámite{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if plantilla.es_sistema %}
+                                <span class="comp-badge comp-badge-accent" title="No se puede editar ni eliminar">
+                                    <i class="fas fa-lock"></i> Sistema
+                                </span>
+                                {% else %}
+                                <span class="comp-badge comp-badge-soft">
+                                    <i class="fas fa-user-pen"></i> Propia
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if plantilla.activa %}
+                                <span class="comp-badge comp-badge-success">Activa</span>
+                                {% else %}
+                                <span class="comp-badge comp-badge-danger">Inactiva</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {{ plantilla.variables_detectadas|length }}
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                                    <a href="{% url 'editar_plantilla' plantilla.pk %}"
+                                       class="comp-btn comp-btn-icon comp-btn-md comp-btn-ghost"
+                                       title="{% if plantilla.es_sistema %}Ver configuración{% else %}Editar{% endif %}">
+                                        <i class="fas {% if plantilla.es_sistema %}fa-eye{% else %}fa-pen{% endif %}"></i>
+                                    </a>
+                                    <a href="{% url 'probar_plantilla' plantilla.pk %}"
+                                       class="comp-btn comp-btn-icon comp-btn-md comp-btn-primary"
+                                       title="Probar plantilla" target="_blank" rel="noopener">
+                                        <i class="fas fa-flask"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'duplicar_plantilla' plantilla.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="comp-btn comp-btn-icon comp-btn-md comp-btn-ghost"
+                                                title="Duplicar como plantilla editable">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </form>
+                                    {% if not plantilla.es_sistema %}
+                                    <form method="post" action="{% url 'alternar_plantilla' plantilla.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="comp-btn comp-btn-icon comp-btn-md comp-btn-ghost"
+                                                title="{% if plantilla.activa %}Desactivar{% else %}Activar{% endif %}">
+                                            <i class="fas {% if plantilla.activa %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'eliminar_plantilla' plantilla.pk %}" class="d-inline"
+                                          onsubmit="return confirm('¿Eliminar la plantilla {{ plantilla.nombre|escapejs }}? Esta acción no afecta los trámites ya generados.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="comp-btn comp-btn-icon comp-btn-md comp-btn-danger"
+                                                title="Eliminar plantilla">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-file-word fa-3x text-muted mb-3"></i>
+                <h4>No hay plantillas con ese filtro</h4>
+                <p class="comp-text-muted">Cambia la búsqueda o crea una plantilla nueva.</p>
+                <a href="{% url 'crear_plantilla' %}" class="comp-btn comp-btn-primary">
+                    <i class="fas fa-plus"></i> Nueva plantilla
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

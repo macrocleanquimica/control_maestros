@@ -1,22 +1,30 @@
 {% extends 'gestion_escolar/base.html' %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-6 mx-auto">
-            <div class="card apple-panel border-0">
-                <div class="card-body p-4">
-                    <h4 class="apple-title mb-3" style="font-size: clamp(20px, 2.5vw, 24px);">Eliminar Rol</h4>
-                    <p>¿Estás seguro de que deseas eliminar el rol <strong>{{ role.name }}</strong>?</p>
-                    <p style="color: var(--text-2, #6e6e73);">Esta acción no se puede deshacer. Los usuarios que pertenezcan a este rol perderán todos los permisos asociados a él.</p>
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-                            <a href="{% url 'role_list' %}" class="apple-btn-ghost">Cancelar</a>
-                            <button type="submit" class="btn btn-danger">Sí, eliminar</button>
-                        </div>
-                    </form>
+<div class="comp-page-container">
+    <div class="comp-form-narrow">
+        <div class="comp-page-header">
+            <div class="comp-title-group">
+                <h1 class="comp-title">Eliminar Rol</h1>
+                <p class="comp-subtitle">Esta acción no se puede deshacer.</p>
+            </div>
+        </div>
+
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <p>¿Estás seguro de que deseas eliminar el rol <strong>{{ role.name }}</strong>?</p>
+                <div class="comp-alert comp-alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>Los usuarios que pertenezcan a este rol perderán todos los permisos asociados a él.</div>
                 </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="comp-form-actions">
+                        <a href="{% url 'role_list' %}" class="comp-btn comp-btn-ghost">Cancelar</a>
+                        <button type="submit" class="comp-btn comp-btn-danger">Sí, eliminar</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

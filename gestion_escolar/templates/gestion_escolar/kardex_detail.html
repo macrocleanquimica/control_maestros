@@ -4,225 +4,133 @@
 {% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-        max-width: 900px;
-        margin: 0 auto;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .header-section {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    /* Línea de tiempo */
-    .timeline-container {
-        position: relative;
-        padding: 1rem 0;
-    }
-
-    .timeline-container::before {
-        content: '';
-        position: absolute;
-        left: 2rem;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: var(--hairline, rgba(0,0,0,0.07));
-        border-radius: 2px;
-    }
-
-    .timeline-item {
-        position: relative;
-        padding-left: 5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .timeline-icon {
-        position: absolute;
-        left: 0.75rem;
-        top: 0;
-        width: 2.5rem;
-        height: 2.5rem;
-        border-radius: 50%;
-        background: var(--surface, #fff);
-        border: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2;
-        font-size: 0.9rem;
-        color: var(--text-2, #6e6e73);
-    }
-
-    .timeline-content {
-        background: var(--surface, #fff);
-        border-radius: var(--r-card, 18px);
-        padding: 1.5rem;
-        box-shadow: var(--sh-card, 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05));
-        position: relative;
-    }
-
-    .timeline-date {
-        font-size: 0.75rem;
-        font-weight: 500;
-        color: var(--text-3, #86868b);
-        margin-bottom: 0.5rem;
-        letter-spacing: 0.025em;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-variant-numeric: tabular-nums;
-    }
-
-    .timeline-title {
-        font-size: 1.05rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--text, #1d1d1f);
-        margin-bottom: 0.5rem;
-    }
-
-    .timeline-desc {
-        font-size: 0.92rem;
-        color: var(--text-body, #424245);
-        line-height: 1.65;
-        margin-bottom: 1rem;
-    }
-
-    .timeline-footer {
-        padding-top: 1rem;
-        border-top: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
-
-    .badge-type {
-        font-size: 0.7rem;
-        font-weight: 600;
-        padding: 0.35rem 0.75rem;
-        border-radius: 2rem;
-        background: rgba(0,0,0,0.05);
-        color: var(--text-2, #6e6e73);
-    }
-
-    .btn-action-view {
-        font-size: 0.8rem;
-        font-weight: 600;
-        border-radius: 2rem;
-        padding: 0.4rem 1rem;
-    }
-</style>
-
-<div class="page-container">
+<div class="comp-page-container comp-detail">
     <!-- Header -->
-    <div class="header-section">
-        <div>
-            <h1 class="apple-title">{{ titulo }}</h1>
-            <p class="apple-subtitle mb-0">Movimientos y eventos en orden.</p>
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ titulo }}</h1>
+            <p class="comp-subtitle">
+                {% if total_plazas and total_plazas > 1 %}
+                    Kardex unificado: {{ total_plazas }} plazas de la misma persona.
+                {% else %}
+                    Movimientos y eventos en orden.
+                {% endif %}
+            </p>
+            {% if plazas and total_plazas > 1 %}
+            <div class="comp-chip-row mt-2">
+                {% for p in plazas %}
+                <a href="{% url 'detalle_maestro' p.id_maestro %}" class="comp-chip comp-chip-accent comp-font-mono text-decoration-none" title="Ver plaza {{ p.id_maestro }}">
+                    {{ p.clave_presupuestal|default:"S/clave" }}
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
-        <div>
+        <div class="comp-actions">
             {% if from_page == 'detalle' %}
-                <a href="{% url 'detalle_maestro' maestro.id_maestro %}" class="apple-btn-ghost">
-                    <i class="fas fa-arrow-left me-2"></i> Perfil
+                <a href="{% url 'detalle_maestro' maestro.id_maestro %}" class="comp-btn comp-btn-ghost">
+                    <i class="fas fa-arrow-left"></i> Perfil
                 </a>
             {% else %}
-                <a href="{% url 'kardex_list' %}" class="apple-btn-ghost">
-                    <i class="fas fa-arrow-left me-2"></i> Kardex
+                <a href="{% url 'kardex_list' %}" class="comp-btn comp-btn-ghost">
+                    <i class="fas fa-arrow-left"></i> Kardex
                 </a>
             {% endif %}
         </div>
     </div>
 
     <!-- Timeline -->
-    <div class="timeline-container">
-        {% for item in timeline %}
-        <div class="timeline-item">
-            <div class="timeline-icon">
-                {% if item.tipo == 'Trámite' %}
-                    <i class="fas fa-file-invoice"></i>
-                {% elif item.tipo == 'Correspondencia' %}
-                    <i class="fas fa-envelope-open-text"></i>
-                {% elif item.tipo == 'Movimiento Manual' %}
-                    <i class="fas fa-user-edit"></i>
-                {% elif item.tipo == 'FUP' %}
-                    <i class="fas fa-file-signature"></i>
-                {% elif item.tipo == 'Expediente' %}
-                    <i class="fas fa-folder-open"></i>
-                {% else %}
-                    <i class="fas fa-history"></i>
+    <div class="comp-panel">
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h5>Línea de tiempo</h5>
+                {% if timeline %}
+                <span class="comp-badge comp-badge-soft ms-auto">{{ timeline|length }} evento{{ timeline|length|pluralize }}</span>
                 {% endif %}
             </div>
-            
-            <div class="timeline-content">
-                <div class="timeline-date">
-                    <span><i class="far fa-calendar-alt me-1"></i> {{ item.fecha|date:"d M Y" }}</span>
-                    <span><i class="far fa-clock me-1"></i> {{ item.fecha|date:"H:i" }} hrs.</span>
-                </div>
-                
-                <h3 class="timeline-title">{{ item.descripcion }}</h3>
-                <p class="timeline-desc">{{ item.detalle }}</p>
-                
-                <div class="timeline-footer">
-                    <div class="d-flex align-items-center gap-3">
-                        <span class="badge-type">
-                            {{ item.tipo }}
-                        </span>
-                        <span class="small fw-bold" style="color: var(--text-2, #6e6e73);">
-                            <i class="fas fa-user-circle me-1"></i> {{ item.usuario }}
-                        </span>
-                    </div>
 
-                    {% if item.objeto %}
-                        <div>
-                            {% if item.tipo == 'Trámite' and item.objeto.id %}
-                                {% if item.descripcion == "Asignación de Vacancia" %}
-                                    <a href="{% url 'historial_detalle_lote' item.objeto.id %}" class="apple-btn-ghost btn-action-view">
-                                        <i class="fas fa-eye me-1"></i> Ver Lote
-                                    </a>
-                                {% else %}
-                                    <a href="{% url 'historial_detalle_tramite' item.objeto.id %}" class="apple-btn-ghost btn-action-view">
-                                        <i class="fas fa-eye me-1"></i> Ver Ficha
-                                    </a>
+            {% if timeline %}
+            <div class="comp-timeline">
+                {% for item in timeline %}
+                <article class="comp-timeline-item">
+                    <span class="comp-timeline-marker{% if item.tipo == 'Trámite' %} comp-timeline-marker-accent{% elif item.tipo == 'Interinato' %} comp-timeline-marker-warning{% elif item.tipo == 'Correspondencia' %} comp-timeline-marker-info{% elif item.tipo == 'FUP' %} comp-timeline-marker-success{% endif %}" aria-hidden="true">
+                        {% if item.tipo == 'Trámite' %}
+                            <i class="fas fa-file-invoice"></i>
+                        {% elif item.tipo == 'Interinato' %}
+                            <i class="fas fa-user-clock"></i>
+                        {% elif item.tipo == 'Correspondencia' %}
+                            <i class="fas fa-envelope-open-text"></i>
+                        {% elif item.tipo == 'Movimiento Manual' %}
+                            <i class="fas fa-user-edit"></i>
+                        {% elif item.tipo == 'FUP' %}
+                            <i class="fas fa-file-signature"></i>
+                        {% elif item.tipo == 'Expediente' %}
+                            <i class="fas fa-folder-open"></i>
+                        {% else %}
+                            <i class="fas fa-history"></i>
+                        {% endif %}
+                    </span>
+
+                    <div class="comp-timeline-card">
+                        <div class="comp-timeline-meta">
+                            <span><i class="far fa-calendar-alt"></i> {{ item.fecha|date:"d M Y" }}</span>
+                            <span><i class="far fa-clock"></i> {{ item.fecha|date:"H:i" }} hrs.</span>
+                        </div>
+
+                        <h3 class="comp-timeline-title">{{ item.descripcion }}</h3>
+                        <p class="comp-timeline-text">{{ item.detalle }}</p>
+
+                        <div class="comp-timeline-footer">
+                            <div class="comp-timeline-tags">
+                                <span class="comp-badge comp-badge-soft">
+                                    {{ item.tipo }}{% if item.rol %} · {{ item.rol }}{% endif %}
+                                </span>
+                                {% if item.clave %}
+                                <span class="comp-badge comp-badge-soft comp-font-mono" title="Clave presupuestal del movimiento">
+                                    {{ item.clave }}
+                                </span>
                                 {% endif %}
-                            {% elif item.tipo == 'Correspondencia' and item.objeto.id %}
-                                <a href="{% url 'registrocorrespondencia_detail' item.objeto.id %}" class="apple-btn-ghost btn-action-view">
-                                    <i class="fas fa-eye me-1"></i> Ver Registro
-                                </a>
-                            {% elif item.tipo == 'FUP' and item.objeto.id %}
-                                <a href="{% url 'detalle_fup' item.objeto.id %}" class="apple-btn-ghost btn-action-view">
-                                    <i class="fas fa-eye me-1"></i> Ver Ficha
-                                </a>
+                                <span class="comp-timeline-user">
+                                    <i class="fas fa-user-circle"></i> {{ item.usuario }}
+                                </span>
+                            </div>
+
+                            {% if item.objeto %}
+                                <div>
+                                    {% if item.tipo == 'Trámite' and item.objeto.id %}
+                                        {% if item.descripcion == "Asignación de Vacancia" %}
+                                            <a href="{% url 'historial_detalle_lote' item.objeto.id %}" class="comp-btn comp-btn-ghost comp-btn-sm">
+                                                <i class="fas fa-eye"></i> Ver Lote
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'historial_detalle_tramite' item.objeto.id %}?from=kardex" class="comp-btn comp-btn-ghost comp-btn-sm">
+                                                <i class="fas fa-eye"></i> Ver Ficha
+                                            </a>
+                                        {% endif %}
+                                    {% elif item.tipo == 'Correspondencia' and item.objeto.id %}
+                                        <a href="{% url 'registrocorrespondencia_detail' item.objeto.id %}" class="comp-btn comp-btn-ghost comp-btn-sm">
+                                            <i class="fas fa-eye"></i> Ver Registro
+                                        </a>
+                                    {% elif item.tipo == 'FUP' and item.objeto.id %}
+                                        <a href="{% url 'detalle_fup' item.objeto.id %}" class="comp-btn comp-btn-ghost comp-btn-sm">
+                                            <i class="fas fa-eye"></i> Ver Ficha
+                                        </a>
+                                    {% endif %}
+                                </div>
                             {% endif %}
                         </div>
-                    {% endif %}
-                </div>
+                    </div>
+                </article>
+                {% endfor %}
             </div>
-        </div>
-        {% empty %}
-        <div class="text-center py-5">
-            <div class="bg-white rounded-4 p-5 shadow-sm border mx-auto" style="max-width: 400px;">
-                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
-                <h5 class="fw-bold text-dark">Sin registros</h5>
-                <p class="text-muted small">No se han encontrado eventos previos en el historial de este docente.</p>
+            {% else %}
+            <div class="comp-empty-state">
+                <i class="fas fa-folder-open"></i>
+                <p>Sin registros</p>
+                <span class="small">No se han encontrado eventos previos en el historial de este docente.</span>
             </div>
+            {% endif %}
         </div>
-        {% endfor %}
     </div>
 </div>
 {% endblock %}

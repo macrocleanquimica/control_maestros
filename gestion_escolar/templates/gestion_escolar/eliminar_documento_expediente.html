@@ -1,23 +1,44 @@
 {% extends 'gestion_escolar/base.html' %}
 
-{% block title %}Confirmar Eliminación{% endblock %}
+{% block title %}Confirmar Eliminación | Control de Maestros{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12 col-md-8 col-lg-6">
-            <div class="card apple-panel border-0">
-                <div class="card-body p-4">
-                    <h4 class="mb-3" style="font-weight: 700; letter-spacing: -0.01em;">Eliminar documento</h4>
-                    <p>¿Eliminar <strong>{{ documento.get_tipo_documento_display }}</strong> del expediente de <strong>{{ maestro.nombres }} {{ maestro.a_paterno }}</strong>?</p>
-                    <p style="color: var(--heat, #ff6b00);">No se puede deshacer.</p>
+<div class="comp-page-container">
+    <div class="comp-form-narrow">
+        <div class="comp-page-header">
+            <div class="comp-title-group">
+                <h1 class="comp-title">Eliminar documento</h1>
+                <p class="comp-subtitle">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="comp-actions">
+                <a href="{% url 'detalle_maestro' pk=maestro.id_maestro %}" class="comp-btn comp-btn-ghost">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
 
-                    <form method="post">
-                        {% csrf_token %}
-                        <a href="{% url 'detalle_maestro' pk=maestro.id_maestro %}" class="apple-btn-ghost">Cancelar</a>
-                        <button type="submit" class="btn btn-danger">Eliminar</button>
-                    </form>
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <p class="mb-3">
+                    ¿Eliminar <strong>{{ documento.get_tipo_documento_display }}</strong>
+                    del expediente de
+                    <strong>{{ maestro.nombres }} {{ maestro.a_paterno }}</strong>?
+                </p>
+
+                <div class="comp-alert comp-alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>El archivo se eliminará de forma permanente del expediente.</div>
                 </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="comp-form-actions">
+                        <button type="submit" class="comp-btn comp-btn-danger">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                        <a href="{% url 'detalle_maestro' pk=maestro.id_maestro %}" class="comp-btn comp-btn-ghost">Cancelar</a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

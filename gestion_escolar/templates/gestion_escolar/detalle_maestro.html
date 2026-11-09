@@ -4,347 +4,183 @@
 {% block title %}Perfil de {{ maestro.nombres }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 2rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .premium-header {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .header-info {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .nav-buttons {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .header-info h1 {
-        font-size: clamp(22px, 3.4vw, 30px);
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: var(--text, #1d1d1f);
-        margin: 0;
-    }
-
-    /* Tarjeta consolidada: panel único */
-    .profile-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-        margin-bottom: 1.5rem;
-    }
-
-    .profile-section {
-        padding: 2rem clamp(17px, 3vw, 2.5rem);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .profile-section:last-child {
-        border-bottom: none;
-    }
-
-    .section-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-header h5 {
-        font-size: 0.95rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--text, #1d1d1f);
-        margin: 0;
-    }
-
-    .section-icon {
-        display: none;
-    }
-
-    /* Grid Layout for Info */
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .info-item {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .info-label {
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        letter-spacing: 0.025em;
-    }
-
-    .info-value {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--text, #1d1d1f);
-    }
-
-    .clave-grande {
-        font-size: 1.5rem;
-        font-weight: 700;
-        letter-spacing: -0.01em;
-        font-variant-numeric: tabular-nums;
-    }
-
-    .info-item.clave-item {
-        grid-column: 1 / -1;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-        margin-bottom: 0.5rem;
-    }
-
-    /* Alerts */
-    .alert-premium {
-        border-radius: 14px;
-        border: none;
-        padding: 1rem 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    /* Etiquetas neutras (mismos nombres) */
-    .badge-soft {
-        font-weight: 600;
-        padding: 0.4em 1em;
-        border-radius: 2rem;
-    }
-    .bg-soft-info { background: rgba(0,113,227,0.08); color: var(--accent-link, #0066cc); }
-    .bg-soft-success { background: rgba(0,0,0,0.05); color: var(--text, #1d1d1f); }
-    .bg-soft-warning { background: rgba(0,0,0,0.05); color: var(--text-2, #6e6e73); }
-    .bg-soft-secondary { background: rgba(0,0,0,0.05); color: var(--text-2, #6e6e73); }
-
-    /* Tablas internas con líneas finas */
-    .profile-card thead th {
-        background: var(--surface, #fff) !important;
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-    }
-
-    .profile-card tbody td {
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .profile-card tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    /* Print specific */
-    @media print {
-        .page-container { padding: 0; }
-        .premium-header, .nav-buttons, .alert, .btn-group-actions, .digital-folder, footer {
-            display: none !important;
-        }
-        .profile-card { border: none; box-shadow: none; }
-        .profile-section { padding: 1rem 0; background: transparent !important; }
-        .info-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-    }
-</style>
-
-<div class="page-container">
+<div class="comp-page-container comp-detail">
     <!-- Header -->
-    <div class="premium-header">
-        <div class="header-info">
-            <div class="nav-buttons">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 {% if maestro_anterior %}
-                <a href="{% url 'detalle_maestro' maestro_anterior.id_maestro %}" class="btn btn-light border rounded-circle shadow-sm btn-hover-animate" title="Anterior: {{ maestro_anterior.nombres }} {{ maestro_anterior.a_paterno }}">
+                <a href="{% url 'detalle_maestro' maestro_anterior.id_maestro %}" class="comp-nav-btn btn btn-sm btn-outline-secondary" title="Anterior: {{ maestro_anterior.nombres }} {{ maestro_anterior.a_paterno }}">
                     <i class="fas fa-chevron-left"></i>
                 </a>
                 {% endif %}
                 {% if maestro_siguiente %}
-                <a href="{% url 'detalle_maestro' maestro_siguiente.id_maestro %}" class="btn btn-light border rounded-circle shadow-sm btn-hover-animate" title="Siguiente: {{ maestro_siguiente.nombres }} {{ maestro_siguiente.a_paterno }}">
+                <a href="{% url 'detalle_maestro' maestro_siguiente.id_maestro %}" class="comp-nav-btn btn btn-sm btn-outline-secondary" title="Siguiente: {{ maestro_siguiente.nombres }} {{ maestro_siguiente.a_paterno }}">
                     <i class="fas fa-chevron-right"></i>
                 </a>
                 {% endif %}
+                <h1 class="comp-title">{{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</h1>
             </div>
-            <div>
-                <h1>{{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</h1>
-                <p class="mb-0" style="font-size: 0.85rem; color: var(--text-2, #6e6e73);">
-                    ID: <span class="fw-bold apple-num">{{ maestro.id_maestro }}</span> ·
-                    <span class="badge {% if maestro.status == 'ACTIVO' %}bg-soft-success{% else %}bg-soft-secondary{% endif %} badge-soft ms-1">{{ maestro.get_status_display }}</span>
-                    {% for incentivo in maestro.incentivos.all %}
-                    <span class="badge bg-soft-info badge-soft ms-1">{{ incentivo.codigo }}</span>
-                    {% endfor %}
-                </p>
-            </div>
+            <p class="comp-subtitle d-flex align-items-center gap-2 flex-wrap mb-0">
+                <span>ID: <strong class="comp-font-mono">{{ maestro.id_maestro }}</strong></span>
+                <span class="comp-badge {% if maestro.status == 'ACTIVO' %}comp-badge-success{% else %}comp-badge-soft{% endif %}">{{ maestro.get_status_display }}</span>
+                {% for incentivo in maestro.incentivos.all %}
+                <span class="comp-badge comp-badge-accent">{{ incentivo.codigo }}</span>
+                {% endfor %}
+            </p>
         </div>
-        <div class="d-flex gap-2 btn-group-actions flex-wrap">
+        <div class="comp-actions">
             {% if perms.gestion_escolar.change_maestro %}
-            <a href="{% url 'editar_maestro' maestro.id_maestro %}" class="apple-btn">
+            <a href="{% url 'editar_maestro' maestro.id_maestro %}" class="btn btn-primary">
                 <i class="fas fa-edit me-2"></i> Editar
             </a>
             {% endif %}
             {% if perms.gestion_escolar.acceder_kardex %}
-            <a href="{% url 'kardex_maestro_detail' maestro.id_maestro %}?from=detalle" class="apple-btn-ghost">
+            <a href="{% url 'kardex_maestro_detail' maestro.id_maestro %}?from=detalle" class="btn btn-outline-secondary">
                 <i class="fas fa-history me-2"></i> Kardex
             </a>
             {% endif %}
-            <button onclick="window.print();" class="apple-btn-ghost">
+            <button type="button" onclick="window.print();" class="btn btn-outline-secondary">
                 <i class="fas fa-print me-2"></i> Imprimir
             </button>
-            <a href="{% url 'export_maestro_excel' pk=maestro.id_maestro %}" class="apple-btn-ghost no-loader">
+            <a href="{% url 'export_maestro_excel' pk=maestro.id_maestro %}" class="btn btn-outline-secondary no-loader">
                 <i class="fas fa-file-excel me-2"></i> Excel
             </a>
-            <a href="{% url 'lista_maestros' %}" class="apple-btn-ghost">
+            <a href="{% url 'lista_maestros' %}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-2"></i> Volver
             </a>
         </div>
     </div>
 
     <!-- Notifications Section -->
-    <div class="notifications-area">
+    <div class="comp-detail-notifications">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="comp-alert comp-alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% else %}{{ message.tags }}{% endif %}" role="alert">
+            <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-check-circle{% endif %}"></i>
+            <div>{{ message }}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
         {% if maestro.techo_f and maestro.id_escuela and maestro.techo_f != maestro.id_escuela.id_escuela %}
-        <div class="alert alert-warning alert-premium d-flex align-items-center gap-3" role="alert">
-            <i class="fas fa-exclamation-triangle fa-lg text-warning"></i>
+        <div class="comp-alert comp-alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
             <div>
-                <strong class="d-block">Sustitución o Desubicación Detectada</strong>
+                <strong class="d-block">Sustitución o desubicación detectada</strong>
                 <span class="small">El Techo Financiero ({{ maestro.techo_f }}) no coincide con el C.C.T. de la escuela ({{ maestro.id_escuela.id_escuela }}).</span>
             </div>
         </div>
         {% endif %}
 
         {% if maestro.codigo == '96' %}
-        <div class="alert alert-info alert-premium bg-soft-info d-flex align-items-center gap-3" role="alert">
-            <i class="fas fa-user-shield fa-lg text-info"></i>
+        <div class="comp-alert comp-alert-info" role="alert">
+            <i class="fas fa-user-shield"></i>
             <div>
-                <strong class="d-block text-info">Personal de Confianza</strong>
-                <span class="small text-info opacity-75">Este registro está catalogado como Personal con Clave de Confianza (Código 96).</span>
+                <strong class="d-block">Personal de confianza</strong>
+                <span class="small">Este registro está catalogado como Personal con Clave de Confianza (Código 96).</span>
             </div>
         </div>
         {% elif maestro.codigo == '09' or maestro.codigo == '95' %}
-        <div class="alert alert-success alert-premium bg-soft-success d-flex align-items-center gap-3" role="alert">
-            <i class="fas fa-user-plus fa-lg text-success"></i>
+        <div class="comp-alert comp-alert-success" role="alert">
+            <i class="fas fa-user-plus"></i>
             <div>
-                <strong class="d-block text-success">{% if maestro.codigo == '09' %}Alta Inicial{% else %}Alta Provisional{% endif %}</strong>
-                <span class="small text-success opacity-75">El docente se encuentra en estatus de {% if maestro.codigo == '09' %}Alta Inicial{% else %}Alta Provisional{% endif %} (Código {{ maestro.codigo }}).</span>
+                <strong class="d-block">{% if maestro.codigo == '09' %}Alta inicial{% else %}Alta provisional{% endif %}</strong>
+                <span class="small">El docente se encuentra en estatus de {% if maestro.codigo == '09' %}Alta Inicial{% else %}Alta Provisional{% endif %} (Código {{ maestro.codigo }}).</span>
             </div>
         </div>
         {% elif maestro.codigo and maestro.codigo != '10' %}
-        <div class="alert alert-warning alert-premium bg-soft-warning d-flex align-items-center gap-3" role="alert">
-            <i class="fas fa-clock fa-lg text-warning"></i>
+        <div class="comp-alert comp-alert-warning" role="alert">
+            <i class="fas fa-clock"></i>
             <div>
-                <strong class="d-block text-warning">Servicio Interino</strong>
-                <span class="small text-warning opacity-75">Este registro corresponde a un servicio de carácter interino (Código {{ maestro.codigo }}).</span>
+                <strong class="d-block">Servicio interino</strong>
+                <span class="small">Este registro corresponde a un servicio de carácter interino (Código {{ maestro.codigo }}).</span>
             </div>
         </div>
         {% endif %}
     </div>
 
     <!-- MAIN CONSOLIDATED CARD -->
-    <div class="profile-card">
+    <div class="comp-panel">
         <!-- Sub-sección 1: Identificación y Base -->
-        <div class="profile-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="fas fa-id-card"></i></div>
+        <div class="comp-section">
+            <div class="comp-section-title">
                 <h5>Identificación y Base Presupuestal</h5>
             </div>
-            <div class="info-grid">
-                <div class="info-item clave-item">
-                    <span class="info-label">Clave Presupuestal</span>
-                    <span class="info-value font-monospace fw-bold clave-grande">{{ maestro.clave_presupuestal }}</span>
+            <div class="comp-info-grid">
+                <div class="comp-info-item comp-info-item-highlight">
+                    <span class="comp-info-label">Clave Presupuestal</span>
+                    <span class="comp-info-value comp-info-value-lg comp-font-mono fw-bold">{{ maestro.clave_presupuestal }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">CURP</span>
-                    <span class="info-value">{{ maestro.curp }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">CURP</span>
+                    <span class="comp-info-value">{{ maestro.curp }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">RFC</span>
-                    <span class="info-value">{{ maestro.rfc }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">RFC</span>
+                    <span class="comp-info-value">{{ maestro.rfc }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Sexo</span>
-                    <span class="info-value">{{ maestro.get_sexo_display }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Sexo</span>
+                    <span class="comp-info-value">{{ maestro.get_sexo_display }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Estado Civil</span>
-                    <span class="info-value">{{ maestro.get_est_civil_display }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Estado Civil</span>
+                    <span class="comp-info-value">{{ maestro.get_est_civil_display }}</span>
                 </div>
             </div>
         </div>
 
         {% if otras_plazas or perms.gestion_escolar.change_maestro %}
         <!-- Nueva Sub-sección: Otras Plazas -->
-        <div class="profile-section">
-            <div class="section-header">
-                <div class="section-icon bg-primary bg-opacity-10 text-primary"><i class="fas fa-copy"></i></div>
-                <div class="d-flex justify-content-between align-items-center w-100">
-                    <h5 class="mb-0">Otras Plazas Registradas</h5>
-                    <div class="d-flex align-items-center gap-2">
-                        {% if otras_plazas %}
-                        <span class="badge bg-primary rounded-pill">{{ otras_plazas.count }} adicional{{ otras_plazas.count|pluralize:"es" }}</span>
-                        {% endif %}
-                    </div>
-                </div>
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h5>Otras Plazas Registradas</h5>
+                {% if otras_plazas %}
+                <span class="comp-badge comp-badge-accent ms-auto">{{ otras_plazas.count }} adicional{{ otras_plazas.count|pluralize:"es" }}</span>
+                {% endif %}
             </div>
-            
+
             {% if maestro.maestro_principal %}
-            <div class="alert alert-info alert-premium bg-soft-info py-2 px-3 mb-3" role="alert">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="fas fa-link text-info"></i>
-                    <span class="small">Este registro está vinculado a la plaza principal <strong>{{ maestro.maestro_principal.id_maestro }}</strong>.</span>
-                </div>
+            <div class="comp-alert comp-alert-info py-2 px-3 mb-3" role="alert">
+                <i class="fas fa-link"></i>
+                <span class="small">Este registro está vinculado a la plaza principal <strong>{{ maestro.maestro_principal.id_maestro }}</strong>.</span>
             </div>
             {% endif %}
 
             {% if otras_plazas %}
-            <div class="table-responsive rounded-3 border bg-white overflow-hidden shadow-sm">
-                <table class="table table-hover align-middle mb-0 small">
-                    <thead class="bg-light">
+            <div class="table-responsive border rounded-4">
+                <table class="comp-table comp-table-sm align-middle mb-0">
+                    <thead>
                         <tr>
-                            <th class="ps-3 py-2 border-0">Plaza / ID</th>
-                            <th class="py-2 border-0">Clave Presupuestal</th>
-                            <th class="py-2 border-0">Escuela</th>
-                            <th class="py-2 border-0">Función</th>
-                            <th class="text-end pe-3 py-2 border-0">Acción</th>
+                            <th>Plaza / ID</th>
+                            <th>Clave Presupuestal</th>
+                            <th>Escuela</th>
+                            <th>Función</th>
+                            <th class="text-end">Acción</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for plaza in otras_plazas %}
                         <tr>
-                            <td class="ps-3">
+                            <td>
                                 <div class="d-flex flex-column">
                                     <span class="fw-bold text-dark">{{ plaza.num_plaza|default:"S/N" }}</span>
-                                    <span class="text-muted" style="font-size: 0.75rem;">ID: {{ plaza.id_maestro }}</span>
+                                    <span class="comp-text-muted small">ID: {{ plaza.id_maestro }}</span>
                                 </div>
                             </td>
-                            <td><span class="font-monospace text-primary">{{ plaza.clave_presupuestal }}</span></td>
+                            <td><span class="comp-font-mono text-primary">{{ plaza.clave_presupuestal }}</span></td>
                             <td>
-                                <div class="d-flex flex-column" style="max-width: 250px;">
+                                <div class="d-flex flex-column comp-detail-school">
                                     <span class="text-truncate" title="{{ plaza.id_escuela.nombre_ct }}">{{ plaza.id_escuela.nombre_ct|default:"N/A" }}</span>
-                                    <span class="text-muted" style="font-size: 0.75rem;">CCT: {{ plaza.id_escuela.id_escuela }}</span>
+                                    <span class="comp-text-muted small">CCT: {{ plaza.id_escuela.id_escuela }}</span>
                                 </div>
                             </td>
                             <td>{{ plaza.get_funcion_display|truncatechars:30 }}</td>
-                            <td class="text-end pe-3">
-                                <a href="{% url 'detalle_maestro' plaza.id_maestro %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 btn-hover-animate" style="font-size: 0.75rem;">
-                                    Ver Detalle <i class="fas fa-external-link-alt ms-1"></i>
+                            <td class="text-end">
+                                <a href="{% url 'detalle_maestro' plaza.id_maestro %}" class="comp-action comp-action-view" title="Ver detalle de la plaza {{ plaza.num_plaza|default:plaza.id_maestro }}" aria-label="Ver detalle de la plaza {{ plaza.num_plaza|default:plaza.id_maestro }}">
+                                    <i class="fas fa-external-link-alt"></i>
                                 </a>
                             </td>
                         </tr>
@@ -353,63 +189,62 @@
                 </table>
             </div>
             {% else %}
-            <div class="text-center py-3 bg-white rounded-3 border border-dashed">
-                <p class="text-muted mb-0 small">No hay otras plazas registradas para este maestro hasta el momento.</p>
+            <div class="comp-empty-state comp-empty-state-sm">
+                <p class="small mb-0">No hay otras plazas registradas para este maestro hasta el momento.</p>
             </div>
             {% endif %}
         </div>
         {% endif %}
 
         <!-- Sub-sección 2: Adscripción y Perfil -->
-        <div class="profile-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="fas fa-briefcase"></i></div>
+        <div class="comp-section">
+            <div class="comp-section-title">
                 <h5>Adscripción y Perfil Laboral</h5>
             </div>
-            <div class="info-grid">
-                <div class="info-item" style="grid-column: span 2;">
-                    <span class="info-label">Escuela (C.C.T.)</span>
-                    <span class="info-value">{{ maestro.id_escuela.id_escuela }} - {{ maestro.id_escuela.nombre_ct|default:"N/A" }}</span>
+            <div class="comp-info-grid">
+                <div class="comp-info-item comp-info-item-span-2">
+                    <span class="comp-info-label">Escuela (C.C.T.)</span>
+                    <span class="comp-info-value">{{ maestro.id_escuela.id_escuela }} - {{ maestro.id_escuela.nombre_ct|default:"N/A" }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Techo Financiero</span>
-                    <span class="info-value">{{ maestro.techo_f|default:"N/A" }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Techo Financiero</span>
+                    <span class="comp-info-value">{{ maestro.techo_f|default:"N/A" }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Zona Escolar</span>
-                    <span class="info-value">{{ maestro.id_escuela.zona_esc.etiqueta|default:"N/A" }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Zona Escolar</span>
+                    <span class="comp-info-value">{{ maestro.id_escuela.zona_esc.etiqueta|default:"N/A" }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Categoría</span>
-                    <span class="info-value font-monospace">{{ maestro.categog }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Categoría</span>
+                    <span class="comp-info-value comp-font-mono">{{ maestro.categog }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Función</span>
-                    <span class="info-value">{{ maestro.get_funcion_display }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Función</span>
+                    <span class="comp-info-value">{{ maestro.get_funcion_display }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Horario</span>
-                    <span class="info-value">{{ maestro.horario }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Horario</span>
+                    <span class="comp-info-value">{{ maestro.horario }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Prefijo / Título</span>
-                    <span class="info-value">{{ maestro.get_nivel_estudio_display }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Prefijo / Título</span>
+                    <span class="comp-info-value">{{ maestro.get_nivel_estudio_display }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Formación Académica</span>
-                    <span class="info-value small">{{ maestro.form_academica }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Formación Académica</span>
+                    <span class="comp-info-value small">{{ maestro.form_academica }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Código</span>
-                    <span class="info-value"><span class="badge bg-secondary rounded-pill px-3">{{ maestro.codigo }}</span></span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Código</span>
+                    <span class="comp-info-value"><span class="comp-badge comp-badge-soft">{{ maestro.codigo }}</span></span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Incentivos</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Incentivos</span>
                     <div class="d-flex flex-wrap gap-1">
                         {% for incentivo in maestro.incentivos.all %}
-                        <span class="badge bg-soft-info text-info rounded-pill px-3">{{ incentivo.codigo }}</span>
+                        <span class="comp-badge comp-badge-accent">{{ incentivo.codigo }}</span>
                         {% empty %}
-                        <span class="text-muted smaller">Ninguno</span>
+                        <span class="comp-text-muted small">Ninguno</span>
                         {% endfor %}
                     </div>
                 </div>
@@ -417,57 +252,54 @@
         </div>
 
         <!-- Sub-sección 3: Trayectoria y Fechas -->
-        <div class="profile-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="fas fa-calendar-alt"></i></div>
+        <div class="comp-section">
+            <div class="comp-section-title">
                 <h5>Trayectoria y Control Temporal</h5>
             </div>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">Fecha de Ingreso</span>
-                    <span class="info-value text-success"><i class="fas fa-calendar-check me-2"></i>{{ maestro.fecha_ingreso|date:"d/m/Y" }}</span>
+            <div class="comp-info-grid">
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Fecha de Ingreso</span>
+                    <span class="comp-info-value text-success"><i class="fas fa-calendar-check me-2"></i>{{ maestro.fecha_ingreso|date:"d/m/Y" }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Fecha de Promoción</span>
-                    <span class="info-value text-primary"><i class="fas fa-calendar-plus me-2"></i>{{ maestro.fecha_promocion|date:"d/m/Y" }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Fecha de Promoción</span>
+                    <span class="comp-info-value text-primary"><i class="fas fa-calendar-plus me-2"></i>{{ maestro.fecha_promocion|date:"d/m/Y" }}</span>
                 </div>
             </div>
         </div>
 
         <!-- Sub-sección 4: Contacto y Localización -->
-        <div class="profile-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="fas fa-map-marker-alt"></i></div>
+        <div class="comp-section">
+            <div class="comp-section-title">
                 <h5>Datos de Contacto y Ubicación</h5>
             </div>
-            <div class="info-grid">
-                <div class="info-item" style="grid-column: span 2;">
-                    <span class="info-label">Domicilio Particular</span>
-                    <span class="info-value">{{ maestro.domicilio_part }}</span>
+            <div class="comp-info-grid">
+                <div class="comp-info-item comp-info-item-span-2">
+                    <span class="comp-info-label">Domicilio Particular</span>
+                    <span class="comp-info-value">{{ maestro.domicilio_part }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Población</span>
-                    <span class="info-value">{{ maestro.poblacion }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Población</span>
+                    <span class="comp-info-value">{{ maestro.poblacion }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Código Postal</span>
-                    <span class="info-value">{{ maestro.codigo_postal }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Código Postal</span>
+                    <span class="comp-info-value">{{ maestro.codigo_postal }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Teléfono</span>
-                    <span class="info-value"><i class="fas fa-phone me-2 text-muted"></i>{{ maestro.telefono|default:"---" }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Teléfono</span>
+                    <span class="comp-info-value"><i class="fas fa-phone me-2 text-muted"></i>{{ maestro.telefono|default:"---" }}</span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Correo Electrónico</span>
-                    <span class="info-value"><i class="fas fa-envelope me-2 text-muted"></i>{{ maestro.email|default:"---" }}</span>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Correo Electrónico</span>
+                    <span class="comp-info-value"><i class="fas fa-envelope me-2 text-muted"></i>{{ maestro.email|default:"---" }}</span>
                 </div>
             </div>
         </div>
 
         <!-- Sub-sección 5: Observaciones -->
-        <div class="profile-section">
-            <div class="section-header">
-                <div class="section-icon"><i class="fas fa-comment-alt"></i></div>
+        <div class="comp-section">
+            <div class="comp-section-title">
                 <h5>Notas y Observaciones</h5>
             </div>
             <div class="p-0">
@@ -479,61 +311,58 @@
     </div>
 
     <!-- HISTORIAL DE INTERINATOS -->
-    <div class="profile-card">
-        <div class="profile-section">
-            <div class="section-header">
-                <div class="section-icon bg-info bg-opacity-10 text-info"><i class="fas fa-user-clock"></i></div>
-                <div class="d-flex justify-content-between align-items-center w-100">
-                    <h5 class="mb-0">Historial de Interinatos Cubiertos</h5>
-                    {% if interinatos_cubiertos %}
-                    <span class="badge bg-info rounded-pill">{{ interinatos_cubiertos.count }} registrado{{ interinatos_cubiertos.count|pluralize:"s" }}</span>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="p-0 pt-1">
+    <div class="comp-panel">
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h5>Historial de Interinatos Cubiertos</h5>
                 {% if interinatos_cubiertos %}
-                <div class="table-responsive rounded-4 border bg-white overflow-hidden shadow-sm">
-                    <table class="table table-hover align-middle mb-0 small">
-                        <thead class="bg-light">
+                <span class="comp-badge comp-badge-accent ms-auto">{{ interinatos_cubiertos.count }} registrado{{ interinatos_cubiertos.count|pluralize:"s" }}</span>
+                {% endif %}
+            </div>
+            <div class="pt-1">
+                {% if interinatos_cubiertos %}
+                <div class="table-responsive border rounded-4">
+                    <table class="comp-table comp-table-sm align-middle mb-0">
+                        <thead>
                             <tr>
-                                <th class="ps-4 py-2 border-0">Clave Cubierta</th>
-                                <th class="py-2 border-0">Maestro Titular</th>
-                                <th class="py-2 border-0">C.C.T.</th>
-                                <th class="py-2 border-0">Período</th>
-                                <th class="py-2 border-0">Motivo</th>
-                                <th class="py-2 border-0">Tipo</th>
-                                <th class="text-end pe-4 py-2 border-0">Estatus</th>
+                                <th>Clave Cubierta</th>
+                                <th>Maestro Titular</th>
+                                <th>C.C.T.</th>
+                                <th>Período</th>
+                                <th>Motivo</th>
+                                <th>Tipo</th>
+                                <th class="text-end">Estatus</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for inter in interinatos_cubiertos %}
                             <tr>
-                                <td class="ps-4"><span class="font-monospace text-primary fw-bold">{{ inter.clave_presupuestal|default:"S/N" }}</span></td>
+                                <td><span class="comp-font-mono text-primary fw-bold">{{ inter.clave_presupuestal|default:"S/N" }}</span></td>
                                 <td>
                                     {% if inter.maestro_titular %}
                                     <a href="{% url 'detalle_maestro' inter.maestro_titular.id_maestro %}" class="text-decoration-none">{{ inter.maestro_titular.nombres }} {{ inter.maestro_titular.a_paterno }} {{ inter.maestro_titular.a_materno }}</a>
                                     {% else %}
-                                    <span class="text-muted">—</span>
+                                    <span class="comp-text-muted">—</span>
                                     {% endif %}
                                 </td>
-                                <td class="small text-muted">{{ inter.escuela.id_escuela|default:"—" }}<br><span class="text-truncate d-inline-block" style="max-width: 180px;">{{ inter.escuela.nombre_ct|default:"" }}</span></td>
+                                <td class="small comp-text-muted">{{ inter.escuela.id_escuela|default:"—" }}<br><span class="text-truncate d-inline-block comp-detail-cct">{{ inter.escuela.nombre_ct|default:"" }}</span></td>
                                 <td>
                                     <span class="fw-semibold">{{ inter.fecha_inicio|date:"d/m/Y" }}</span>
                                     {% if inter.fecha_final %}
                                     → <span class="fw-semibold">{{ inter.fecha_final|date:"d/m/Y" }}</span>
                                     {% else %}
-                                    <span class="badge bg-soft-warning text-warning ms-1">Vigente</span>
+                                    <span class="comp-badge comp-badge-warning ms-1">Vigente</span>
                                     {% endif %}
                                 </td>
                                 <td class="small">{{ inter.get_motivo_display|default:"—" }}</td>
-                                <td><span class="badge bg-soft-info text-info rounded-pill px-3">{{ inter.get_tipo_display }}</span></td>
-                                <td class="text-end pe-4">
+                                <td><span class="comp-badge comp-badge-accent">{{ inter.get_tipo_display }}</span></td>
+                                <td class="text-end">
                                     {% if inter.estatus == 'ACTIVO' %}
-                                    <span class="badge bg-soft-success text-success rounded-pill px-3">Activo</span>
+                                    <span class="comp-badge comp-badge-success">Activo</span>
                                     {% elif inter.estatus == 'CONCLUIDO' %}
-                                    <span class="badge bg-soft-secondary text-secondary rounded-pill px-3">Concluido</span>
+                                    <span class="comp-badge comp-badge-soft">Concluido</span>
                                     {% else %}
-                                    <span class="badge bg-soft-warning text-warning rounded-pill px-3">Cancelado</span>
+                                    <span class="comp-badge comp-badge-warning">Cancelado</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -542,37 +371,34 @@
                     </table>
                 </div>
                 {% else %}
-                <div class="text-center py-4 bg-white rounded-4 border border-dashed">
-                    <p class="text-muted mb-0 small">Este personal no tiene interinatos registrados hasta el momento.</p>
+                <div class="comp-empty-state comp-empty-state-sm">
+                    <p class="small mb-0">Este personal no tiene interinatos registrados hasta el momento.</p>
                 </div>
                 {% endif %}
             </div>
 
             {% if interinatos_como_titular %}
             <hr class="my-4">
-            <div class="section-header">
-                <div class="section-icon bg-warning bg-opacity-10 text-warning"><i class="fas fa-user-slash"></i></div>
-                <div class="d-flex justify-content-between align-items-center w-100">
-                    <h5 class="mb-0">Interinatos que Cubren sus Plazas (Titular)</h5>
-                    <span class="badge bg-warning rounded-pill">{{ interinatos_como_titular.count }} registrado{{ interinatos_como_titular.count|pluralize:"s" }}</span>
-                </div>
+            <div class="comp-section-title">
+                <h5>Interinatos que Cubren sus Plazas (Titular)</h5>
+                <span class="comp-badge comp-badge-warning ms-auto">{{ interinatos_como_titular.count }} registrado{{ interinatos_como_titular.count|pluralize:"s" }}</span>
             </div>
-            <div class="p-0 pt-1">
-                <div class="table-responsive rounded-4 border bg-white overflow-hidden shadow-sm">
-                    <table class="table table-hover align-middle mb-0 small">
-                        <thead class="bg-light">
+            <div class="pt-1">
+                <div class="table-responsive border rounded-4">
+                    <table class="comp-table comp-table-sm align-middle mb-0">
+                        <thead>
                             <tr>
-                                <th class="ps-4 py-2 border-0">Clave Cubierta</th>
-                                <th class="py-2 border-0">Interino que la Cubre</th>
-                                <th class="py-2 border-0">Período</th>
-                                <th class="py-2 border-0">Motivo</th>
-                                <th class="text-end pe-4 py-2 border-0">Estatus</th>
+                                <th>Clave Cubierta</th>
+                                <th>Interino que la Cubre</th>
+                                <th>Período</th>
+                                <th>Motivo</th>
+                                <th class="text-end">Estatus</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for inter in interinatos_como_titular %}
                             <tr>
-                                <td class="ps-4"><span class="font-monospace text-primary fw-bold">{{ inter.clave_presupuestal|default:"S/N" }}</span></td>
+                                <td><span class="comp-font-mono text-primary fw-bold">{{ inter.clave_presupuestal|default:"S/N" }}</span></td>
                                 <td>
                                     <a href="{% url 'detalle_maestro' inter.maestro_interino.id_maestro %}" class="text-decoration-none">{{ inter.maestro_interino.nombres }} {{ inter.maestro_interino.a_paterno }} {{ inter.maestro_interino.a_materno }}</a>
                                 </td>
@@ -581,13 +407,13 @@
                                     {% if inter.fecha_final %}→ <span class="fw-semibold">{{ inter.fecha_final|date:"d/m/Y" }}</span>{% endif %}
                                 </td>
                                 <td class="small">{{ inter.get_motivo_display|default:"—" }}</td>
-                                <td class="text-end pe-4">
+                                <td class="text-end">
                                     {% if inter.estatus == 'ACTIVO' %}
-                                    <span class="badge bg-soft-success text-success rounded-pill px-3">Activo</span>
+                                    <span class="comp-badge comp-badge-success">Activo</span>
                                     {% elif inter.estatus == 'CONCLUIDO' %}
-                                    <span class="badge bg-soft-secondary text-secondary rounded-pill px-3">Concluido</span>
+                                    <span class="comp-badge comp-badge-soft">Concluido</span>
                                     {% else %}
-                                    <span class="badge bg-soft-warning text-warning rounded-pill px-3">Cancelado</span>
+                                    <span class="comp-badge comp-badge-warning">Cancelado</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -601,36 +427,35 @@
     </div>
 
     <!-- DIGITAL EXPEDIENT (Keep separate logic-wise but could be part of the card too if desired) -->
-    <div class="profile-card digital-folder">
-        <div class="profile-section">
-            <div class="section-header">
-                <div class="section-icon bg-white text-info shadow-sm"><i class="fas fa-folder-open"></i></div>
-                <h5 class="text-info">Expediente Digital del Trabajador</h5>
+    <div class="comp-panel digital-folder">
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h5><i class="fas fa-folder-open me-2 text-info"></i>Expediente Digital del Trabajador</h5>
             </div>
-            <div class="p-0 pt-2">
+            <div class="pt-1">
                 {% if documentos %}
-                <div class="table-responsive rounded-4 border bg-white overflow-hidden shadow-sm">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
+                <div class="table-responsive border rounded-4">
+                    <table class="comp-table comp-table-sm align-middle mb-0">
+                        <thead>
                             <tr>
-                                <th class="ps-4 py-3 border-0">Documento</th>
-                                <th class="py-3 border-0">Fecha de Carga</th>
-                                <th class="py-3 border-0">Registrado por</th>
-                                <th class="text-end pe-4 py-3 border-0">Visualizar</th>
+                                <th>Documento</th>
+                                <th>Fecha de Carga</th>
+                                <th>Registrado por</th>
+                                <th class="text-end">Visualizar</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for doc in documentos %}
                             <tr>
-                                <td class="ps-4">
+                                <td>
                                     <i class="fas fa-file-pdf text-danger me-2"></i>
                                     <span class="fw-bold">{{ doc.get_tipo_documento_display }}</span>
                                 </td>
                                 <td>{{ doc.fecha_subida|date:"d/m/Y H:i" }}</td>
-                                <td><span class="badge bg-soft-info text-info rounded-pill px-3">{{ doc.subido_por.username|default:'Sistema' }}</span></td>
-                                <td class="text-end pe-4">
-                                    <a href="{{ doc.archivo.url }}" target="_blank" class="btn btn-sm btn-outline-info rounded-pill px-3 btn-hover-animate">
-                                        <i class="fas fa-eye me-1"></i> Abrir PDF
+                                <td><span class="comp-badge comp-badge-accent">{{ doc.subido_por.username|default:'Sistema' }}</span></td>
+                                <td class="text-end">
+                                    <a href="{{ doc.archivo.url }}" target="_blank" rel="noopener" class="comp-action comp-action-view" title="Abrir PDF" aria-label="Abrir PDF {{ doc.get_tipo_documento_display }}">
+                                        <i class="fas fa-eye"></i>
                                     </a>
                                 </td>
                             </tr>
@@ -639,9 +464,9 @@
                     </table>
                 </div>
                 {% else %}
-                <div class="text-center py-5 bg-white rounded-4 border border-dashed">
-                    <i class="fas fa-cloud-upload-alt fa-3x text-muted opacity-25 mb-3"></i>
-                    <p class="text-muted fw-bold mb-0">El expediente digital está vacío.</p>
+                <div class="comp-empty-state">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>El expediente digital está vacío.</p>
                 </div>
                 {% endif %}
             </div>

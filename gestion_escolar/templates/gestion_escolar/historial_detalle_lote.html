@@ -4,154 +4,105 @@
 {% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .header-section {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    /* Resumen en panel único */
-    .lote-header-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        margin-bottom: 1.5rem;
-        overflow: hidden;
-    }
-
-    .lote-stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-        padding: 1.5rem;
-    }
-
-    .stat-item label {
-        display: block;
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-item span {
-        font-size: 1.05rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--text, #1d1d1f);
-        font-variant-numeric: tabular-nums;
-    }
-
-    /* Tabla en panel */
-    .table-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        padding: 1.5rem;
-    }
-
-    .table thead th {
-        background: var(--surface, #fff);
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        color: var(--text-2, #6e6e73);
-        padding: 0.9rem 1rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .table tbody td {
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .table tbody tr:last-child td {
-        border-bottom: none;
-    }
-</style>
-
-<div class="page-container">
-    <div class="header-section">
-        <div>
-            <h1 class="apple-title">Lote <span class="apple-num">#{{ lote.id }}</span></h1>
-            <p class="apple-subtitle mb-0">{{ titulo }}</p>
+<div class="comp-page-container comp-detail">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Lote <span class="comp-tabular-nums">#{{ lote.id }}</span></h1>
+            <p class="comp-subtitle">{{ titulo }}</p>
         </div>
-        <a href="{% url 'historial' %}" class="apple-btn-ghost">
-            <i class="fas fa-arrow-left me-2"></i> Volver
-        </a>
-    </div>
-
-    <div class="lote-header-card">
-        <div class="lote-stats">
-            <div class="stat-item">
-                <label>Generado por</label>
-                <span>{{ lote.usuario_generador.username }}</span>
-            </div>
-            <div class="stat-item">
-                <label>Fecha</label>
-                <span class="apple-num">{{ lote.fecha_creacion|date:"d/m/Y H:i" }}</span>
-            </div>
-            <div class="stat-item">
-                <label>Estado</label>
-                <span class="apple-tag">{{ lote.get_estado_display }}</span>
-            </div>
-        </div>
-        {% if lote.archivo_generado %}
-        <div class="p-3 text-center" style="border-top: 1px solid var(--hairline, rgba(0,0,0,0.07));">
-            <a href="{{ lote.archivo_generado.url }}" target="_blank" class="apple-btn">
-                <i class="fas fa-file-excel me-2"></i> Descargar Excel
+        <div class="comp-actions">
+            <a href="{% url 'historial' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> Volver
             </a>
         </div>
-        {% endif %}
     </div>
 
-    <div class="table-card">
-        <h5 class="fw-bold mb-3" style="letter-spacing: -0.01em;">Vacancias del lote</h5>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle" id="loteTable">
-                <thead>
-                    <tr>
-                        <th>Maestro Titular</th>
-                        <th>Clave Presupuestal</th>
-                        <th>Tipo de Vacante</th>
-                        <th>Movimiento</th>
-                        <th>Periodo</th>
-                        <th>Observaciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for vacancia in vacancias %}
-                    <tr>
-                        <td>
-                            <div class="fw-bold">{{ vacancia.maestro_titular.nombres }} {{ vacancia.maestro_titular.a_paterno }}</div>
-                            <div class="text-muted small">Interino: {{ vacancia.nombre_interino|default:"N/A" }}</div>
-                        </td>
-                        <td><span class="font-monospace apple-num">{{ vacancia.clave_presupuestal }}</span></td>
-                        <td><span class="apple-tag">{{ vacancia.tipo_vacante }}</span></td>
-                        <td><small>{{ vacancia.tipo_movimiento_original }}</small></td>
-                        <td>
-                            <div class="small fw-bold">{{ vacancia.fecha_inicio|date:"d/m/y" }}</div>
-                            <div class="small text-muted">{{ vacancia.fecha_final|date:"d/m/y"|default:"Indefinido" }}</div>
-                        </td>
-                        <td><small class="text-muted">{{ vacancia.observaciones|default:"-" }}</small></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="comp-panel">
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h4>Resumen del lote</h4>
+                {% if lote.archivo_generado %}
+                <a href="{{ lote.archivo_generado.url }}" target="_blank" class="comp-btn comp-btn-primary comp-btn-sm ms-auto">
+                    <i class="fas fa-file-excel"></i> Descargar Excel
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="comp-info-grid">
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Generado por</span>
+                    <span class="comp-info-value">{{ lote.usuario_generador.username }}</span>
+                </div>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Fecha</span>
+                    <span class="comp-info-value comp-tabular-nums">{{ lote.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                </div>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Estado</span>
+                    <span class="comp-info-value">
+                        {% if lote.estado == 'EN_PROCESO' %}
+                            <span class="comp-badge comp-badge-warning">En Proceso</span>
+                        {% elif lote.estado == 'GENERADO' %}
+                            <span class="comp-badge comp-badge-success">Generado</span>
+                        {% elif lote.estado == 'PROCESANDO' %}
+                            <span class="comp-badge comp-badge-accent">Procesando</span>
+                        {% elif lote.estado == 'CANCELADO' %}
+                            <span class="comp-badge comp-badge-danger">Cancelado</span>
+                        {% else %}
+                            <span class="comp-badge comp-badge-soft">{{ lote.get_estado_display }}</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h4>Vacancias del lote</h4>
+                <span class="comp-badge comp-badge-soft ms-auto comp-tabular-nums">{{ vacancias|length }}</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="comp-table comp-table-sm align-middle" id="loteTable">
+                    <thead>
+                        <tr>
+                            <th>Maestro Titular</th>
+                            <th>Clave Presupuestal</th>
+                            <th>Tipo de Vacante</th>
+                            <th>Movimiento</th>
+                            <th>Periodo</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vacancia in vacancias %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold comp-text-dark">{{ vacancia.maestro_titular.nombres }} {{ vacancia.maestro_titular.a_paterno }}</div>
+                                <div class="comp-text-muted smaller">Interino: {{ vacancia.nombre_interino|default:"N/A" }}</div>
+                            </td>
+                            <td><span class="comp-code">{{ vacancia.clave_presupuestal }}</span></td>
+                            <td><span class="comp-badge comp-badge-soft">{{ vacancia.tipo_vacante }}</span></td>
+                            <td><span class="smaller">{{ vacancia.tipo_movimiento_original }}</span></td>
+                            <td class="text-nowrap">
+                                <div class="smaller fw-bold">{{ vacancia.fecha_inicio|date:"d/m/y" }}</div>
+                                <div class="smaller comp-text-muted">{{ vacancia.fecha_final|date:"d/m/y"|default:"Indefinido" }}</div>
+                            </td>
+                            <td><span class="smaller comp-text-muted">{{ vacancia.observaciones|default:"-" }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6">
+                                <div class="comp-empty-state comp-empty-state-sm">
+                                    <i class="fas fa-inbox"></i>
+                                    <p>Este lote no tiene vacancias registradas.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -161,13 +112,13 @@
 <script>
     $(document).ready(function() {
         $('#loteTable').DataTable({
-            language: { 
+            language: {
                 ...window.SpanishDataTable,
                 search: "_INPUT_",
                 searchPlaceholder: "Buscar registro en este lote..."
             },
             pageLength: 20,
-            dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>'
+            dom: '<"d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"lf>rt<"d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3"ip>'
         });
     });
 </script>

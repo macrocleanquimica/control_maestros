@@ -1,18 +1,31 @@
 {% extends 'gestion_escolar/base.html' %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">{{ titulo }}</h1>
+<div class="comp-page-container">
+    <div class="comp-form-narrow">
+        <div class="comp-page-header">
+            <div class="comp-title-group">
+                <h1 class="comp-title">{{ titulo|default:"Eliminar Tema" }}</h1>
+                <p class="comp-subtitle">Esta acción no se puede deshacer.</p>
+            </div>
+        </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            <p>¿Estás seguro de que quieres eliminar el tema <strong>"{{ object.nombre }}"</strong>?</p>
-            <p class="text-danger">Esta acción no se puede deshacer.</p>
-            <form method="post">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Sí, eliminar</button>
-                <a href="{% url 'tema_list' %}" class="btn btn-secondary">Cancelar</a>
-            </form>
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <p>¿Estás seguro de que quieres eliminar el tema <strong>“{{ object.nombre }}”</strong>?</p>
+                <div class="comp-alert comp-alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>El tema se eliminará de forma permanente del sistema.</div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="comp-form-actions">
+                        <button type="submit" class="comp-btn comp-btn-danger">Sí, eliminar</button>
+                        <a href="{% url 'tema_list' %}" class="comp-btn comp-btn-ghost">Cancelar</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>

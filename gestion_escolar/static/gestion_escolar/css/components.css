@@ -1,0 +1,2458 @@
+/* ============================================================
+   Control de Maestros — Componentes comunes (Paso 2)
+   Aditivo: no modifica ningún estilo existente.
+   Las pantallas siguen igual hasta que se adopten sus clases.
+   ============================================================ */
+
+/* ---------- Variables unificadas (con fallback seguro) ---------- */
+:root {
+  --comp-bg: #f5f5f7;
+  --comp-surface: #ffffff;
+  --comp-hover: #fbfbfd;
+  --comp-hairline: rgba(0, 0, 0, 0.07);
+  --comp-text: #1d1d1f;
+  --comp-text-body: #424245;
+  --comp-text-2: #6e6e73;
+  --comp-text-3: #86868b;
+  --comp-accent: var(--accent, #0071e3);
+  --comp-accent-link: var(--accent-link, #0066cc);
+  --comp-heat: #ff6b00;
+  --comp-live: #30d158;
+  --comp-r-pill: 999px;
+  --comp-r-card: 18px;
+  --comp-r-panel: 22px;
+  --comp-r-input: 12px;
+  --comp-r-badge: 2rem;
+  --comp-sh-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.05);
+  --comp-sh-panel: 0 1px 3px rgba(0, 0, 0, 0.05), 0 14px 40px rgba(0, 0, 0, 0.05);
+  --comp-sh-input: 0 0 0 4px rgba(0, 113, 227, 0.12);
+  --comp-input-border: var(--comp-accent);
+  --comp-input-border-readonly: rgba(0, 0, 0, 0.08);
+  --comp-input-focus-shadow: 0 0 0 3px var(--comp-accent);
+  --comp-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI',
+               'Helvetica Neue', Arial, sans-serif;
+  --comp-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --comp-ease: cubic-bezier(0.25, 1, 0.5, 1);
+  --comp-speed: 0.2s;
+}
+
+/* ---------- Utilidades ---------- */
+.comp-text-muted { color: var(--comp-text-2) !important; }
+.comp-text-dark  { color: var(--comp-text) !important; }
+.comp-font-mono  { font-family: var(--comp-mono); }
+.comp-tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* ---------- Tarjeta blanca estándar ---------- */
+.comp-card {
+  background: var(--comp-surface);
+  border-radius: var(--comp-r-card);
+  box-shadow: var(--comp-sh-card);
+  border: 1px solid var(--comp-hairline);
+  overflow: hidden;
+}
+
+.comp-card > .card-body,
+.comp-card > .comp-card-body {
+  padding: 1.5rem;
+}
+
+.comp-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--comp-sh-panel);
+  transition: transform var(--comp-speed) ease, box-shadow var(--comp-speed) ease;
+}
+
+/* ---------- Panel único (sin división en muchas tarjetas) ---------- */
+.comp-panel {
+  background: var(--comp-surface);
+  border-radius: var(--comp-r-panel);
+  box-shadow: var(--comp-sh-panel);
+  border: 1px solid var(--comp-hairline);
+  overflow: hidden;
+}
+/* ---------- Contenedor de página ---------- */
+.comp-page-container {
+  width: 100%;
+}
+
+/* ---------- Encabezado de página estándar ---------- */
+.comp-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--comp-hairline);
+}
+
+.comp-page-header .comp-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.comp-page-header h1.comp-title {
+  font-size: clamp(22px, 3.4vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--comp-text);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.comp-page-header p.comp-subtitle {
+  font-size: 14px;
+  color: var(--comp-text-2);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.comp-page-header .comp-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ---------- Título de sección dentro de una tarjeta ---------- */
+.comp-section {
+  padding: 1.5rem clamp(17px, 3vw, 2rem);
+  border-bottom: 1px solid var(--comp-hairline);
+}
+
+.comp-section:last-child {
+  border-bottom: none;
+}
+
+.comp-section-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--comp-hairline);
+}
+
+.comp-section-title h4,
+.comp-section-title h5 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--comp-text);
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* ---------- Formularios ---------- */
+.comp-form .form-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--comp-text-2);
+  letter-spacing: 0.025em;
+  margin-bottom: 0.5rem;
+}
+
+.comp-form .form-control,
+.comp-form .form-select,
+.comp-form select:not(.select2-hidden-accessible) {
+  border-radius: var(--comp-r-input);
+  border: 1px solid var(--comp-input-border-readonly);
+  padding: 0.6rem 1rem;
+  background-color: var(--comp-surface);
+  font-weight: 500;
+}
+
+/* Campos editables (no readonly): borde del tema */
+.comp-form .form-control:not([readonly]),
+.comp-form .form-select:not([readonly]),
+.comp-form select:not(.select2-hidden-accessible):not([readonly]) {
+  border: 1px solid var(--comp-input-border);
+  transition: border-color var(--comp-speed) ease, box-shadow var(--comp-speed) ease;
+}
+
+/* Focus solo en campos editables */
+.comp-form .form-control:not([readonly]):focus,
+.comp-form .form-select:not([readonly]):focus,
+.comp-form select:not(.select2-hidden-accessible):not([readonly]):focus {
+  background-color: var(--comp-surface);
+  border-color: var(--comp-accent);
+  box-shadow: var(--comp-input-focus-shadow);
+}
+
+/* Select2 dentro de un input-group: evita que el botón baje de línea. */
+.comp-form .input-group > .select2-container {
+  flex: 1 1 auto;
+  width: 1% !important;
+  min-width: 0;
+}
+
+.comp-form .input-group > .select2-container .select2-selection--single {
+  height: 100%;
+  min-height: 42px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.comp-form .input-group > .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 40px;
+  padding-left: 0.75rem;
+}
+
+.comp-form .input-group > .select2-container .select2-selection--single .select2-selection__arrow {
+  height: 40px;
+}
+
+/* ---------- Tabla estándar ---------- */
+.comp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.comp-table thead th {
+  background: var(--comp-surface);
+  color: var(--comp-text-2);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--comp-hairline);
+  padding: 0.9rem 1rem;
+  text-align: left;
+}
+
+.comp-table tbody td {
+  border-bottom: 1px solid var(--comp-hairline);
+  padding: 0.9rem 1rem;
+  color: var(--comp-text-body);
+  vertical-align: middle;
+}
+
+.comp-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ---------- Botones ---------- */
+.comp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.25rem;
+  border: none;
+  border-radius: var(--comp-r-pill);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--comp-font);
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity var(--comp-speed) ease, transform var(--comp-speed) ease;
+  line-height: 1;
+}
+
+.comp-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.comp-btn-primary {
+  background: var(--comp-accent);
+  color: #fff;
+}
+
+.comp-btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+  color: #fff;
+}
+
+.comp-btn-ghost {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--comp-text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.comp-btn-ghost:hover:not(:disabled) {
+  background: var(--comp-hover);
+  color: var(--comp-text);
+}
+
+.comp-btn-danger {
+  background: #c0392b;
+  color: #fff;
+}
+
+.comp-btn-danger:hover:not(:disabled) {
+  opacity: 0.92;
+  color: #fff;
+}
+
+.comp-btn-sm {
+  min-height: 32px;
+  padding: 0 0.85rem;
+  font-size: 13px;
+}
+
+.comp-btn-md {
+  min-height: 40px;
+  padding: 0 1.1rem;
+  font-size: 14px;
+}
+
+.comp-btn-lg {
+  min-height: 48px;
+  padding: 0 2rem;
+  font-size: 15px;
+}
+
+.comp-btn-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none !important;
+}
+
+/* Reforzar botones icono dentro de tablas para que no sean sobrescritos por Bootstrap/DataTables */
+.comp-table .comp-btn.comp-btn-icon,
+.comp-table .comp-btn.comp-btn-icon.comp-btn-md {
+  width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  min-width: 44px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.comp-table .comp-btn.comp-btn-icon i,
+.comp-table .comp-btn.comp-btn-icon.comp-btn-md i {
+  font-size: 16px !important;
+  color: #fff !important;
+}
+
+.comp-table .comp-btn.comp-btn-icon.comp-btn-primary {
+  background: var(--comp-accent) !important;
+  color: #fff !important;
+}
+
+.comp-table .comp-btn.comp-btn-icon.comp-btn-primary:hover,
+.comp-table .comp-btn.comp-btn-icon.comp-btn-primary:focus {
+  opacity: 0.92 !important;
+  background: var(--comp-accent) !important;
+  color: #fff !important;
+}
+
+.comp-table .comp-btn.comp-btn-icon.comp-btn-danger {
+  background: #c0392b !important;
+  color: #fff !important;
+}
+
+.comp-table .comp-btn.comp-btn-icon.comp-btn-danger:hover,
+.comp-table .comp-btn.comp-btn-icon.comp-btn-danger:focus {
+  opacity: 0.92 !important;
+  background: #c0392b !important;
+  color: #fff !important;
+}
+
+/* ---------- Acciones circulares de tabla ----------
+   Sistema unico para las acciones de fila en todo el sistema:
+   ver (neutro), editar (acento), eliminar (rojo), aviso (ambar),
+   exito (verde) e informativa (teal). */
+.comp-action-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.comp-action {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  flex: 0 0 34px;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle;
+  border: 1px solid transparent !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 13px;
+  line-height: 1;
+  text-decoration: none !important;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: transform 0.12s ease, background-color 0.2s ease,
+    border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.comp-action > i {
+  color: inherit !important;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.comp-action:hover {
+  transform: translateY(-1px);
+}
+
+.comp-action:active {
+  transform: translateY(0);
+}
+
+.comp-action:focus-visible {
+  outline: 2px solid var(--comp-accent);
+  outline-offset: 2px;
+}
+
+.comp-action:disabled,
+.comp-action.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Ver / descargar: neutro */
+.comp-action-view {
+  background: rgba(0, 0, 0, 0.045) !important;
+  border-color: var(--comp-hairline) !important;
+  color: var(--comp-text-2) !important;
+}
+
+.comp-action-view:hover,
+.comp-action-view:focus {
+  background: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.14) !important;
+  color: var(--comp-text) !important;
+}
+
+/* Editar: accion principal del acento */
+.comp-action-edit {
+  background: var(--comp-accent) !important;
+  border-color: var(--comp-accent) !important;
+  color: #fff !important;
+}
+
+.comp-action-edit:hover,
+.comp-action-edit:focus {
+  background: var(--comp-accent) !important;
+  border-color: var(--comp-accent) !important;
+  color: #fff !important;
+  filter: brightness(0.94);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);
+}
+
+/* Eliminar / cancelar: rojo */
+.comp-action-delete {
+  background: #c0392b !important;
+  border-color: #c0392b !important;
+  color: #fff !important;
+}
+
+.comp-action-delete:hover,
+.comp-action-delete:focus {
+  background: #a93226 !important;
+  border-color: #a93226 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 10px rgba(192, 57, 43, 0.24);
+}
+
+/* Aviso / reintentar: ambar */
+.comp-action-warning {
+  background: #b26a00 !important;
+  border-color: #b26a00 !important;
+  color: #fff !important;
+}
+
+.comp-action-warning:hover,
+.comp-action-warning:focus {
+  background: #965900 !important;
+  border-color: #965900 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 10px rgba(178, 106, 0, 0.24);
+}
+
+/* Activar / confirmar: verde */
+.comp-action-success {
+  background: #1d7a37 !important;
+  border-color: #1d7a37 !important;
+  color: #fff !important;
+}
+
+.comp-action-success:hover,
+.comp-action-success:focus {
+  background: #16642c !important;
+  border-color: #16642c !important;
+  color: #fff !important;
+  box-shadow: 0 4px 10px rgba(29, 122, 55, 0.24);
+}
+
+/* Informativa / exportar: teal */
+.comp-action-info {
+  background: #0b7285 !important;
+  border-color: #0b7285 !important;
+  color: #fff !important;
+}
+
+.comp-action-info:hover,
+.comp-action-info:focus {
+  background: #095c6b !important;
+  border-color: #095c6b !important;
+  color: #fff !important;
+  box-shadow: 0 4px 10px rgba(11, 114, 133, 0.24);
+}
+
+/* ---------- Badges / etiquetas de estado ---------- */
+.comp-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--comp-r-badge);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.comp-badge-soft {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--comp-text-2);
+}
+
+.comp-badge-lg {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.comp-badge-wrap {
+  white-space: normal;
+  max-width: 120px;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.comp-cell-truncate {
+  display: inline-block;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.comp-cell-content {
+  display: block;
+  max-width: none;
+  white-space: normal;
+  word-break: break-word;
+  vertical-align: middle;
+}
+
+.comp-badge-accent {
+  background: rgba(0, 113, 227, 0.08);
+  color: var(--comp-accent-link);
+}
+
+.comp-badge-success {
+  background: rgba(48, 209, 88, 0.08);
+  color: #1d7a37;
+}
+
+.comp-badge-danger {
+  background: rgba(192, 57, 43, 0.08);
+  color: #c0392b;
+}
+
+.comp-badge-warning {
+  background: rgba(255, 107, 0, 0.08);
+  color: #b26a00;
+}
+
+/* ---------- Formularios ---------- */
+.comp-form-group {
+  margin-bottom: 1.25rem;
+}
+
+.comp-form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--comp-text-2);
+  letter-spacing: 0.025em;
+  margin-bottom: 0.5rem;
+}
+
+.comp-form-control,
+.comp-form-select {
+  width: 100%;
+  border-radius: var(--comp-r-input);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0.6rem 1rem;
+  background: var(--comp-surface);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--comp-text);
+  font-family: var(--comp-font);
+  transition: border-color var(--comp-speed), box-shadow var(--comp-speed);
+}
+
+.comp-form-control:focus,
+.comp-form-select:focus {
+  background: #fff;
+  border-color: var(--comp-accent);
+  box-shadow: var(--comp-sh-input);
+  outline: none;
+}
+
+.comp-form-control::placeholder {
+  color: var(--comp-text-3);
+}
+
+.comp-form-text {
+  font-size: 0.78rem;
+  color: var(--comp-text-3);
+  margin-top: 0.35rem;
+}
+
+.comp-form-error {
+  font-size: 0.78rem;
+  color: #c0392b;
+  margin-top: 0.35rem;
+}
+
+/* ---------- Avatar ---------- */
+.comp-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--comp-text);
+  flex-shrink: 0;
+}
+
+/* ---------- Indicador / pill ---------- */
+.comp-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--comp-text-2);
+  font-weight: 500;
+}
+
+/* ---------- Estado vacío ---------- */
+.comp-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--comp-text-2);
+}
+
+.comp-empty-state i,
+.comp-empty-state svg {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.25;
+}
+
+.comp-empty-state p {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* ---------- Avisos / alertas ---------- */
+.comp-alert {
+  padding: 1rem 1.5rem;
+  border-radius: 14px;
+  border: none;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.comp-alert-success {
+  background: rgba(48, 209, 88, 0.08);
+  color: #1d7a37;
+}
+
+.comp-alert-danger {
+  background: rgba(192, 57, 43, 0.08);
+  color: #c0392b;
+}
+
+.comp-alert-warning {
+  background: rgba(255, 107, 0, 0.08);
+  color: #b26a00;
+}
+
+.comp-alert-info {
+  background: rgba(0, 113, 227, 0.08);
+  color: #0066cc;
+}
+
+.comp-alert i {
+  font-size: 1.25rem;
+  margin-top: 0.1rem;
+}
+
+/* ---------- Responsivo base ---------- */
+@media (max-width: 768px) {
+  .comp-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .comp-page-header .comp-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.comp-table tbody tr:hover td {
+  background: var(--comp-hover);
+}
+
+
+
+.comp-table.text-center { text-align: center; }
+.comp-table.text-end { text-align: right; }
+
+.comp-table.comp-table-sm th,
+.comp-table.comp-table-sm td {
+  padding: 0.55rem;
+  font-size: 0.85rem;
+}
+
+.comp-panel-body {
+  padding: 1.5rem clamp(17px, 3vw, 2rem);
+}
+
+.comp-panel + .comp-panel {
+  margin-top: 1.5rem;
+}
+
+/* ---------- Lista de personal ----------
+   Clases emitidas por el render de DataTables y por la vista AJAX.
+   Se mantienen sus nombres para no modificar el JavaScript. */
+
+.comp-personal-list .badge-soft-success,
+.comp-personal-list .badge-soft-danger {
+  font-size: 0.72rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 2rem;
+  font-weight: 600;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.05);
+  display: inline-flex;
+  align-items: center;
+}
+
+.comp-personal-list .badge-soft-success {
+  color: var(--comp-text);
+}
+
+.comp-personal-list .badge-soft-danger {
+  color: var(--comp-text-2);
+}
+
+.comp-personal-list .badge-soft-success::before,
+.comp-personal-list .badge-soft-danger::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.comp-personal-list .badge-soft-success::before {
+  background: var(--comp-live);
+}
+
+.comp-personal-list .badge-soft-danger::before {
+  background: #aeaeb2;
+}
+
+.comp-personal-list .badge-soft-warning {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--comp-text-2);
+}
+
+.comp-personal-list .badge-soft-info {
+  background: rgba(0, 113, 227, 0.08);
+  color: var(--comp-accent-link);
+}
+
+.comp-personal-list .indicator-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--comp-text-2);
+  font-weight: 500;
+}
+
+.comp-personal-list .indicator-pill.text-danger,
+.comp-personal-list .indicator-pill.text-info,
+.comp-personal-list .indicator-pill.text-primary {
+  color: var(--comp-text-2) !important;
+}
+
+/* La tabla de DataTables trae estilos globales de base.html; aquí se alinean
+   con el panel y se compactan para que las acciones no queden recortadas. */
+.comp-personal-list table.dataTable {
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+}
+
+.comp-personal-list table.dataTable thead th {
+  padding: 0.55rem 0.5rem !important;
+  font-size: 0.72rem !important;
+  background: var(--comp-surface) !important;
+  color: var(--comp-text-2) !important;
+  border-bottom: 1px solid var(--comp-hairline) !important;
+}
+
+.comp-personal-list table.dataTable tbody td {
+  padding: 0.55rem 0.5rem !important;
+  border-bottom: 1px solid var(--comp-hairline) !important;
+}
+
+.comp-personal-list table.dataTable tbody tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+.comp-personal-list table.dataTable tbody tr:hover td {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* En anchos intermedios se ocultan CURP y clave presupuestal para evitar
+   una tabla recortada; ambos datos siguen disponibles en la ficha. */
+@media (max-width: 1199.98px) {
+  .comp-personal-list .comp-table thead th:nth-child(4),
+  .comp-personal-list .comp-table tbody td:nth-child(4),
+  .comp-personal-list .comp-table thead th:nth-child(5),
+  .comp-personal-list .comp-table tbody td:nth-child(5) {
+    display: none;
+  }
+}
+
+/* ---------- Fichas de detalle ---------- */
+.comp-nav-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.comp-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.comp-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.comp-info-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--comp-text-2);
+  letter-spacing: 0.025em;
+}
+
+.comp-info-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--comp-text);
+  overflow-wrap: anywhere;
+}
+
+.comp-info-value-lg {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.comp-info-item-span-2 {
+  grid-column: span 2;
+}
+
+.comp-info-item-highlight {
+  grid-column: 1 / -1;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--comp-hairline);
+  margin-bottom: 0.5rem;
+}
+
+.comp-detail-school {
+  max-width: 250px;
+}
+
+.comp-detail-cct {
+  max-width: 180px;
+}
+
+/* Directorio de escuelas regulares dentro del detalle de escuela. */
+.table-responsive-directorio {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 14px;
+}
+
+.table-responsive-directorio .comp-table {
+  min-width: 1400px;
+  margin-bottom: 0;
+}
+
+.table-responsive-directorio .comp-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--comp-surface);
+}
+
+.table-responsive-directorio .directorio-table thead th {
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+
+.table-responsive-directorio .directorio-table tbody td {
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.comp-empty-state-sm {
+  padding: 1.25rem 1rem;
+}
+
+.comp-empty-state-sm i,
+.comp-empty-state-sm svg {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 576px) {
+  .comp-info-item-span-2 {
+    grid-column: auto;
+  }
+}
+
+@media print {
+  .comp-detail .comp-page-header,
+  .comp-detail .comp-actions,
+  .comp-detail .comp-alert,
+  .comp-detail .digital-folder,
+  .comp-detail .btn {
+    display: none !important;
+  }
+
+  .comp-detail .comp-panel {
+    border: none;
+    box-shadow: none;
+  }
+
+  .comp-detail .comp-section {
+    padding: 1rem 0;
+    background: transparent !important;
+  }
+
+  .comp-detail .comp-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* ---------- Reportes ---------- */
+.comp-report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.comp-report-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 195px;
+  background: var(--comp-surface);
+  border: 1px solid var(--comp-hairline);
+  border-radius: var(--comp-r-card);
+  box-shadow: var(--comp-sh-card);
+  overflow: hidden;
+  transition: transform var(--comp-speed) var(--comp-ease),
+              box-shadow var(--comp-speed) var(--comp-ease);
+}
+
+.comp-report-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--comp-sh-panel);
+}
+
+.comp-report-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.comp-report-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 1rem;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--comp-text-2);
+  font-size: 1.2rem;
+  transition: color var(--comp-speed) ease, background var(--comp-speed) ease;
+}
+
+.comp-report-card:hover .comp-report-icon {
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--comp-accent);
+}
+
+.comp-report-title {
+  margin: 0 0 0.5rem;
+  color: var(--comp-text);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.comp-report-desc {
+  margin: 0;
+  color: var(--comp-text-2);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.comp-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.comp-kpi-card {
+  background: var(--comp-surface);
+  border: 1px solid var(--comp-hairline);
+  border-radius: var(--comp-r-card);
+  box-shadow: var(--comp-sh-card);
+  padding: 1.1rem 1.25rem;
+}
+
+.comp-kpi-value {
+  color: var(--comp-text);
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.comp-kpi-label {
+  margin-top: 0.3rem;
+  color: var(--comp-text-2);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.comp-kpi-card.is-danger .comp-kpi-value { color: #c0392b; }
+.comp-kpi-card.is-warning .comp-kpi-value { color: #b26a00; }
+.comp-kpi-card.is-success .comp-kpi-value { color: #1d7a37; }
+.comp-kpi-card.is-info .comp-kpi-value { color: #34495e; }
+
+/* ---------- Dashboard ---------- */
+.comp-kpi-grid a.comp-kpi-card,
+.comp-kpi-grid a.comp-kpi-card:hover {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.comp-dashboard-split {
+  display: flex;
+  align-items: stretch;
+  gap: 1.5rem;
+}
+
+.comp-dashboard-split > .comp-panel,
+.comp-dashboard-split > .comp-dashboard-feed-grid {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.comp-dashboard-feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.comp-dashboard-split > .comp-panel,
+.comp-dashboard-feed-grid > .comp-panel {
+  margin-top: 0;
+}
+
+.comp-feed {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.comp-feed-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-width: 0;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--comp-hairline);
+}
+
+.comp-feed-item:last-child {
+  border-bottom: none;
+}
+
+.comp-feed-item.is-stacked {
+  align-items: flex-start;
+}
+
+.comp-feed a.comp-feed-item {
+  margin: 0 -0.5rem;
+  padding: 0.75rem 0.5rem;
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--comp-speed) ease;
+}
+
+.comp-feed a.comp-feed-item:hover {
+  background: var(--comp-hover);
+  color: inherit;
+  text-decoration: none;
+}
+
+.comp-feed a.comp-feed-item:focus-visible {
+  outline: 2px solid var(--comp-accent);
+  outline-offset: 2px;
+}
+
+.comp-feed-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--comp-text-2);
+}
+
+.comp-feed-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.comp-feed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.15rem;
+}
+
+.comp-feed-title {
+  color: var(--comp-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.comp-feed-meta {
+  margin-top: 0.15rem;
+  color: var(--comp-text-2);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.comp-feed-date {
+  margin-top: 0.15rem;
+  color: var(--comp-text-3);
+  font-size: 0.7rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.comp-feed-text {
+  margin: 0;
+  color: var(--comp-text-2);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.comp-feed-link {
+  color: var(--comp-accent-link);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.comp-feed-link:hover {
+  color: var(--comp-accent-link);
+  text-decoration: underline;
+}
+
+/* Calendario escolar (carrusel del dashboard) */
+.comp-calendar .calendar-carousel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--comp-hairline);
+  border-radius: 14px;
+  background: var(--comp-bg);
+}
+
+.comp-calendar .calendar-carousel-track {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.comp-calendar .calendar-slides {
+  display: flex;
+  transition: transform 0.4s var(--comp-ease);
+}
+
+.comp-calendar .calendar-slide {
+  position: relative;
+  flex: 0 0 100%;
+  min-width: 100%;
+  cursor: pointer;
+}
+
+.comp-calendar .calendar-slide img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 360px;
+  object-fit: contain;
+  background: var(--comp-bg);
+  transition: filter 0.2s ease;
+}
+
+.comp-calendar .calendar-slide:hover img {
+  filter: brightness(0.97);
+}
+
+.comp-calendar .calendar-slide::after {
+  content: "\f065";
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(29, 29, 31, 0.85);
+  color: #fff;
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.comp-calendar .calendar-slide:hover::after {
+  opacity: 1;
+}
+
+.comp-calendar .calendar-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--comp-hairline);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--comp-text);
+  font-size: 0.9rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease,
+    transform 0.1s ease;
+}
+
+.comp-calendar .calendar-nav:hover {
+  background: var(--comp-surface);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.comp-calendar .calendar-nav:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+.comp-calendar .calendar-nav.prev { left: 0.5rem; }
+.comp-calendar .calendar-nav.next { right: 0.5rem; }
+
+.comp-calendar .calendar-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+.comp-calendar .calendar-dot.active {
+  width: 22px;
+  border-radius: 999px;
+  background: var(--comp-accent);
+}
+
+.comp-calendar .calendar-nav:focus-visible,
+.comp-calendar .calendar-dot:focus-visible {
+  outline: 2px solid var(--comp-accent);
+  outline-offset: 2px;
+}
+
+.comp-calendar .calendar-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.comp-calendar .calendar-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.25rem;
+}
+
+.comp-calendar .calendar-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--comp-text-2);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.comp-calendar .calendar-summary-item i {
+  font-size: 0.85rem;
+}
+
+.comp-calendar .calendar-summary-item strong {
+  color: var(--comp-text);
+  font-weight: 600;
+}
+
+.comp-calendar .calendar-summary-item .text-success { color: #1d7a37 !important; }
+.comp-calendar .calendar-summary-item .text-danger { color: #c0392b !important; }
+.comp-calendar .calendar-summary-item .text-warning { color: #b26a00 !important; }
+
+@media (max-width: 1199.98px) {
+  .comp-dashboard-split {
+    flex-direction: column;
+  }
+
+  .comp-dashboard-split > .comp-panel,
+  .comp-dashboard-split > .comp-dashboard-feed-grid {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .comp-dashboard-feed-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .comp-calendar .calendar-slide img {
+    max-height: 280px;
+  }
+
+  .comp-calendar .calendar-nav {
+    width: 34px;
+    height: 34px;
+    font-size: 0.8rem;
+  }
+
+  .comp-calendar .calendar-summary {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+.comp-code {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--comp-text);
+  font-family: var(--comp-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.comp-note {
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: var(--comp-r-card);
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--comp-text-2);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.comp-note i {
+  color: var(--comp-text-3);
+  margin-right: 0.4rem;
+}
+
+.comp-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.comp-segmented .btn {
+  min-height: 34px;
+  padding: 0.35rem 0.9rem;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--comp-text-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.comp-segmented .btn.active {
+  background: var(--comp-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  color: var(--comp-text);
+}
+
+.comp-report-filters {
+  margin-bottom: 1.5rem;
+}
+
+.comp-report-footer {
+  position: sticky;
+  bottom: 1.5rem;
+  z-index: 100;
+  margin-top: 1.5rem;
+}
+
+.comp-report-footer .comp-panel-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+@media (max-width: 576px) {
+  .comp-report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .comp-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .comp-report-footer {
+    position: static;
+  }
+}
+
+/* ---------- Ajustes ---------- */
+.comp-hub-section + .comp-hub-section {
+  margin-top: 2rem;
+}
+
+.comp-kpi-card.is-clickable {
+  cursor: pointer;
+  transition: transform var(--comp-speed) var(--comp-ease),
+              box-shadow var(--comp-speed) var(--comp-ease);
+}
+
+.comp-kpi-card.is-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--comp-sh-panel);
+}
+
+.comp-kpi-card.filtrando {
+  outline: 2px solid var(--comp-accent);
+  outline-offset: 2px;
+}
+
+.comp-kpi-hint {
+  margin-top: 0.3rem;
+  color: var(--comp-text-3);
+  font-size: 0.66rem;
+  font-weight: 500;
+}
+
+/* Tarjetas de roles */
+.comp-role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.comp-role-grid > .comp-panel {
+  grid-column: 1 / -1;
+}
+
+.comp-role-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--comp-surface);
+  border: 1px solid var(--comp-hairline);
+  border-radius: var(--comp-r-card);
+  box-shadow: var(--comp-sh-card);
+}
+
+.comp-role-top {
+  padding: 1.25rem 1.35rem 0.7rem;
+}
+
+.comp-role-title {
+  margin: 0;
+  color: var(--comp-text);
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.comp-role-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+}
+
+.comp-role-body {
+  flex: 1;
+  padding: 0 1.35rem 1rem;
+}
+
+.comp-role-empty {
+  margin: 0;
+  color: var(--comp-text-2);
+  font-size: 0.82rem;
+}
+
+.comp-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.comp-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--comp-text-2);
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.comp-chip-accent {
+  background: rgba(0, 113, 227, 0.08);
+  color: var(--comp-accent-link);
+}
+
+.comp-role-details {
+  margin-top: 0.8rem;
+}
+
+.comp-role-details summary {
+  color: var(--comp-accent-link);
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 600;
+  list-style-position: inside;
+}
+
+.comp-role-details .table-responsive {
+  margin-top: 0.5rem;
+  border: 1px solid var(--comp-hairline);
+  border-radius: 10px;
+}
+
+.comp-role-details .comp-table {
+  margin: 0;
+}
+
+.comp-role-members {
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--comp-hairline);
+}
+
+.comp-role-members-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--comp-text-3);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.comp-role-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.9rem 1.35rem 1.1rem;
+  border-top: 1px solid var(--comp-hairline);
+}
+
+.comp-role-actions .comp-btn {
+  flex: 1 1 calc(50% - 0.25rem);
+}
+
+.comp-role-delete {
+  flex-basis: 100%;
+  padding: 0.15rem;
+  color: #c0392b;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.comp-role-delete:hover {
+  color: #a93226;
+  text-decoration: underline;
+}
+
+/* Barra de herramientas y matriz de permisos */
+.comp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.comp-toolbar h4 {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--comp-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.comp-toolbar-actions {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.comp-matrix-search {
+  width: min(240px, 100%);
+  min-height: 40px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--comp-r-input);
+  padding: 0.55rem 1rem;
+  background: var(--comp-surface);
+  font-size: 0.9rem;
+}
+
+.comp-matrix-search:focus {
+  border-color: var(--comp-accent);
+  box-shadow: var(--comp-sh-input);
+  outline: none;
+}
+
+.comp-matrix-wrap {
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--comp-hairline);
+  border-radius: 14px;
+}
+
+.comp-matrix-wrap .comp-table {
+  margin: 0;
+}
+
+.comp-permissions-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--comp-surface);
+}
+
+.comp-permissions-table .comp-matrix-section td {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+
+.comp-permissions-table .comp-matrix-toggle {
+  color: var(--comp-accent-link) !important;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.comp-permissions-table .form-check-input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--comp-accent);
+}
+
+.comp-matrix-empty {
+  margin: 0;
+  padding: 2rem 1rem;
+  color: var(--comp-text-2);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Transferencia de miembros */
+.comp-transfer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.comp-transfer-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.comp-transfer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--comp-hairline);
+}
+
+.comp-transfer-head h4 {
+  margin: 0;
+  color: var(--comp-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.comp-transfer-search {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--comp-hairline);
+}
+
+.comp-transfer-search .comp-form-control {
+  min-height: 40px;
+}
+
+.comp-transfer-list {
+  height: 430px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.comp-user-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.comp-user-item:hover {
+  background: var(--comp-hover);
+}
+
+.comp-user-item.selected {
+  background: rgba(0, 113, 227, 0.08);
+}
+
+.comp-user-item .comp-avatar {
+  width: 34px;
+  height: 34px;
+  font-size: 0.8rem;
+}
+
+.comp-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.comp-user-name {
+  margin: 0;
+  color: var(--comp-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comp-user-full {
+  margin: 0;
+  color: var(--comp-text-2);
+  font-size: 0.74rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comp-transfer-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-top: 1px solid var(--comp-hairline);
+}
+
+.comp-transfer-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.comp-transfer-actions .comp-btn {
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.comp-transfer-empty {
+  padding: 2rem 1rem;
+  color: var(--comp-text-2);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+/* Formularios de Ajustes */
+.comp-form-narrow {
+  width: 100%;
+  max-width: 720px;
+}
+
+.comp-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--comp-hairline);
+}
+
+.comp-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--comp-hairline);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.comp-switch-row label {
+  margin: 0;
+  color: var(--comp-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.comp-switch-row small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--comp-text-2);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.comp-file-drop {
+  padding: 1.25rem;
+  border: 1px dashed rgba(0, 0, 0, 0.14);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.015);
+  text-align: center;
+}
+
+.comp-file-drop > i {
+  margin-bottom: 0.5rem;
+  color: var(--comp-text-3);
+  font-size: 1.6rem;
+}
+
+.comp-file-drop p {
+  margin: 0 0 0.5rem;
+  color: var(--comp-text-2);
+  font-size: 0.82rem;
+}
+
+.comp-form input[type="color"] {
+  width: 100%;
+  height: 44px;
+  padding: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--comp-r-input);
+  background: var(--comp-surface);
+}
+
+/* Listado de temas */
+.comp-color-pair {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.comp-color-dot {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 9px;
+}
+
+.comp-color-pill {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+}
+
+.comp-theme-name {
+  color: var(--comp-text);
+  font-weight: 600;
+}
+
+.comp-date-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  color: var(--comp-text-2);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.comp-date-stack .comp-date-end {
+  padding-left: 1rem;
+}
+
+.comp-actions-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+@media (max-width: 991.98px) {
+  .comp-transfer-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .comp-transfer-actions {
+    flex-direction: row;
+  }
+
+  .comp-transfer-actions .comp-btn i {
+    transform: rotate(90deg);
+
+/* ============================================================
+   Campos de fecha estandarizados en todo el sistema
+   Se aplican a todos los inputs[type="date"] para que se vean
+   uniformes tanto en captura como en visualización.
+   ============================================================ */
+.comp-date-field,
+input[type="date"].form-control,
+input[type="date"].comp-form-control {
+  max-width: 220px;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: var(--comp-r-input);
+  border: 1px solid var(--comp-input-border-readonly);
+  background-color: var(--comp-surface);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: border-color var(--comp-speed) ease, box-shadow var(--comp-speed) ease;
+}
+
+/* Campos de fecha editables: borde del tema */
+input[type="date"].form-control:not([readonly]),
+.comp-date-field:not([readonly]) input[type="date"] {
+  border: 1px solid var(--comp-accent);
+}
+
+/* En foco solo campos editables */
+input[type="date"].form-control:not([readonly]):focus,
+.comp-date-field:not([readonly]) input[type="date"]:focus {
+  background-color: var(--comp-surface);
+  border-color: var(--comp-accent);
+  box-shadow: var(--comp-input-focus-shadow);
+  outline: none;
+}
+
+/* Fecha de solo lectura (muestra): gris tenue, sin foco */
+input[type="date"].form-control[readonly],
+.comp-date-field[readonly] input[type="date"] {
+  border: 1px solid var(--comp-input-border-readonly);
+  background-color: rgba(245, 245, 247, 0.6);
+  color: var(--comp-text-2);
+  cursor: not-allowed;
+}
+
+/* Asegura que el icono del calendario no se desborde */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.4);
+  cursor: pointer;
+}
+
+input[type="date"].form-control:not([readonly])::-webkit-calendar-picker-indicator {
+  filter: invert(0.2);
+  cursor: pointer;
+}
+
+/* Contenedor de fecha: asegura que no crezca más de lo necesario */
+.comp-date-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 220px;
+}
+
+/* En pantallas pequeñas, las fechas pueden ocupar todo el ancho disponible */
+@media (max-width: 576px) {
+  .comp-date-field,
+  input[type="date"].form-control {
+    max-width: 100%;
+  }
+}
+
+  }
+
+  .comp-transfer-list {
+    height: 300px;
+  }
+}
+
+@media (max-width: 576px) {
+  .comp-role-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .comp-role-actions .comp-btn {
+    flex-basis: 100%;
+  }
+
+  .comp-form-actions .comp-btn {
+    width: 100%;
+  }
+
+  .comp-toolbar-actions {
+    width: 100%;
+  }
+
+  .comp-matrix-search {
+    width: 100%;
+  }
+}
+
+/* ---------- Subpaneles de formulario ---------- */
+.comp-subpanel {
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--comp-hairline);
+  border-radius: var(--comp-r-card);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.comp-subpanel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--comp-hairline);
+  color: var(--comp-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.comp-subpanel-title i {
+  color: var(--comp-accent);
+  font-size: 0.8rem;
+}
+
+/* ---------- Listado de usuarios (HTML generado por AJAX) ---------- */
+.comp-user-table tbody td {
+  text-transform: none;
+}
+
+.comp-user-table tbody td:nth-child(1),
+.comp-user-table tbody td:nth-child(7) {
+  white-space: nowrap;
+}
+
+.comp-user-table .badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.32rem 0.7rem;
+  border-radius: var(--comp-r-pill);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.comp-user-table .badge.bg-success {
+  background: rgba(29, 122, 55, 0.12) !important;
+  color: #1d7a37 !important;
+}
+
+.comp-user-table .badge.bg-danger {
+  background: rgba(192, 57, 43, 0.12) !important;
+  color: #c0392b !important;
+}
+
+.comp-user-table .badge.bg-warning {
+  background: rgba(178, 106, 0, 0.14) !important;
+  color: #8a5200 !important;
+}
+
+/* En escritorio la tabla usa columnas fijas y recorta los textos largos con
+   tooltip (title), de modo que las acciones siempre queden visibles. */
+@media (min-width: 992px) {
+  .dataTables_wrapper table.dataTable.comp-user-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  .dataTables_wrapper table.dataTable.comp-user-table > thead > tr > th {
+    padding: 11px 9px !important;
+    font-size: 10.5px !important;
+  }
+
+  .dataTables_wrapper table.dataTable.comp-user-table > tbody > tr > td {
+    padding: 10px 9px !important;
+    font-size: 13.5px !important;
+  }
+
+  .comp-user-table > thead > tr > th,
+  .comp-user-table > tbody > tr > td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .comp-user-table th:nth-child(1),
+  .comp-user-table td:nth-child(1) {
+    width: 13.5% !important;
+  }
+
+  .comp-user-table th:nth-child(2),
+  .comp-user-table td:nth-child(2) {
+    width: 13.5% !important;
+  }
+
+  .comp-user-table th:nth-child(3),
+  .comp-user-table td:nth-child(3) {
+    width: 12% !important;
+  }
+
+  .comp-user-table th:nth-child(4),
+  .comp-user-table td:nth-child(4) {
+    width: 13% !important;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .comp-user-table th:nth-child(5),
+  .comp-user-table td:nth-child(5) {
+    width: 9% !important;
+  }
+
+  .comp-user-table th:nth-child(6),
+  .comp-user-table td:nth-child(6) {
+    width: 10.5% !important;
+  }
+
+  .comp-user-table th:nth-child(7),
+  .comp-user-table td:nth-child(7) {
+    width: 11% !important;
+  }
+
+  .comp-user-table th:nth-child(8),
+  .comp-user-table td:nth-child(8) {
+    width: 17.5% !important;
+  }
+
+  .comp-user-table .badge {
+    padding: 0.28rem 0.55rem;
+    font-size: 0.68rem;
+  }
+}
+
+/* En pantallas medianas se ocultan email y último acceso; en móvil también
+   los permisos, para que la tabla conserve lo esencial sin desbordar. */
+@media (max-width: 991.98px) {
+  .comp-user-table thead th:nth-child(3),
+  .comp-user-table tbody td:nth-child(3),
+  .comp-user-table thead th:nth-child(7),
+  .comp-user-table tbody td:nth-child(7) {
+    display: none;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .comp-user-table thead th:nth-child(6),
+  .comp-user-table tbody td:nth-child(6) {
+    display: none;
+  }
+}
+/* ---------- Kardex: linea de tiempo ---------- */
+.comp-timeline {
+  position: relative;
+  padding: 0.25rem 0;
+}
+
+.comp-timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 0.9rem;
+  padding-bottom: 1rem;
+}
+
+.comp-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 36px;
+  bottom: 0;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--comp-hairline);
+}
+
+.comp-timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.comp-timeline-item:last-child::before {
+  display: none;
+}
+
+.comp-timeline-marker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--comp-hairline);
+  background: var(--comp-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  color: var(--comp-text-2);
+  font-size: 0.82rem;
+}
+
+.comp-timeline-marker-accent { color: var(--comp-accent); }
+.comp-timeline-marker-warning { color: #b26a00; }
+.comp-timeline-marker-info { color: var(--comp-accent-link); }
+.comp-timeline-marker-success { color: #1d7a37; }
+
+.comp-timeline-card {
+  min-width: 0;
+  padding: 1rem 1.15rem;
+  border-radius: 14px;
+  border: 1px solid var(--comp-hairline);
+  background: var(--comp-bg);
+}
+
+.comp-timeline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  margin-bottom: 0.4rem;
+  color: var(--comp-text-3);
+  font-size: 0.72rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.comp-timeline-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.comp-timeline-title {
+  margin: 0 0 0.3rem;
+  color: var(--comp-text);
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.comp-timeline-text {
+  margin: 0;
+  color: var(--comp-text-body);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.comp-timeline-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--comp-hairline);
+}
+
+.comp-timeline-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.comp-timeline-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  color: var(--comp-text-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 575.98px) {
+  .comp-timeline-item {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .comp-timeline-item::before {
+    left: 15px;
+    top: 32px;
+  }
+
+  .comp-timeline-marker {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+  }
+
+  .comp-timeline-card {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .comp-timeline-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

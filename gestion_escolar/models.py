@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 from .validators import validate_cct_format
 import re
+from decimal import Decimal
 from colorfield.fields import ColorField
 from unidecode import unidecode
 
@@ -79,7 +81,7 @@ class Escuela(models.Model):
         validators=[validate_cct_format]  
     )
     nombre_ct = models.CharField(max_length=200, verbose_name="Nombre del Centro de Trabajo")
-    zona_esc = models.ForeignKey(Zona, on_delete=models.CASCADE, verbose_name="Zona Escolar")
+    zona_esc = models.ForeignKey(Zona, on_delete=models.PROTECT, verbose_name="Zona Escolar")
     turno = models.CharField(max_length=20, choices=TURNOS, verbose_name="Turno")
     domicilio = models.TextField(verbose_name="Domicilio")
     telefono_ct = models.CharField(
@@ -159,7 +161,7 @@ class EscuelaRegular(models.Model):
 
     cct = models.ForeignKey(
         'Escuela',
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='escuelas_regulares',
         verbose_name="CCT (Centro de Trabajo)",
         help_text="Centro de Trabajo FUA que atiende estas escuelas regulares"
@@ -301,7 +303,7 @@ class Maestro(models.Model):
     sexo = models.CharField(max_length=1, choices=SEXO_OPCIONES, verbose_name="Sexo", blank=True, null=True)
     est_civil = models.CharField(max_length=20, choices=ESTADO_CIVIL_OPCIONES, verbose_name="Estado Civil", blank=True, null=True)
     fecha_nacimiento = models.DateField(verbose_name="Fecha de Nacimiento", null=True, blank=True)
-    id_escuela = models.ForeignKey(Escuela, on_delete=models.CASCADE, verbose_name="Escuela", blank=True, null=True)
+    id_escuela = models.ForeignKey(Escuela, on_delete=models.PROTECT, verbose_name="Escuela", blank=True, null=True)
     techo_f = models.CharField(max_length=50, verbose_name="Techo Financiero", blank=True, null=True)
     dep = models.CharField(max_length=10, verbose_name="Dependencia", blank=True, null=True)
     unid = models.CharField(max_length=10, verbose_name="Unidad", blank=True, null=True)
@@ -480,7 +482,11 @@ class MotivoTramite(models.Model):
 class PlantillaTramite(models.Model):
     nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre de Plantilla")
     ruta_archivo = models.CharField(max_length=255, verbose_name="Ruta del Archivo de Plantilla")
-    
+    descripcion = models.CharField(
+        max_length=255, blank=True, verbose_name="Descripción",
+        help_text="Texto breve para identificar la plantilla en el listado."
+    )
+
     TIPO_DOCUMENTO_CHOICES = [
         ('OFICIO', 'Oficio'),
         ('TRAMITE', 'Trámite'),
@@ -493,6 +499,29 @@ class PlantillaTramite(models.Model):
         help_text="Indica si la plantilla es para un Oficio o un Trámite general."
     )
 
+    # --- Diseñador de plantillas ---
+    es_sistema = models.BooleanField(
+        default=False,
+        verbose_name="Plantilla del sistema",
+        help_text="Las plantillas del sistema no se pueden editar ni eliminar; "
+                  "se conservan como base para no alterar los trámites existentes."
+    )
+    activa = models.BooleanField(
+        default=True,
+        verbose_name="Activa",
+        help_text="Si se desactiva deja de aparecer en los formularios de generación."
+    )
+    configuracion = models.JSONField(
+        default=dict, blank=True,
+        verbose_name="Configuración del formulario",
+        help_text="Campos, obligatorios, motivos y campos personalizados de la plantilla."
+    )
+    variables_detectadas = models.JSONField(
+        default=list, blank=True,
+        verbose_name="Variables detectadas en el Word",
+        help_text="Variables {{ ... }} encontradas la última vez que se cargó el archivo."
+    )
+
     class Meta:
         verbose_name = "Plantilla de Trámite"
         verbose_name_plural = "Plantillas de Trámite"
@@ -500,6 +529,11 @@ class PlantillaTramite(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    @property
+    def es_editable(self):
+        """Solo las plantillas creadas desde el diseñador se pueden modificar."""
+        return not self.es_sistema
 
 class Prelacion(models.Model):
     pos_orden = models.IntegerField(verbose_name="Posición de Orden")
@@ -573,7 +607,7 @@ class Vacancia(models.Model):
 
     lote = models.ForeignKey(LoteReporteVacancia, related_name='vacancias', on_delete=models.CASCADE, verbose_name="Lote de Reporte")
     # Campos del formulario original
-    maestro_titular = models.ForeignKey(Maestro, on_delete=models.CASCADE, verbose_name="Maestro Titular")
+    maestro_titular = models.ForeignKey(Maestro, on_delete=models.PROTECT, verbose_name="Maestro Titular")
     maestro_interino = models.ForeignKey(Maestro, on_delete=models.SET_NULL, null=True, blank=True, related_name='vacancias_interino', verbose_name="Maestro Interino")
     apreciacion = models.ForeignKey(TipoApreciacion, on_delete=models.PROTECT, verbose_name="Apreciación")
     tipo_vacante = models.CharField(max_length=100, choices=TIPO_VACANTE_CHOICES, verbose_name="Tipo de Vacante")
@@ -648,7 +682,7 @@ class DocumentoExpediente(models.Model):
         ('OTRO', 'Otro'),
     ]
 
-    maestro = models.ForeignKey(Maestro, on_delete=models.CASCADE, related_name='documentos_expediente', verbose_name="Maestro")
+    maestro = models.ForeignKey(Maestro, on_delete=models.PROTECT, related_name='documentos_expediente', verbose_name="Maestro")
     tipo_documento = models.CharField(max_length=50, choices=TIPO_DOCUMENTO_CHOICES, verbose_name="Tipo de Documento")
     archivo = models.FileField(upload_to='expedientes/%Y/%m/%d/', verbose_name="Archivo PDF")
     fecha_subida = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Subida")
@@ -852,7 +886,7 @@ class ModuloDashboard(models.Model):
         )
 
 class KardexMovimiento(models.Model):
-    maestro = models.ForeignKey(Maestro, on_delete=models.CASCADE, verbose_name="Maestro")
+    maestro = models.ForeignKey(Maestro, on_delete=models.PROTECT, verbose_name="Maestro")
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Usuario")
     fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha del Movimiento")
     descripcion = models.TextField(verbose_name="Descripción del Movimiento")
@@ -879,6 +913,14 @@ class Tema(models.Model):
     color_boton = ColorField(default='#0071e3', verbose_name="Color del Botón Primario", help_text="Color de los botones primarios (.apple-btn) para combinar con el menú lateral.")
 
     usar_filtro_oscuro = models.BooleanField(default=True, verbose_name="Usar filtro oscuro en imagen", help_text="Si está activo, se aplicará un filtro oscuro sobre la imagen de fondo para mejorar la legibilidad del texto blanco.")
+
+    # Velo opcional sobre la foto. Antes de estos campos la imagen siempre se
+    # teñía con color_principal usando 'overlay', que le daba un tinte azulado.
+    # Con opacidad 0 la foto se ve limpia y el texto se apoya en la sombra en
+    # capas y el chip translúcido del menú.
+    color_velo = ColorField(default='#000000', verbose_name="Color del Velo sobre la Foto", help_text="Se aplica como una capa semitransparente sobre la imagen, sin mezclarse con ella. No altera los colores de la foto.")
+    opacidad_velo = models.DecimalField(max_digits=3, decimal_places=2, default=Decimal('0.00'), verbose_name="Opacidad del Velo", help_text="De 0.00 (foto limpia, sin velo) a 1.00 (velo totalmente opaco).", validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('1.00'))])
+
     activo = models.BooleanField(default=True, verbose_name="Activo", help_text="Solo un tema puede estar activo a la vez para un rango de fechas.")
 
     class Meta:
@@ -906,7 +948,7 @@ class FUP(models.Model):
     # Relación con maestro
     maestro = models.ForeignKey(
         Maestro,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         verbose_name="Maestro",
         related_name='fups'
     )
@@ -999,7 +1041,7 @@ class Interinato(models.Model):
 
     maestro_interino = models.ForeignKey(
         Maestro,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='interinatos_cubiertos',
         verbose_name="Maestro Interino"
     )

@@ -5,222 +5,157 @@
 {% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block extra_css %}
-<!-- Select2 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-<style>
-    .fw-extrabold { font-weight: 700; letter-spacing: -0.01em; }
-    .fs-xs { font-size: 0.7rem; }
-    .letter-spacing-wider { letter-spacing: 0.05em; }
-    .shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .transition-all { transition: background 0.2s ease; }
-
-    /* Form Control Enhancements */
-    .form-control, .form-select, .select2-container--bootstrap-5 .select2-selection {
-        border-radius: 12px !important;
-        border: 1px solid rgba(0,0,0,0.08) !important;
-        background-color: var(--surface, #fff) !important;
-        padding: 0.75rem 1rem !important;
-    }
-    .form-control:focus, .form-select:focus, .select2-container--bootstrap-5.select2-container--focus .select2-selection {
-        background-color: white !important;
-        border-color: var(--accent, #0071e3) !important;
-        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12) !important;
-        outline: none !important;
-    }
-
-    /* Switches */
-    .form-check-input { width: 2.8em; height: 1.4em; cursor: pointer; }
-
-    .status-card {
-        background: rgba(0,0,0,0.03);
-        border-radius: 1rem;
-        padding: 1.25rem;
-    }
-</style>
+<link href="{% static 'gestion_escolar/css/vendor/select2-bootstrap-5-theme.min.css' %}" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-xl-10 mx-auto">
-            <h4 class="apple-title mb-1" style="font-size: clamp(20px, 2.5vw, 24px);">{{ titulo }}</h4>
-            <p class="text-muted mb-4">{% if editando %}Actualiza los datos y permisos del usuario.{% else %}Nueva cuenta de acceso al sistema.{% endif %}</p>
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show mb-4" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ titulo }}</h1>
+            <p class="comp-subtitle">{% if editando %}Actualiza los datos y permisos del usuario.{% else %}Nueva cuenta de acceso al sistema.{% endif %}</p>
+        </div>
+        <div class="comp-actions">
+            <a href="{% url 'user_list' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="comp-alert {% if message.tags == 'error' %}comp-alert-danger{% elif message.tags == 'success' %}comp-alert-success{% else %}comp-alert-info{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" id="userForm" class="comp-form needs-validation">
+        {% csrf_token %}
+
+        <div class="comp-panel">
+            <div class="comp-panel-body">
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="comp-section-title">
+                            <h4>Identidad y acceso</h4>
+                        </div>
+
+                        <div class="comp-form-group">
+                            {{ form.username|as_crispy_field }}
+                        </div>
+
+                        <div class="comp-form-group">
+                            {{ form.email|as_crispy_field }}
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                {{ form.first_name|as_crispy_field }}
+                            </div>
+                            <div class="col-sm-6">
+                                {{ form.last_name|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        {% if not editando %}
+                        <div class="comp-subpanel my-4">
+                            <div class="comp-subpanel-title">
+                                <i class="fas fa-lock"></i> Credenciales seguras
+                            </div>
+                            <div class="comp-form-group">
+                                {{ form.password1|as_crispy_field }}
+                            </div>
+                            <div class="mb-0">
+                                {{ form.password2|as_crispy_field }}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="comp-form-group mb-0">
+                            {{ form.maestro|as_crispy_field }}
+                            <div class="comp-form-text">Vincular cuenta con una ficha técnica de personal.</div>
+                        </div>
                     </div>
-                {% endfor %}
-            {% endif %}
 
-    <div class="row justify-content-center">
-        <div class="col-xl-10">
-            <!-- Form Card -->
-            <div class="card apple-panel border-0 overflow-hidden">
-                <div class="card-body p-4 p-md-5">
-                    <form method="post" id="userForm" class="needs-validation">
-                        {% csrf_token %}
+                    <div class="col-lg-6">
+                        <div class="comp-section-title">
+                            <h4>Roles y privilegios</h4>
+                        </div>
 
-                        <div class="row g-4">
-                            <!-- Columna Izquierda: Identidad y Acceso -->
-                            <div class="col-lg-6">
-                                <div class="d-flex align-items-center gap-2 mb-3">
-                                    <h5 class="fw-bold mb-0">Identidad y acceso</h5>
-                                </div>
+                        <div class="comp-form-group">
+                            {{ form.groups|as_crispy_field }}
+                            <div class="comp-form-text">Añade al usuario a uno o más grupos para heredar permisos.</div>
+                        </div>
 
-                                <div class="mb-4">
-                                    {{ form.username|as_crispy_field }}
-                                </div>
+                        <div class="comp-subpanel mb-4">
+                            <div class="comp-subpanel-title">Atributos de cuenta</div>
 
-                                <div class="mb-4">
-                                    {{ form.email|as_crispy_field }}
-                                </div>
-
-                                <div class="row g-3 mb-4">
-                                    <div class="col-sm-6">
-                                        {{ form.first_name|as_crispy_field }}
-                                    </div>
-                                    <div class="col-sm-6">
-                                        {{ form.last_name|as_crispy_field }}
-                                    </div>
-                                </div>
-
-                                {% if not editando %}
-                                <div class="bg-light p-4 rounded-4 border shadow-xs mb-4">
-                                    <div class="d-flex align-items-center gap-2 mb-3">
-                                        <i class="fas fa-lock text-primary small"></i>
-                                        <h6 class="fw-bold mb-0 small text-uppercase">Credenciales Seguras</h6>
-                                    </div>
-                                    <div class="mb-3">
-                                        {{ form.password1|as_crispy_field }}
-                                    </div>
-                                    <div class="mb-0">
-                                        {{ form.password2|as_crispy_field }}
-                                    </div>
-                                </div>
-                                {% endif %}
-                                
-                                <div class="mb-4">
-                                    {{ form.maestro|as_crispy_field }}
-                                    <div class="form-text small mt-1 ms-1">Vincular cuenta con una ficha técnica de personal.</div>
+                            <div class="comp-switch-row mb-2">
+                                <label for="{{ form.is_active.id_for_label }}">Cuenta activa</label>
+                                <div class="form-check form-switch m-0">
+                                    {{ form.is_active }}
                                 </div>
                             </div>
 
-                            <!-- Columna Derecha: Roles y Permisos -->
-                            <div class="col-lg-6">
-                                <div class="d-flex align-items-center gap-2 mb-3">
-                                    <h5 class="fw-bold mb-0">Roles y privilegios</h5>
+                            <div class="comp-switch-row mb-2">
+                                <label for="{{ form.is_staff.id_for_label }}">Acceso staff</label>
+                                <div class="form-check form-switch m-0">
+                                    {{ form.is_staff }}
                                 </div>
-
-                                <div class="mb-4">
-                                    {{ form.groups|as_crispy_field }}
-                                    <div class="form-text small mt-1 ms-1 text-muted">Añade al usuario a uno o más grupos para heredar permisos.</div>
-                                </div>
-
-                                <div class="status-card mb-4 border">
-                                    <h6 class="fw-bold mb-3 small text-uppercase letter-spacing-wider" style="color: var(--text-2, #6e6e73);">Atributos de cuenta</h6>
-
-                                    <div class="form-check form-switch p-2 rounded-3 mb-2 d-flex justify-content-between align-items-center">
-                                        <label class="form-check-label fw-bold mb-0" for="{{ form.is_active.id_for_label }}">
-                                            Cuenta activa
-                                        </label>
-                                        {{ form.is_active }}
-                                    </div>
-
-                                    <div class="form-check form-switch p-2 rounded-3 mb-2 d-flex justify-content-between align-items-center">
-                                        <label class="form-check-label fw-bold mb-0" for="{{ form.is_staff.id_for_label }}">
-                                            Acceso staff
-                                        </label>
-                                        {{ form.is_staff }}
-                                    </div>
-
-                                    <div class="form-check form-switch p-2 rounded-3 d-flex justify-content-between align-items-center">
-                                        <label class="form-check-label fw-bold mb-0" for="{{ form.is_superuser.id_for_label }}">
-                                            Superusuario
-                                        </label>
-                                        {{ form.is_superuser }}
-                                    </div>
-                                </div>
-
-                                {% if editando %}
-                                <div class="card border-0 rounded-4">
-                                    <div class="card-body p-4 d-flex gap-3 align-items-center">
-                                        <div>
-                                            <h6 class="fw-bold mb-1 fs-xs text-uppercase">Cambio de contraseña</h6>
-                                            <p class="small mb-0" style="color: var(--text-2, #6e6e73);">Para actualizar la clave, usa la acción de <a href="{% url 'user_password_change' object.pk %}" class="fw-bold">llave</a> en el listado.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
                             </div>
+
+                            {% if form.is_superuser %}
+                            <div class="comp-switch-row">
+                                <label for="{{ form.is_superuser.id_for_label }}">Superusuario</label>
+                                <div class="form-check form-switch m-0">
+                                    {{ form.is_superuser }}
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
 
-                        <!-- Action Buttons -->
-                        <div class="d-flex flex-column flex-md-row gap-3 pt-4 mt-4" style="border-top: 1px solid var(--hairline, rgba(0,0,0,0.07));">
-                            <button type="submit" class="apple-btn justify-content-center">
-                                <i class="fas fa-save me-2"></i>
-                                <span>{{ boton_texto }}</span>
-                            </button>
-                            <a href="{% url 'user_list' %}" class="apple-btn-ghost justify-content-center">
-                                <i class="fas fa-times me-2"></i>
-                                <span>Cancelar</span>
-                            </a>
+                        {% if editando %}
+                        <div class="comp-note mb-0">
+                            <i class="fas fa-key"></i>
+                            Para actualizar la clave, usa la acción de
+                            <a href="{% url 'user_password_change' object.pk %}" class="fw-bold">llave</a>
+                            en el listado.
                         </div>
-                    </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="comp-form-actions">
+                    <button type="submit" class="comp-btn comp-btn-primary">
+                        <i class="fas fa-save"></i>
+                        <span>{{ boton_texto }}</span>
+                    </button>
+                    <a href="{% url 'user_list' %}" class="comp-btn comp-btn-ghost">
+                        <i class="fas fa-times"></i>
+                        <span>Cancelar</span>
+                    </a>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 </div>
-
-<style>
-    .bg-gradient-info-light {
-        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-    }
-    .hover-bg-light:hover {
-        background-color: #f1f5f9;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-    }
-    /* Select2 Bootstrap 5 Integration Refinement */
-    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
-        background: rgba(0,0,0,0.06);
-        color: var(--text, #1d1d1f);
-        border: none;
-        border-radius: 2rem;
-        padding: 2px 8px;
-    }
-    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove {
-        color: var(--text-2, #6e6e73);
-        border: none;
-        margin-right: 5px;
-    }
-    .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice__remove:hover {
-        color: var(--text, #1d1d1f);
-        background: transparent;
-    }
-</style>
 {% endblock %}
 
 {% block extra_js %}
 <!-- Select2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{% static 'gestion_escolar/js/vendor/select2.min.js' %}"></script>
 
 <script>
     $(document).ready(function () {
-        // Inicializar Select2 con el tema de Bootstrap 5
         $('.select2, select[multiple]').select2({
             theme: 'bootstrap-5',
             placeholder: 'Seleccionar...',
             allowClear: true,
-            selectionCssClass: 'shadow-xs',
-            dropdownCssClass: 'shadow-sm border-0 rounded-3'
+            width: '100%'
         });
-        
-        // Efecto visual al pasar por los switches
-        $('.form-check').parent().addClass('transition-all');
     });
 </script>
 {% endblock %}

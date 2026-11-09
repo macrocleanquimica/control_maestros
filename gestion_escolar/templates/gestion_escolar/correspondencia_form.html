@@ -5,180 +5,95 @@
 
 {% block content %}
 <style>
-    .compose-container {
+    .compose-wrap {
+        width: 100%;
         max-width: 800px;
         margin: 0 auto;
-        animation: fadeIn 0.4s ease-out;
     }
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .form-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-    }
-
-    .form-header {
-        padding: 2rem 2.5rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .header-icon {
-        display: none;
-    }
-
-    .form-header h2 {
-        font-size: 1.4rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: var(--text, #1d1d1f);
-        margin: 0;
-    }
-
-    .form-body {
-        padding: 2rem clamp(17px, 3vw, 2.5rem);
-    }
-
-    .form-label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        letter-spacing: 0.025em;
-        margin-bottom: 0.5rem;
-    }
-
-    .form-control, .form-select {
-        border-radius: 12px;
-        border: 1px solid rgba(0,0,0,0.08);
-        padding: 0.75rem 1.25rem;
-        background-color: var(--surface, #fff);
-    }
-
-    .form-control:focus, .form-select:focus {
-        background-color: white;
-        border-color: var(--accent, #0071e3);
-        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
-        outline: none;
-    }
-
-    /* Select2 */
-    .select2-container--default .select2-selection--single {
-        height: 48px !important;
-        border-radius: 12px !important;
-        border: 1px solid rgba(0,0,0,0.08) !important;
-        background-color: var(--surface, #fff) !important;
-        display: flex;
-        align-items: center;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 48px !important;
-    }
-
-    .btn-send {
-        background: var(--accent, #0071e3);
-        color: white;
-        border: none;
-        border-radius: var(--r-pill, 999px);
-        padding: 0 2rem;
-        min-height: 48px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .btn-send:hover {
-        opacity: 0.92;
-        color: white;
-    }
-
-    .btn-cancel {
-        background: transparent;
-        color: var(--text-2, #6e6e73);
-        border: none;
-        border-radius: var(--r-pill, 999px);
-        padding: 0 1.5rem;
-        min-height: 48px;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-    }
-
-    .btn-cancel:hover {
-        background: rgba(0,0,0,0.05);
-        color: var(--text, #1d1d1f);
+    .compose-body {
+        font-size: 0.95rem;
     }
 </style>
 
-<div class="compose-container py-4">
-    <div class="form-card">
-        <div class="form-header">
-            <div>
-                <h2>{{ titulo }}</h2>
-                <p class="apple-subtitle mb-0">Mensaje directo a otro usuario.</p>
+<div class="comp-page-container">
+    <div class="compose-wrap">
+        <div class="comp-page-header">
+            <div class="comp-title-group">
+                <h1 class="comp-title">Redactar mensaje</h1>
+                <p class="comp-subtitle">Mensaje directo a otro usuario del sistema.</p>
+            </div>
+            <div class="comp-actions">
+                <a href="{% url 'correspondencia_inbox' %}" class="comp-btn comp-btn-ghost">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
             </div>
         </div>
 
-        <div class="form-body">
-            <form method="post" class="needs-validation">
-                {% csrf_token %}
-                
-                <div class="mb-4">
-                    <label for="{{ form.destinatario.id_for_label }}" class="form-label">Destinatario</label>
-                    {{ form.destinatario }}
-                    {% if form.destinatario.errors %}
-                        <div class="text-danger smaller mt-1">{{ form.destinatario.errors|striptags }}</div>
-                    {% endif %}
-                </div>
+        {% if form.non_field_errors %}
+            <div class="comp-alert comp-alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <div>{{ form.non_field_errors|join:", " }}</div>
+            </div>
+        {% endif %}
 
-                <div class="mb-4">
-                    <label for="{{ form.asunto.id_for_label }}" class="form-label">Asunto del Mensaje</label>
-                    <input type="text" name="asunto" id="id_asunto" class="form-control w-100" placeholder="¿De qué trata este mensaje?" value="{{ form.asunto.value|default:'' }}" required>
-                    {% if form.asunto.errors %}
-                        <div class="text-danger smaller mt-1">{{ form.asunto.errors|striptags }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-5">
-                    <label for="{{ form.cuerpo.id_for_label }}" class="form-label">Mensaje</label>
-                    <textarea name="cuerpo" id="id_cuerpo" rows="8" class="form-control w-100" placeholder="Escribe tu mensaje aquí..." required>{{ form.cuerpo.value|default:'' }}</textarea>
-                    {% if form.cuerpo.errors %}
-                        <div class="text-danger smaller mt-1">{{ form.cuerpo.errors|striptags }}</div>
-                    {% endif %}
-                </div>
+        <form method="post" class="comp-form compose-body" novalidate>
+            {% csrf_token %}
 
-                <div class="d-flex justify-content-end gap-3 pt-4 border-top">
-                    <a href="{% url 'correspondencia_inbox' %}" class="btn-cancel">
-                        Cancelar
-                    </a>
-                    <button type="submit" class="btn-send">
-                        <i class="fas fa-paper-plane"></i> Enviar Mensaje
-                    </button>
+            <div class="comp-panel">
+                <div class="comp-panel-body">
+                    <div class="comp-form-group">
+                        <label for="{{ form.destinatario.id_for_label }}" class="comp-form-label">Destinatario</label>
+                        {{ form.destinatario }}
+                        {% if form.destinatario.errors %}
+                            <div class="comp-form-error">{% for error in form.destinatario.errors %}{{ error }}{% endfor %}</div>
+                        {% endif %}
+                        <div class="comp-form-text">Solo se muestran usuarios distintos a tu cuenta.</div>
+                    </div>
+
+                    <div class="comp-form-group">
+                        <label for="id_asunto" class="comp-form-label">Asunto del mensaje</label>
+                        <input type="text" name="asunto" id="id_asunto" class="form-control" placeholder="¿De qué trata este mensaje?" value="{{ form.asunto.value|default:'' }}" required>
+                        {% if form.asunto.errors %}
+                            <div class="comp-form-error">{% for error in form.asunto.errors %}{{ error }}{% endfor %}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="comp-form-group mb-0">
+                        <label for="id_cuerpo" class="comp-form-label">Mensaje</label>
+                        <textarea name="cuerpo" id="id_cuerpo" rows="8" class="form-control" placeholder="Escribe tu mensaje aquí..." required>{{ form.cuerpo.value|default:'' }}</textarea>
+                        {% if form.cuerpo.errors %}
+                            <div class="comp-form-error">{% for error in form.cuerpo.errors %}{{ error }}{% endfor %}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="comp-form-actions">
+                        <button type="submit" class="comp-btn comp-btn-primary">
+                            <i class="fas fa-paper-plane"></i> Enviar mensaje
+                        </button>
+                        <a href="{% url 'correspondencia_inbox' %}" class="comp-btn comp-btn-ghost">
+                            Cancelar
+                        </a>
+                    </div>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    $('#id_destinatario').select2({
-        placeholder: "Busca y selecciona un destinatario...",
-        allowClear: true,
-        width: '100%'
-    });
+    $(document).ready(function () {
+        $('.comp-form select').addClass('form-select');
+        $('.comp-form input[type="text"], .comp-form textarea').addClass('form-control');
 
-    // Añadir clases a los inputs si no las tienen
-    $('#id_asunto').addClass('form-control');
-    $('#id_cuerpo').addClass('form-control');
-});
+        $('#id_destinatario').select2({
+            placeholder: "Busca y selecciona un destinatario...",
+            allowClear: true,
+            width: '100%',
+            language: 'es'
+        });
+    });
 </script>
 {% endblock %}

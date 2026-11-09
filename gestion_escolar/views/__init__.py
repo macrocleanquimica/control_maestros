@@ -16,3 +16,4 @@ from .mensajeria import *
 from .fup import *
 from .usuarios import *
 from .mapa_zonas import *
+from .plantillas import *

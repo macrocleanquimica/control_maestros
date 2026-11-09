@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.urls import reverse
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponse
@@ -11,10 +11,12 @@ from openpyxl.styles import Font, Alignment
 from datetime import date
 
 @login_required
+@permission_required('gestion_escolar.acceder_fup', raise_exception=True)
 def lista_fup(request):
     return render(request, 'gestion_escolar/lista_fup.html')
 
 @login_required
+@permission_required('gestion_escolar.acceder_fup', raise_exception=True)
 def fup_datatable_ajax(request):
     draw = int(request.GET.get('draw', 0))
     start = int(request.GET.get('start', 0))
@@ -61,17 +63,17 @@ def fup_datatable_ajax(request):
         
         pdf_button = ''
         if fup.archivo:
-            pdf_button = f'<a href="{fup.archivo.url}" class="btn btn-light border btn-action-custom text-danger" target="_blank" title="Ver PDF"><i class="fas fa-file-pdf"></i></a>'
+            pdf_button = f'<a href="{fup.archivo.url}" class="comp-action comp-action-view" target="_blank" rel="noopener" title="Ver PDF" aria-label="Ver PDF del FUP {fup.folio}"><i class="fas fa-file-pdf"></i></a>'
 
-        actions = '<div class="btn-group" role="group">'
-        actions += f'<a href="{reverse("detalle_fup", args=[fup.pk])}" class="btn btn-light border btn-action-custom text-info" title="Detalle"><i class="fas fa-eye"></i></a>'
-        
+        actions = '<div class="comp-action-group">'
+        actions += f'<a href="{reverse("detalle_fup", args=[fup.pk])}" class="comp-action comp-action-view" title="Ver detalle" aria-label="Ver detalle del FUP {fup.folio}"><i class="fas fa-eye"></i></a>'
+
         if request.user.has_perm('gestion_escolar.change_fup'):
-            actions += f'<a href="{reverse("editar_fup", args=[fup.pk])}" class="btn btn-light border btn-action-custom text-primary" title="Editar"><i class="fas fa-edit"></i></a>'
+            actions += f'<a href="{reverse("editar_fup", args=[fup.pk])}" class="comp-action comp-action-edit" title="Editar" aria-label="Editar FUP {fup.folio}"><i class="fas fa-edit"></i></a>'
 
         if request.user.has_perm('gestion_escolar.delete_fup'):
-            actions += f'<a href="{reverse("eliminar_fup", args=[fup.pk])}" class="btn btn-light border btn-action-custom text-danger" title="Eliminar"><i class="fas fa-trash"></i></a>'
-        
+            actions += f'<a href="{reverse("eliminar_fup", args=[fup.pk])}" class="comp-action comp-action-delete" title="Eliminar" aria-label="Eliminar FUP {fup.folio}"><i class="fas fa-trash"></i></a>'
+
         actions += '</div>'
         
         data.append([
@@ -95,6 +97,7 @@ def fup_datatable_ajax(request):
     return JsonResponse(response)
 
 @login_required
+@permission_required('gestion_escolar.add_fup', raise_exception=True)
 def crear_fup(request):
     if request.method == 'POST':
         form = FUPForm(request.POST, request.FILES)
@@ -109,6 +112,7 @@ def crear_fup(request):
     return render(request, 'gestion_escolar/form_fup.html', {'form': form, 'titulo': 'Captura de FUP'})
 
 @login_required
+@permission_required('gestion_escolar.change_fup', raise_exception=True)
 def editar_fup(request, pk):
     fup = get_object_or_404(FUP, pk=pk)
     if request.method == 'POST':
@@ -124,6 +128,7 @@ def editar_fup(request, pk):
     return render(request, 'gestion_escolar/form_fup.html', {'form': form, 'titulo': 'Editar FUP'})
 
 @login_required
+@permission_required('gestion_escolar.delete_fup', raise_exception=True)
 def eliminar_fup(request, pk):
     fup = get_object_or_404(FUP, pk=pk)
     if request.method == 'POST':
@@ -133,6 +138,7 @@ def eliminar_fup(request, pk):
     return render(request, 'gestion_escolar/eliminar_fup.html', {'fup': fup})
 
 @login_required
+@permission_required('gestion_escolar.acceder_fup', raise_exception=True)
 def validar_folio_fup(request):
     folio = request.GET.get('folio', '').strip()
     fup_id = request.GET.get('fup_id')
@@ -151,6 +157,7 @@ def validar_folio_fup(request):
     return JsonResponse({'valido': True})
 
 @login_required
+@permission_required('gestion_escolar.acceder_fup', raise_exception=True)
 def detalle_fup(request, pk):
     fup = get_object_or_404(FUP, pk=pk)
     
@@ -168,6 +175,7 @@ def detalle_fup(request, pk):
     })
 
 @login_required
+@permission_required('gestion_escolar.acceder_fup', raise_exception=True)
 def get_maestro_data_fup(request):
     maestro_id = request.GET.get('maestro_id')
     if not maestro_id:

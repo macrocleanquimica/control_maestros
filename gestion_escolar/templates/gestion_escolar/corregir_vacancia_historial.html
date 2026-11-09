@@ -1,0 +1,134 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
+{% block content %}
+<div class="comp-page-container comp-detail">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ titulo }}</h1>
+            <p class="comp-subtitle">
+                Se actualizará la vacancia de origen y se regenerarán los documentos del lote.
+            </p>
+        </div>
+        <div class="comp-actions">
+            <a href="{{ volver_url }}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> Cancelar
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="comp-alert comp-alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div class="flex-grow-1">{{ message }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if candidatas %}
+    <div class="comp-panel">
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h4>Elige la vacancia a corregir</h4>
+            </div>
+            <p class="comp-text-muted small">
+                Este movimiento tiene más de una vacancia asociada en el lote. Selecciona la que deseas corregir.
+            </p>
+            <div class="comp-info-grid">
+                {% for v in candidatas %}
+                <a href="?vacancia={{ v.id }}{% if from %}&from={{ from }}{% endif %}" class="comp-btn comp-btn-ghost text-start">
+                    <span class="d-block fw-semibold">{{ v.maestro_titular }}</span>
+                    <span class="d-block small comp-text-muted">
+                        {{ v.get_tipo_vacante_display }} · {{ v.tipo_movimiento_reporte|default:v.tipo_movimiento_original|default:"Sin motivo" }}
+                    </span>
+                    <span class="d-block small comp-text-muted">
+                        {{ v.fecha_inicio|date:"d/m/Y" }} al {{ v.fecha_final|date:"d/m/Y"|default:"vigente" }}
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="comp-panel">
+        <div class="comp-section">
+            <div class="comp-section-title">
+                <h4>Datos de la vacancia</h4>
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="from" value="{{ from }}">
+                <input type="hidden" name="vacancia_id" value="{{ vacancia.id }}">
+
+                {% if form.non_field_errors %}
+                <div class="comp-alert comp-alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>{{ form.non_field_errors|striptags }}</div>
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="comp-form-label">Maestro titular</label>
+                        <div class="form-control" style="background: var(--comp-surface-2);">
+                            {{ vacancia.maestro_titular }}
+                        </div>
+                        <div class="small comp-text-muted mt-1">
+                            Clave presupuestal: <span class="comp-font-mono">{{ vacancia.clave_presupuestal }}</span>.
+                            El titular no se puede cambiar desde aquí.
+                        </div>
+                    </div>
+
+                    {% for field in form %}
+                        {% if field.name != 'maestro_titular' %}
+                        <div class="col-md-6">
+                            <label class="comp-form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="small comp-text-muted mt-1">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                            <div class="comp-form-error">{{ field.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div class="comp-alert comp-alert-info mt-4">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        Al guardar se actualizará la vacancia y se regenerarán el documento individual y el Excel del lote
+                        para que las descargas coincidan con los datos corregidos.
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
+                    <a href="{{ volver_url }}" class="comp-btn comp-btn-ghost">Cancelar</a>
+                    <button type="submit" class="comp-btn comp-btn-primary">
+                        <i class="fas fa-save"></i> Guardar y regenerar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        if (!window.jQuery) return;
+        jQuery('#id_maestro_interino, #id_apreciacion').select2({
+            width: '100%',
+            language: 'es'
+        });
+    })();
+</script>
+{% endblock %}

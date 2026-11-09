@@ -4,107 +4,40 @@
 {% block title %}Formatos Únicos de Personal (FUP) | Control de Maestros{% endblock %}
 
 {% block content %}
-<style>
-    .page-container {
-        padding: 1.5rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .header-section {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    /* Tabla en panel único */
-    .table-container-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        padding: 1.5rem;
-        overflow: hidden;
-    }
-
-    .table thead th {
-        background: var(--surface, #fff);
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        color: var(--text-2, #6e6e73);
-        padding: 0.9rem 1rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .table tbody td {
-        padding: 0.9rem 1rem;
-        vertical-align: middle;
-        font-size: 0.9rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    .btn-create-fup {
-        background-color: var(--accent, #0071e3);
-        color: white;
-        border-radius: var(--r-pill, 999px);
-        padding: 0.5rem 1.5rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 44px;
-        text-decoration: none;
-    }
-
-    .btn-create-fup:hover {
-        opacity: 0.92;
-        color: white;
-    }
-
-    .btn-reporte {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.5rem 1.5rem;
-    }
-</style>
-
-<div class="page-container">
-    <!-- Header -->
-    <div class="header-section">
-        <div class="header-title">
-            <h1 class="apple-title mb-1">FUP</h1>
-            <p class="apple-subtitle mb-0">Formatos únicos emitidos al personal.</p>
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">FUP</h1>
+            <p class="comp-subtitle">Formatos únicos emitidos al personal.</p>
         </div>
-        <div class="d-flex gap-2 flex-wrap justify-content-end align-items-center">
-            <a href="{% url 'crear_fup' %}" class="btn-create-fup">
-                <i class="fas fa-plus me-2"></i> Nueva Captura
-            </a>
-            <a href="{% url 'reporte_fups_opciones' %}" class="apple-btn-ghost">
+        <div class="comp-actions">
+            <a href="{% url 'reporte_fups_opciones' %}" class="btn btn-outline-secondary">
                 <i class="fas fa-filter me-2"></i> Por Zona
             </a>
-            <button id="export-excel-fup-premium" class="apple-btn-ghost">
+            <button type="button" id="export-excel-fup-premium" class="btn btn-outline-secondary">
                 <i class="fas fa-file-excel me-2"></i> Exportar
             </button>
+            <a href="{% url 'crear_fup' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Nueva Captura
+            </a>
         </div>
     </div>
 
+    {% if messages %}
+        {% for message in messages %}
+            <div class="comp-alert comp-alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}" role="alert">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
     <!-- Table -->
-    <div class="table-container-card">
+    <div class="comp-panel">
+        <div class="comp-panel-body">
         <div class="table-responsive">
-            <table class="table table-hover w-100" id="tablaFUPs" data-ajax-url="{% url 'fup_datatable_ajax' %}">
+            <table class="comp-table comp-table-sm w-100" id="tablaFUPs" data-ajax-url="{% url 'fup_datatable_ajax' %}">
                 <thead>
                     <tr>
                         <th>Folio</th>
@@ -119,6 +52,7 @@
                 </thead>
                 <tbody></tbody>
             </table>
+        </div>
         </div>
     </div>
 </div>
@@ -151,7 +85,7 @@ $(document).ready(function() {
             { 
                 data: 4,
                 render: function(data, type, row) {
-                    return `<span class="font-monospace apple-tag">${data}</span>`;
+                    return `<span class="comp-badge comp-badge-soft comp-font-mono">${data}</span>`;
                 }
             },
             { 

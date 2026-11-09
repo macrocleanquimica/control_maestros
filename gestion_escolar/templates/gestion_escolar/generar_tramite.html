@@ -6,177 +6,66 @@
 
 {% block content %}
 <style>
-    .page-container {
-        padding: 2rem;
-        animation: fadeIn 0.4s ease-out;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Encabezado simple */
-    .premium-header {
-        margin-bottom: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .header-info h1 {
-        font-size: clamp(22px, 3.4vw, 30px);
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: var(--text, #1d1d1f);
-        margin: 0;
-    }
-
-    /* Contenedor único */
-    .form-card {
-        background: var(--surface, #fff);
-        border-radius: var(--r-panel, 22px);
-        box-shadow: var(--sh-panel, 0 1px 3px rgba(0,0,0,0.05), 0 14px 40px rgba(0,0,0,0.05));
-        overflow: hidden;
-        margin-bottom: 3rem;
-    }
-
-    .section-container {
-        padding: 2rem clamp(17px, 3vw, 2.5rem);
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .section-container:last-child {
-        border-bottom: none;
-    }
-
-    .section-title {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid var(--hairline, rgba(0,0,0,0.07));
-    }
-
-    .section-title h4 {
-        font-size: 1rem;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--text, #1d1d1f);
-        margin: 0;
-    }
-
-    .section-icon {
-        display: none;
-    }
-
-    /* Etiquetas y campos */
-    .form-label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text-2, #6e6e73);
-        letter-spacing: 0.025em;
-        margin-bottom: 0.5rem;
-    }
-
-    .form-control, .form-select {
+    /* Ajuste de Select2 al alto de los controles canónicos */
+    .tramite-page .select2-container--default .select2-selection--single {
+        height: 44px;
         border-radius: 12px;
-        border: 1px solid rgba(0,0,0,0.08);
-        padding: 0.6rem 1rem;
-        background-color: var(--surface, #fff);
-        transition: border-color 0.2s;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        background-color: var(--comp-surface);
+    }
+
+    .tramite-page .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 42px;
+        padding-left: 12px;
         font-weight: 500;
     }
 
-    .form-control:focus, .form-select:focus {
-        background-color: white;
-        border-color: var(--accent, #0071e3);
-        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
+    .tramite-page .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 42px;
     }
 
-    .form-control[readonly] {
-        background-color: rgba(0,0,0,0.03);
-        color: var(--text-2, #6e6e73);
-        cursor: not-allowed;
+    .tramite-page .select2-dropdown {
+        border-radius: 12px;
+        border: 1px solid var(--comp-input-border);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
-    /* Alertas */
-    .alert-premium {
-        border-radius: 14px;
-        border: none;
-        padding: 1rem 1.5rem;
-    }
-
-    /* Botón principal */
-    .btn-generate {
-        background: var(--accent, #0071e3);
-        color: white;
-        border: none;
-        padding: 0 2.5rem;
-        min-height: 48px;
-        border-radius: var(--r-pill, 999px);
-        font-weight: 600;
-        font-size: 1rem;
-    }
-
-    .btn-generate:hover {
-        opacity: 0.92;
-        color: white;
-    }
-
-    /* Select2 integration */
-    .select2-container--default .select2-selection--single {
-        border-radius: 12px !important;
-        border: 1px solid rgba(0,0,0,0.08) !important;
-        height: 45px !important;
-        background-color: var(--surface, #fff) !important;
-    }
-
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 45px !important;
-        padding-left: 12px !important;
-        font-weight: 500 !important;
-    }
-
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 43px !important;
+    /* El texto que se captura en las búsquedas de Select2 (maestro titular,
+       interino, etc.) se muestra en mayúsculas. Es solo visual: la búsqueda
+       del servidor ya ignora mayúsculas y acentos. */
+    html body .select2-container .select2-search--dropdown .select2-search__field,
+    html body .select2-container .select2-search--inline .select2-search__field {
+        text-transform: uppercase !important;
     }
 </style>
 
-<div class="page-container">
-    <!-- Header -->
-    <div class="premium-header">
-        <div class="header-info">
-            <h1>{{ titulo }}</h1>
-            <p class="mb-0" style="font-size: 0.9rem; color: var(--text-2, #6e6e73);">Documentos y oficios oficiales.</p>
+<div class="comp-page-container tramite-page">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">{{ titulo }}</h1>
+            <p class="comp-subtitle">Documentos y oficios oficiales.</p>
         </div>
-        <div class="d-flex gap-2">
-            <a href="{% url 'historial' %}" class="apple-btn-ghost">
-                <i class="fas fa-history me-2"></i> Historial
+        <div class="comp-actions">
+            <a href="{% url 'historial' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-history"></i> Historial
             </a>
         </div>
     </div>
 
-    <!-- Messages -->
     {% if messages %}
-    <div class="mb-4">
         {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-premium alert-dismissible fade show d-flex align-items-center gap-3" role="alert">
-            <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} fa-lg"></i>
-            <span class="fw-bold">{{ message }}</span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="comp-alert comp-alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}" role="alert">
+            <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+            <div class="fw-bold">{{ message }}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
         {% endfor %}
-    </div>
     {% endif %}
 
-    <div class="form-card">
+    <div class="comp-panel">
         {% if form.errors and not messages %}
-        <div class="alert alert-danger alert-premium m-4 d-flex align-items-center gap-3">
-            <i class="fas fa-exclamation-triangle fa-lg"></i>
+        <div class="comp-alert comp-alert-danger m-0 mb-0" style="border-radius: 0;">
+            <i class="fas fa-exclamation-triangle"></i>
             <div>
                 <span class="fw-bold">Error de validación:</span>
                 <ul class="mb-0 small">
@@ -188,23 +77,23 @@
         </div>
         {% endif %}
 
-        <form method="post" id="formGenerarOficio">
+        <form method="post" id="formGenerarOficio" class="comp-form">
             {% csrf_token %}
 
             <!-- SECCIÓN 1: CONFIGURACIÓN BASE -->
-            <div class="section-container bg-light bg-opacity-50">
-                <div class="section-title">
+            <div class="comp-section">
+                <div class="comp-section-title">
                     <h4>Configuración del Documento</h4>
                 </div>
                 <div class="row g-4">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label for="{{ form.plantilla.id_for_label }}" class="form-label">{{ form.plantilla.label }}</label>
                         {{ form.plantilla }}
                         {% if form.plantilla.errors %}
                         <div class="text-danger small mt-1 fw-bold">{{ form.plantilla.errors.0 }}</div>
                         {% endif %}
                     </div>
-                    <div class="col-md-6" id="motivo-tramite-wrapper">
+                    <div class="col-md-4" id="motivo-tramite-wrapper">
                         <label for="{{ form.motivo_tramite.id_for_label }}" class="form-label">{{ form.motivo_tramite.label }}</label>
                         <select name="motivo_tramite" id="id_motivo_tramite" class="form-control">
                             {% if is_edit %}
@@ -222,7 +111,7 @@
                         {% endif %}
                     </div>
                     <div class="col-md-12" data-field-name="archivo_plantilla_especifico">
-                        <div class="p-3 rounded-4 border bg-white shadow-sm">
+                        <div class="comp-subpanel">
                             <label for="{{ form.archivo_plantilla_especifico.id_for_label }}" class="form-label text-primary">{{ form.archivo_plantilla_especifico.label }}</label>
                             {{ form.archivo_plantilla_especifico }}
                             <div class="form-text mt-2"><i class="fas fa-info-circle me-1"></i> Seleccione 'PRORROGA' para Art. 3 o 'INTERINATO NUEVO' para Art. 36</div>
@@ -232,12 +121,12 @@
             </div>
 
             <!-- SECCIÓN 2: DATOS DEL TITULAR -->
-            <div class="section-container" id="datos-titular-section">
-                <div class="section-title">
+            <div class="comp-section" id="datos-titular-section">
+                <div class="comp-section-title">
                     <h4>Datos del Maestro Titular</h4>
                 </div>
                 <div class="row g-4">
-                    <div class="col-md-12" data-field-name="maestro_titular">
+                    <div class="col-md-5" data-field-name="maestro_titular">
                         <label for="id_maestro_titular" class="form-label">Búsqueda de Maestro:</label>
                         <select name="maestro_titular" id="id_maestro_titular" class="form-control" style="width: 100%;">
                             {% if is_edit and historial_item.maestro %}
@@ -245,17 +134,17 @@
                             {% endif %}
                         </select>
                     </div>
-                    
-                    <div class="col-md-12" data-field-name="maestro_titular">
+                </div>
+                <div class="row g-4 mt-3">
+                    <div class="col-md-4" data-field-name="maestro_titular">
                         <label class="form-label">{{ form.nombre_titular_display.label }}</label>
                         {{ form.nombre_titular_display }}
                     </div>
-                    
-                    <div class="col-md-4" data-field-name="maestro_titular">
+                    <div class="col-md-2" data-field-name="maestro_titular">
                         <label class="form-label">{{ form.curp_titular_display.label }}</label>
                         {{ form.curp_titular_display }}
                     </div>
-                    <div class="col-md-4" data-field-name="maestro_titular">
+                    <div class="col-md-2" data-field-name="maestro_titular">
                         <label class="form-label">{{ form.rfc_titular_display.label }}</label>
                         {{ form.rfc_titular_display }}
                     </div>
@@ -263,7 +152,8 @@
                         <label class="form-label">{{ form.clave_presupuestal_titular_display.label }}</label>
                         {{ form.clave_presupuestal_titular_display }}
                     </div>
-
+                </div>
+                <div class="row g-4 mt-3">
                     <div class="col-md-6" data-field-name="maestro_titular">
                         <label class="form-label">{{ form.categoria_titular_display.label }}</label>
                         {{ form.categoria_titular_display }}
@@ -284,24 +174,30 @@
                     </div>
 
                     <!-- Fechas Titular -->
-                    <div class="col-md-6" data-field-name="fecha_efecto1">
+                    <div class="col-md-2" data-field-name="fecha_efecto1">
                         <label for="{{ form.fecha_efecto1.id_for_label }}" class="form-label">Fecha Inicial Titular</label>
                         {{ form.fecha_efecto1 }}
+                        {% if form.fecha_efecto1.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.fecha_efecto1.errors.0 }}</div>
+                        {% endif %}
                     </div>
-                    <div class="col-md-6" data-field-name="fecha_efecto2">
+                    <div class="col-md-2" data-field-name="fecha_efecto2">
                         <label for="{{ form.fecha_efecto2.id_for_label }}" class="form-label">Fecha Final Titular</label>
                         {{ form.fecha_efecto2 }}
+                        {% if form.fecha_efecto2.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.fecha_efecto2.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
             <!-- SECCIÓN 3: DATOS DEL INTERINO -->
-            <div class="section-container" id="datos-interino-section">
-                <div class="section-title">
+            <div class="comp-section" id="datos-interino-section">
+                <div class="comp-section-title">
                     <h4>Datos del Maestro Interino</h4>
                 </div>
                 <div class="row g-4">
-                    <div class="col-md-12" data-field-name="maestro_interino">
+                    <div class="col-md-5" data-field-name="maestro_interino">
                         <label for="id_maestro_interino" class="form-label">Búsqueda de Interino:</label>
                         <select name="maestro_interino" id="id_maestro_interino" class="form-control" style="width: 100%;">
                             {% if is_edit %}
@@ -315,12 +211,26 @@
                             {% endif %}
                         </select>
                     </div>
-
-                    <div class="col-md-12" data-field-name="maestro_interino">
+                </div>
+                <div class="row g-4 mt-3">
+                    <div class="col-md-4" data-field-name="maestro_interino">
                         <label class="form-label">{{ form.nombre_interino_display.label }}</label>
                         {{ form.nombre_interino_display }}
                     </div>
-
+                    <div class="col-md-2" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.curp_interino_display.label }}</label>
+                        {{ form.curp_interino_display }}
+                    </div>
+                    <div class="col-md-2" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.rfc_interino_display.label }}</label>
+                        {{ form.rfc_interino_display }}
+                    </div>
+                    <div class="col-md-4" data-field-name="maestro_interino">
+                        <label class="form-label">{{ form.clave_presupuestal_interino_display.label }}</label>
+                        {{ form.clave_presupuestal_interino_display }}
+                    </div>
+                </div>
+                <div class="row g-4 mt-3">
                     <div class="col-md-4" data-field-name="maestro_interino">
                         <label class="form-label">{{ form.no_prel_display.label }}</label>
                         {{ form.no_prel_display }}
@@ -333,20 +243,6 @@
                         <label class="form-label">{{ form.tipo_val_display.label }}</label>
                         {{ form.tipo_val_display }}
                     </div>
-
-                    <div class="col-md-4" data-field-name="maestro_interino">
-                        <label class="form-label">{{ form.curp_interino_display.label }}</label>
-                        {{ form.curp_interino_display }}
-                    </div>
-                    <div class="col-md-4" data-field-name="maestro_interino">
-                        <label class="form-label">{{ form.rfc_interino_display.label }}</label>
-                        {{ form.rfc_interino_display }}
-                    </div>
-                    <div class="col-md-4" data-field-name="maestro_interino">
-                        <label class="form-label">{{ form.clave_presupuestal_interino_display.label }}</label>
-                        {{ form.clave_presupuestal_interino_display }}
-                    </div>
-
                     <div class="col-md-6" data-field-name="maestro_interino">
                         <label class="form-label">{{ form.funcion_interino_display.label }}</label>
                         {{ form.funcion_interino_display }}
@@ -355,22 +251,27 @@
                         <label class="form-label">{{ form.tipo_movimiento_interino.label }}</label>
                         {{ form.tipo_movimiento_interino }}
                     </div>
-
                     <!-- Fechas Interino -->
-                    <div class="col-md-6" data-field-name="fecha_efecto3">
+                    <div class="col-md-2" data-field-name="fecha_efecto3">
                         <label for="{{ form.fecha_efecto3.id_for_label }}" class="form-label">Fecha Inicial Interino</label>
                         {{ form.fecha_efecto3 }}
+                        {% if form.fecha_efecto3.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.fecha_efecto3.errors.0 }}</div>
+                        {% endif %}
                     </div>
-                    <div class="col-md-6" data-field-name="fecha_efecto4">
+                    <div class="col-md-2" data-field-name="fecha_efecto4">
                         <label for="{{ form.fecha_efecto4.id_for_label }}" class="form-label">Fecha Final Interino</label>
                         {{ form.fecha_efecto4 }}
+                        {% if form.fecha_efecto4.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.fecha_efecto4.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
             <!-- SECCIÓN PARA CAMBIO DE ADSCRIPCIÓN -->
-            <div class="section-container" id="cambio-adscripcion-section">
-                <div class="section-title">
+            <div class="comp-section" id="cambio-adscripcion-section">
+                <div class="comp-section-title">
                     <h4>Datos del Cambio de Adscripción</h4>
                 </div>
                 <div class="row g-4">
@@ -400,22 +301,31 @@
             </div>
 
             <!-- SECCIÓN 4: OTROS DATOS -->
-            <div class="section-container" id="otros-datos-section">
-                <div class="section-title">
+            <div class="comp-section" id="otros-datos-section">
+                <div class="comp-section-title">
                     <h4>Otros Datos del Trámite</h4>
                 </div>
                 <div class="row g-4">
                     <div class="col-md-4" data-field-name="folio">
                         <label class="form-label">{{ form.folio.label }}</label>
                         {{ form.folio }}
+                        {% if form.folio.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.folio.errors.0 }}</div>
+                        {% endif %}
                     </div>
                     <div class="col-md-4" data-field-name="quincena_inicial">
                         <label class="form-label">{{ form.quincena_inicial.label }}</label>
                         {{ form.quincena_inicial }}
+                        {% if form.quincena_inicial.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.quincena_inicial.errors.0 }}</div>
+                        {% endif %}
                     </div>
                     <div class="col-md-4" data-field-name="quincena_final">
                         <label class="form-label">{{ form.quincena_final.label }}</label>
                         {{ form.quincena_final }}
+                        {% if form.quincena_final.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.quincena_final.errors.0 }}</div>
+                        {% endif %}
                     </div>
 
                     <div class="col-md-12" data-field-name="observaciones">
@@ -461,13 +371,67 @@
                 </div>
             </div>
 
+            <!-- SECCIÓN JUSTIFICACIÓN DE RETROACTIVIDAD -->
+            <div class="comp-section" id="retroactividad-section">
+                <div class="comp-section-title">
+                    <h4>Justificación de la Retroactividad</h4>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-12" data-field-name="opcionjustificacion">
+                        <label for="id_opcionjustificacion" class="form-label">{{ form.opcionjustificacion.label }}</label>
+                        {{ form.opcionjustificacion }}
+                        {% if form.opcionjustificacion.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.opcionjustificacion.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4" data-field-name="fecha_usicamm" style="display:none;">
+                        <label class="form-label">{{ form.fecha_usicamm.label }}</label>
+                        {{ form.fecha_usicamm }}
+                        {% if form.fecha_usicamm.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.fecha_usicamm.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-12" data-field-name="texto_razon_otro" style="display:none;">
+                        <label class="form-label">{{ form.texto_razon_otro.label }}</label>
+                        {{ form.texto_razon_otro }}
+                        {% if form.texto_razon_otro.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.texto_razon_otro.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN CAMPOS PERSONALIZADOS DEL DISEÑADOR -->
+            {% if campos_personalizados %}
+            <div class="comp-section" id="campos-personales-section">
+                <div class="comp-section-title">
+                    <h4>Datos Adicionales</h4>
+                </div>
+                <div class="row g-4">
+                    {% for campo in campos_personalizados %}
+                    <div class="col-md-{% if campo.tipo == 'texto_largo' %}12{% else %}4{% endif %}"
+                         data-field-name="{{ campo.name }}">
+                        <label for="id_{{ campo.name }}" class="form-label">
+                            {{ campo.label }}{% if campo.requerido %} <span class="text-danger">*</span>{% endif %}
+                        </label>
+                        {{ campo.bound }}
+                        {% if campo.ayuda %}<div class="form-text">{{ campo.ayuda }}</div>{% endif %}
+                        {% if campo.bound.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ campo.bound.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Acción Final -->
-            <div class="section-container bg-light bg-opacity-50 text-center py-5" id="accion-final-section">
-                <button type="submit" class="btn-generate">
-                    <i class="fas fa-{% if is_edit %}save{% else %}file-word{% endif %} me-2"></i> 
+            <div class="comp-section text-center" id="accion-final-section">
+                <button type="submit" class="comp-btn comp-btn-primary comp-btn-lg">
+                    <i class="fas fa-{% if is_edit %}save{% else %}file-word{% endif %}"></i>
                     {% if is_edit %}Corregir y Regenerar Documento{% else %}Generar y Descargar Trámite{% endif %}
                 </button>
-                <p class="text-muted small mt-3 px-5">
+                <p class="comp-text-muted small mt-3 mb-0 px-3 px-md-5">
                     {% if is_edit %}
                     Se actualizará el registro en el historial y se reemplazará el archivo anterior por uno nuevo con los datos corregidos.
                     {% else %}
@@ -570,32 +534,10 @@
         setupEscuelaSelect2('#id_escuela_destino', 'Busca y selecciona un centro de trabajo');
 
         // --- LÓGICA DE VISIBILIDAD DE CONTROLES ---
-        const allManagedFields = ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones', 'quincena_inicial', 'quincena_final', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'antiguedad_categoria', 'fecha_adscripcion', 'incentivos', 'archivo_plantilla_especifico', 'form_academica_titular', 'ze_techo_f', 'tipo_cambio', 'maestro_sustituido', 'escuela_destino', 'fecha_del_calculo_servicio', 'antiguedad_servicio'];
-        const allSections = ['#datos-titular-section', '#datos-interino-section', '#cambio-adscripcion-section', '#otros-datos-section', '#accion-final-section'];
+        const allManagedFields = ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones', 'quincena_inicial', 'quincena_final', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'antiguedad_categoria', 'fecha_adscripcion', 'incentivos', 'archivo_plantilla_especifico', 'form_academica_titular', 'ze_techo_f', 'tipo_cambio', 'maestro_sustituido', 'escuela_destino', 'fecha_del_calculo_servicio', 'antiguedad_servicio', 'opcionjustificacion', 'razon_retroactividad', 'fecha_usicamm', 'texto_razon_otro'];
+        const allSections = ['#datos-titular-section', '#datos-interino-section', '#cambio-adscripcion-section', '#otros-datos-section', '#retroactividad-section', '#campos-personales-section', '#accion-final-section'];
 
-        const visibleFieldsConfig = {
-            "REINGRESO": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-            "FILIACION": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-            "REINGRESO SIN PRELACION": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-            "SOLICITUD DE ASIGNACION": { fields: ['maestro_titular', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones', 'archivo_plantilla_especifico'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-            "JUSTIFICACION DE PERFIL": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-            "CONSTANCIAS": { fields: ['maestro_titular', 'motivo_tramite', 'folio', 'quincena_inicial', 'quincena_final'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-            "OFICIO DE REINCORPORACION": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-            "CAMBIO DEL CENTRO DE TRABAJO": { fields: ['maestro_titular'], sections: ['#datos-titular-section'] },
-            "CUADRO CAMBIOS CON FOLIO": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-            "PROPUESTA DE MOVIMIENTO": { fields: ['maestro_titular', 'folio', 'fecha_efecto1'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-            "ALTA INICIAL (09)": { fields: ['maestro_titular', 'no_prel_display', 'folio_prel_display', 'tipo_val_display', 'fecha_efecto1', 'fecha_efecto2', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-            "REPORTE DE VACANCIA": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2', 'maestro_interino'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-            "CONSTANCIA DE CAMBIO": { fields: ['maestro_titular', 'motivo_tramite', 'folio', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'antiguedad_categoria', 'fecha_adscripcion', 'incentivos'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-            "CONSTANCIA DE HORIZONTAL": { fields: ['maestro_titular', 'motivo_tramite', 'folio', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'incentivos'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-            "CONSTANCIA DE RECATEGORIZACIÓN": { fields: ['maestro_titular', 'motivo_tramite', 'folio', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion', 'incentivos', 'form_academica_titular', 'ze_techo_f'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-            "PRESENTACION LABORAL": { fields: ['maestro_titular', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-            "PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION": { fields: ['maestro_titular', 'tipo_cambio', 'maestro_sustituido', 'escuela_destino', 'fecha_efecto1', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#cambio-adscripcion-section', '#otros-datos-section'] },
-            "CAPTURA DE GRAVIDEZ": { fields: ['maestro_titular', 'fecha_efecto1', 'fecha_efecto2'], sections: ['#datos-titular-section'] },
-            "CAMBIO DE EFECTOS": { fields: ['maestro_titular', 'maestro_interino', 'fecha_efecto3', 'fecha_efecto4', 'folio', 'observaciones'], sections: ['#datos-titular-section', '#datos-interino-section', '#otros-datos-section'] },
-            "LIBERACION DE SUPERVISORES": { fields: ['maestro_titular', 'folio', 'fecha_efecto1', 'observaciones'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-            "SOLICITUD BECA COMISION": { fields: ['maestro_titular', 'folio', 'fecha_al_corte', 'fecha_del_calculo', 'antiguedad_funcion'], sections: ['#datos-titular-section', '#otros-datos-section'] },
-        };
+        const visibleFieldsConfig = {{ configuraciones_json|safe }};
 
         function updateFormVisibility() {
             const selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
@@ -605,11 +547,40 @@
             allSections.forEach(sectionId => { $(sectionId).hide(); });
 
             if (config) {
-                config.fields.forEach(fieldName => { $(`[data-field-name="${fieldName}"]`).show(); });
-                config.sections.forEach(sectionId => { $(sectionId).show(); });
+                (config.campos || []).forEach(fieldName => { $(`[data-field-name="${fieldName}"]`).show(); });
+                (config.secciones || []).forEach(sectionId => { $(sectionId).show(); });
                 $('#accion-final-section').show();
             }
+
+            // Para JUSTIFICACION DE RETROACTIVIDAD, solo se muestra busqueda y nombre del interino
+            if (selectedPlantillaText === 'JUSTIFICACION DE RETROACTIVIDAD') {
+                $('#datos-interino-section [data-field-name="maestro_interino"]').each(function() {
+                    var hasSearch = $(this).find('#id_maestro_interino').length > 0;
+                    var hasName = $(this).find('#id_nombre_interino_display').length > 0;
+                    if (!hasSearch && !hasName) {
+                        $(this).hide();
+                    } else if (hasSearch) {
+                        $(this).removeClass('col-md-5').addClass('col-md-6');
+                    } else if (hasName) {
+                        $(this).removeClass('col-md-4').addClass('col-md-6');
+                    }
+                });
+                $('#datos-interino-section .comp-section-title h4').text('Datos del Maestro Interino');
+            } else {
+                $('#datos-interino-section [data-field-name="maestro_interino"]').each(function() {
+                    var hasSearch = $(this).find('#id_maestro_interino').length > 0;
+                    var hasName = $(this).find('#id_nombre_interino_display').length > 0;
+                    if (hasSearch) {
+                        $(this).removeClass('col-md-6').addClass('col-md-5');
+                    } else if (hasName) {
+                        $(this).removeClass('col-md-6').addClass('col-md-4');
+                    }
+                });
+                $('#datos-interino-section .comp-section-title h4').text('Datos del Maestro Interino');
+            }
+
             updateCambioAdscripcion();
+            updateRetroactividadFields();
         }
 
         function updateCambioAdscripcion() {
@@ -637,6 +608,13 @@
 
         function calculateTipoMovimientoInterino() {
             if (window.isInitialLoad && {{ is_edit|lower|default:"false" }}) return;
+            // La 99 tiene el motivo oculto, así que el switch de motivo no aplica:
+            // el tipo de movimiento es el propio nombre del tramite.
+            var plantillaText99 = $('#id_plantilla option:selected').text().trim().toUpperCase();
+            if (plantillaText99 === 'ALTA PROVISIONAL EN VACANTE DEFINITIVA (99)') {
+                $('#id_tipo_movimiento_interino').val('ALTA PROVISIONAL EN VACANTE DEFINITIVA');
+                return;
+            }
             var motivoTramiteText = $('#id_motivo_tramite option:selected').text().trim().toUpperCase();
             var fechaEfecto3Str = $('#id_fecha_efecto3').val();
             var fechaEfecto4Str = $('#id_fecha_efecto4').val();
@@ -749,48 +727,85 @@
             }
         }
 
-        // Plantillas que NO tienen motivo de movimiento
-        const plantillasSinMotivo = ['CAPTURA DE GRAVIDEZ', 'CAMBIO DE EFECTOS', 'CONSTANCIA DE HORIZONTAL', 'PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION', 'LIBERACION DE SUPERVISORES', 'SOLICITUD BECA COMISION'];
+        // Lógica de visibilidad dinámica para los sub-campos de la retroactividad
+        function updateRetroactividadFields() {
+            var razon = $('#id_opcionjustificacion').val() || $('#id_razon_retroactividad').val();
+            $('[data-field-name="fecha_usicamm"]').toggle(razon === 'usicamm');
+            $('[data-field-name="texto_razon_otro"]').toggle(razon === 'otro');
+        }
+        $('#id_opcionjustificacion, #id_razon_retroactividad').on('change', updateRetroactividadFields);
+
+        // Plantillas que NO tienen motivo de movimiento (configuración del servidor)
+        const plantillasSinMotivo = {{ plantillas_sin_motivo_json|safe }};
+        window.suppressPlantillaReload = false;
+
+        // Carga los motivos permitidos de la plantilla y respeta la selección
+        // actual cuando se está corrigiendo un trámite.
+        function cargarMotivosPlantilla(plantillaId, conservarSeleccion) {
+            if (!plantillaId) return;
+            const motivoTramiteSelect = $('#id_motivo_tramite');
+            const nombrePlantilla = $('#id_plantilla option:selected').text().trim().toUpperCase();
+            const config = visibleFieldsConfig[nombrePlantilla];
+            $.ajax({
+                url: '{% url "get_motivos_tramite_ajax" %}',
+                data: { 'plantilla_id': plantillaId },
+                dataType: 'json',
+                success: function (data) {
+                    const valorActual = conservarSeleccion ? $('#id_motivo_tramite').val() : null;
+                    motivoTramiteSelect.empty().append(new Option('', '', true, true));
+                    $.each(data, function (key, value) { motivoTramiteSelect.append(new Option(value.text, value.id)); });
+
+                    if (valorActual && motivoTramiteSelect.find('option[value="' + valorActual + '"]').length) {
+                        motivoTramiteSelect.val(valorActual);
+                    } else if (config && config.motivo_auto) {
+                        motivoTramiteSelect.val(String(config.motivo_auto));
+                    }
+
+                    if (data.length > 0 && config && config.mostrar_motivo) {
+                        motivoTramiteWrapper.show();
+                    } else {
+                        motivoTramiteWrapper.hide();
+                    }
+                    motivoTramiteSelect.trigger('change');
+                }
+            });
+        }
 
         $('#id_plantilla').on('change', function () {
             var plantillaId = $(this).val();
-            var motivoTramiteSelect = $('#id_motivo_tramite');
             var selectedPlantillaText = $('#id_plantilla option:selected').text().trim().toUpperCase();
+            var config = visibleFieldsConfig[selectedPlantillaText];
+            var esEdicion = {{ is_edit|lower|default:"false" }};
 
-            if (plantillaId && !plantillasSinMotivo.includes(selectedPlantillaText)) {
-                motivoTramiteWrapper.show();
-                if (!window.isInitialLoad || !{{ is_edit|lower|default:"false" }}) {
-                    motivoTramiteSelect.empty().append(new Option('', '', true, true)).trigger('change');
+            // El reset del formulario dispara este evento: no recargar.
+            if (window.suppressPlantillaReload) {
+                return;
+            }
+
+            // Al cambiar de plantilla se recarga la página para que el servidor
+            // renderice también los campos personalizados de esa plantilla.
+            if (!window.isInitialLoad && !esEdicion) {
+                var url = new URL(window.location.href);
+                if (plantillaId) {
+                    url.searchParams.set('plantilla', plantillaId);
+                } else {
+                    url.searchParams.delete('plantilla');
                 }
+                window.location.assign(url.toString());
+                return;
+            }
+
+            // Modo edición: refrescar sin recargar para no perder los datos.
+            if (config && config.mostrar_motivo) {
+                motivoTramiteWrapper.show();
             } else {
-                motivoTramiteSelect.empty().append(new Option('', '', true, true)).trigger('change');
                 motivoTramiteWrapper.hide();
             }
 
             updateFormVisibility();
             updateLabels();
             updateCambioAdscripcion();
-
-            if (plantillaId) {
-                $.ajax({
-                    url: '{% url "get_motivos_tramite_ajax" %}', data: { 'plantilla_id': plantillaId }, dataType: 'json',
-                    success: function (data) {
-                        $.each(data, function (key, value) { motivoTramiteSelect.append(new Option(value.text, value.id)); });
-                        
-                        // Selección automática para Recategorización
-                        if (selectedPlantillaText === 'CONSTANCIA DE RECATEGORIZACIÓN') {
-                            motivoTramiteSelect.val('17');
-                        }
-                        
-                        // Selección automática BECA COMISIÓN (ID 1)
-                        if (selectedPlantillaText === 'SOLICITUD BECA COMISION') {
-                            motivoTramiteSelect.val('1');
-                        }
-                        
-                        motivoTramiteSelect.trigger('change');
-                    }
-                });
-            }
+            cargarMotivosPlantilla(plantillaId, true);
             calculateAntiguedad();
         });
 
@@ -881,8 +896,13 @@
             {% endif %}
             setTimeout(() => {
                 if ($('.alert-danger').length === 0) {
+                    // Evita que el reset dispare una recarga de plantilla.
+                    window.suppressPlantillaReload = true;
                     $(this)[0].reset();
                     $('#id_plantilla, #id_motivo_tramite, #id_maestro_titular, #id_maestro_interino, #id_archivo_plantilla_especifico, #id_maestro_sustituido, #id_escuela_destino').val(null).trigger('change');
+                    window.suppressPlantillaReload = false;
+                    motivoTramiteWrapper.hide();
+                    updateFormVisibility();
                 }
             }, 1000);
         });
@@ -923,45 +943,18 @@
         
         {% if is_edit %}
         console.log('Modo edición: Respetando datos pre-cargados del servidor');
-        var selectedPlantillaTextEdit = $('#id_plantilla option:selected').text().trim().toUpperCase();
-        // Solo mostrar el wrapper de motivo si la plantilla NO está en plantillasSinMotivo
-        if ($('#id_motivo_tramite').val() && !plantillasSinMotivo.includes(selectedPlantillaTextEdit)) {
-            motivoTramiteWrapper.show();
-        }
-        // Cargar la lista completa de motivos disponibles para la plantilla actual
         var plantillaIdEdit = $('#id_plantilla').val();
         if (plantillaIdEdit) {
-            $.ajax({
-                url: '{% url "get_motivos_tramite_ajax" %}',
-                data: { 'plantilla_id': plantillaIdEdit },
-                dataType: 'json',
-                success: function(data) {
-                    var currentMotivo = $('#id_motivo_tramite').val();
-                    if (data.length > 0) {
-                        motivoTramiteWrapper.show();
-                        // Guardar el valor actual, agregar opciones, y restaurar
-                        var currentOption = $('#id_motivo_tramite option:selected').clone();
-                        $('#id_motivo_tramite').empty().append(new Option('', '', false, false));
-                        $.each(data, function(key, value) {
-                            var isSelected = (String(value.id) === String(currentMotivo));
-                            $('#id_motivo_tramite').append(new Option(value.text, value.id, isSelected, isSelected));
-                        });
-                        // Si no quedó seleccionado, restaurar
-                        if (currentMotivo && !$('#id_motivo_tramite').val()) {
-                            $('#id_motivo_tramite').append(currentOption).val(currentMotivo);
-                        }
-                        // Selección automática BECA COMISIÓN en modo edición
-                        if (selectedPlantillaTextEdit === 'SOLICITUD BECA COMISION') {
-                            $('#id_motivo_tramite').val('1');
-                        }
-                        $('#id_motivo_tramite').trigger('change.select2');
-                    }
-                }
-            });
+            // Carga los motivos permitidos conservando el motivo ya guardado.
+            cargarMotivosPlantilla(plantillaIdEdit, true);
         }
         {% else %}
         $('#id_maestro_titular').trigger('change');
         $('#id_maestro_interino').trigger('change');
+        var plantillaInicial = $('#id_plantilla').val();
+        if (plantillaInicial) {
+            cargarMotivosPlantilla(plantillaInicial, false);
+        }
         {% endif %}
         
         calculateTipoMovimientoInterino();

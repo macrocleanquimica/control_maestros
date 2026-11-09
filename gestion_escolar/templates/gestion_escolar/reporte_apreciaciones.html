@@ -1,0 +1,363 @@
+{% extends 'gestion_escolar/base.html' %}
+{% load static %}
+
+{% block title %}Catálogo de Apreciaciones | Control de Maestros{% endblock %}
+
+{% block content %}
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Catálogo de Apreciaciones</h1>
+            <p class="comp-subtitle">Los textos que se eligen en el formulario de vacancias, con su uso real.</p>
+        </div>
+        <div class="comp-actions d-print-none">
+            {% if puede_editar %}
+            <button type="button" id="btn-nuevo" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Nueva
+            </button>
+            {% endif %}
+            <button type="button" id="btn-exportar" class="btn btn-outline-secondary">
+                <i class="fas fa-file-excel me-2"></i> Exportar
+            </button>
+            <a href="{% url 'reportes_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Reportes
+            </a>
+            <button type="button" onclick="window.print();" class="btn btn-outline-secondary">
+                <i class="fas fa-print me-2"></i> Imprimir
+            </button>
+        </div>
+    </div>
+
+    <div class="comp-note">
+        <i class="fas fa-info-circle"></i>
+        Estos textos se usan en el formulario de <strong>vacancias</strong>.
+        Algunas apreciaciones tienen <strong>validaciones de categoría del maestro escritas con su texto exacto</strong>
+        en el sistema, así que renombrarlas cambia cómo se comportan los trámites.
+        Las que así están se marcan con la insignia <strong>Con regla</strong>.
+        {% if not puede_editar %}
+        <br>Puedes consultar y exportar, pero no editar: tu usuario no tiene el permiso
+        <code>change_tipoapreciacion</code>.
+        {% endif %}
+    </div>
+
+    <div class="comp-kpi-grid">
+        <div class="comp-kpi-card is-info">
+            <div class="comp-kpi-value">{{ total }}</div>
+            <div class="comp-kpi-label">Apreciaciones</div>
+        </div>
+        <div class="comp-kpi-card is-success">
+            <div class="comp-kpi-value">{{ en_uso }}</div>
+            <div class="comp-kpi-label">En uso</div>
+        </div>
+        <div class="comp-kpi-card">
+            <div class="comp-kpi-value">{{ sin_usar }}</div>
+            <div class="comp-kpi-label">Sin usar</div>
+        </div>
+        <div class="comp-kpi-card is-warning">
+            <div class="comp-kpi-value">{{ con_regla }}</div>
+            <div class="comp-kpi-label">Con regla</div>
+        </div>
+    </div>
+
+    <div class="comp-panel">
+        <div class="comp-section">
+            <div class="comp-section-title mb-0 pb-0 border-0">
+                <h5>Catálogo completo</h5>
+            </div>
+        </div>
+        <div class="comp-panel-body pt-0">
+            <div class="table-responsive">
+                <table class="comp-table comp-table-sm w-100" id="tablaApreciaciones">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Descripción</th>
+                            <th>Vacancias</th>
+                            <th>Con regla</th>
+                            {% if puede_editar %}<th class="text-end">Acciones</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in apreciaciones %}
+                        <tr data-pk="{{ a.id }}"
+                            data-descripcion="{{ a.descripcion|escape }}"
+                            data-en-uso="{{ a.en_uso }}">
+                            <td><span class="comp-code">{{ a.id }}</span></td>
+                            <td style="line-height: 1.5; word-break: break-word; min-width: 260px;">{{ a.descripcion }}</td>
+                            <td>
+                                {% if a.en_uso %}
+                                <span class="comp-badge comp-badge-success">{{ a.en_uso }} en uso</span>
+                                {% else %}
+                                <span class="comp-badge comp-badge-soft">Sin usar</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if a.descripcion in con_regla_lista %}
+                                <span class="comp-badge comp-badge-warning"><i class="fas fa-shield-halved me-1"></i> Con regla</span>
+                                {% else %}
+                                <span class="text-muted">&mdash;</span>
+                                {% endif %}
+                            </td>
+                            {% if puede_editar %}
+                            <td>
+                                <div class="comp-action-group justify-content-end">
+                                    <button type="button" class="comp-action comp-action-edit btn-editar" title="Editar" aria-label="Editar apreciación">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                    <button type="button" class="comp-action comp-action-delete btn-eliminar" title="Eliminar" aria-label="Eliminar apreciación">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{% if puede_editar %}5{% else %}4{% endif %}">
+                                <div class="comp-empty-state">
+                                    <i class="fas fa-tags"></i>
+                                    <p>No hay apreciaciones registradas.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if puede_editar %}
+<!-- Modal de alta / edición -->
+<div class="modal fade" id="modalApreciacion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="modalTitulo">Editar apreciación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="form-aviso"></div>
+
+                <div id="aviso-uso" style="display:none; font-size:0.78rem; border-radius:0.6rem; padding:0.6rem 0.8rem; margin-bottom:0.85rem; background:rgba(255,149,0,0.13); color:#b26a00; line-height:1.5;">
+                    <i class="fas fa-triangle-exclamation me-2"></i>
+                    <span id="aviso-uso-texto"></span>
+                </div>
+
+                <label for="form-descripcion" class="form-label fw-semibold">Descripción</label>
+                <textarea id="form-descripcion" class="form-control" rows="3" maxlength="1000"
+                          placeholder="Ej. ADMISIÓN.EDUCACIÓN BÁSICA.DOCENTE.EDUCACIÓN ESPECIAL.EDUCACIÓN ESPECIAL"></textarea>
+                <div class="form-text">
+                    Es el texto exacto que aparecerá en el formulario de vacancias.
+                    El campo no puede repetirse entre apreciaciones.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btn-guardar" class="btn btn-primary">
+                    <i class="fas fa-check me-2"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación de borrado -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Eliminar apreciación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="eliminar-aviso" style="display:none; font-size:0.78rem; border-radius:0.6rem; padding:0.6rem 0.8rem; margin-bottom:0.85rem; background:rgba(255,59,48,0.13); color:#c0392b; line-height:1.5;"></div>
+                <p class="mb-2">¿Seguro que quieres eliminar esta apreciación?</p>
+                <p id="eliminar-texto" class="mb-0" style="font-size:0.85rem; background:rgba(0,0,0,0.04); padding:0.6rem 0.8rem; border-radius:0.6rem; word-break:break-word;"></p>
+                <p id="eliminar-uso" class="mb-0 mt-2" style="font-size:0.78rem; color:var(--text-2,#6e6e73);"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btn-confirmar-eliminar" class="btn btn-danger">
+                    <i class="fas fa-trash me-2"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    #form-aviso {
+        display: none;
+        font-size: 0.78rem;
+        border-radius: 0.6rem;
+        padding: 0.6rem 0.8rem;
+        margin-bottom: 0.85rem;
+        line-height: 1.5;
+    }
+    #form-aviso.warn { display: block; background: rgba(255,149,0,0.13); color: #b26a00; }
+    #form-aviso.error { display: block; background: rgba(255,59,48,0.13); color: #c0392b; }
+    #form-aviso.ok { display: block; background: rgba(48,209,88,0.14); color: #1d7a37; }
+    #form-descripcion { font-size: 0.88rem; line-height: 1.55; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Búsqueda / paginación al estilo de Todo el Personal
+    var tabla = $('#tablaApreciaciones').DataTable({
+        responsive: true,
+        autoWidth: false,
+        language: {
+            ...window.SpanishDataTable,
+            search: "_INPUT_",
+            searchPlaceholder: "Filtrar por descripción..."
+        },
+        pageLength: 25,
+        order: [[1, 'asc']],
+        dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>',
+        drawCallback: function() {
+            $('.dataTables_paginate > .pagination').addClass('pagination-sm');
+        }
+    });
+
+    // El buscador también aplica al Excel
+    $('#btn-exportar').on('click', function() {
+        var params = new URLSearchParams();
+        var busqueda = tabla.search();
+        if (busqueda) params.set('q', busqueda);
+        var qs = params.toString();
+        window.location.href = "{% url 'export_apreciaciones_excel' %}" + (qs ? "?" + qs : "");
+    });
+
+    {% if puede_editar %}
+    var urlCrear = "{% url 'apreciacion_crear' %}";
+    var urlEditarBase = "{% url 'apreciacion_editar' 0 %}";   // .../0/editar/
+    var urlEliminarBase = "{% url 'apreciacion_eliminar' 0 %}"; // .../0/eliminar/
+    var pkActual = null;
+    var enUsoActual = 0;
+
+    function verAviso(tipo, texto) {
+        var el = $('#form-aviso');
+        el.attr('class', tipo).text(texto);
+    }
+
+    function setAvisoUso(texto) {
+        if (texto) { $('#aviso-uso-texto').text(texto); $('#aviso-uso').show(); }
+        else { $('#aviso-uso').hide(); }
+    }
+
+    // Aviso vivo: si cambia el texto y esa apreciación ya tiene vacancias
+    $('#form-descripcion').on('input', function() {
+        var fila = $('#tablaApreciaciones tr[data-pk="' + pkActual + '"]');
+        var original = fila.data('descripcion') || '';
+        var nuevo = $.trim($(this).val());
+        if (pkActual && enUsoActual > 0 && nuevo !== original) {
+            setAvisoUso("Está en uso por " + enUsoActual + " vacancia(s). Si cambias el texto, "
+                + "esas vacancias quedarán con el texto nuevo y la validación de categoría "
+                + "de trámites puede dejar de aplicar.");
+        } else {
+            setAvisoUso("");
+        }
+    });
+
+    // Crear
+    $('#btn-nuevo').on('click', function() {
+        pkActual = null;
+        enUsoActual = 0;
+        $('#modalTitulo').text('Nueva apreciación');
+        $('#form-descripcion').val('');
+        verAviso('', '');
+        setAvisoUso('');
+        $('#modalApreciacion').modal('show');
+        setTimeout(function() { $('#form-descripcion').focus(); }, 400);
+    });
+
+    // Editar
+    $('#tablaApreciaciones').on('click', '.btn-editar', function() {
+        var fila = $(this).closest('tr');
+        pkActual = fila.data('pk');
+        enUsoActual = parseInt(fila.data('en-uso'), 10) || 0;
+        $('#modalTitulo').text('Editar apreciación #' + pkActual);
+        $('#form-descripcion').val(fila.data('descripcion'));
+        verAviso('', '');
+        $('#modalApreciacion').modal('show');
+        // Dispara el aviso de uso si el texto queda igual (no debe aparecer)
+        $('#form-descripcion').trigger('input');
+    });
+
+    // Guardar (alta o edición)
+    $('#btn-guardar').on('click', function() {
+        var texto = $.trim($('#form-descripcion').val());
+        if (!texto) { verAviso('error', 'La descripción es obligatoria.'); return; }
+
+        var url = pkActual ? urlEditarBase.replace('/0/', '/' + pkActual + '/') : urlCrear;
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: {
+                descripcion: texto,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(resp) {
+                if (resp.ok) {
+                    verAviso('ok', resp.msg);
+                    $('#modalApreciacion').modal('hide');
+                    setTimeout(function() { window.location.reload(); }, 700);
+                } else {
+                    verAviso('error', resp.error);
+                }
+            },
+            error: function(xhr) {
+                var msg = 'No se pudo guardar.';
+                if (xhr.status === 403) msg = 'No tienes permiso para editar apreciaciones.';
+                else if (xhr.responseJSON && xhr.responseJSON.error) msg = xhr.responseJSON.error;
+                verAviso('error', msg);
+            }
+        });
+    });
+
+    // Eliminar
+    $('#tablaApreciaciones').on('click', '.btn-eliminar', function() {
+        var fila = $(this).closest('tr');
+        pkActual = fila.data('pk');
+        var enUso = parseInt(fila.data('en-uso'), 10) || 0;
+        $('#eliminar-texto').text(fila.data('descripcion'));
+        if (enUso) {
+            $('#eliminar-uso').html('<i class="fas fa-triangle-exclamation me-1"></i>'
+                + enUso + ' vacancia(s) la están usando: no se podrá eliminar.');
+        } else {
+            $('#eliminar-uso').text('No está en uso, se puede eliminar.');
+        }
+        $('#eliminar-aviso').hide().text('');
+        $('#modalEliminar').modal('show');
+    });
+
+    $('#btn-confirmar-eliminar').on('click', function() {
+        $.ajax({
+            url: urlEliminarBase.replace('/0/', '/' + pkActual + '/'),
+            method: 'POST',
+            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+            success: function(resp) {
+                if (resp.ok) {
+                    $('#modalEliminar').modal('hide');
+                    setTimeout(function() { window.location.reload(); }, 600);
+                } else {
+                    $('#eliminar-aviso').show().text(resp.error);
+                }
+            },
+            error: function(xhr) {
+                var msg = 'No se pudo eliminar.';
+                if (xhr.status === 403) msg = 'No tienes permiso para eliminar apreciaciones.';
+                $('#eliminar-aviso').show().text(msg);
+            }
+        });
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}
