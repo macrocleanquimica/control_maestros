@@ -924,14 +924,6 @@
                         </a>
                     </li>
                     {%endif%}
-                    {%if user.is_superuser or user|has_group:"ADMINISTRADOR"%}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{%url 'lista_plantillas'%}" data-tooltip="Plantillas">
-                            <i class="fas fa-file-word me-2"></i>
-                            <span class="sidebar-text">Plantillas</span>
-                        </a>
-                    </li>
-                    {%endif%}
                     {%if perms.gestion_escolar.acceder_vacancias%}
                     <li class="nav-item">
                         <a class="nav-link" href="{%url 'gestionar_lote_vacancia'%}" data-tooltip="Vacancia">
