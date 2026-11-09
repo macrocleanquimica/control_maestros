@@ -1279,6 +1279,21 @@
                 }, 0);
             });
         }
+
+        // Cerrar los avisos (.comp-alert) con el botón X. Bootstrap solo
+        // reconoce data-bs-dismiss="alert" en elementos con la clase .alert,
+        // y nuestros avisos usan .comp-alert; por eso se maneja aquí.
+        document.addEventListener('click', function (evento) {
+            var boton = evento.target.closest('[data-bs-dismiss="alert"]');
+            if (!boton) return;
+            var aviso = boton.closest('.comp-alert');
+            if (!aviso) return;
+            evento.preventDefault();
+            evento.stopPropagation();
+            aviso.style.transition = 'opacity 0.15s ease';
+            aviso.style.opacity = '0';
+            setTimeout(function () { aviso.remove(); }, 150);
+        });
     </script>
 
 
