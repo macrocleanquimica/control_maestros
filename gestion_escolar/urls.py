@@ -109,6 +109,7 @@ urlpatterns = [
     path('reportes/exportar/horizontal/', views.exportar_maestros_personalizado_excel, name='exportar_maestros_personalizado_excel'),
     path('reportes/reporteador/', views.reporteador_datos, name='reporteador_datos'),
     path('reportes/reporteador/exportar/', views.exportar_datos_dinamicos_excel, name='exportar_datos_dinamicos_excel'),
+    path('reportes/centros_trabajo/', views.reporte_centros_trabajo_preview, name='reporte_centros_trabajo_preview'),
     path('reportes/centros_trabajo/pdf/', views.reporte_centros_trabajo_pdf, name='reporte_centros_trabajo_pdf'),
     path('reportes/control_basificacion/', views.reporte_control_basificacion, name='reporte_control_basificacion'),
     path('reportes/control_basificacion/export/excel/', views.export_control_basificacion_excel, name='export_control_basificacion_excel'),

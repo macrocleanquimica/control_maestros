@@ -8,6 +8,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_POST
 from django.db.models import Q, Count
 from django.db.models.functions import Upper, Trim
@@ -1166,10 +1167,26 @@ def _supervisor_zona(zona):
 
 @login_required
 @permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
+def reporte_centros_trabajo_preview(request):
+    """Muestra la vista previa del PDF antes de descargarlo."""
+    return render(request, 'gestion_escolar/reporte_centros_trabajo_preview.html', {
+        'titulo': 'Relación de Centros de Trabajo',
+    })
+
+
+@login_required
+@permission_required('gestion_escolar.acceder_reportes', raise_exception=True)
+@xframe_options_sameorigin
 def reporte_centros_trabajo_pdf(request):
-    """Genera el PDF 'Relación de Centros de Trabajo' organizado por zona escolar."""
+    """Genera el PDF 'Relación de Centros de Trabajo' organizado por zona escolar.
+
+    Por defecto se descarga (attachment). Con ?inline=1 se muestra dentro del
+    navegador, lo que permite usarlo en la vista previa embebida.
+    """
     import os
     from io import BytesIO
+
+    disposicion = 'inline' if request.GET.get('inline') in ('1', 'true', 'True') else 'attachment'
 
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
@@ -1316,7 +1333,7 @@ def reporte_centros_trabajo_pdf(request):
         doc.build([Paragraph("No hay centros de trabajo registrados.", estilos['Normal'])])
         buffer.seek(0)
         response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="relacion_centros_trabajo.pdf"'
+        response['Content-Disposition'] = f'{disposicion}; filename="relacion_centros_trabajo.pdf"'
         return response
 
     # Construcción del documento
@@ -1481,7 +1498,7 @@ def reporte_centros_trabajo_pdf(request):
 
     buffer.seek(0)
     response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="relacion_centros_trabajo.pdf"'
+    response['Content-Disposition'] = f'{disposicion}; filename="relacion_centros_trabajo.pdf"'
     return response
 
 

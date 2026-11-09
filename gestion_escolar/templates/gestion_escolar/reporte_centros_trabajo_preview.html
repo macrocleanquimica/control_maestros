@@ -1,0 +1,52 @@
+{% extends 'gestion_escolar/base.html' %}
+
+{% block title %}{{ titulo }} | Control de Maestros{% endblock %}
+
+{% block content %}
+<style>
+    .pdf-preview-frame {
+        display: block;
+        width: 100%;
+        height: calc(100vh - 235px);
+        min-height: 520px;
+        border: 1px solid var(--comp-border, #dee2e6);
+        border-radius: 12px;
+        background: #f1f5f9;
+    }
+
+    @media (max-width: 767.98px) {
+        .pdf-preview-frame {
+            height: 70vh;
+            min-height: 420px;
+        }
+    }
+</style>
+
+<div class="comp-page-container">
+    <div class="comp-page-header">
+        <div class="comp-title-group">
+            <h1 class="comp-title">Relación de Centros de Trabajo</h1>
+            <p class="comp-subtitle">Revise la vista previa del PDF antes de descargarlo.</p>
+        </div>
+        <div class="comp-actions">
+            <a href="{% url 'reportes_dashboard' %}" class="comp-btn comp-btn-ghost">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <a href="{% url 'reporte_centros_trabajo_pdf' %}" class="comp-btn comp-btn-primary" download>
+                <i class="fas fa-file-download"></i> Descargar PDF
+            </a>
+        </div>
+    </div>
+
+    <iframe class="pdf-preview-frame"
+            src="{% url 'reporte_centros_trabajo_pdf' %}?inline=1"
+            title="Vista previa de la Relación de Centros de Trabajo"></iframe>
+
+    <p class="comp-form-text mt-3 mb-0">
+        <i class="fas fa-info-circle me-1"></i>
+        Si la vista previa no se muestra en su navegador,
+        <a href="{% url 'reporte_centros_trabajo_pdf' %}?inline=1" target="_blank" rel="noopener">abra el PDF en una nueva pestaña</a>
+        o use el botón <strong>Descargar PDF</strong>.
+    </p>
+</div>
+{% endblock %}
