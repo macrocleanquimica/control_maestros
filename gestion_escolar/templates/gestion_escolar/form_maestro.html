@@ -576,9 +576,12 @@
             var aviso = $('#curp-duplicada-aviso');
             var submitBtn = $('.btn-save-personal');
             var timer = null;
+            // Al editar, la CURP guardada puede repetirse en otras plazas de la
+            // misma persona. Solo se revisa si el usuario la cambia.
+            var curpInicial = ($('#id_curp').val() || '').trim().toUpperCase();
             function revisarCurp() {
-                var curp = ($('#id_curp').val() || '').trim();
-                if (curp.length < 18) { aviso.hide().empty(); submitBtn.prop('disabled', false); return; }
+                var curp = ($('#id_curp').val() || '').trim().toUpperCase();
+                if (curp.length < 18 || curp === curpInicial) { aviso.hide().empty(); submitBtn.prop('disabled', false); return; }
                 $.ajax({
                     url: '{% url "verificar_curp_ajax" %}',
                     data: { 'curp': curp, 'exclude_id': excludeId },

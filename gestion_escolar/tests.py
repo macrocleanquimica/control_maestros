@@ -190,6 +190,22 @@ class MaestroFormCurpRfcTests(TestCase):
         self.assertTrue(form.has_error('curp'))
         self.assertTrue(form.has_error('rfc'))
 
+    def test_editar_sin_cambiar_curp_ignora_duplicado_previo(self):
+        """Editar otros campos no debe bloquearse por una CURP repetida que ya existía."""
+        Maestro.objects.create(
+            a_paterno=self.maestro.a_paterno,
+            a_materno=self.maestro.a_materno,
+            nombres=self.maestro.nombres,
+            curp=self.maestro.curp,
+            rfc=self.maestro.rfc,
+            fecha_nacimiento=date(1985, 1, 1),
+        )
+        datos = self._datos_legacy()
+        datos['status'] = 'INACTIVO'
+        form = MaestroForm(validar_curp_rfc=True, data=datos, instance=self.maestro)
+        form.is_valid()
+        self.assertFalse(form.has_error('curp'))
+
     def test_legacy_corregido_valido_pasa_sin_aviso(self):
         datos = self._datos_legacy()
         datos['curp'] = CURP_VALIDA_1985

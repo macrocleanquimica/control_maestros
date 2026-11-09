@@ -407,7 +407,15 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
         # admin (ver MaestroAdmin); "agregar otra plaza" lo desactiva a propósito.
         if not self.permitir_curp_duplicada:
             curp_val = (curp or '').strip()
-            if curp_val:
+            # Al editar sin cambiar la CURP, el posible duplicado ya existía en
+            # los datos: no se bloquean cambios de otros campos (por ejemplo,
+            # pasar al maestro a INACTIVO). Solo se valida al crear o al
+            # capturar una CURP distinta a la guardada.
+            curp_sin_cambios = (
+                bool(self.instance.pk)
+                and normalizar_curp(curp_val) == self._curp_guardada
+            )
+            if curp_val and not curp_sin_cambios:
                 qs_curp = Maestro.objects.filter(curp__iexact=curp_val)
                 if self.instance.pk:
                     # Excluir a toda la persona (raíz + plazas secundarias): la

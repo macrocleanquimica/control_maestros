@@ -133,6 +133,32 @@ def verificar_curp_ajax(request):
     qs = _filtrar_escuela_director(request, qs)
     if exclude_id:
         qs = qs.exclude(id_maestro=exclude_id)
+        # Al editar una plaza, su CURP también aparece en las demás plazas de
+        # la misma persona (raíz + secundarias). No son duplicados: se excluyen
+        # para no bloquear la edición de campos como el status.
+        instancia = (Maestro.objects
+                     .filter(id_maestro=exclude_id)
+                     .only('id_maestro', 'maestro_principal_id')
+                     .first())
+        if instancia:
+            raiz = instancia
+            visitados = set()
+            while getattr(raiz, 'maestro_principal_id', None):
+                if raiz.maestro_principal_id in visitados:
+                    break
+                visitados.add(raiz.maestro_principal_id)
+                padre = (Maestro.objects
+                         .filter(id_maestro=raiz.maestro_principal_id)
+                         .only('id_maestro', 'maestro_principal_id')
+                         .first())
+                if not padre:
+                    break
+                raiz = padre
+            propias = {raiz.pk} | set(
+                Maestro.objects.filter(maestro_principal_id=raiz.pk)
+                .values_list('pk', flat=True)
+            )
+            qs = qs.exclude(pk__in=propias)
     coincidencias = []
     for m in qs.order_by('id_maestro')[:5]:
         cct = m.id_escuela.id_escuela if m.id_escuela else ''
