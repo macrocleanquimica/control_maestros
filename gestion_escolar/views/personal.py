@@ -46,6 +46,50 @@ def registros_de_persona(maestro):
     return ids
 
 
+def buscar_plaza_vacante(clave_presupuestal=None, num_plaza=None, escuela_id=None, excluir_pk=None):
+    """Busca una plaza de nueva creación (sin docente) que coincida con la clave.
+
+    Solo considera registros sin nombre y que no estén marcados como
+    "DUPLICADO / NO USAR". Devuelve el más antiguo.
+    """
+    filtro = Q()
+    if clave_presupuestal:
+        filtro |= Q(clave_presupuestal=clave_presupuestal)
+    if num_plaza and escuela_id:
+        filtro |= Q(num_plaza=num_plaza, id_escuela_id=escuela_id)
+    if not filtro:
+        return None
+
+    qs = Maestro.objects.filter(filtro)
+    if excluir_pk:
+        qs = qs.exclude(pk=excluir_pk)
+    for plaza in qs.order_by('fecha_registro'):
+        if plaza.es_plaza_sin_docente and not plaza.es_registro_duplicado_no_usar:
+            return plaza
+    return None
+
+
+def reclamar_plaza_vacante(plaza, form, maestro_principal=None):
+    """Copia los datos capturados del docente a la plaza vacante existente.
+
+    Se conservan así la vacante, el kardex y el historial ya ligados a la plaza.
+    """
+    campos_modelo = {f.name for f in Maestro._meta.concrete_fields}
+    for campo, valor in form.cleaned_data.items():
+        if campo in ('es_plaza_vacante', 'maestro_principal'):
+            continue
+        if campo not in campos_modelo:
+            continue
+        # No borrar la observación de la plaza si el usuario no escribió nada.
+        if campo == 'observaciones' and not (valor or '').strip():
+            continue
+        setattr(plaza, campo, valor)
+    if maestro_principal is not None:
+        plaza.maestro_principal = maestro_principal
+    plaza.save()
+    return plaza
+
+
 def buscar_persona_existente(datos):
     """
     Busca si ya existe un registro de la misma persona antes de crearla.
@@ -239,9 +283,15 @@ def lista_maestros_ajax(request):
         if maestro.codigo and maestro.codigo.strip() not in ['10', '96', '95', '09']:
             is_interino = True
 
+        nombre_html = maestro.nombre_visible
+        if maestro.es_plaza_sin_docente and 'PLAZA VACANTE' not in nombre_html:
+            nombre_html += ' <span class="badge bg-warning text-dark ms-1">PLAZA VACANTE</span>'
+        if maestro.es_registro_duplicado_no_usar and 'NO USAR' not in nombre_html:
+            nombre_html += ' <span class="badge bg-secondary ms-1">DUPLICADO / NO USAR</span>'
+
         data.append([
             maestro.id_maestro,
-            f'{maestro.nombres} {maestro.a_paterno} {maestro.a_materno}',
+            nombre_html,
             maestro.id_escuela.id_escuela if maestro.id_escuela else 'N/A',
             maestro.curp,
             maestro.clave_presupuestal or '-',
@@ -323,16 +373,51 @@ def agregar_maestro(request):
                         'titulo': 'Agregar Maestro',
                         'all_escuelas': all_escuelas
                     })
-                else:
-                    raiz = persona_raiz(existente)
-                    maestro.maestro_principal = raiz
-                    maestro.save()
+
+            # Plaza de nueva creación (sin docente): se ofrece reutilizarla en
+            # vez de crear un registro nuevo, para no dejar claves sin dueño.
+            plaza_vacante = None
+            if not form.cleaned_data.get('es_plaza_vacante'):
+                plaza_vacante = buscar_plaza_vacante(
+                    clave_presupuestal=maestro.clave_presupuestal,
+                    num_plaza=maestro.num_plaza,
+                    escuela_id=maestro.id_escuela_id,
+                )
+
+            if plaza_vacante and request.POST.get('crear_registro_nuevo') != '1':
+                if request.POST.get('confirmar_reclamar') == plaza_vacante.pk:
+                    raiz = persona_raiz(existente) if existente else None
+                    reclamar_plaza_vacante(plaza_vacante, form, maestro_principal=raiz)
+                    _advertir_curp_rfc_legacy(request, form)
+                    _verificar_directores_duplicados(request, plaza_vacante)
+                    _verificar_supervisores_duplicados(request, plaza_vacante)
                     messages.success(
                         request,
-                        f'Maestro agregado correctamente como plaza secundaria de la persona '
-                        f'(CURP {existente.curp or "s/nombre"}, ID raíz {raiz.id_maestro if raiz else existente.id_maestro}). '
-                        'No se creó un registro duplicado.'
+                        f'Se asignó la plaza vacante {plaza_vacante.id_maestro} a '
+                        f'{plaza_vacante.nombre_visible}. Se conservaron la vacante, el kardex '
+                        'y el historial de la plaza.'
                     )
+                    if escuela_id:
+                        return redirect('detalle_escuela', pk=escuela_id)
+                    return redirect('detalle_maestro', pk=plaza_vacante.id_maestro)
+
+                return render(request, 'gestion_escolar/form_maestro.html', {
+                    'form': form,
+                    'titulo': 'Agregar Maestro',
+                    'all_escuelas': all_escuelas,
+                    'plaza_vacante': plaza_vacante,
+                })
+
+            if existente:
+                raiz = persona_raiz(existente)
+                maestro.maestro_principal = raiz
+                maestro.save()
+                messages.success(
+                    request,
+                    f'Maestro agregado correctamente como plaza secundaria de la persona '
+                    f'(CURP {existente.curp or "s/nombre"}, ID raíz {raiz.id_maestro if raiz else existente.id_maestro}). '
+                    'No se creó un registro duplicado.'
+                )
             else:
                 maestro.save()
                 messages.success(request, 'Maestro agregado correctamente.')
@@ -581,6 +666,37 @@ def agregar_otra_plaza(request, pk):
         )
         if form.is_valid():
             nueva_plaza = form.save(commit=False)
+
+            # Si la clave corresponde a una plaza de nueva creación que aún no
+            # tiene docente, se ofrece reutilizarla en lugar de duplicarla.
+            plaza_vacante = None
+            if not form.cleaned_data.get('es_plaza_vacante'):
+                plaza_vacante = buscar_plaza_vacante(
+                    clave_presupuestal=nueva_plaza.generar_clave_presupuestal(),
+                    num_plaza=nueva_plaza.num_plaza,
+                    escuela_id=nueva_plaza.id_escuela_id,
+                )
+
+            if plaza_vacante and request.POST.get('crear_registro_nuevo') != '1':
+                if request.POST.get('confirmar_reclamar') == plaza_vacante.pk:
+                    reclamar_plaza_vacante(plaza_vacante, form, maestro_principal=maestro_raiz)
+                    _advertir_curp_rfc_legacy(request, form)
+                    messages.success(
+                        request,
+                        f'Se asignó la plaza vacante {plaza_vacante.id_maestro} a '
+                        f'{plaza_vacante.nombre_visible} como plaza adicional. Se conservaron '
+                        'la vacante, el kardex y el historial de la plaza.'
+                    )
+                    return redirect('detalle_maestro', pk=plaza_vacante.id_maestro)
+
+                return render(request, 'gestion_escolar/form_maestro.html', {
+                    'form': form,
+                    'titulo': f'Agregar Nueva Plaza para {maestro_original.nombres}',
+                    'maestro': maestro_original,
+                    'es_clonado': True,
+                    'plaza_vacante': plaza_vacante,
+                })
+
             nueva_plaza.maestro_principal = maestro_raiz
             nueva_plaza.save()
             messages.success(request, f'Nueva plaza agregada correctamente para {maestro_original.nombres}.')

@@ -1,8 +1,9 @@
 from django.apps import apps
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import Q
 
-from gestion_escolar.models import Maestro
+from gestion_escolar.models import Maestro, Vacancia
 
 # Campos que no se copian del registro que se elimina.
 CAMPOS_EXCLUIDOS = {
@@ -106,6 +107,14 @@ class Command(BaseCommand):
         else:
             self.stdout.write('  (ninguno)')
 
+        correcciones = self._correcciones_vacancias(conservar, eliminar)
+        self.stdout.write('\nNombres guardados en vacantes a corregir:')
+        if correcciones:
+            for vacancia_id, campo, antes, despues in correcciones:
+                self.stdout.write(f'  Vacancia {vacancia_id}.{campo}: {antes!r} -> {despues!r}')
+        else:
+            self.stdout.write('  (ninguno)')
+
         if options['seco']:
             self.stdout.write(self.style.WARNING('\nModo seco: no se guardo ningun cambio.'))
             return
@@ -113,6 +122,10 @@ class Command(BaseCommand):
         with transaction.atomic():
             for modelo, campo in relaciones:
                 modelo.objects.filter(**{campo: eliminar}).update(**{campo: conservar})
+
+            # Corregir los nombres que quedaron guardados como "None None None"
+            # al reportar la vacante antes de que existiera el docente.
+            self._aplicar_correcciones_vacancias(conservar)
 
             # Si el registro conservado era plaza secundaria del que se elimina, se vuelve principal.
             if conservar.maestro_principal_id == eliminar.pk:
@@ -198,3 +211,54 @@ class Command(BaseCommand):
             if actual in VACIOS and nuevo not in VACIOS:
                 cambios.append((campo.name, actual, nuevo))
         return cambios
+
+    def _correcciones_vacancias(self, conservar, eliminar):
+        """Nombres guardados como texto en vacantes que se corregirán al fusionar."""
+        nombre = conservar.nombre_completo_registro
+        if not nombre:
+            return []
+
+        correcciones = []
+        vacancias = Vacancia.objects.filter(
+            Q(maestro_titular=eliminar) | Q(maestro_titular=conservar)
+            | Q(maestro_interino=eliminar) | Q(maestro_interino=conservar)
+        )
+        for v in vacancias.order_by('pk'):
+            if v.maestro_titular_id in (eliminar.pk, conservar.pk):
+                actual = (v.nombre_titular_reporte or '').strip()
+                if not actual or actual.upper() == 'NONE NONE NONE':
+                    correcciones.append((v.pk, 'nombre_titular_reporte', actual, nombre))
+            if v.maestro_interino_id in (eliminar.pk, conservar.pk):
+                actual = (v.nombre_interino or '').strip()
+                if not actual or actual.upper() == 'NONE NONE NONE':
+                    correcciones.append((v.pk, 'nombre_interino', actual, nombre))
+                if not (v.curp_interino or '').strip() and conservar.curp:
+                    correcciones.append((v.pk, 'curp_interino', v.curp_interino or '', conservar.curp))
+        return correcciones
+
+    def _aplicar_correcciones_vacancias(self, conservar):
+        """Guarda el nombre del docente en las vacantes que lo tenían en 'None'."""
+        nombre = conservar.nombre_completo_registro
+        if not nombre:
+            return
+
+        vacancias = Vacancia.objects.filter(
+            Q(maestro_titular=conservar) | Q(maestro_interino=conservar)
+        )
+        for v in vacancias:
+            campos = []
+            if v.maestro_titular_id == conservar.pk:
+                actual = (v.nombre_titular_reporte or '').strip()
+                if not actual or actual.upper() == 'NONE NONE NONE':
+                    v.nombre_titular_reporte = nombre
+                    campos.append('nombre_titular_reporte')
+            if v.maestro_interino_id == conservar.pk:
+                actual = (v.nombre_interino or '').strip()
+                if not actual or actual.upper() == 'NONE NONE NONE':
+                    v.nombre_interino = nombre
+                    campos.append('nombre_interino')
+                if not (v.curp_interino or '').strip() and conservar.curp:
+                    v.curp_interino = conservar.curp
+                    campos.append('curp_interino')
+            if campos:
+                v.save(update_fields=campos)

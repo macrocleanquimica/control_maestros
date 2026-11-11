@@ -107,10 +107,10 @@
                                     <span class="comp-badge comp-badge-success">AL COBRO</span>
                                 {% endif %}
                             </td>
-                            <td>{{ v.nombre_titular_reporte }}</td>
+                            <td>{{ v.nombre_titular_visible }}</td>
                             <td>
                                 {% if v.maestro_interino %}
-                                    {{ v.maestro_interino.nombres }} {{ v.maestro_interino.a_paterno }} {{ v.maestro_interino.a_materno }}
+                                    {{ v.maestro_interino.nombre_visible }}
                                     <div class="small text-muted">{{ v.maestro_interino.curp }}</div>
                                 {% elif v.nombre_interino %}
                                     {{ v.nombre_interino }}

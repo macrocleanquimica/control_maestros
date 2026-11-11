@@ -78,7 +78,7 @@
                         {% for vacancia in vacancias %}
                         <tr>
                             <td>
-                                <div class="fw-bold comp-text-dark">{{ vacancia.maestro_titular.nombres }} {{ vacancia.maestro_titular.a_paterno }}</div>
+                                <div class="fw-bold comp-text-dark">{{ vacancia.nombre_titular_visible }}</div>
                                 <div class="comp-text-muted smaller">Interino: {{ vacancia.nombre_interino|default:"N/A" }}</div>
                             </td>
                             <td><span class="comp-code">{{ vacancia.clave_presupuestal }}</span></td>

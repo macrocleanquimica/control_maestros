@@ -96,7 +96,7 @@ def gestionar_lote_vacancia(request, lote_id=None):
 
             maestro_interino_obj = form.cleaned_data.get('maestro_interino')
             if maestro_interino_obj:
-                vacancia.nombre_interino = f'{maestro_interino_obj.nombres} {maestro_interino_obj.a_paterno} {maestro_interino_obj.a_materno}'
+                vacancia.nombre_interino = maestro_interino_obj.nombre_visible
                 vacancia.curp_interino = maestro_interino_obj.curp
                 if maestro_interino_obj.curp:
                     prelacion = Prelacion.objects.filter(curp=maestro_interino_obj.curp).first()
@@ -134,7 +134,7 @@ def gestionar_lote_vacancia(request, lote_id=None):
             vacancia.clave_presupuestal = maestro.clave_presupuestal
             vacancia.techo_financiero = maestro.techo_f
             vacancia.clave_ct = escuela.id_escuela
-            vacancia.nombre_titular_reporte = f'{maestro.nombres} {maestro.a_paterno} {maestro.a_materno}'
+            vacancia.nombre_titular_reporte = maestro.nombre_visible
 
             vacancia.save()
 
@@ -476,7 +476,7 @@ def _aplicar_datos_derivados_vacancia(vacancia):
     vacancia.clave_presupuestal = maestro.clave_presupuestal
     vacancia.techo_financiero = maestro.techo_f
     vacancia.clave_ct = escuela.id_escuela
-    vacancia.nombre_titular_reporte = f'{maestro.nombres} {maestro.a_paterno} {maestro.a_materno}'
+    vacancia.nombre_titular_reporte = maestro.nombre_visible
 
 
 def _sincronizar_interinato_vacancia(vacancia):
@@ -1099,7 +1099,7 @@ def exportar_reporte_vacancias_excel(request):
 
         nombre_interino = ""
         if v.maestro_interino:
-            nombre_interino = f"{v.maestro_interino.nombres} {v.maestro_interino.a_paterno} {v.maestro_interino.a_materno}"
+            nombre_interino = v.maestro_interino.nombre_visible
         else:
             nombre_interino = v.nombre_interino or ""
 
@@ -1108,7 +1108,7 @@ def exportar_reporte_vacancias_excel(request):
             v.lote.fecha_creacion.strftime("%d/%m/%Y") if v.lote and v.lote.fecha_creacion else "",
             v.fecha_inicio.strftime("%d/%m/%Y") if v.fecha_inicio else "",
             v.fecha_final.strftime("%d/%m/%Y") if v.fecha_final else "",
-            v.nombre_titular_reporte or "",
+            v.nombre_titular_visible or "",
             nombre_interino,
             v.curp_interino or "",
             v.get_tipo_vacante_display() or "",

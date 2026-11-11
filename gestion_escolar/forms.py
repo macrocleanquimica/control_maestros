@@ -285,6 +285,14 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
         widget=forms.Select(attrs={'class': 'form-control select2-escuelas', 'style': 'width: 100%;'})
     )
 
+    es_plaza_vacante = forms.BooleanField(
+        required=False,
+        label="Es plaza vacante / nueva creación",
+        help_text="Márcalo cuando la plaza aún no tiene docente. Permite guardar "
+                  "sin nombre; después podrás asignársela al maestro que llegue.",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
+
     def __init__(self, *args, **kwargs):
         request = kwargs.pop('request', None)
         # En "agregar otra plaza" se comparte CURP a propósito (misma persona,
@@ -316,6 +324,10 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
         if self.instance and self.instance.pk:
             self._curp_guardada = normalizar_curp(self.instance.curp)
             self._rfc_guardado = normalizar_rfc(self.instance.rfc)
+            # Al editar una plaza vacía ya existente, se deja marcada para no
+            # bloquear cambios de otros campos (por ejemplo, el status).
+            if self.instance.es_plaza_sin_docente:
+                self.fields['es_plaza_vacante'].initial = True
         else:
             self._curp_guardada = normalizar_curp(legacy_curp)
             self._rfc_guardado = normalizar_rfc(legacy_rfc)
@@ -367,6 +379,21 @@ class MaestroForm(UppercaseFormMixin, forms.ModelForm):
         rfc = cleaned_data.get('rfc')
         id_escuela = cleaned_data.get('id_escuela')
         num_plaza = cleaned_data.get('num_plaza')
+
+        # Un maestro normal debe tener nombre y apellido paterno. Solo las
+        # plazas de nueva creación (sin docente todavía) pueden quedar sin
+        # nombre, y deben marcarse explícitamente.
+        if self.validar_curp_rfc and not cleaned_data.get('es_plaza_vacante'):
+            if not (nombres or '').strip():
+                self.add_error(
+                    'nombres',
+                    'Captura el nombre o marca "Es plaza vacante / nueva creación".'
+                )
+            if not (a_paterno or '').strip():
+                self.add_error(
+                    'a_paterno',
+                    'Captura el apellido paterno o marca "Es plaza vacante / nueva creación".'
+                )
 
         # El duplicado es la COMBINACION persona + escuela + plaza. Sin el numero
         # de plaza, todo maestro con varias plazas (77 personas / 193 filas) se

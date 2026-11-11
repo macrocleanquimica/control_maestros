@@ -1,7 +1,7 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load static %}
 
-{% block title %}Perfil de {{ maestro.nombres }} | Control de Maestros{% endblock %}
+{% block title %}Perfil de {{ maestro.nombre_visible }} | Control de Maestros{% endblock %}
 
 {% block content %}
 <div class="comp-page-container comp-detail">
@@ -19,11 +19,17 @@
                     <i class="fas fa-chevron-right"></i>
                 </a>
                 {% endif %}
-                <h1 class="comp-title">{{ maestro.nombres }} {{ maestro.a_paterno }} {{ maestro.a_materno }}</h1>
+                <h1 class="comp-title">{{ maestro.nombre_visible }}</h1>
             </div>
             <p class="comp-subtitle d-flex align-items-center gap-2 flex-wrap mb-0">
                 <span>ID: <strong class="comp-font-mono">{{ maestro.id_maestro }}</strong></span>
                 <span class="comp-badge {% if maestro.status == 'ACTIVO' %}comp-badge-success{% else %}comp-badge-soft{% endif %}">{{ maestro.get_status_display }}</span>
+                {% if maestro.es_plaza_sin_docente %}
+                <span class="comp-badge comp-badge-accent">PLAZA VACANTE</span>
+                {% endif %}
+                {% if maestro.es_registro_duplicado_no_usar %}
+                <span class="comp-badge comp-badge-soft">DUPLICADO / NO USAR</span>
+                {% endif %}
                 {% for incentivo in maestro.incentivos.all %}
                 <span class="comp-badge comp-badge-accent">{{ incentivo.codigo }}</span>
                 {% endfor %}

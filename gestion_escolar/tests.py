@@ -9,6 +9,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
@@ -19,7 +20,9 @@ from .campos_plantilla import (
 )
 from .forms import MaestroForm, TramiteForm
 from .models import (
+    Categoria,
     Historial,
+    KardexMovimiento,
     LoteReporteVacancia,
     Maestro,
     MotivoTramite,
@@ -27,6 +30,7 @@ from .models import (
     TipoApreciacion,
     Vacancia,
 )
+from .views.personal import buscar_plaza_vacante, reclamar_plaza_vacante
 from .motivos_plantilla import ids_permitidos
 from .plantillas_utils import (
     es_administrador,
@@ -1089,3 +1093,294 @@ class DisenadorPlantillasTests(TestCase):
 
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, plantilla.nombre)
+
+
+class MaestroNombreVisibleTests(TestCase):
+    """Los registros sin nombre no deben imprimir 'None None None'."""
+
+    def test_plaza_sin_docente_usa_etiqueta_y_plaza(self):
+        plaza = Maestro.objects.create(num_plaza='806004', status='ACTIVO')
+        self.assertTrue(plaza.es_plaza_sin_docente)
+        self.assertEqual(plaza.nombre_completo_registro, '')
+        self.assertEqual(plaza.nombre_visible, 'PLAZA VACANTE (Plaza 806004)')
+
+    def test_nombre_completo_limpia_espacios(self):
+        maestro = Maestro.objects.create(
+            a_paterno=' CHACON ', a_materno='LOPEZ', nombres=' EMMA  ROSALIA ')
+        self.assertFalse(maestro.es_plaza_sin_docente)
+        self.assertEqual(maestro.nombre_completo_registro, 'EMMA  ROSALIA CHACON LOPEZ')
+
+    def test_registro_marcado_duplicado_no_usar(self):
+        maestro = Maestro.objects.create(
+            observaciones='DUPLICADO HISTORICO - NO USAR')
+        self.assertTrue(maestro.es_registro_duplicado_no_usar)
+        self.assertEqual(maestro.nombre_visible, 'REGISTRO DUPLICADO / NO USAR')
+
+    def test_vacancia_corrige_nombre_none(self):
+        user = get_user_model().objects.create_user(username='u', password='x')
+        lote = LoteReporteVacancia.objects.create(usuario_generador=user)
+        maestro = Maestro.objects.create(nombres='EMMA', a_paterno='CHACON')
+        vacancia = Vacancia.objects.create(
+            lote=lote,
+            maestro_titular=maestro,
+            apreciacion=TipoApreciacion.objects.create(descripcion='LICENCIA'),
+            tipo_vacante='TEMPORAL',
+            fecha_inicio=date(2026, 1, 1),
+            nombre_titular_reporte='None None None',
+            municipio='DURANGO',
+            direccion='ESCUELA',
+            zona_economica='Zona III',
+            destino='Admisión',
+            tipo_plaza='JORNADA',
+            sostenimiento='Federalizado',
+            categoria='E0687',
+            clave_presupuestal='CLAVE',
+            techo_financiero='TECHO',
+            clave_ct='10DML0002K',
+            turno='Matutino',
+        )
+        self.assertEqual(vacancia.nombre_titular_visible, 'EMMA CHACON')
+
+
+class MaestroFormNombreTests(TestCase):
+    """Bloquear maestros sin nombre salvo que se marquen como plaza vacante."""
+
+    def test_sin_nombre_se_bloquea(self):
+        form = MaestroForm(
+            data={'nombres': '', 'a_paterno': ''},
+            validar_curp_rfc=True,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertTrue(form.has_error('nombres'))
+        self.assertTrue(form.has_error('a_paterno'))
+        self.assertIn('plaza vacante', form.errors['nombres'][0])
+
+    def test_sin_nombre_pero_plaza_vacante_es_valido(self):
+        form = MaestroForm(
+            data={'nombres': '', 'a_paterno': '', 'es_plaza_vacante': 'on'},
+            validar_curp_rfc=True,
+        )
+        self.assertTrue(form.is_valid(), form.errors.as_json())
+
+    def test_con_nombre_es_valido(self):
+        form = MaestroForm(
+            data={'nombres': 'EMMA', 'a_paterno': 'CHACON'},
+            validar_curp_rfc=True,
+        )
+        self.assertTrue(form.is_valid(), form.errors.as_json())
+
+    def test_editar_plaza_vacante_la_deja_marcada(self):
+        plaza = Maestro.objects.create(num_plaza='806004')
+        form = MaestroForm(instance=plaza, validar_curp_rfc=True)
+        self.assertTrue(form.fields['es_plaza_vacante'].initial)
+
+
+class PlazaVacanteReclamacionTests(TestCase):
+    """Buscar y reutilizar una plaza de nueva creación al registrar al docente."""
+
+    def setUp(self):
+        self.categoria = Categoria.objects.create(
+            id_categoria='E0687', descripcion='CATEGORIA', horas='00.0')
+        self.plaza = self._crear_plaza()
+
+    def _crear_plaza(self, **kwargs):
+        datos = {
+            'dep': '07',
+            'unid': '10',
+            'sub_unid': '04',
+            'categog': self.categoria,
+            'hrs': '00.0',
+            'num_plaza': '806004',
+            'status': 'ACTIVO',
+        }
+        datos.update(kwargs)
+        return Maestro.objects.create(**datos)
+
+    def _datos_docente(self):
+        return {
+            'dep': '07',
+            'unid': '10',
+            'sub_unid': '04',
+            'categog': self.categoria.pk,
+            'hrs': '00.0',
+            'num_plaza': '806004',
+            'nombres': 'EMMA ROSALIA',
+            'a_paterno': 'CHACON',
+            'a_materno': 'LOPEZ',
+        }
+
+    def test_buscar_por_clave_devuelve_la_plaza(self):
+        encontrada = buscar_plaza_vacante(
+            clave_presupuestal=self.plaza.clave_presupuestal)
+        self.assertEqual(encontrada.pk, self.plaza.pk)
+
+    def test_buscar_excluye_marcadas_no_usar(self):
+        self.plaza.observaciones = 'DUPLICADO / NO USAR'
+        self.plaza.save()
+        self.assertIsNone(buscar_plaza_vacante(
+            clave_presupuestal=self.plaza.clave_presupuestal))
+
+    def test_reclamar_copia_datos_y_conserva_observacion(self):
+        self.plaza.observaciones = 'NUEVA CREACION Y EN ESPERA DE DOCENTE TITULAR'
+        self.plaza.save()
+        form = MaestroForm(data=self._datos_docente(), validar_curp_rfc=True)
+        self.assertTrue(form.is_valid(), form.errors.as_json())
+        antes = Maestro.objects.count()
+
+        reclamada = reclamar_plaza_vacante(self.plaza, form)
+
+        self.assertEqual(Maestro.objects.count(), antes)
+        self.assertEqual(reclamada.pk, self.plaza.pk)
+        self.assertEqual(reclamada.nombre_completo_registro, 'EMMA ROSALIA CHACON LOPEZ')
+        self.assertEqual(
+            reclamada.observaciones,
+            'NUEVA CREACION Y EN ESPERA DE DOCENTE TITULAR')
+
+
+class AgregarMaestroPlazaVacanteViewTests(TestCase):
+    """El alta de maestro debe ofrecer reclamar la plaza vacante antes de duplicar."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username='tester', email='tester@example.com', password='x')
+        self.categoria = Categoria.objects.create(
+            id_categoria='E0687', descripcion='CATEGORIA', horas='00.0')
+        self.plaza = Maestro.objects.create(
+            dep='07', unid='10', sub_unid='04', categog=self.categoria,
+            hrs='00.0', num_plaza='806004', status='ACTIVO',
+            observaciones='NUEVA CREACION Y EN ESPERA DE DOCENTE TITULAR')
+        self.client.force_login(self.user)
+
+    def _datos(self):
+        return {
+            'dep': '07',
+            'unid': '10',
+            'sub_unid': '04',
+            'categog': self.categoria.pk,
+            'hrs': '00.0',
+            'num_plaza': '806004',
+            'nombres': 'EMMA ROSALIA',
+            'a_paterno': 'CHACON',
+            'a_materno': 'LOPEZ',
+        }
+
+    def test_primero_pide_confirmacion_sin_crear(self):
+        r = self.client.post(reverse('agregar_maestro'), self._datos())
+
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Se encontró una plaza vacante con la misma clave')
+        self.assertContains(r, 'Asignar esta plaza')
+        self.assertEqual(Maestro.objects.count(), 1)
+        self.plaza.refresh_from_db()
+        self.assertTrue(self.plaza.es_plaza_sin_docente)
+
+    def test_confirmar_reutiliza_la_plaza(self):
+        datos = self._datos()
+        datos['confirmar_reclamar'] = self.plaza.pk
+
+        r = self.client.post(reverse('agregar_maestro'), datos)
+
+        self.assertRedirects(
+            r, reverse('detalle_maestro', args=[self.plaza.pk]),
+            fetch_redirect_response=False)
+        self.assertEqual(Maestro.objects.count(), 1)
+        self.plaza.refresh_from_db()
+        self.assertEqual(
+            self.plaza.nombre_completo_registro, 'EMMA ROSALIA CHACON LOPEZ')
+        self.assertIn('NUEVA CREACION', self.plaza.observaciones)
+
+    def test_crear_registro_nuevo_no_reutiliza(self):
+        datos = self._datos()
+        datos['crear_registro_nuevo'] = '1'
+
+        self.client.post(reverse('agregar_maestro'), datos)
+
+        self.assertEqual(Maestro.objects.count(), 2)
+        self.plaza.refresh_from_db()
+        self.assertTrue(self.plaza.es_plaza_sin_docente)
+
+
+class FusionarMaestroTests(TestCase):
+    """La fusión conserva historial/kardex y corrige nombres en vacantes."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username='u', password='x')
+        self.categoria = Categoria.objects.create(
+            id_categoria='E0687', descripcion='CATEGORIA', horas='00.0')
+        self.conservar = Maestro.objects.create(
+            id_maestro='01669', nombres='EMMA ROSALIA', a_paterno='CHACON',
+            a_materno='LOPEZ', curp=CURP_VALIDA_1985,
+            observaciones='EN SUSTITUCION DE TITULAR',
+            dep='07', unid='10', sub_unid='04', categog=self.categoria,
+            hrs='00.0', num_plaza='806004')
+        self.eliminar = Maestro.objects.create(
+            id_maestro='01668', status='INACTIVO',
+            observaciones='NUEVA CREACION Y EN ESPERA DE DOCENTE TITULAR',
+            dep='07', unid='10', sub_unid='04', categog=self.categoria,
+            hrs='00.0', num_plaza='806004')
+        self.lote = LoteReporteVacancia.objects.create(usuario_generador=self.user)
+        self.vacancia = Vacancia.objects.create(
+            lote=self.lote,
+            maestro_titular=self.eliminar,
+            maestro_interino=self.conservar,
+            apreciacion=TipoApreciacion.objects.create(descripcion='LICENCIA'),
+            tipo_vacante='TEMPORAL',
+            fecha_inicio=date(2026, 1, 1),
+            nombre_titular_reporte='None None None',
+            nombre_interino='None None None',
+            municipio='DURANGO',
+            direccion='ESCUELA',
+            zona_economica='Zona III',
+            destino='Admisión',
+            tipo_plaza='JORNADA',
+            sostenimiento='Federalizado',
+            categoria='E0687',
+            clave_presupuestal='CLAVE',
+            techo_financiero='TECHO',
+            clave_ct='10DML0002K',
+            turno='Matutino',
+        )
+        self.historial = Historial.objects.create(
+            usuario=self.user,
+            tipo_documento='Validación EO (Individual)',
+            maestro=self.eliminar,
+            ruta_archivo='C:/ruta/falsa/EO.xlsx',
+        )
+        self.kardex = KardexMovimiento.objects.create(
+            maestro=self.eliminar,
+            usuario=self.user,
+            descripcion='ALTA DE PLAZA',
+        )
+
+    def _fusionar(self, **extra):
+        call_command(
+            'fusionar_maestro',
+            conservar=self.conservar.pk,
+            eliminar=self.eliminar.pk,
+            stdout=io.StringIO(),
+            **extra)
+
+    def test_fusion_reapunta_y_corrige_nombres(self):
+        self._fusionar()
+
+        self.assertFalse(Maestro.objects.filter(pk='01668').exists())
+        self.conservar.refresh_from_db()
+        self.assertEqual(
+            self.conservar.observaciones,
+            'EN SUSTITUCION DE TITULAR\nNUEVA CREACION Y EN ESPERA DE DOCENTE TITULAR')
+
+        self.historial.refresh_from_db()
+        self.kardex.refresh_from_db()
+        self.vacancia.refresh_from_db()
+        self.assertEqual(self.historial.maestro_id, self.conservar.pk)
+        self.assertEqual(self.kardex.maestro_id, self.conservar.pk)
+        self.assertEqual(self.vacancia.maestro_titular_id, self.conservar.pk)
+        self.assertEqual(self.vacancia.nombre_titular_reporte, 'EMMA ROSALIA CHACON LOPEZ')
+        self.assertEqual(self.vacancia.nombre_interino, 'EMMA ROSALIA CHACON LOPEZ')
+
+    def test_modo_seco_no_modifica(self):
+        self._fusionar(seco=True)
+
+        self.assertTrue(Maestro.objects.filter(pk='01668').exists())
+        self.vacancia.refresh_from_db()
+        self.assertEqual(self.vacancia.nombre_titular_reporte, 'None None None')

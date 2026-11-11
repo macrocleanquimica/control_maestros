@@ -67,15 +67,57 @@
             </div>
             {% endif %}
 
+            {% if plaza_vacante %}
+            <!-- Confirmación: se encontró una plaza de nueva creación con la misma clave -->
+            <div class="comp-alert comp-alert-warning m-3" role="alert">
+                <i class="fas fa-link"></i>
+                <div>
+                    <strong class="d-block mb-1">Se encontró una plaza vacante con la misma clave</strong>
+                    <span class="small d-block mb-2">
+                        ID <strong>{{ plaza_vacante.id_maestro }}</strong> ·
+                        Clave <strong>{{ plaza_vacante.clave_presupuestal|default:"s/clave" }}</strong> ·
+                        CCT <strong>{{ plaza_vacante.id_escuela.id_escuela|default:"s/CCT" }}</strong>
+                        {% if plaza_vacante.observaciones %}
+                        <br>Observaciones: {{ plaza_vacante.observaciones }}
+                        {% endif %}
+                    </span>
+                    <p class="small mb-2">
+                        Puedes asignar esta plaza al maestro en lugar de crear un registro nuevo.
+                        Se conservarán la vacante, el kardex y el historial de la plaza.
+                    </p>
+                    <button type="submit" name="confirmar_reclamar" value="{{ plaza_vacante.id_maestro }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-link me-1"></i> Asignar esta plaza
+                    </button>
+                    <button type="submit" name="crear_registro_nuevo" value="1" class="btn btn-outline-secondary btn-sm ms-2">
+                        Crear registro nuevo
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- SECCIÓN 1: DATOS GENERALES -->
             <div class="comp-section">
                 <div class="comp-section-title">
                     <h4>Identificación y Nombres</h4>
                 </div>
                 <div class="row g-3">
+                    <div class="col-12">
+                        <div class="border rounded-3 p-3 bg-light">
+                            <div class="form-check">
+                                {{ form.es_plaza_vacante }}
+                                <label class="form-check-label fw-bold" for="{{ form.es_plaza_vacante.id_for_label }}">
+                                    {{ form.es_plaza_vacante.label }}
+                                </label>
+                            </div>
+                            <div class="form-text small mb-0">{{ form.es_plaza_vacante.help_text }}</div>
+                        </div>
+                    </div>
                     <div class="col-md-4">
                         <label class="form-label">Apellido Paterno</label>
                         {{ form.a_paterno }}
+                        {% if form.a_paterno.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.a_paterno.errors.0 }}</div>
+                        {% endif %}
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Apellido Materno</label>
@@ -84,6 +126,9 @@
                     <div class="col-md-4">
                         <label class="form-label">Nombres</label>
                         {{ form.nombres }}
+                        {% if form.nombres.errors %}
+                        <div class="text-danger small mt-1 fw-bold">{{ form.nombres.errors.0 }}</div>
+                        {% endif %}
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">CURP</label>

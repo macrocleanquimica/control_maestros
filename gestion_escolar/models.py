@@ -363,7 +363,39 @@ class Maestro(models.Model):
     
     def __str__(self):
         return f"{self.a_paterno} {self.a_materno} {self.nombres}"
-    
+
+    @property
+    def nombre_completo_registro(self):
+        """Nombre completo sin espacios sobrantes ('' si no tiene nombre)."""
+        return ' '.join(
+            parte.strip()
+            for parte in (self.nombres, self.a_paterno, self.a_materno)
+            if parte and str(parte).strip()
+        )
+
+    @property
+    def es_plaza_sin_docente(self):
+        """True para las plazas de nueva creación que aún no tienen docente."""
+        return not self.nombre_completo_registro
+
+    @property
+    def es_registro_duplicado_no_usar(self):
+        """Marca registros conservados solo como historial (observación NO USAR)."""
+        obs = (self.observaciones or '').upper()
+        return 'NO USAR' in obs and 'DUPLICADO' in obs
+
+    @property
+    def nombre_visible(self):
+        """Nombre a mostrar en listados y reportes; evita 'None None None'."""
+        if self.nombre_completo_registro:
+            return self.nombre_completo_registro
+        if self.es_registro_duplicado_no_usar:
+            return 'REGISTRO DUPLICADO / NO USAR'
+        etiqueta = 'PLAZA VACANTE'
+        if self.num_plaza:
+            etiqueta += f' (Plaza {self.num_plaza})'
+        return etiqueta
+
     def generar_clave_presupuestal(self):
         """Genera la clave presupuestal concatenando los campos en el orden correcto"""
         dep = self.dep or ""
@@ -646,7 +678,17 @@ class Vacancia(models.Model):
         ordering = ['-lote__fecha_creacion']
 
     def __str__(self):
-        return f"Vacancia para {self.nombre_titular_reporte} en Lote {self.lote.id}"
+        return f"Vacancia para {self.nombre_titular_visible} en Lote {self.lote.id}"
+
+    @property
+    def nombre_titular_visible(self):
+        """Nombre del titular para reportes; corrige el texto viejo 'None None None'."""
+        nombre = (self.nombre_titular_reporte or '').strip()
+        if nombre and nombre.upper() != 'NONE NONE NONE':
+            return nombre
+        if self.maestro_titular_id:
+            return self.maestro_titular.nombre_visible
+        return 'PLAZA VACANTE'
 
 class Historial(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Usuario")
