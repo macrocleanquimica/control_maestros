@@ -285,7 +285,7 @@ def lista_maestros_ajax(request):
 
         nombre_html = maestro.nombre_visible
         if maestro.es_plaza_sin_docente and 'PLAZA VACANTE' not in nombre_html:
-            nombre_html += ' <span class="badge bg-warning text-dark ms-1">PLAZA VACANTE</span>'
+            nombre_html += ' <span class="badge bg-secondary ms-1">PLAZA VACANTE</span>'
         if maestro.es_registro_duplicado_no_usar and 'NO USAR' not in nombre_html:
             nombre_html += ' <span class="badge bg-secondary ms-1">DUPLICADO / NO USAR</span>'
 

@@ -25,7 +25,7 @@
                 <span>ID: <strong class="comp-font-mono">{{ maestro.id_maestro }}</strong></span>
                 <span class="comp-badge {% if maestro.status == 'ACTIVO' %}comp-badge-success{% else %}comp-badge-soft{% endif %}">{{ maestro.get_status_display }}</span>
                 {% if maestro.es_plaza_sin_docente %}
-                <span class="comp-badge comp-badge-accent">PLAZA VACANTE</span>
+                <span class="comp-badge comp-badge-soft">PLAZA VACANTE</span>
                 {% endif %}
                 {% if maestro.es_registro_duplicado_no_usar %}
                 <span class="comp-badge comp-badge-soft">DUPLICADO / NO USAR</span>
