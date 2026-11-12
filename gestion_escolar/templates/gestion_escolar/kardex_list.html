@@ -56,7 +56,10 @@ $(document).ready(function() {
                     className: 'fw-bold text-dark'
                 },
                 { 
-                    className: 'text-muted comp-font-mono small'
+                    render: function(data) {
+                        // La vista ya envía las claves con el estilo comp-code.
+                        return data || '';
+                    }
                 },
                 { 
                     className: 'text-center',
@@ -69,10 +72,9 @@ $(document).ready(function() {
                 searchPlaceholder: "Buscar maestro por nombre o clave...",
                 processing: `
                     <div class="d-flex justify-content-center py-4">
-                        <div class="spinner-border text-fup-primary" role="status"></div>
+                        <div class="spinner-border text-primary" role="status"></div>
                     </div>`
-            },
-            dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>'
+            }
         });
     }
 });

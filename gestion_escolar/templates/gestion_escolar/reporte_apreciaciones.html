@@ -209,19 +209,12 @@
 $(document).ready(function() {
     // Búsqueda / paginación al estilo de Todo el Personal
     var tabla = $('#tablaApreciaciones').DataTable({
-        responsive: true,
-        autoWidth: false,
         language: {
             ...window.SpanishDataTable,
             search: "_INPUT_",
             searchPlaceholder: "Filtrar por descripción..."
         },
-        pageLength: 25,
-        order: [[1, 'asc']],
-        dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>',
-        drawCallback: function() {
-            $('.dataTables_paginate > .pagination').addClass('pagination-sm');
-        }
+        order: [[1, 'asc']]
     });
 
     // El buscador también aplica al Excel

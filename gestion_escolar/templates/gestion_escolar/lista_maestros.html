@@ -80,14 +80,11 @@ Desactívelo para ver todas las plazas por separado.">
                     d.agrupar = agrupar ? '1' : '0';
                 }
             },
-            responsive: true,
             language: {
                 ...window.SpanishDataTable,
                 search: "_INPUT_",
                 searchPlaceholder: "Buscar personal..."
             },
-            pageLength: 15,
-            lengthMenu: [10, 15, 25, 50, 100],
             order: [[0, 'asc']],
             columns: [
                 { data: 0, className: 'text-muted small fw-bold' },
@@ -119,16 +116,19 @@ Desactívelo para ver todas las plazas por separado.">
                     }
                 },
                 { data: 2, className: 'fw-bold' },
-                { data: 3, className: 'small text-muted font-monospace' },
+                {
+                    data: 3,
+                    render: function(data) {
+                        if (!data) return '';
+                        return '<span class="comp-code">' + data + '</span>';
+                    }
+                },
                 { data: 4, className: 'fw-bold text-dark' },
                 { 
                     data: 5,
 render: function(data) {
-                    if (!data) return '';
-                    // Detectar por la clase que envía la vista (bg-success=activo, bg-danger=inactivo)
-                    var is_active = /bg-success/.test(data);
-                    var badgeClass = is_active ? 'badge-soft-success' : 'badge-soft-danger';
-                    return `<span class="badge ${badgeClass}">${data.replace(/<\/?[^>]+(>|$)/g, "")}</span>`;
+                    // La vista ya envía el badge con las clases comp-badge.
+                    return data || '';
                 }
                 },
                 { 
@@ -139,11 +139,7 @@ render: function(data) {
                         return data || '';
                     }
                 }
-            ],
-            drawCallback: function() {
-                $('.dataTables_paginate > .pagination').addClass('pagination-sm justify-content-end px-3 py-2');
-                $('.dataTables_info').addClass('px-3 small text-muted');
-            }
+            ]
         });
 
         $('#export-excel-btn').on('click', function() {

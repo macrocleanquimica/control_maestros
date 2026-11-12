@@ -271,8 +271,8 @@ def lista_maestros_ajax(request):
 
         actions += '</div>'
         status_map = {'ACTIVO': 'success', 'INACTIVO': 'danger'}
-        status_class = status_map.get(maestro.status, 'secondary')
-        status_html = f'<span class="badge bg-{status_class}">{maestro.get_status_display()}</span>'
+        status_class = status_map.get(maestro.status, 'soft')
+        status_html = f'<span class="comp-badge comp-badge-{status_class}">{maestro.get_status_display()}</span>'
 
         is_misplaced = False
         if maestro.id_escuela and maestro.techo_f:
@@ -285,9 +285,9 @@ def lista_maestros_ajax(request):
 
         nombre_html = maestro.nombre_visible
         if maestro.es_plaza_sin_docente and 'PLAZA VACANTE' not in nombre_html:
-            nombre_html += ' <span class="badge bg-secondary ms-1">PLAZA VACANTE</span>'
+            nombre_html += ' <span class="comp-badge comp-badge-soft ms-1">PLAZA VACANTE</span>'
         if maestro.es_registro_duplicado_no_usar and 'NO USAR' not in nombre_html:
-            nombre_html += ' <span class="badge bg-secondary ms-1">DUPLICADO / NO USAR</span>'
+            nombre_html += ' <span class="comp-badge comp-badge-soft ms-1">DUPLICADO / NO USAR</span>'
 
         data.append([
             maestro.id_maestro,

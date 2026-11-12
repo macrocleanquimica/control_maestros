@@ -110,10 +110,10 @@ def kardex_maestros_ajax(request):
         claves = [c for c in [raiz.clave_presupuestal] + [s.clave_presupuestal for s in secundarias] if c]
         if claves:
             claves_html = ' '.join(
-                f'<span class="badge bg-light text-dark border font-monospace me-1">{c}</span>' for c in claves
+                f'<span class="comp-code me-1">{c}</span>' for c in claves
             )
             if len(claves) > 1:
-                claves_html += f' <span class="badge bg-warning text-dark ms-1">{len(claves)} plazas</span>'
+                claves_html += f' <span class="comp-badge comp-badge-soft ms-1">{len(claves)} plazas</span>'
         else:
             claves_html = '-'
         kardex_url = reverse("kardex_maestro_detail", args=[raiz.pk]) + "?from=lista"

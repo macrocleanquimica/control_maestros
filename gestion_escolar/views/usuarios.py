@@ -296,16 +296,16 @@ def user_datatable_ajax(request):
         
         # Estado
         if user.is_active:
-            estado_badge = '<span class="badge bg-success">Activo</span>'
+            estado_badge = '<span class="comp-badge comp-badge-success">Activo</span>'
         else:
-            estado_badge = '<span class="badge bg-danger">Inactivo</span>'
+            estado_badge = '<span class="comp-badge comp-badge-danger">Inactivo</span>'
         
         # Permisos
         permisos_badges = ''
         if user.is_superuser:
-            permisos_badges += '<span class="badge bg-danger me-1">Superusuario</span>'
+            permisos_badges += '<span class="comp-badge comp-badge-danger me-1">Superusuario</span>'
         elif user.is_staff:
-            permisos_badges += '<span class="badge bg-warning me-1">Staff</span>'
+            permisos_badges += '<span class="comp-badge comp-badge-warning me-1">Staff</span>'
         
         # Último login
         ultimo_login = user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Nunca'

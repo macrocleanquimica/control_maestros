@@ -1110,7 +1110,7 @@
     <script src="{% static 'gestion_escolar/js/vendor/select2-es.min.js' %}"></script>
     <script src="{% static 'gestion_escolar/js/vendor/chart.js' %}"></script>
 
-    <script src="{%static 'gestion_escolar/js/custom_datatables.js'%}?v=20261020"></script>
+    <script src="{%static 'gestion_escolar/js/custom_datatables.js'%}?v=20261112"></script>
 
     <script>
         // Toggle sidebar en dispositivos móviles
@@ -1297,22 +1297,7 @@
     </script>
 
 
-    {%block extra_js%}
-    <script>
-                $(document).ready(function () {
-                    // Check if tablaCorrespondencia exists before initializing DataTable
-                    if ($('#tablaCorrespondencia').length) {
-                        $('#tablaCorrespondencia').DataTable({
-                            responsive: true,
-                            order: [[0, 'desc']], // Ordenar por la primera columna (fecha) de forma descendente
-                            language: {
-                                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-                            }
-                        });
-                    }
-                });
-    </script>
-    {%endblock%}
+    {% block extra_js %}{% endblock %}
 </body>
 
 </html>

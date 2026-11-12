@@ -38,7 +38,7 @@
                     <tbody>
                         {% for categoria in categorias %}
                         <tr>
-                            <td><span class="comp-badge comp-badge-soft comp-font-mono comp-tabular-nums">{{ categoria.id_categoria }}</span></td>
+                            <td><span class="comp-code">{{ categoria.id_categoria }}</span></td>
                             <td><span class="fw-bold text-dark">{{ categoria.descripcion }}</span></td>
                             <td class="text-center"><span class="fw-semibold">{{ categoria.horas|default:"—" }}</span></td>
                             <td class="text-center">
@@ -54,9 +54,11 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center py-5 text-muted">
-                                <i class="fas fa-folder-open fa-3x mb-3 opacity-25"></i>
-                                <p class="mb-0">No se encontraron categorías registradas.</p>
+                            <td colspan="4">
+                                <div class="comp-empty-state">
+                                    <i class="fas fa-folder-open"></i>
+                                    <p>No se encontraron categorías registradas.</p>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -73,18 +75,12 @@
 <script>
     $(document).ready(function() {
         $('#tablaCategoriasPremium').DataTable({
-            responsive: true,
             language: {
                 ...window.SpanishDataTable,
                 search: "_INPUT_",
                 searchPlaceholder: "Filtrar categorías..."
             },
-            pageLength: 25,
-            order: [[0, 'asc']],
-            drawCallback: function() {
-                $('.dataTables_paginate > .pagination').addClass('pagination-sm justify-content-end px-3 py-2');
-                $('.dataTables_info').addClass('px-3 small text-muted');
-            }
+            order: [[0, 'asc']]
         });
     });
 </script>

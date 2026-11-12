@@ -240,19 +240,12 @@
 $(document).ready(function() {
     var grupoEsConTramite = "{{ grupo_sel }}" === 'con_tramite';
     var tabla = $('#tablaBasificacion').DataTable({
-        responsive: true,
-        autoWidth: false,
         language: {
             ...window.SpanishDataTable,
             search: "_INPUT_",
             searchPlaceholder: "Filtrar por maestro, CURP, CCT..."
         },
-        pageLength: 25,
-        order: grupoEsConTramite ? [[9, 'asc']] : [[0, 'asc']],
-        dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>',
-        drawCallback: function() {
-            $('.dataTables_paginate > .pagination').addClass('pagination-sm');
-        }
+        order: grupoEsConTramite ? [[9, 'asc']] : [[0, 'asc']]
     });
 
     $('.tab-btn').on('click', function() {

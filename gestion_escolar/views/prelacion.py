@@ -64,10 +64,10 @@ def lista_prelacion_ajax(request):
 
         # Crear badge de estado
         if maestro_existente:
-            estado_html = f'<span class="badge bg-soft-success text-success border px-2">En Sistema</span>'
+            estado_html = '<span class="comp-badge comp-badge-success">En Sistema</span>'
             nombre_html = f'<a href="{reverse("detalle_maestro", args=[maestro_existente.id_maestro])}" class="text-primary fw-bold" title="Ver perfil del maestro">{registro.nombre}</a>'
         else:
-            estado_html = f'<span class="badge bg-soft-secondary text-secondary border px-2">No Registrado</span>'
+            estado_html = '<span class="comp-badge comp-badge-soft">No Registrado</span>'
             nombre_html = f'<span class="text-dark">{registro.nombre}</span>'
 
         data.append([

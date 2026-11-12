@@ -84,8 +84,8 @@
                         return '<span class="fw-bold comp-tabular-nums">' + data + '</span>';
                     }
                 },
-                { data: 1, name: 'folio', className: 'comp-font-mono' },
-                { data: 2, name: 'curp', className: 'comp-font-mono small' },
+                { data: 1, name: 'folio', render: function(data) { return '<span class="comp-code">' + (data || '') + '</span>'; } },
+                { data: 2, name: 'curp', render: function(data) { return '<span class="comp-code">' + (data || '') + '</span>'; } },
                 { data: 3, name: 'nombre', orderable: false },
                 { data: 4, name: 'tipo_val', className: 'small' },
                 { data: 5, name: 'estado', orderable: false, className: 'text-center' },
@@ -102,19 +102,8 @@
                             <span class="visually-hidden">Cargando...</span>
                         </div>
                     </div>`
-            },
-            pageLength: 25,
-            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-            dom: "<'row mb-4'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6 d-flex justify-content-md-end'f>>" +
-                 "<'row'<'col-sm-12'tr>>" +
-                 "<'row mt-4'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
-            drawCallback: function () {
-                $('.dataTables_paginate .paginate_button').addClass('rounded-pill');
             }
         });
-
-        // Aplicar estilos a la caja de búsqueda
-        $('.dataTables_filter input').removeClass('form-control-sm').addClass('shadow-sm');
     });
 </script>
 {% endblock %}

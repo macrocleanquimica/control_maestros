@@ -204,10 +204,10 @@
                                     <td>
                                         {% if vacancia.maestro_interino %}
                                             <div class="smaller fw-bold">{{ vacancia.maestro_interino }}</div>
-                                            <div class="smaller comp-text-muted comp-font-mono">{{ vacancia.maestro_interino.curp }}</div>
+                                            <div class="smaller comp-text-muted"><span class="comp-code">{{ vacancia.maestro_interino.curp }}</span></div>
                                         {% else %}
                                             <div class="smaller fw-bold">{{ vacancia.nombre_interino|default:"N/A" }}</div>
-                                            <div class="smaller comp-text-muted comp-font-mono">{{ vacancia.curp_interino|default:"N/A" }}</div>
+                                            <div class="smaller comp-text-muted"><span class="comp-code">{{ vacancia.curp_interino|default:"N/A" }}</span></div>
                                         {% endif %}
                                         <div class="smaller comp-text-muted mt-1">
                                             Folio: {{ vacancia.folio_prelacion|default:"-" }} | Pos: {{ vacancia.posicion_orden|default:"-" }}

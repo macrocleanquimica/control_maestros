@@ -72,7 +72,7 @@ $(document).ready(function() {
             { 
                 data: 0,
                 render: function(data, type, row) {
-                    return `<span class="fw-bold text-dark">#${data}</span>`;
+                    return `<span class="comp-code">#${data}</span>`;
                 }
             },
             { data: 1 },
@@ -85,7 +85,7 @@ $(document).ready(function() {
             { 
                 data: 4,
                 render: function(data, type, row) {
-                    return `<span class="comp-badge comp-badge-soft comp-font-mono">${data}</span>`;
+                    return `<span class="comp-code">${data}</span>`;
                 }
             },
             { 
@@ -112,8 +112,7 @@ $(document).ready(function() {
             ...window.SpanishDataTable,
             search: "_INPUT_",
             searchPlaceholder: "Buscar por folio, nombre, rfc o clave..."
-        },
-        dom: '<"d-flex justify-content-between align-items-center mb-4"lf>rt<"d-flex justify-content-between align-items-center mt-4"ip>'
+        }
     });
 
     $('#export-excel-fup-premium').on('click', function() {

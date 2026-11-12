@@ -22,7 +22,7 @@
                 <h1 class="comp-title">{{ maestro.nombre_visible }}</h1>
             </div>
             <p class="comp-subtitle d-flex align-items-center gap-2 flex-wrap mb-0">
-                <span>ID: <strong class="comp-font-mono">{{ maestro.id_maestro }}</strong></span>
+                <span>ID: <span class="comp-code">{{ maestro.id_maestro }}</span></span>
                 <span class="comp-badge {% if maestro.status == 'ACTIVO' %}comp-badge-success{% else %}comp-badge-soft{% endif %}">{{ maestro.get_status_display }}</span>
                 {% if maestro.es_plaza_sin_docente %}
                 <span class="comp-badge comp-badge-soft">PLAZA VACANTE</span>
@@ -176,7 +176,7 @@
                                     <span class="comp-text-muted small">ID: {{ plaza.id_maestro }}</span>
                                 </div>
                             </td>
-                            <td><span class="comp-font-mono text-primary">{{ plaza.clave_presupuestal }}</span></td>
+                            <td><span class="comp-code">{{ plaza.clave_presupuestal }}</span></td>
                             <td>
                                 <div class="d-flex flex-column comp-detail-school">
                                     <span class="text-truncate" title="{{ plaza.id_escuela.nombre_ct }}">{{ plaza.id_escuela.nombre_ct|default:"N/A" }}</span>
@@ -343,7 +343,7 @@
                         <tbody>
                             {% for inter in interinatos_cubiertos %}
                             <tr>
-                                <td><span class="comp-font-mono text-primary fw-bold">{{ inter.clave_presupuestal|default:"S/N" }}</span></td>
+                                <td><span class="comp-code">{{ inter.clave_presupuestal|default:"S/N" }}</span></td>
                                 <td>
                                     {% if inter.maestro_titular %}
                                     <a href="{% url 'detalle_maestro' inter.maestro_titular.id_maestro %}" class="text-decoration-none">{{ inter.maestro_titular.nombres }} {{ inter.maestro_titular.a_paterno }} {{ inter.maestro_titular.a_materno }}</a>
@@ -404,7 +404,7 @@
                         <tbody>
                             {% for inter in interinatos_como_titular %}
                             <tr>
-                                <td><span class="comp-font-mono text-primary fw-bold">{{ inter.clave_presupuestal|default:"S/N" }}</span></td>
+                                <td><span class="comp-code">{{ inter.clave_presupuestal|default:"S/N" }}</span></td>
                                 <td>
                                     <a href="{% url 'detalle_maestro' inter.maestro_interino.id_maestro %}" class="text-decoration-none">{{ inter.maestro_interino.nombres }} {{ inter.maestro_interino.a_paterno }} {{ inter.maestro_interino.a_materno }}</a>
                                 </td>

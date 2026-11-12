@@ -38,7 +38,7 @@
                         {% for lote in lotes %}
                         <tr>
                             <td class="ps-4">
-                                <span class="comp-badge comp-badge-soft comp-tabular-nums">#{{ lote.id }}</span>
+                                <span class="comp-code">#{{ lote.id }}</span>
                             </td>
                             <td>
                                 <div class="fw-bold text-dark">{{ lote.fecha_creacion|date:"d/m/Y" }}</div>
@@ -119,10 +119,7 @@ $(document).ready(function() {
                 ...window.SpanishDataTable,
                 "search": "_INPUT_",
                 "searchPlaceholder": "Buscar lote..."
-            },
-            "pageLength": 10,
-            "dom": '<"p-3 d-flex justify-content-between align-items-center"fB>t<"p-3 d-flex justify-content-between align-items-center"ip>',
-            "buttons": []
+            }
         });
     }
 

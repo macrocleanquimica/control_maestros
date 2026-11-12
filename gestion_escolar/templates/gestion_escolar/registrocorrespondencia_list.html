@@ -79,7 +79,7 @@
                                     <div class="comp-text-muted small">Recibió: {{ registro.quien_recibio|default:"-"|truncatechars:18 }}</div>
                                 </td>
                                 <td>
-                                    <span class="comp-badge comp-badge-soft comp-font-mono comp-tabular-nums">{{ registro.folio_documento|default:"SIN FOLIO" }}</span>
+                                    <span class="comp-code">{{ registro.folio_documento|default:"SIN FOLIO" }}</span>
                                 </td>
                                 <td>
                                     <div class="fw-bold" style="color: var(--comp-text);">{{ registro.remitente }}</div>
@@ -140,34 +140,13 @@
 {% block extra_js %}
 <script>
     $(document).ready(function () {
-        var accent_normalize = function (data) {
-            if (typeof data !== 'string') return data;
-            return data.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        };
-
-        $.fn.dataTable.ext.type.search['string-accent-neutral'] = accent_normalize;
-        $.fn.dataTable.ext.type.search['html-accent-neutral'] = accent_normalize;
-
-        var table = $('#tablaCorrespondenciaPremium').DataTable({
-            responsive: true,
+        $('#tablaCorrespondenciaPremium').DataTable({
             language: {
                 ...window.SpanishDataTable,
                 search: "_INPUT_",
                 searchPlaceholder: "Buscar registro..."
             },
-            pageLength: 25,
-            order: [[0, 'desc']],
-            columnDefs: [
-                { type: "html-accent-neutral", targets: "_all" }
-            ],
-            drawCallback: function () {
-                $('.dataTables_paginate > .pagination').addClass('pagination-sm justify-content-end px-3 py-2');
-                $('.dataTables_info').addClass('px-3 small text-muted');
-            }
-        });
-
-        $('.dataTables_filter input').off().on('input search keyup', function () {
-            table.search(accent_normalize(this.value)).draw();
+            order: [[0, 'desc']]
         });
     });
 </script>

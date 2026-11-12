@@ -188,15 +188,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar DataTable Premium
     var table = $('#historialTable').DataTable({
         order: [[1, "desc"]],
-        pageLength: 25,
         language: {
             ...window.SpanishDataTable,
             search: "_INPUT_",
             searchPlaceholder: "Buscar en historial..."
-        },
-        dom: '<"d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3"lf>rt<"d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3"ip>',
-        drawCallback: function() {
-            $('.dataTables_paginate > .pagination').addClass('pagination-sm');
         }
     });
 

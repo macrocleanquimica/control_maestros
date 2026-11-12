@@ -52,7 +52,7 @@
                     <tbody>
                         {% for escuela in escuelas %}
                         <tr>
-                            <td><span class="comp-badge comp-badge-soft comp-font-mono comp-tabular-nums">{{ escuela.id_escuela }}</span></td>
+                            <td><span class="comp-code">{{ escuela.id_escuela }}</span></td>
                             <td>
                                 <div class="fw-bold text-dark">{{ escuela.nombre_ct }}</div>
                                 <div class="text-muted small">U.D: {{ escuela.u_d }}</div>
@@ -105,38 +105,13 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    // Función para normalizar texto (quitar acentos)
-    var accent_normalize = function(data) {
-        if (typeof data !== 'string') return data;
-        return data.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    };
-
-    $.fn.dataTable.ext.type.search['string-accent-neutral'] = accent_normalize;
-    $.fn.dataTable.ext.type.search['html-accent-neutral'] = accent_normalize;
-
     var table = $('#tablaEscuelasPremium').DataTable({
-        responsive: true,
         language: {
             ...window.SpanishDataTable,
             search: "_INPUT_",
             searchPlaceholder: "Buscar escuela..."
         },
-        pageLength: 25,
-        order: [[1, 'asc']],
-        columnDefs: [
-            { type: "html-accent-neutral", targets: "_all" }
-        ],
-        drawCallback: function() {
-            $('.dataTables_paginate > .pagination').addClass('pagination-sm justify-content-end px-3 py-2');
-            $('.dataTables_info').addClass('px-3 small text-muted');
-        }
-    });
-
-    // Filtro personalizado para búsqueda insensible a acentos.
-    // Se escucha también "input" y "search" para que al borrar con la X
-    // del campo se limpie el filtro (antes solo se atendía keyup).
-    $('.dataTables_filter input').off().on('input search keyup', function() {
-        table.search(accent_normalize(this.value)).draw();
+        order: [[1, 'asc']]
     });
 
     // Lógica de exportación

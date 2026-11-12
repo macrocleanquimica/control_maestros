@@ -65,7 +65,7 @@
                         {% for trabajador in trabajadores %}
                         <tr>
                             <td>
-                                <span class="comp-badge comp-badge-soft comp-font-mono comp-tabular-nums">{{ trabajador.id_maestro }}</span>
+                                <span class="comp-code">{{ trabajador.id_maestro }}</span>
                             </td>
                             <td>
                                 <div class="d-flex align-items-center">
@@ -74,16 +74,16 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="comp-badge comp-badge-soft comp-font-mono">{{ trabajador.id_escuela.id_escuela|default:"N/A" }}</span>
+                                <span class="comp-code">{{ trabajador.id_escuela.id_escuela|default:"N/A" }}</span>
                             </td>
                             <td>
-                                <span class="text-muted small comp-font-mono">{{ trabajador.clave_presupuestal|default:"-" }}</span>
+                                <span class="comp-code">{{ trabajador.clave_presupuestal|default:"-" }}</span>
                             </td>
                             <td>
                                 {% if trabajador.status == 'ACTIVO' %}
-                                    <span class="badge-soft-success">{{ trabajador.get_status_display|default:"Activo" }}</span>
+                                    <span class="comp-badge comp-badge-success">{{ trabajador.get_status_display|default:"Activo" }}</span>
                                 {% elif trabajador.status == 'INACTIVO' %}
-                                    <span class="badge-soft-danger">{{ trabajador.get_status_display|default:"Inactivo" }}</span>
+                                    <span class="comp-badge comp-badge-danger">{{ trabajador.get_status_display|default:"Inactivo" }}</span>
                                 {% else %}
                                     <span class="comp-badge comp-badge-warning">{{ trabajador.get_status_display|default:trabajador.status }}</span>
                                 {% endif %}
@@ -130,24 +130,15 @@
         if (!tabla) return;
 
         const table = $(tabla).DataTable({
-            responsive: true,
-            autoWidth: false,
             language: {
                 ...window.SpanishDataTable,
                 search: "_INPUT_",
                 searchPlaceholder: "Buscar personal..."
             },
-            pageLength: 15,
-            lengthMenu: [10, 15, 25, 50, 100],
             order: [[0, 'asc']],
             columnDefs: [
-                { targets: 5, orderable: false, searchable: false },
-                { type: 'html-accent-neutral', targets: '_all' }
-            ],
-            drawCallback: function () {
-                $('.dataTables_paginate > .pagination').addClass('pagination-sm justify-content-end px-3 py-2');
-                $('.dataTables_info').addClass('px-3 small text-muted');
-            }
+                { targets: 5, orderable: false, searchable: false }
+            ]
         });
 
         const exportBtn = document.getElementById('exportarExcelBtn');
