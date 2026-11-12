@@ -39,7 +39,7 @@ $(document).ready(function () {
                     '<p>No se encontraron resultados.</p>' +
                     '</div>'
             }),
-            pageLength: 25,
+            pageLength: 10,
             lengthMenu: [10, 25, 50, 100],
             autoWidth: false,
             searchDelay: 300,
