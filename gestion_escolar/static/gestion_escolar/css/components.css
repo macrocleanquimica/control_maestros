@@ -629,6 +629,12 @@
   margin-top: 0.35rem;
 }
 
+/* Filtro compacto de fechas */
+.comp-date-filter {
+  width: 140px;
+  max-width: 140px;
+}
+
 .comp-form-error {
   font-size: 0.78rem;
   color: #c0392b;
