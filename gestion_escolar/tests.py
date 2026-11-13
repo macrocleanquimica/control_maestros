@@ -15,6 +15,7 @@ from django.urls import reverse
 
 from .campos_plantilla import (
     PLANTILLAS_SISTEMA,
+    config_para_js,
     config_sistema,
     config_vacia,
 )
@@ -1044,6 +1045,28 @@ class DisenadorPlantillasTests(TestCase):
         plantilla.save(update_fields=['configuracion'])
 
         self.assertEqual(ids_permitidos(plantilla.nombre), [])
+
+    def test_alta_inicial_sugiere_su_unico_motivo(self):
+        """ALTA INICIAL (09) preselecciona ALTA INICIAL aunque la config
+        guardada no traiga ``motivo_auto``."""
+        MotivoTramite.objects.get_or_create(
+            id=39, defaults={'motivo_tramite': 'ALTA INICIAL'})
+        plantilla, _ = PlantillaTramite.objects.get_or_create(
+            nombre='ALTA INICIAL (09)',
+            defaults={
+                'ruta_archivo': 'gestion_escolar/templates/tramites/Plantillas/Word/NO_EXISTE.docx',
+                'tipo_documento': 'TRAMITE',
+                'es_sistema': True,
+                'activa': True,
+                'configuracion': config_sistema('ALTA INICIAL (09)'),
+            },
+        )
+        config = dict(plantilla.configuracion or {})
+        config.update({'mostrar_motivo': True, 'motivos': [39], 'motivo_auto': None})
+        plantilla.configuracion = config
+        plantilla.save(update_fields=['configuracion'])
+
+        self.assertEqual(config_para_js(plantilla)['motivo_auto'], 39)
 
     # ------------------------------------------------------------------
     # Integración con la generación de documentos

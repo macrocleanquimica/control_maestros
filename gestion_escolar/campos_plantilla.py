@@ -407,6 +407,7 @@ _REQUERIDOS_ESPECIALES = {
 }
 
 _MOTIVO_AUTO = {
+    'ALTA INICIAL (09)': 39,
     'CONSTANCIA DE RECATEGORIZACIÓN': 17,
     'SOLICITUD BECA COMISION': 1,
 }
@@ -505,9 +506,17 @@ def config_de_plantilla(plantilla):
     if plantilla is None:
         return config_vacia()
     config = getattr(plantilla, 'configuracion', None)
-    if isinstance(config, dict) and config.get('campos') is not None:
-        return normalizar_config(config)
     sistema = config_sistema(getattr(plantilla, 'nombre', ''))
+    if isinstance(config, dict) and config.get('campos') is not None:
+        guardada = normalizar_config(config)
+        # Configuraciones guardadas antes de existir "motivo_auto" lo traen
+        # vacío: se completa con el valor del sistema sin tocar el resto.
+        if not guardada.get('motivo_auto') and sistema:
+            motivo_auto = sistema.get('motivo_auto')
+            motivos = guardada.get('motivos')
+            if motivo_auto and (not motivos or motivo_auto in motivos):
+                guardada['motivo_auto'] = motivo_auto
+        return guardada
     if sistema:
         return normalizar_config(sistema)
     return config_vacia()
