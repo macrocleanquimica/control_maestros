@@ -45,19 +45,29 @@
         {% endfor %}
     {% endif %}
 
+    {% if historial_item.estado == 'CANCELADO' %}
+    <div class="comp-alert comp-alert-danger d-flex align-items-start gap-3 p-3 mb-4 rounded-4 shadow-sm" style="border-left: 5px solid #dc3545; background: #fff5f5;">
+        <i class="fas fa-ban fa-2x text-danger mt-1"></i>
+        <div class="flex-grow-1">
+            <h5 class="mb-1 fw-bold text-danger">ESTE TRÁMITE FUE CANCELADO</h5>
+            <p class="mb-1 text-dark">Cancelado el <strong>{{ historial_item.fecha_cancelacion|date:"d/m/Y H:i" }} hrs.</strong> por <strong>{{ historial_item.usuario_cancelacion.username|default:"Sistema" }}</strong>.</p>
+            <p class="mb-0 small text-danger-emphasis"><strong>Motivo:</strong> {{ historial_item.motivo_cancelacion|default:"No se registró motivo" }}</p>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="comp-panel">
         <div class="comp-section d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div class="comp-section-title mb-0 pb-0 border-0">
                 <h4>Registro</h4>
             </div>
-            {% if puede_corregir or tiene_archivo %}
             <div class="comp-actions d-print-none">
                 {% if puede_corregir %}
                 <a href="{{ corregir_url }}" class="comp-btn comp-btn-ghost comp-btn-sm">
                     <i class="fas fa-edit"></i> Corregir datos
                 </a>
                 {% endif %}
-                {% if es_tramite and historial_item.ruta_archivo %}
+                {% if es_tramite and historial_item.ruta_archivo and historial_item.estado != 'CANCELADO' %}
                     {% if user == historial_item.usuario or user.is_superuser or user|has_group:"ADMINISTRADOR" %}
                     <a href="{% url 'corregir_tramite' historial_item.id %}" class="comp-btn comp-btn-ghost comp-btn-sm">
                         <i class="fas fa-edit"></i> Corregir y regenerar
@@ -69,12 +79,42 @@
                     <i class="fas fa-download"></i> Descargar
                 </a>
                 {% endif %}
+                {% if historial_item.estado != 'CANCELADO' %}
+                    {% if user == historial_item.usuario or user.is_superuser or user|has_group:"ADMINISTRADOR" %}
+                    <button type="button" class="comp-btn comp-btn-danger comp-btn-sm" data-bs-toggle="modal" data-bs-target="#modalCancelarTramiteDetalle">
+                        <i class="fas fa-ban"></i> Cancelar trámite
+                    </button>
+                    {% endif %}
+                {% endif %}
             </div>
-            {% endif %}
         </div>
 
         <div class="comp-panel-body">
             <div class="comp-info-grid">
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Estado</span>
+                    <span class="comp-info-value">
+                        {% if historial_item.estado == 'CANCELADO' %}
+                        <span class="comp-badge comp-badge-danger"><i class="fas fa-ban me-1"></i> CANCELADO</span>
+                        {% else %}
+                        <span class="comp-badge comp-badge-success"><i class="fas fa-check-circle me-1"></i> ACTIVO</span>
+                        {% endif %}
+                    </span>
+                </div>
+                {% if historial_item.estado == 'CANCELADO' %}
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Cancelado por</span>
+                    <span class="comp-info-value fw-bold text-danger">
+                        <i class="fas fa-user-times me-1"></i> {{ historial_item.usuario_cancelacion.username|default:"Sistema" }}
+                    </span>
+                </div>
+                <div class="comp-info-item">
+                    <span class="comp-info-label">Fecha cancelación</span>
+                    <span class="comp-info-value comp-tabular-nums text-danger">
+                        {{ historial_item.fecha_cancelacion|date:"d/m/Y H:i" }} hrs.
+                    </span>
+                </div>
+                {% endif %}
                 <div class="comp-info-item">
                     <span class="comp-info-label">Tipo de documento</span>
                     <span class="comp-info-value">
@@ -260,6 +300,76 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para Cancelar Trámite -->
+<div class="modal fade" id="modalCancelarTramiteDetalle" tabindex="-1" aria-labelledby="modalCancelarTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white py-3">
+                <h5 class="modal-title d-flex align-items-center gap-2" id="modalCancelarTitle">
+                    <i class="fas fa-ban"></i> Cancelar Trámite / Oficio
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-warning py-2 px-3 small rounded-3 mb-3 d-flex align-items-start gap-2">
+                    <i class="fas fa-exclamation-triangle text-warning mt-1"></i>
+                    <div>
+                        <strong>¿Deseas cancelar este movimiento?</strong>
+                        <div class="text-muted">El documento quedará registrado como <strong>CANCELADO</strong> en el Historial y en el Kardex del docente.</div>
+                    </div>
+                </div>
+
+                {% if "CAMBIO DE ADSCRIPCION" in historial_item.tipo_documento.upper or "CAMBIO DE ADSCRIPCIÓN" in historial_item.tipo_documento.upper %}
+                    {% if datos_tramite.escuela_anterior_cct %}
+                    <div class="alert alert-info py-2 px-3 small rounded-3 mb-3 d-flex align-items-start gap-2">
+                        <i class="fas fa-undo-alt text-info mt-1"></i>
+                        <div>
+                            <strong>Reversión de Adscripción:</strong>
+                            <div>El maestro regresará automáticamente a su escuela anterior: <strong>{{ datos_tramite.escuela_anterior_cct }} - {{ datos_tramite.escuela_anterior_nombre|default:"" }}</strong>.</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <label for="escuelaReversionDetalle" class="form-label small fw-bold">Revertir adscripción del docente a:</label>
+                        <select class="form-select form-select-sm" id="escuelaReversionDetalle">
+                            <option value="">-- No modificar escuela actual --</option>
+                            {% for esc in escuelas %}
+                            <option value="{{ esc.id }}">{{ esc.id_escuela }} - {{ esc.nombre_ct }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text small">Selecciona la escuela previa si deseas restablecerla ahora.</div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                {% if vacancia_relacionada %}
+                <div class="alert alert-secondary py-2 px-3 small rounded-3 mb-3 d-flex align-items-start gap-2">
+                    <i class="fas fa-user-clock text-secondary mt-1"></i>
+                    <div>
+                        <strong>Interinato / Vacancia:</strong>
+                        <div>Al cancelar este trámite, el interinato vinculado pasará a estatus <strong>CANCELADO</strong> y la plaza vacante quedará liberada.</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="motivoCancelacionDetalle" class="form-label small fw-bold text-dark">
+                        Motivo de la cancelación <span class="text-danger">*</span>
+                    </label>
+                    <textarea class="form-control" id="motivoCancelacionDetalle" rows="3" placeholder="Describe brevemente por qué se cancela el trámite y quién lo solicitó..." required></textarea>
+                </div>
+                <div id="cancelarErrorDetalle" class="text-danger small" style="display: none;"></div>
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Volver</button>
+                <button type="button" class="btn btn-danger btn-sm" id="btnConfirmarCancelarDetalle">
+                    <i class="fas fa-ban me-1"></i> Confirmar Cancelación
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -330,6 +440,67 @@
                     btnSave.disabled = false;
                 });
         });
+
+        // Manejador de cancelación de trámite
+        var btnConfirmarCancelar = document.getElementById('btnConfirmarCancelarDetalle');
+        if (btnConfirmarCancelar) {
+            btnConfirmarCancelar.addEventListener('click', function () {
+                var motivoInput = document.getElementById('motivoCancelacionDetalle');
+                var errorDiv = document.getElementById('cancelarErrorDetalle');
+                var escuelaSelect = document.getElementById('escuelaReversionDetalle');
+
+                var motivo = motivoInput ? motivoInput.value.trim() : '';
+                if (!motivo) {
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Por favor ingresa el motivo de la cancelación.';
+                        errorDiv.style.display = 'block';
+                    }
+                    if (motivoInput) motivoInput.focus();
+                    return;
+                }
+
+                if (errorDiv) errorDiv.style.display = 'none';
+                btnConfirmarCancelar.disabled = true;
+                btnConfirmarCancelar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Cancelando...';
+
+                var payload = {
+                    motivo_cancelacion: motivo
+                };
+                if (escuelaSelect && escuelaSelect.value) {
+                    payload.escuela_reversion_id = escuelaSelect.value;
+                }
+
+                fetch("{% url 'cancelar_tramite' historial_item.id %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.status === 'success') {
+                        window.location.reload();
+                    } else {
+                        if (errorDiv) {
+                            errorDiv.textContent = data.message || 'Error al cancelar el trámite.';
+                            errorDiv.style.display = 'block';
+                        }
+                        btnConfirmarCancelar.disabled = false;
+                        btnConfirmarCancelar.innerHTML = '<i class="fas fa-ban me-1"></i> Confirmar Cancelación';
+                    }
+                })
+                .catch(function (err) {
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Error de conexión con el servidor.';
+                        errorDiv.style.display = 'block';
+                    }
+                    btnConfirmarCancelar.disabled = false;
+                    btnConfirmarCancelar.innerHTML = '<i class="fas fa-ban me-1"></i> Confirmar Cancelación';
+                });
+            });
+        }
     })();
 </script>
 {% endblock %}

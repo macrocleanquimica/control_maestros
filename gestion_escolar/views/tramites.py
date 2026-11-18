@@ -2,6 +2,7 @@ import os
 import json
 import re
 from datetime import date
+from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
@@ -10,7 +11,7 @@ from django.conf import settings
 from django.urls import reverse
 
 from ..forms import TramiteForm
-from ..models import PlantillaTramite, Historial, MotivoTramite
+from ..models import PlantillaTramite, Historial, MotivoTramite, Maestro, Escuela, Interinato, Vacancia
 from .helpers import vacancia_de_historial, vacancias_candidatas_historial
 
 
@@ -202,6 +203,12 @@ def generar_oficios(request):
 
                 data_for_document['_dest_escuela'] = escuela_destino_final
                 if escuela_destino_final and maestro_titular_obj:
+                    escuela_ant = maestro_titular_obj.id_escuela
+                    data_for_document['escuela_anterior_id'] = escuela_ant.id if escuela_ant else None
+                    data_for_document['escuela_anterior_cct'] = escuela_ant.id_escuela if escuela_ant else ''
+                    data_for_document['escuela_anterior_nombre'] = escuela_ant.nombre_ct if escuela_ant else ''
+                    data_for_document['techo_f_anterior'] = maestro_titular_obj.techo_f or ''
+
                     maestro_titular_obj.id_escuela = escuela_destino_final
                     maestro_titular_obj.techo_f = techo_f_destino
                     maestro_titular_obj.save()
@@ -276,6 +283,11 @@ def generar_oficios(request):
                     datos_para_historial['sostenimiento'] = escuela_info.get('sostenimiento', '')
                     datos_para_historial['supervisor'] = supervisor_info.get('nombre', '')
                     datos_para_historial['director'] = director_info.get('nombre', '')
+                    if 'escuela_anterior_id' in data_for_document:
+                        datos_para_historial['escuela_anterior_id'] = data_for_document.get('escuela_anterior_id')
+                        datos_para_historial['escuela_anterior_cct'] = data_for_document.get('escuela_anterior_cct')
+                        datos_para_historial['escuela_anterior_nombre'] = data_for_document.get('escuela_anterior_nombre')
+                        datos_para_historial['techo_f_anterior'] = data_for_document.get('techo_f_anterior')
 
                     historial_motivo = form.cleaned_data.get('motivo_tramite')
                     historial_motivo_text = historial_motivo.motivo_tramite if historial_motivo else ''
@@ -319,9 +331,11 @@ def generar_oficios(request):
 
 @permission_required('gestion_escolar.acceder_historial', raise_exception=True)
 def historial(request):
-    historial_items = Historial.objects.select_related('usuario', 'maestro').all().order_by('-fecha_creacion')
+    historial_items = Historial.objects.select_related('usuario', 'maestro', 'usuario_cancelacion').all().order_by('-fecha_creacion')
+    escuelas = Escuela.objects.all().order_by('id_escuela')
     context = {
         'historial_items': historial_items,
+        'escuelas': escuelas,
         'titulo': 'Historial de Documentos'
     }
     return render(request, 'gestion_escolar/historial.html', context)
@@ -368,7 +382,7 @@ def historial_detalle_tramite(request, historial_id):
 
     vacancia_relacionada = vacancia_de_historial(historial_item)
     puede_corregir = False
-    if vacancias_candidatas_historial(historial_item).exists():
+    if historial_item.estado != 'CANCELADO' and vacancias_candidatas_historial(historial_item).exists():
         es_autor = historial_item.usuario_id == request.user.id
         es_admin = request.user.is_superuser or request.user.groups.filter(name='ADMINISTRADOR').exists()
         puede_corregir = (es_autor or es_admin) and request.user.has_perm('gestion_escolar.change_vacancia')
@@ -376,6 +390,8 @@ def historial_detalle_tramite(request, historial_id):
     corregir_url = reverse('corregir_vacancia_historial', args=[historial_item.id])
     if request.GET.get('from') == 'kardex':
         corregir_url += '?from=kardex'
+
+    escuelas = Escuela.objects.all().order_by('id_escuela')
 
     context = {
         'historial_item': historial_item,
@@ -389,6 +405,7 @@ def historial_detalle_tramite(request, historial_id):
         'vacancia_relacionada': vacancia_relacionada,
         'puede_corregir': puede_corregir,
         'corregir_url': corregir_url,
+        'escuelas': escuelas,
     }
     return render(request, 'gestion_escolar/historial_detalle_tramite.html', context)
 
@@ -423,6 +440,10 @@ def descargar_archivo_historial(request, item_id):
 @permission_required('gestion_escolar.delete_historial', raise_exception=True)
 def eliminar_historial_item(request, item_id):
     if request.method == 'POST':
+        # Validación de seguridad: solo superusuarios o miembros del grupo ADMINISTRADOR
+        es_admin = request.user.is_superuser or request.user.groups.filter(name='ADMINISTRADOR').exists()
+        if not es_admin:
+            return JsonResponse({'status': 'error', 'message': 'Solo los administradores pueden eliminar registros definitivamente.'}, status=403)
         item = get_object_or_404(Historial, id=item_id)
         try:
             item.delete()
@@ -445,9 +466,159 @@ def guardar_observacion_historial(request, item_id):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     return JsonResponse({'status': 'error', 'message': 'Método no permitido.'}, status=405)
 
+
+@login_required
+@permission_required('gestion_escolar.change_historial', raise_exception=True)
+def info_cancelar_tramite(request, item_id):
+    """Devuelve metadatos para preparar la ventana modal de cancelación."""
+    historial_item = get_object_or_404(Historial, id=item_id)
+    datos = historial_item.datos_tramite or {}
+    tipo = historial_item.tipo_documento or ''
+    es_cambio_adscripcion = 'CAMBIO DE ADSCRIPCION' in tipo.upper() or 'CAMBIO DE ADSCRIPCIÓN' in tipo.upper()
+    escuela_ant_cct = datos.get('escuela_anterior_cct') or ''
+    escuela_ant_nombre = datos.get('escuela_anterior_nombre') or ''
+
+    vacancia = vacancia_de_historial(historial_item)
+    tiene_interinato = False
+    if vacancia and Interinato.objects.filter(vacancia=vacancia, estatus='ACTIVO').exists():
+        tiene_interinato = True
+    elif historial_item.maestro and Interinato.objects.filter(maestro_titular=historial_item.maestro, estatus='ACTIVO').exists():
+        tiene_interinato = True
+
+    return JsonResponse({
+        'status': 'success',
+        'id': historial_item.id,
+        'tipo_documento': tipo,
+        'maestro': str(historial_item.maestro) if historial_item.maestro else 'N/A',
+        'estado': historial_item.estado,
+        'es_cambio_adscripcion': es_cambio_adscripcion,
+        'escuela_anterior_cct': escuela_ant_cct,
+        'escuela_anterior_nombre': escuela_ant_nombre,
+        'escuela_anterior_id': datos.get('escuela_anterior_id'),
+        'tiene_interinato': tiene_interinato,
+    })
+
+
+@login_required
+@permission_required('gestion_escolar.change_historial', raise_exception=True)
+def cancelar_tramite(request, item_id):
+    """Cancela un trámite u oficio, revierte afectaciones y libera plazas/interinatos."""
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Método no permitido.'}, status=405)
+
+    historial_item = get_object_or_404(Historial, id=item_id)
+
+    # Validación de seguridad: autor original, superusuario o ADMINISTRADOR
+    es_autor = historial_item.usuario == request.user
+    es_admin = request.user.is_superuser or request.user.groups.filter(name='ADMINISTRADOR').exists()
+    if not (es_autor or es_admin):
+        return JsonResponse({'status': 'error', 'message': 'No tienes permiso para cancelar este documento. Solo el autor original o un administrador pueden hacerlo.'}, status=403)
+
+    if historial_item.estado == 'CANCELADO':
+        return JsonResponse({'status': 'error', 'message': 'El trámite ya se encuentra cancelado.'}, status=400)
+
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        data = request.POST
+
+    motivo = (data.get('motivo_cancelacion') or '').strip()
+    if not motivo:
+        return JsonResponse({'status': 'error', 'message': 'Debes especificar el motivo de la cancelación.'}, status=400)
+
+    # 1. Marcar el registro como cancelado
+    historial_item.estado = 'CANCELADO'
+    historial_item.motivo_cancelacion = motivo
+    historial_item.fecha_cancelacion = timezone.now()
+    historial_item.usuario_cancelacion = request.user
+    historial_item.save()
+
+    detalles_reversion = []
+
+    # 2. Revertir adscripción del maestro si fue un cambio de adscripción
+    tipo_doc_upper = (historial_item.tipo_documento or '').upper()
+    if 'CAMBIO DE ADSCRIPCION' in tipo_doc_upper or 'CAMBIO DE ADSCRIPCIÓN' in tipo_doc_upper:
+        maestro = historial_item.maestro
+        if maestro:
+            datos = historial_item.datos_tramite or {}
+            escuela_ant_id = datos.get('escuela_anterior_id')
+            techo_ant = datos.get('techo_f_anterior')
+            escuela_manual_id = data.get('escuela_reversion_id')
+
+            escuela_destino = None
+            if escuela_manual_id:
+                escuela_destino = Escuela.objects.filter(id=escuela_manual_id).first()
+            elif escuela_ant_id:
+                escuela_destino = Escuela.objects.filter(id=escuela_ant_id).first()
+
+            if escuela_destino:
+                maestro.id_escuela = escuela_destino
+                maestro.techo_f = techo_ant if (techo_ant and not escuela_manual_id) else escuela_destino.id_escuela
+                maestro.save()
+                detalles_reversion.append(f"Adscripción de {maestro} revertida a {escuela_destino.id_escuela} - {escuela_destino.nombre_ct}")
+
+    # 3. Invalidar o liberar interinatos / vacancias asociadas
+    vacancia = vacancia_de_historial(historial_item)
+    if vacancia:
+        # Interinatos asociados a la vacancia
+        interinatos = Interinato.objects.filter(vacancia=vacancia, estatus='ACTIVO')
+        count_inter = 0
+        for inter in interinatos:
+            inter.estatus = 'CANCELADO'
+            nota = f"[Cancelado por trámite #{historial_item.id}: {motivo}]"
+            inter.observaciones = f"{inter.observaciones or ''} {nota}".strip()
+            inter.save()
+            count_inter += 1
+        if count_inter > 0:
+            detalles_reversion.append(f"{count_inter} interinato(s) marcado(s) como CANCELADO")
+
+        # Si la vacancia tenía asignado un interino, liberarla
+        if vacancia.maestro_interino:
+            interino_txt = str(vacancia.maestro_interino)
+            vacancia.maestro_interino = None
+            vacancia.nombre_interino = None
+            vacancia.curp_interino = None
+            vacancia.save()
+            detalles_reversion.append(f"Plaza vacante liberada (se desvinculó al interino {interino_txt})")
+    elif historial_item.maestro:
+        # Si no hubo vacancia directa pero hay interinatos activos ligados al maestro como titular
+        interinatos = Interinato.objects.filter(maestro_titular=historial_item.maestro, estatus='ACTIVO')
+        if historial_item.maestro_secundario_nombre:
+            nombre_sec = historial_item.maestro_secundario_nombre.strip().upper()
+            interinatos_match = [
+                i for i in interinatos 
+                if i.maestro_interino and (i.maestro_interino.nombre_visible.upper() in nombre_sec or nombre_sec in i.maestro_interino.nombre_visible.upper())
+            ]
+            for inter in interinatos_match:
+                inter.estatus = 'CANCELADO'
+                nota = f"[Cancelado por trámite #{historial_item.id}: {motivo}]"
+                inter.observaciones = f"{inter.observaciones or ''} {nota}".strip()
+                inter.save()
+            if interinatos_match:
+                detalles_reversion.append(f"{len(interinatos_match)} interinato(s) asociado(s) cancelado(s)")
+
+    msg = "Trámite cancelado exitosamente."
+    if detalles_reversion:
+        msg += " " + ". ".join(detalles_reversion) + "."
+
+    return JsonResponse({
+        'status': 'success',
+        'message': msg,
+        'estado': 'CANCELADO',
+        'fecha_cancelacion': historial_item.fecha_cancelacion.strftime('%d/%m/%Y %H:%M'),
+        'motivo_cancelacion': historial_item.motivo_cancelacion,
+        'usuario_cancelacion': request.user.username,
+        'detalles_reversion': detalles_reversion
+    })
+
+
 @login_required
 def corregir_tramite(request, item_id):
     historial_item = get_object_or_404(Historial, id=item_id)
+
+    if historial_item.estado == 'CANCELADO':
+        messages.error(request, "No es posible corregir ni regenerar un trámite cancelado.")
+        return redirect('historial_detalle_tramite', historial_id=item_id)
     
     # Validación de seguridad: Solo el autor, superusuario o ADMINISTRADOR
     es_autor = historial_item.usuario == request.user
@@ -574,6 +745,11 @@ def corregir_tramite(request, item_id):
                     datos_para_historial['sostenimiento'] = escuela_info.get('sostenimiento', '')
                     datos_para_historial['supervisor'] = supervisor_info.get('nombre', '')
                     datos_para_historial['director'] = director_info.get('nombre', '')
+                    if 'escuela_anterior_id' in data_for_document:
+                        datos_para_historial['escuela_anterior_id'] = data_for_document.get('escuela_anterior_id')
+                        datos_para_historial['escuela_anterior_cct'] = data_for_document.get('escuela_anterior_cct')
+                        datos_para_historial['escuela_anterior_nombre'] = data_for_document.get('escuela_anterior_nombre')
+                        datos_para_historial['techo_f_anterior'] = data_for_document.get('techo_f_anterior')
 
                     maestro_para_historial = maestro_titular_obj or form.cleaned_data.get('maestro_interino')
                     historial_item.tipo_documento = f"{'Oficio' if form_type == 'oficios' else 'Trámite'} - {plantilla_tramite.nombre}"

@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import shutil
 import tempfile
@@ -22,7 +23,9 @@ from .campos_plantilla import (
 from .forms import MaestroForm, TramiteForm
 from .models import (
     Categoria,
+    Escuela,
     Historial,
+    Interinato,
     KardexMovimiento,
     LoteReporteVacancia,
     Maestro,
@@ -30,6 +33,7 @@ from .models import (
     PlantillaTramite,
     TipoApreciacion,
     Vacancia,
+    Zona,
 )
 from .views.personal import buscar_plaza_vacante, reclamar_plaza_vacante
 from .motivos_plantilla import ids_permitidos
@@ -1407,3 +1411,192 @@ class FusionarMaestroTests(TestCase):
         self.assertTrue(Maestro.objects.filter(pk='01668').exists())
         self.vacancia.refresh_from_db()
         self.assertEqual(self.vacancia.nombre_titular_reporte, 'None None None')
+
+
+class CancelarTramiteTests(TestCase):
+    """Pruebas para la funcionalidad de cancelación y reversión de trámites/oficios."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username='admin_cancelar', email='admin@example.com', password='pass')
+        self.client.force_login(self.user)
+
+        self.zona = Zona.objects.create(numero=1)
+        self.escuela_a = Escuela.objects.create(
+            id_escuela='10DPR0001A', nombre_ct='PRIMARIA A', turno='MATUTINO', zona_esc=self.zona)
+        self.escuela_b = Escuela.objects.create(
+            id_escuela='10DPR0002B', nombre_ct='PRIMARIA B', turno='MATUTINO', zona_esc=self.zona)
+
+        self.categoria = Categoria.objects.create(
+            id_categoria='E0281', descripcion='DOCENTE DE GRUPO')
+
+        self.maestro = Maestro.objects.create(
+            id_maestro='M001',
+            curp='TEST123456HDFR00',
+            rfc='TEST123456AB1',
+            nombres='CARLOS',
+            a_paterno='GARCIA',
+            a_materno='PEREZ',
+            id_escuela=self.escuela_b,
+            techo_f=self.escuela_b.id_escuela,
+            categog=self.categoria,
+            status='ACTIVO'
+        )
+
+    def test_cancelar_tramite_simple(self):
+        item = Historial.objects.create(
+            usuario=self.user,
+            tipo_documento='Trámite - REINGRESO',
+            maestro=self.maestro,
+            ruta_archivo='falsa.docx',
+            estado='ACTIVO'
+        )
+
+        response = self.client.post(
+            reverse('cancelar_tramite', args=[item.id]),
+            data=json.dumps({'motivo_cancelacion': 'Petición de supervisión'}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertEqual(data['estado'], 'CANCELADO')
+
+        item.refresh_from_db()
+        self.assertEqual(item.estado, 'CANCELADO')
+        self.assertEqual(item.motivo_cancelacion, 'Petición de supervisión')
+        self.assertIsNotNone(item.fecha_cancelacion)
+        self.assertEqual(item.usuario_cancelacion, self.user)
+
+    def test_cancelar_tramite_reversion_adscripcion(self):
+        item = Historial.objects.create(
+            usuario=self.user,
+            tipo_documento='Oficio - PRESENTACION LABORAL PARA CAMBIO DE ADSCRIPCION',
+            maestro=self.maestro,
+            ruta_archivo='falsa.docx',
+            estado='ACTIVO',
+            datos_tramite={
+                'escuela_anterior_id': self.escuela_a.id,
+                'escuela_anterior_cct': self.escuela_a.id_escuela,
+                'techo_f_anterior': self.escuela_a.id_escuela
+            }
+        )
+
+        self.assertEqual(self.maestro.id_escuela, self.escuela_b)
+
+        response = self.client.post(
+            reverse('cancelar_tramite', args=[item.id]),
+            data=json.dumps({'motivo_cancelacion': 'Cancelación por reubicación improcedente'}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.maestro.refresh_from_db()
+        self.assertEqual(self.maestro.id_escuela, self.escuela_a)
+        self.assertEqual(self.maestro.techo_f, self.escuela_a.id_escuela)
+
+    def test_cancelar_tramite_ya_cancelado_rechaza(self):
+        item = Historial.objects.create(
+            usuario=self.user,
+            tipo_documento='Trámite - CONSTANCIA',
+            maestro=self.maestro,
+            ruta_archivo='falsa.docx',
+            estado='CANCELADO',
+            motivo_cancelacion='Ya cancelado'
+        )
+
+        response = self.client.post(
+            reverse('cancelar_tramite', args=[item.id]),
+            data=json.dumps({'motivo_cancelacion': 'Otro motivo'}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('ya se encuentra cancelado', response.json()['message'])
+
+    def test_corregir_tramite_cancelado_bloqueado(self):
+        item = Historial.objects.create(
+            usuario=self.user,
+            tipo_documento='Trámite - CONSTANCIA',
+            maestro=self.maestro,
+            ruta_archivo='falsa.docx',
+            estado='CANCELADO'
+        )
+
+        response = self.client.get(reverse('corregir_tramite', args=[item.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('historial_detalle_tramite', args=[item.id]), response.url)
+
+    def test_info_cancelar_y_cancelar_interinato(self):
+        interino = Maestro.objects.create(
+            id_maestro='M002',
+            curp='INTER123456HDFR00',
+            rfc='INTER123456AB1',
+            nombres='LAURA',
+            a_paterno='SANCHEZ',
+            a_materno='DIAZ',
+            categog=self.categoria,
+            status='ACTIVO'
+        )
+        interinato = Interinato.objects.create(
+            maestro_titular=self.maestro,
+            maestro_interino=interino,
+            tipo='INTERINO',
+            estatus='ACTIVO',
+            fecha_inicio=date(2026, 1, 1),
+            fecha_final=date(2026, 6, 30)
+        )
+        item = Historial.objects.create(
+            usuario=self.user,
+            tipo_documento='Trámite - ALTA PROVISIONAL',
+            maestro=self.maestro,
+            maestro_secundario_nombre='LAURA SANCHEZ DIAZ',
+            ruta_archivo='falsa.docx',
+            estado='ACTIVO'
+        )
+
+        resp_info = self.client.get(reverse('info_cancelar_tramite', args=[item.id]))
+        self.assertEqual(resp_info.status_code, 200)
+        self.assertTrue(resp_info.json()['tiene_interinato'])
+
+        resp_cancel = self.client.post(
+            reverse('cancelar_tramite', args=[item.id]),
+            data=json.dumps({'motivo_cancelacion': 'Cancelación de interinato'}),
+            content_type='application/json'
+        )
+        self.assertEqual(resp_cancel.status_code, 200)
+
+        interinato.refresh_from_db()
+        self.assertEqual(interinato.estatus, 'CANCELADO')
+        self.assertIn('Cancelado por trámite', interinato.observaciones)
+
+    def test_eliminar_historial_no_admin_bloqueado(self):
+        usuario_comun = get_user_model().objects.create_user(
+            username='operador', email='operador@example.com', password='pass')
+        perm = Permission.objects.get(codename='delete_historial')
+        usuario_comun.user_permissions.add(perm)
+        self.client.force_login(usuario_comun)
+
+        item = Historial.objects.create(
+            usuario=usuario_comun,
+            tipo_documento='Trámite - CONSTANCIA',
+            maestro=self.maestro,
+            ruta_archivo='falsa.docx',
+            estado='ACTIVO'
+        )
+
+        response = self.client.post(reverse('eliminar_historial_item', args=[item.id]))
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Historial.objects.filter(id=item.id).exists())
+
+    def test_eliminar_historial_admin_permitido(self):
+        item = Historial.objects.create(
+            usuario=self.user,
+            tipo_documento='Trámite - CONSTANCIA',
+            maestro=self.maestro,
+            ruta_archivo='falsa.docx',
+            estado='ACTIVO'
+        )
+
+        response = self.client.post(reverse('eliminar_historial_item', args=[item.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Historial.objects.filter(id=item.id).exists())

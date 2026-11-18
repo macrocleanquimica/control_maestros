@@ -702,6 +702,15 @@ class Historial(models.Model):
     lote_reporte = models.ForeignKey(LoteReporteVacancia, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Lote de Reporte")
     datos_tramite = models.JSONField(blank=True, null=True, verbose_name="Datos del Trámite/Oficio")
 
+    ESTADO_CHOICES = [
+        ('ACTIVO', 'Activo'),
+        ('CANCELADO', 'Cancelado'),
+    ]
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='ACTIVO', verbose_name="Estado")
+    motivo_cancelacion = models.TextField(blank=True, null=True, verbose_name="Motivo de Cancelación")
+    fecha_cancelacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Cancelación")
+    usuario_cancelacion = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='tramites_cancelados', verbose_name="Cancelado por")
+
     class Meta:
         verbose_name = "Historial"
         verbose_name_plural = "Historial"

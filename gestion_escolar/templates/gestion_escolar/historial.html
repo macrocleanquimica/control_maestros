@@ -1,5 +1,6 @@
 {% extends 'gestion_escolar/base.html' %}
 {% load historial_filters %}
+{% load auth_extras %}
 {% load static %}
 
 {% block title %}{{ titulo }} | Control de Maestros{% endblock %}
@@ -31,6 +32,29 @@
         color: var(--comp-text-3);
         padding: 0;
         line-height: 1;
+    }
+
+    .row-tramite-cancelado {
+        background-color: #fff8f8 !important;
+        opacity: 0.88;
+    }
+    .row-tramite-cancelado td {
+        color: #6c757d !important;
+    }
+    .comp-action-cancel {
+        color: #6c757d; /* Gris mientras esté activo */
+        transition: all 0.2s ease;
+    }
+    .comp-action-cancel:hover {
+        background-color: #fee2e2;
+        color: #dc3545;
+    }
+    .comp-action-cancelled {
+        color: #dc3545 !important; /* Rojo cuando está cancelado */
+        cursor: default;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .observacion-display:hover .btn-edit-observacion {
@@ -68,6 +92,38 @@
         word-break: break-word;
     }
 
+    /* La columna de acciones nunca se recorta: los botones no bajan de
+       renglón y la celda se ajusta a su contenido. */
+    #historialTable {
+        min-width: 820px;
+    }
+    #historialTable thead th:last-child,
+    #historialTable tbody td:last-child {
+        white-space: nowrap;
+        padding-left: 2px;
+        padding-right: 8px;
+    }
+    #historialTable tbody td:last-child .comp-action-group {
+        flex-wrap: nowrap;
+        gap: 4px;
+    }
+
+    /* Botones algo más compactos para que las 4 acciones quepan sin
+       empujar la tabla fuera del panel. */
+    #historialTable .comp-action {
+        width: 26px !important;
+        height: 26px !important;
+        min-width: 26px !important;
+        min-height: 26px !important;
+        flex: 0 0 26px;
+        font-size: 11px;
+    }
+
+    #historialTable .obs-text {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
 </style>
 
 <div class="comp-page-container">
@@ -84,19 +140,19 @@
                 <table id="historialTable" class="comp-table w-100" style="table-layout: fixed;">
                     <thead>
                         <tr>
-                            <th class="ps-4" style="width: 88px;">Usuario</th>
-                            <th style="width: 110px;">Fecha y Hora</th>
-                            <th style="width: 140px;">Documento</th>
-                            <th style="width: 242px;">Maestro / Titular</th>
-                            <th style="width: 120px;">Dato Clave</th>
-                            <th style="width: 120px;">Motivo</th>
-                            <th style="width: 180px;">Observaciones</th>
-                            <th class="text-end pe-4" style="width: 90px;">Acciones</th>
+                            <th class="ps-4" style="width: 8%;">Usuario</th>
+                            <th style="width: 10%;">Fecha y Hora</th>
+                            <th style="width: 13%;">Documento</th>
+                            <th style="width: 18%;">Maestro / Titular</th>
+                            <th style="width: 9%;">Dato Clave</th>
+                            <th style="width: 10%;">Motivo</th>
+                            <th style="width: 16%;">Observaciones</th>
+                            <th class="text-end pe-4" style="width: 16%;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in historial_items %}
-                        <tr>
+                        <tr id="historial-row-{{ item.id }}" class="{% if item.estado == 'CANCELADO' %}row-tramite-cancelado{% endif %}">
                             <td class="ps-4">
                                 <span class="fw-bold comp-text-dark">{{ item.usuario.username|default:"N/A" }}</span>
                             </td>
@@ -111,6 +167,18 @@
                                     {{ tipo }}
                                 </span>
                                 {% endwith %}
+                                {% if item.estado == 'CANCELADO' %}
+                                <div class="mt-1 badge-cancelado-wrap">
+                                    <span class="comp-badge comp-badge-danger" style="font-size: 0.68rem;" title="Motivo: {{ item.motivo_cancelacion|default:'Sin motivo' }}">
+                                        <i class="fas fa-ban me-1"></i> CANCELADO
+                                    </span>
+                                    {% if item.usuario_cancelacion %}
+                                    <div class="smaller text-danger fw-semibold mt-1" style="font-size: 0.72rem;" title="Cancelado el {{ item.fecha_cancelacion|date:'d/m/Y H:i' }} hrs.">
+                                        <i class="fas fa-user-times me-1"></i>Por: {{ item.usuario_cancelacion.username }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if item.tipo_documento == "Reporte de Vacancia" %}
@@ -167,15 +235,107 @@
                                         </a>
                                     {% endif %}
 
-                                    <button type="button" class="comp-action comp-action-delete btn-delete-historial" data-item-id="{{ item.id }}" title="Eliminar registro" aria-label="Eliminar registro">
+                                    {% if item.estado == 'ACTIVO' %}
+                                        {% if user == item.usuario or user.is_superuser or user|has_group:"ADMINISTRADOR" %}
+                                        <button type="button" class="comp-action comp-action-cancel btn-cancelar-tramite" data-item-id="{{ item.id }}" title="Cancelar trámite" aria-label="Cancelar trámite">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="comp-action comp-action-cancelled text-danger" title="Cancelado por {{ item.usuario_cancelacion.username|default:'Usuario' }}{% if item.fecha_cancelacion %} el {{ item.fecha_cancelacion|date:'d/m/Y H:i' }} hrs.{% endif %}: {{ item.motivo_cancelacion|default:'Sin motivo' }}">
+                                            <i class="fas fa-ban"></i>
+                                        </span>
+                                    {% endif %}
+
+                                    {% if user.is_superuser or user|has_group:"ADMINISTRADOR" %}
+                                    <button type="button" class="comp-action comp-action-delete btn-delete-historial" data-item-id="{{ item.id }}" title="Eliminar registro definitivamente (Solo Administradores)" aria-label="Eliminar registro">
                                         <i class="fas fa-trash"></i>
                                     </button>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Cancelar Trámite desde Lista -->
+<div class="modal fade" id="modalCancelarTramite" tabindex="-1" aria-labelledby="modalCancelarListTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white py-3">
+                <h5 class="modal-title d-flex align-items-center gap-2" id="modalCancelarListTitle">
+                    <i class="fas fa-ban"></i> Cancelar Trámite / Oficio
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="cancelarCargando" class="text-center py-3">
+                    <i class="fas fa-spinner fa-spin fa-2x text-muted mb-2"></i>
+                    <p class="small text-muted mb-0">Cargando información del movimiento...</p>
+                </div>
+                <div id="cancelarFormBody" style="display: none;">
+                    <div class="mb-3 p-3 border rounded-3 bg-light">
+                        <div class="small text-muted">Documento:</div>
+                        <div class="fw-bold text-dark" id="cancelarDocNombre">-</div>
+                        <div class="small text-muted mt-2">Maestro / Titular:</div>
+                        <div class="fw-semibold text-dark" id="cancelarDocMaestro">-</div>
+                    </div>
+
+                    <div class="alert alert-warning py-2 px-3 small rounded-3 mb-3 d-flex align-items-start gap-2">
+                        <i class="fas fa-exclamation-triangle text-warning mt-1"></i>
+                        <div>
+                            <strong>¿Confirmas la cancelación de este trámite?</strong>
+                            <div class="text-muted">El trámite se marcará como <strong>CANCELADO</strong> en Historial y Kardex.</div>
+                        </div>
+                    </div>
+
+                    <div id="boxReversionAdscripcion" style="display: none;" class="mb-3">
+                        <div id="boxReversionAuto" class="alert alert-info py-2 px-3 small rounded-3 mb-2 d-flex align-items-start gap-2">
+                            <i class="fas fa-undo-alt text-info mt-1"></i>
+                            <div>
+                                <strong>Reversión de Adscripción:</strong>
+                                <div id="txtReversionAuto"></div>
+                            </div>
+                        </div>
+                        <div id="boxSelectEscuela" style="display: none;">
+                            <label for="selectEscuelaReversionList" class="form-label small fw-bold">Revertir adscripción del docente a:</label>
+                            <select class="form-select form-select-sm" id="selectEscuelaReversionList">
+                                <option value="">-- No modificar escuela actual --</option>
+                                {% for esc in escuelas %}
+                                <option value="{{ esc.id }}">{{ esc.id_escuela }} - {{ esc.nombre_ct }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text small">Selecciona la escuela si deseas reasignarla.</div>
+                        </div>
+                    </div>
+
+                    <div id="boxAlertaInterinato" style="display: none;" class="alert alert-secondary py-2 px-3 small rounded-3 mb-3 d-flex align-items-start gap-2">
+                        <i class="fas fa-user-clock text-secondary mt-1"></i>
+                        <div>
+                            <strong>Interinato / Vacancia vinculada:</strong>
+                            <div>El interinato asociado se marcará como <strong>CANCELADO</strong> y la vacante quedará liberada.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="motivoCancelacionList" class="form-label small fw-bold text-dark">
+                            Motivo de la cancelación <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="motivoCancelacionList" rows="3" placeholder="Indica el motivo de la cancelación y quién la solicitó..." required></textarea>
+                    </div>
+                    <div id="cancelarErrorList" class="text-danger small" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-danger btn-sm" id="btnConfirmarCancelarList" disabled>
+                    <i class="fas fa-ban me-1"></i> Confirmar Cancelación
+                </button>
             </div>
         </div>
     </div>
@@ -187,6 +347,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar DataTable Premium
     var table = $('#historialTable').DataTable({
+        autoWidth: false,
         order: [[1, "desc"]],
         language: {
             ...window.SpanishDataTable,
@@ -272,6 +433,129 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 alert('Error al guardar');
             }
+        });
+    });
+
+    // Modal de cancelación
+    let currentCancelItemId = null;
+    const modalCancelarEl = document.getElementById('modalCancelarTramite');
+    const modalCancelar = modalCancelarEl ? new bootstrap.Modal(modalCancelarEl) : null;
+
+    $('#historialTable tbody').on('click', '.btn-cancelar-tramite', function() {
+        const itemId = $(this).data('item-id');
+        currentCancelItemId = itemId;
+        
+        $('#cancelarCargando').show();
+        $('#cancelarFormBody').hide();
+        $('#btnConfirmarCancelarList').prop('disabled', true);
+        $('#cancelarErrorList').hide().text('');
+        $('#motivoCancelacionList').val('');
+        $('#boxReversionAdscripcion').hide();
+        $('#boxAlertaInterinato').hide();
+        
+        if (modalCancelar) modalCancelar.show();
+
+        fetch(`/historial/info_cancelar/${itemId}/`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    $('#cancelarDocNombre').text(data.tipo_documento || 'Trámite / Oficio');
+                    $('#cancelarDocMaestro').text(data.maestro || 'N/A');
+
+                    if (data.es_cambio_adscripcion) {
+                        $('#boxReversionAdscripcion').show();
+                        if (data.escuela_anterior_cct) {
+                            $('#txtReversionAuto').text(`El maestro regresará automáticamente a su escuela anterior: ${data.escuela_anterior_cct} - ${data.escuela_anterior_nombre}`);
+                            $('#boxReversionAuto').show();
+                            $('#boxSelectEscuela').hide();
+                        } else {
+                            $('#boxReversionAuto').hide();
+                            $('#boxSelectEscuela').show();
+                        }
+                    }
+
+                    if (data.tiene_interinato) {
+                        $('#boxAlertaInterinato').show();
+                    }
+
+                    $('#cancelarCargando').hide();
+                    $('#cancelarFormBody').fadeIn(200);
+                    $('#btnConfirmarCancelarList').prop('disabled', false);
+                    setTimeout(() => $('#motivoCancelacionList').focus(), 250);
+                } else {
+                    $('#cancelarErrorList').text(data.message || 'Error al obtener datos.').show();
+                    $('#cancelarCargando').hide();
+                }
+            })
+            .catch(err => {
+                $('#cancelarErrorList').text('Error de conexión con el servidor.').show();
+                $('#cancelarCargando').hide();
+            });
+    });
+
+    $('#btnConfirmarCancelarList').on('click', function() {
+        const motivo = $('#motivoCancelacionList').val().trim();
+        if (!motivo) {
+            $('#cancelarErrorList').text('Por favor indica el motivo de la cancelación.').show();
+            $('#motivoCancelacionList').focus();
+            return;
+        }
+
+        $('#cancelarErrorList').hide();
+        const $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Cancelando...');
+
+        const payload = {
+            motivo_cancelacion: motivo
+        };
+        const escuelaSel = $('#selectEscuelaReversionList').val();
+        if (escuelaSel) {
+            payload.escuela_reversion_id = escuelaSel;
+        }
+
+        fetch(`/historial/cancelar/${currentCancelItemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (modalCancelar) modalCancelar.hide();
+                // Actualizar la fila en la tabla
+                const row = $(`#historial-row-${currentCancelItemId}`);
+                row.addClass('row-tramite-cancelado');
+                const docCell = row.find('td:nth-child(3)');
+                if (docCell.find('.badge-cancelado-wrap').length === 0) {
+                    docCell.append(`
+                        <div class="mt-1 badge-cancelado-wrap">
+                            <span class="comp-badge comp-badge-danger" style="font-size: 0.68rem;" title="Motivo: ${data.motivo_cancelacion}">
+                                <i class="fas fa-ban me-1"></i> CANCELADO
+                            </span>
+                            <div class="smaller text-danger fw-semibold mt-1" style="font-size: 0.72rem;" title="Cancelado el ${data.fecha_cancelacion} hrs.">
+                                <i class="fas fa-user-times me-1"></i>Por: ${data.usuario_cancelacion}
+                            </div>
+                        </div>
+                    `);
+                }
+                const btnCancel = row.find('.btn-cancelar-tramite');
+                btnCancel.replaceWith(`
+                    <span class="comp-action comp-action-cancelled text-danger" title="Cancelado por ${data.usuario_cancelacion} el ${data.fecha_cancelacion} hrs.: ${data.motivo_cancelacion}">
+                        <i class="fas fa-ban"></i>
+                    </span>
+                `);
+                alert(data.message);
+            } else {
+                $('#cancelarErrorList').text(data.message || 'Error al cancelar.').show();
+                $btn.prop('disabled', false).html('<i class="fas fa-ban me-1"></i> Confirmar Cancelación');
+            }
+        })
+        .catch(err => {
+            $('#cancelarErrorList').text('Error de conexión con el servidor.').show();
+            $btn.prop('disabled', false).html('<i class="fas fa-ban me-1"></i> Confirmar Cancelación');
         });
     });
 });

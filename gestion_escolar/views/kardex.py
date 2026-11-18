@@ -153,7 +153,7 @@ def kardex_maestro_detail(request, maestro_id):
     filtros_historial = Q(maestro_id__in=ids_persona) | Q(datos_tramite__maestro_interino__in=ids_persona)
     if nombres_persona:
         filtros_historial |= Q(maestro_secundario_nombre__in=nombres_persona)
-    historial_maestro = Historial.objects.filter(filtros_historial).select_related('usuario', 'maestro')
+    historial_maestro = Historial.objects.filter(filtros_historial).select_related('usuario', 'maestro', 'usuario_cancelacion')
     # Vacancias donde fue titular o interino (para el fallback de registros antiguos)
     vacancias_titular = {v.maestro_titular_id: v for v in Vacancia.objects.filter(maestro_titular_id__in=ids_persona)}
     vacancias_interino = {v.maestro_interino_id: v for v in Vacancia.objects.filter(maestro_interino_id__in=ids_persona) if v.maestro_interino_id}
@@ -191,6 +191,10 @@ def kardex_maestro_detail(request, maestro_id):
             'objeto': item,
             'clave': clave_mov,
             'rol': rol,
+            'estado': item.estado,
+            'motivo_cancelacion': item.motivo_cancelacion,
+            'fecha_cancelacion': item.fecha_cancelacion,
+            'usuario_cancelacion': item.usuario_cancelacion.username if item.usuario_cancelacion else '',
         })
 
     correspondencia_recibida = RegistroCorrespondencia.objects.filter(maestro_id__in=ids_persona).select_related('maestro')

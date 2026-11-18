@@ -4,6 +4,17 @@
 {% block title %}{{ titulo }} | Control de Maestros{% endblock %}
 
 {% block content %}
+<style>
+.comp-timeline-marker-danger {
+    background-color: #fee2e2 !important;
+    color: #dc2626 !important;
+    border-color: #fca5a5 !important;
+}
+.timeline-item-cancelado .comp-timeline-card {
+    border-left: 3px solid #dc3545 !important;
+    background-color: #fff8f8 !important;
+}
+</style>
 <div class="comp-page-container comp-detail">
     <!-- Header -->
     <div class="comp-page-header">
@@ -52,9 +63,11 @@
             {% if timeline %}
             <div class="comp-timeline">
                 {% for item in timeline %}
-                <article class="comp-timeline-item">
-                    <span class="comp-timeline-marker{% if item.tipo == 'Trámite' %} comp-timeline-marker-accent{% elif item.tipo == 'Interinato' %} comp-timeline-marker-warning{% elif item.tipo == 'Correspondencia' %} comp-timeline-marker-info{% elif item.tipo == 'FUP' %} comp-timeline-marker-success{% endif %}" aria-hidden="true">
-                        {% if item.tipo == 'Trámite' %}
+                <article class="comp-timeline-item{% if item.estado == 'CANCELADO' %} timeline-item-cancelado{% endif %}">
+                    <span class="comp-timeline-marker{% if item.estado == 'CANCELADO' %} comp-timeline-marker-danger{% elif item.tipo == 'Trámite' %} comp-timeline-marker-accent{% elif item.tipo == 'Interinato' %} comp-timeline-marker-warning{% elif item.tipo == 'Correspondencia' %} comp-timeline-marker-info{% elif item.tipo == 'FUP' %} comp-timeline-marker-success{% endif %}" aria-hidden="true">
+                        {% if item.estado == 'CANCELADO' %}
+                            <i class="fas fa-ban"></i>
+                        {% elif item.tipo == 'Trámite' %}
                             <i class="fas fa-file-invoice"></i>
                         {% elif item.tipo == 'Interinato' %}
                             <i class="fas fa-user-clock"></i>
@@ -77,8 +90,24 @@
                             <span><i class="far fa-clock"></i> {{ item.fecha|date:"H:i" }} hrs.</span>
                         </div>
 
-                        <h3 class="comp-timeline-title">{{ item.descripcion }}</h3>
-                        <p class="comp-timeline-text">{{ item.detalle }}</p>
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                            <h3 class="comp-timeline-title mb-0{% if item.estado == 'CANCELADO' %} text-decoration-line-through text-muted{% endif %}">{{ item.descripcion }}</h3>
+                            {% if item.estado == 'CANCELADO' %}
+                            <span class="comp-badge comp-badge-danger" style="font-size: 0.72rem;"><i class="fas fa-ban me-1"></i> CANCELADO</span>
+                            {% endif %}
+                        </div>
+
+                        {% if item.estado == 'CANCELADO' %}
+                        <div class="alert alert-danger py-2 px-3 my-2 small rounded-3 d-flex align-items-start gap-2 border-danger-subtle bg-white">
+                            <i class="fas fa-ban text-danger mt-1"></i>
+                            <div>
+                                <div><strong>Trámite Cancelado</strong>{% if item.fecha_cancelacion %} el {{ item.fecha_cancelacion|date:"d/m/Y H:i" }} hrs.{% endif %}{% if item.usuario_cancelacion %} por {{ item.usuario_cancelacion }}{% endif %}</div>
+                                <div class="text-danger-emphasis"><strong>Motivo:</strong> {{ item.motivo_cancelacion|default:"Sin motivo especificado" }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <p class="comp-timeline-text{% if item.estado == 'CANCELADO' %} text-muted{% endif %}">{{ item.detalle }}</p>
 
                         <div class="comp-timeline-footer">
                             <div class="comp-timeline-tags">
